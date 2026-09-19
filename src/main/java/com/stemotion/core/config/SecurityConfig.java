@@ -23,6 +23,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/ai/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers(
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             );
 
