@@ -30,10 +30,26 @@ public class User extends BaseEntity {
     @Column(name = "google_id", unique = true)
     private String googleId;
 
+    // Null for accounts created through Google sign-in
+    @Column(name = "password_hash")
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    @Builder.Default
+    private UserRole role = UserRole.WRITER;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
+
+    public enum UserRole {
+        WRITER,
+        REVIEWER,
+        PRODUCER,
+        ADMIN
+    }
 
     public enum UserStatus {
         ACTIVE,

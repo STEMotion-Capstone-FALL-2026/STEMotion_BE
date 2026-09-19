@@ -1,6 +1,7 @@
-package com.stemotion.domain.script.entity;
+package com.stemotion.domain.workspace.entity;
 
 import com.stemotion.core.entity.BaseEntity;
+import com.stemotion.domain.auth.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -13,26 +14,25 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * A subject department ("tổ bộ môn") that owns clip projects and members.
+ */
 @Entity
-@Table(name = "comment_annotations")
+@Table(name = "workspaces")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CommentAnnotation extends BaseEntity {
+public class Workspace extends BaseEntity {
 
-    @Column(name = "timecode")
-    private String timecode;
+    @Column(name = "name", nullable = false)
+    private String name;
 
-    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
-    private String content;
-
-    @Column(name = "status", nullable = false)
-    @Builder.Default
-    private String status = "Open";
+    @Column(name = "department")
+    private String department;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "scene_id", nullable = false)
-    private Scene scene;
+    @JoinColumn(name = "created_by")
+    private User createdBy;
 }

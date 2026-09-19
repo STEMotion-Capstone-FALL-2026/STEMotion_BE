@@ -10,4 +10,6 @@ import java.util.List;
 public interface SceneRepository extends JpaRepository<Scene, String> {
 
     List<Scene> findByScriptVersionIdOrderByOrderNoAsc(String versionId);
+
+    void deleteByScriptVersionId(String versionId);
 }

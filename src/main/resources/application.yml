@@ -21,6 +21,34 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
 
+app:
+  jwt:
+    secret: ${JWT_SECRET:stemotion-local-dev-secret-key-change-me-in-production-min-32-bytes}
+    expiration-ms: 86400000
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
+
+  publish:
+    embed-base-url: ${EMBED_BASE_URL:http://localhost:5173/embed}
+
+  integration:
+    render:
+      base-url: ${RENDER_SERVICE_URL:http://localhost:4000}
+      api-key: ${RENDER_SERVICE_KEY:}
+      callback-url: ${RENDER_CALLBACK_URL:http://localhost:8080/api/v1/render/callback}
+      timeout-seconds: 30
+      max-attempts: 3
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      base-url: https://generativelanguage.googleapis.com/v1beta
+      model: ${GEMINI_MODEL:gemini-3.6-flash}
+      timeout-seconds: 60
+      enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
 logging:
   level:
     root: INFO

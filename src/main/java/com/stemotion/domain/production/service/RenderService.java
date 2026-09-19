@@ -1,0 +1,252 @@
+package com.stemotion.domain.production.service;
+
+import com.stemotion.core.enums.StemEnums.RenderResolution;
+import com.stemotion.core.enums.StemEnums.RenderStatus;
+import com.stemotion.core.enums.StemEnums.ScriptStatus;
+import com.stemotion.core.enums.StemEnums.VideoStatus;
+import com.stemotion.core.exception.ApiException;
+import com.stemotion.domain.auth.service.AuthService;
+import com.stemotion.domain.production.dto.ProductionDtos.RenderCallbackRequest;
+import com.stemotion.domain.production.dto.ProductionDtos.RenderJobResponse;
+import com.stemotion.domain.production.dto.ProductionDtos.StartRenderRequest;
+import com.stemotion.domain.production.entity.RenderJob;
+import com.stemotion.domain.production.repository.RenderJobRepository;
+import com.stemotion.domain.project.entity.ClipProject;
+import com.stemotion.domain.project.repository.ClipProjectRepository;
+import com.stemotion.domain.script.dto.SceneDtos.SceneResponse;
+import com.stemotion.domain.script.entity.Scene;
+import com.stemotion.domain.script.entity.ScriptVersion;
+import com.stemotion.domain.script.mapper.SceneMapper;
+import com.stemotion.domain.script.service.ScriptService;
+import com.stemotion.integration.client.RenderServiceClient;
+import com.stemotion.integration.config.IntegrationProperties;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Producer-side orchestration: hand an approved script to the Remotion worker
+ * pool and track progress. Rendering itself happens in the Node service.
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class RenderService {
+
+    /** The Remotion composition that stitches the scene list into one clip. */
+    private static final String COMPOSITION_ID = "FullSTEMVideo";
+
+    private final RenderJobRepository renderJobRepository;
+    private final ClipProjectRepository projectRepository;
+    private final ScriptService scriptService;
+    private final SceneMapper sceneMapper;
+    private final RenderServiceClient renderClient;
+    private final AuthService authService;
+    private final IntegrationProperties properties;
+
+    /**
+     * Queues a render of the project's current script version.
+     *
+     * <p>Only an approved script may be rendered: producing a clip from an
+     * unreviewed script would put unchecked content in front of students.
+     */
+    @Transactional
+    public RenderJobResponse start(String projectId, StartRenderRequest request, String currentUserId) {
+        ClipProject project = scriptService.getOrThrow(projectId);
+
+        if (project.getScriptStatus() != ScriptStatus.APPROVED) {
+            throw ApiException.badRequest(
+                "Script is " + project.getScriptStatus() + "; only an approved script can be rendered"
+            );
+        }
+        if (project.getVideoStatus() == VideoStatus.RENDERING) {
+            throw ApiException.conflict("A render is already running for this project");
+        }
+
+        ScriptVersion version = scriptService.currentVersion(project);
+        List<Scene> scenes = scriptService.scenesOf(version);
+        if (scenes.isEmpty()) {
+            throw ApiException.badRequest("The approved script has no scenes to render");
+        }
+
+        RenderResolution resolution = RenderResolution.fromLabel(request.resolution());
+        int fps = request.fps() == null ? project.getFps() : request.fps();
+
+        RenderJob job = renderJobRepository.save(RenderJob.builder()
+            .project(project)
+            .scriptVersion(version)
+            .requestedBy(authService.findUserOrThrow(currentUserId))
+            .status(RenderStatus.QUEUED)
+            .progress(0)
+            .stage("Queued")
+            .resolution(resolution)
+            .fps(fps)
+            .ttsVoice(request.ttsVoice())
+            .attemptCount(1)
+            .build());
+
+        RenderServiceClient.EnqueueResult result = renderClient.enqueue(
+            job.getId(),
+            COMPOSITION_ID,
+            toScriptProps(project, scenes),
+            resolution.getWidth(),
+            resolution.getHeight(),
+            fps,
+            request.ttsVoice()
+        );
+
+        job.setExternalJobId(result.externalJobId());
+        renderJobRepository.save(job);
+
+        project.setVideoStatus(VideoStatus.RENDERING);
+        projectRepository.save(project);
+
+        return RenderJobResponse.from(job, result.estimatedSeconds());
+    }
+
+    @Transactional(readOnly = true)
+    public RenderJobResponse getStatus(String jobId) {
+        return RenderJobResponse.from(getOrThrow(jobId), null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RenderJobResponse> findByProject(String projectId) {
+        scriptService.getOrThrow(projectId);
+        return renderJobRepository.findByProjectIdOrderByCreatedAtDesc(projectId)
+            .stream()
+            .map(job -> RenderJobResponse.from(job, null))
+            .toList();
+    }
+
+    /**
+     * Applies a progress update from the worker. A completed clip moves into QA
+     * so a reviewer sees it before it can be published.
+     */
+    @Transactional
+    public RenderJobResponse applyCallback(RenderCallbackRequest callback) {
+        RenderJob job = renderJobRepository.findById(callback.jobId())
+            .or(() -> renderJobRepository.findByExternalJobId(callback.jobId()))
+            .orElseThrow(() -> ApiException.notFound("RenderJob", callback.jobId()));
+
+        if (callback.status() != null) {
+            job.setStatus(callback.status());
+        }
+        if (callback.progress() != null) {
+            job.setProgress(Math.max(0, Math.min(100, callback.progress())));
+        }
+        if (callback.stage() != null) {
+            job.setStage(callback.stage());
+        }
+        if (callback.videoUrl() != null) {
+            job.setVideoUrl(callback.videoUrl());
+        }
+        if (callback.errorMessage() != null) {
+            job.setErrorMessage(callback.errorMessage());
+        }
+        renderJobRepository.save(job);
+
+        ClipProject project = job.getProject();
+        if (job.getStatus() == RenderStatus.COMPLETED) {
+            job.setProgress(100);
+            project.setVideoUrl(job.getVideoUrl());
+            project.setVideoStatus(VideoStatus.IN_QA);
+            projectRepository.save(project);
+        } else if (job.getStatus() == RenderStatus.FAILED) {
+            log.warn("Render job {} failed on attempt {}: {}",
+                job.getId(), job.getAttemptCount(), job.getErrorMessage());
+            project.setVideoStatus(VideoStatus.NOT_RENDERED);
+            projectRepository.save(project);
+        }
+
+        return RenderJobResponse.from(job, null);
+    }
+
+    /** Re-queues a failed job within the three-attempt budget. */
+    @Transactional
+    public RenderJobResponse retry(String jobId, String currentUserId) {
+        RenderJob failed = getOrThrow(jobId);
+        if (failed.getStatus() != RenderStatus.FAILED) {
+            throw ApiException.badRequest("Only a failed job can be retried");
+        }
+        if (failed.getAttemptCount() >= properties.getRender().getMaxAttempts()) {
+            throw ApiException.badRequest(
+                "Render job has already used its " + properties.getRender().getMaxAttempts() + " attempts"
+            );
+        }
+
+        StartRenderRequest request = new StartRenderRequest(
+            failed.getResolution().getLabel(),
+            failed.getFps(),
+            failed.getTtsVoice()
+        );
+        RenderJobResponse response = start(failed.getProject().getId(), request, currentUserId);
+
+        RenderJob retried = getOrThrow(response.jobId());
+        retried.setAttemptCount(failed.getAttemptCount() + 1);
+        renderJobRepository.save(retried);
+
+        return RenderJobResponse.from(retried, response.estimatedSeconds());
+    }
+
+    @Transactional
+    public void cancel(String jobId) {
+        RenderJob job = getOrThrow(jobId);
+        if (job.getStatus() == RenderStatus.COMPLETED) {
+            throw ApiException.badRequest("A completed render cannot be cancelled");
+        }
+        if (job.getExternalJobId() != null) {
+            renderClient.cancel(job.getExternalJobId());
+        }
+        job.setStatus(RenderStatus.FAILED);
+        job.setErrorMessage("Cancelled by user");
+        renderJobRepository.save(job);
+
+        ClipProject project = job.getProject();
+        project.setVideoStatus(VideoStatus.NOT_RENDERED);
+        projectRepository.save(project);
+    }
+
+    private RenderJob getOrThrow(String jobId) {
+        return renderJobRepository.findById(jobId)
+            .orElseThrow(() -> ApiException.notFound("RenderJob", jobId));
+    }
+
+    /**
+     * Builds the STEMScript object the FullSTEMVideo composition takes as its
+     * {@code script} prop — the same shape the Remotion Player previews in the
+     * front end, so preview and render stay identical.
+     */
+    private Map<String, Object> toScriptProps(ClipProject project, List<Scene> scenes) {
+        List<Map<String, Object>> sceneProps = new ArrayList<>(scenes.size());
+        for (Scene scene : scenes) {
+            SceneResponse dto = sceneMapper.toResponse(scene);
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("id", dto.getId());
+            payload.put("type", dto.getType().name());
+            payload.put("title", dto.getTitle());
+            payload.put("narration", dto.getNarration());
+            payload.put("durationInFrames", dto.getDurationInFrames());
+            payload.putAll(dto.getFlattenedProps());
+            sceneProps.add(payload);
+        }
+
+        Map<String, Object> script = new LinkedHashMap<>();
+        script.put("id", project.getId());
+        script.put("title", project.getTitle());
+        script.put("subject", project.getSubject().name());
+        script.put("gradeLevel", project.getGradeLevel());
+        script.put("totalDurationSeconds", project.getTotalDurationSeconds());
+        script.put("scriptStatus", project.getScriptStatus().name());
+        script.put("videoStatus", project.getVideoStatus().name());
+        script.put("fps", project.getFps());
+        script.put("scenes", sceneProps);
+        script.put("createdAt", String.valueOf(project.getCreatedAt()));
+        return script;
+    }
+}
