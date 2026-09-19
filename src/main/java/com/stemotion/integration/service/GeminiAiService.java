@@ -57,6 +57,25 @@ public class GeminiAiService {
         """;
 
     public AiSegmentationResponse segmentScript(String rawScript) {
+        // Fallback for local testing without API Key
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            log.warn("GEMINI_API_KEY is empty. Returning mock segmentation response.");
+            return AiSegmentationResponse.builder()
+                .scenes(List.of(
+                    AiSegmentationResponse.SceneSegment.builder()
+                        .narrationText("Xin chào, đây là đoạn mock từ Backend do thiếu API Key.")
+                        .suggestedDuration(5)
+                        .templateType("TITLE")
+                        .build(),
+                    AiSegmentationResponse.SceneSegment.builder()
+                        .narrationText("Nội dung kịch bản gốc: " + rawScript.substring(0, Math.min(rawScript.length(), 20)) + "...")
+                        .suggestedDuration(10)
+                        .templateType("EXPLANATION")
+                        .build()
+                ))
+                .build();
+        }
+
         String fullPrompt = SEGMENTATION_PROMPT + rawScript;
 
         Map<String, Object> payload = buildPayload(fullPrompt);

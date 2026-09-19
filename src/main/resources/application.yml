@@ -6,7 +6,7 @@ spring:
     name: stemotion-be
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/stemotion_db
+    url: jdbc:postgresql://localhost:5433/stemotion_db
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -29,7 +29,7 @@ logging:
 
 gemini:
   api:
-    key: ${GEMINI_API_KEY}
+    key: AQ.Ab8RN6KWHIM3wnn5PqWFqfCwOC91bwKgYryFF8dUaA95lihUuA
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
 
 springdoc:
