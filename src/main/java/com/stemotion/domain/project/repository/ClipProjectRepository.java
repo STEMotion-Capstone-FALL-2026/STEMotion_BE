@@ -1,6 +1,7 @@
 package com.stemotion.domain.project.repository;
 
 import com.stemotion.domain.project.entity.ClipProject;
+import com.stemotion.domain.project.entity.ProjectStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,5 +14,5 @@ public interface ClipProjectRepository extends JpaRepository<ClipProject, String
 
     List<ClipProject> findBySubjectIdOrderByCreatedAtDesc(String subjectId);
 
-    List<ClipProject> findByStatus(ClipProject.ProjectStatus status);
+    List<ClipProject> findByStatus(ProjectStatus status);
 }

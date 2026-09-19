@@ -5,6 +5,8 @@ import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.project.entity.ClipProject;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -33,8 +35,10 @@ public class ScriptVersion extends BaseEntity {
     @Column(name = "summary", columnDefinition = "TEXT")
     private String summary;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private String status;
+    @Builder.Default
+    private ScriptVersionStatus status = ScriptVersionStatus.DRAFT;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)

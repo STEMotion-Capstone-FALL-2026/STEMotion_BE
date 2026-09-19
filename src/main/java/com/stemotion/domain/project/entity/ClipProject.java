@@ -43,13 +43,4 @@ public class ClipProject extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
-
-    public enum ProjectStatus {
-        DRAFT,
-        SCRIPTING,
-        PRODUCING,
-        REVIEWING,
-        PUBLISHED,
-        ARCHIVED
-    }
 }
