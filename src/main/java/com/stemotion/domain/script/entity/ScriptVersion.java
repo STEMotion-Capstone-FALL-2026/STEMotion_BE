@@ -21,6 +21,9 @@ import lombok.Setter;
 /**
  * An immutable-by-convention snapshot of a project's script. A new version is
  * created on every resubmission so reviewers can diff iterations.
+ *
+ * <p>Uses the same {@link ScriptStatus} vocabulary as the project, which is the
+ * spelling the front end's STEMScript contract expects.
  */
 @Entity
 @Table(name = "script_versions")

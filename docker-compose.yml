@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: stemotion-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stemotion_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - stemotion_pgdata:/var/lib/postgresql/data
+
+volumes:
+  stemotion_pgdata:
