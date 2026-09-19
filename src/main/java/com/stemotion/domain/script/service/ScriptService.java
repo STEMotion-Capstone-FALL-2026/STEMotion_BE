@@ -6,6 +6,8 @@ import com.stemotion.core.exception.ApiException;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.service.AuthService;
 import com.stemotion.domain.project.entity.ClipProject;
+import com.stemotion.domain.project.entity.ProjectStatus;
+import com.stemotion.domain.project.service.StatusHistoryService;
 import com.stemotion.domain.project.repository.ClipProjectRepository;
 import com.stemotion.domain.script.dto.SceneDtos.SceneRequest;
 import com.stemotion.domain.script.dto.SceneDtos.SceneResponse;
@@ -43,6 +45,7 @@ public class ScriptService {
     private final SceneMapper sceneMapper;
     private final AuthService authService;
     private final WorkspaceService workspaceService;
+    private final StatusHistoryService statusHistoryService;
 
     // ---------------------------------------------------------------- queries
 
@@ -180,9 +183,10 @@ public class ScriptService {
 
     /** Writer hands the draft to the reviewer queue. */
     @Transactional
-    public ScriptResponse submitForReview(String projectId) {
+    public ScriptResponse submitForReview(String projectId, String currentUserId) {
         ClipProject project = getOrThrow(projectId);
         requireStatus(project, ScriptStatus.DRAFT, ScriptStatus.CHANGE_REQUESTED);
+        requireOwner(project, currentUserId);
 
         ScriptVersion current = currentVersion(project);
         List<Scene> scenes = scenesOf(current);
@@ -190,19 +194,27 @@ public class ScriptService {
             throw ApiException.badRequest("A script needs at least one scene before it can be reviewed");
         }
 
+        ProjectStatus from = project.getPipelineStatus();
+        statusHistoryService.validateTransition(from, ProjectStatus.SCRIPT_REVIEW);
+
         project.setScriptStatus(ScriptStatus.IN_REVIEW);
         current.setStatus(ScriptStatus.IN_REVIEW);
         versionRepository.save(current);
         projectRepository.save(project);
+        statusHistoryService.record(
+            project, from, authService.findUserOrThrow(currentUserId), "Script submitted for review");
 
         return toResponse(project, current, scenes);
     }
 
     /** Reviewer accepts the script; it becomes available to the producer. */
     @Transactional
-    public ScriptResponse approve(String projectId, ReviewDecisionRequest request) {
+    public ScriptResponse approve(String projectId, ReviewDecisionRequest request, String reviewerId) {
         ClipProject project = getOrThrow(projectId);
         requireStatus(project, ScriptStatus.IN_REVIEW);
+
+        ProjectStatus from = project.getPipelineStatus();
+        statusHistoryService.validateTransition(from, ProjectStatus.APPROVED);
 
         ScriptVersion current = currentVersion(project);
         current.setStatus(ScriptStatus.APPROVED);
@@ -211,6 +223,9 @@ public class ScriptService {
 
         versionRepository.save(current);
         projectRepository.save(project);
+        statusHistoryService.record(
+            project, from, authService.findUserOrThrow(reviewerId),
+            request == null || request.note() == null ? "Script approved" : request.note());
 
         return toResponse(project, current, scenesOf(current));
     }
@@ -224,6 +239,9 @@ public class ScriptService {
     public ScriptResponse requestChanges(String projectId, ReviewDecisionRequest request, String reviewerId) {
         ClipProject project = getOrThrow(projectId);
         requireStatus(project, ScriptStatus.IN_REVIEW);
+
+        ProjectStatus from = project.getPipelineStatus();
+        statusHistoryService.validateTransition(from, ProjectStatus.DRAFT);
 
         ScriptVersion reviewed = currentVersion(project);
         reviewed.setStatus(ScriptStatus.CHANGE_REQUESTED);
@@ -245,6 +263,9 @@ public class ScriptService {
         List<Scene> copied = copyScenes(scenesOf(reviewed), next);
         project.setScriptStatus(ScriptStatus.CHANGE_REQUESTED);
         projectRepository.save(project);
+        statusHistoryService.record(
+            project, from, authService.findUserOrThrow(reviewerId),
+            request == null || request.note() == null ? "Changes requested" : request.note());
 
         return toResponse(project, next, copied);
     }
@@ -342,6 +363,13 @@ public class ScriptService {
             throw ApiException.badRequest("Version " + versionId + " does not belong to project " + projectId);
         }
         return version;
+    }
+
+    /** Only the writer who owns the project may hand it to the reviewers. */
+    private void requireOwner(ClipProject project, String userId) {
+        if (!project.getOwner().getId().equals(userId)) {
+            throw ApiException.badRequest("Only the project owner can submit this script for review");
+        }
     }
 
     private void requireStatus(ClipProject project, ScriptStatus... allowed) {

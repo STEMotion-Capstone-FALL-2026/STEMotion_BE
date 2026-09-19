@@ -8,6 +8,5 @@ import java.util.List;
 
 @Repository
 public interface StatusHistoryRepository extends JpaRepository<StatusHistory, String> {
-
     List<StatusHistory> findByProjectIdOrderByCreatedAtDesc(String projectId);
 }

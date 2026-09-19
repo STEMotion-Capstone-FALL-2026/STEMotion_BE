@@ -88,8 +88,11 @@ public class ScriptController {
     @PostMapping("/scripts/{id}/submit-review")
     @Operation(summary = "Writer submits the draft for review")
     @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
-    public ResponseEntity<ScriptResponse> submitForReview(@PathVariable String id) {
-        return ResponseEntity.ok(scriptService.submitForReview(id));
+    public ResponseEntity<ScriptResponse> submitForReview(
+        @PathVariable String id,
+        @AuthenticationPrincipal UserDetails principal
+    ) {
+        return ResponseEntity.ok(scriptService.submitForReview(id, principal.getUsername()));
     }
 
     @PostMapping("/scripts/{id}/approve")
@@ -97,9 +100,10 @@ public class ScriptController {
     @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
     public ResponseEntity<ScriptResponse> approve(
         @PathVariable String id,
-        @RequestBody(required = false) ReviewDecisionRequest request
+        @RequestBody(required = false) ReviewDecisionRequest request,
+        @AuthenticationPrincipal UserDetails principal
     ) {
-        return ResponseEntity.ok(scriptService.approve(id, request));
+        return ResponseEntity.ok(scriptService.approve(id, request, principal.getUsername()));
     }
 
     @PostMapping("/scripts/{id}/request-changes")

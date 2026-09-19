@@ -2,6 +2,7 @@ package com.stemotion.core.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -45,6 +46,22 @@ public class GlobalExceptionHandler {
             LocalDateTime.now()
         );
         return ResponseEntity.badRequest().body(response);
+    }
+
+    /**
+     * Raised by @PreAuthorize when the caller's role is not allowed. Without
+     * this the catch-all below would turn a legitimate denial into a 500.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+            HttpStatus.FORBIDDEN.value(),
+            "ACCESS_DENIED",
+            "You do not have permission to perform this action",
+            LocalDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     @ExceptionHandler(Exception.class)

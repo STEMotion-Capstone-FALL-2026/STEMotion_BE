@@ -6,7 +6,9 @@ spring:
     name: stemotion-be
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/stemotion_db
+    # Matches docker-compose.yml, which maps the container's 5432 to 5433
+    # so it does not clash with a Postgres already installed on the machine.
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/stemotion_db}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -18,7 +20,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
 
 app:
@@ -39,26 +40,12 @@ app:
       timeout-seconds: 30
       max-attempts: 3
     gemini:
+      # Never hard-code the key here: this file is committed. Put it in .env.
       api-key: ${GEMINI_API_KEY:}
       base-url: https://generativelanguage.googleapis.com/v1beta
       model: ${GEMINI_MODEL:gemini-3.6-flash}
       timeout-seconds: 60
       enabled: true
-
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-
-logging:
-  level:
-    root: INFO
-    com.stemotion: DEBUG
-    org.hibernate.SQL: DEBUG
-
-gemini:
-  api:
-    key: AQ.Ab8RN6KWHIM3wnn5PqWFqfCwOC91bwKgYryFF8dUaA95lihUuA
-    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
 
 springdoc:
   api-docs:
@@ -68,3 +55,8 @@ springdoc:
     tags-sorter: alpha
     operations-sorter: method
 
+logging:
+  level:
+    root: INFO
+    com.stemotion: DEBUG
+    org.hibernate.SQL: DEBUG
