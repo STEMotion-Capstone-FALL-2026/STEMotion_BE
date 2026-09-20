@@ -127,9 +127,16 @@ public class RenderService {
     /**
      * Applies a progress update from the worker. A completed clip moves into QA
      * so a reviewer sees it before it can be published.
+     *
+     * <p>The caller (RenderController) extracts the {@code X-Render-Api-Key}
+     * header and passes it here for validation against the configured shared
+     * secret. This prevents external actors from spoofing render progress or
+     * injecting malicious video URLs.
      */
     @Transactional
-    public RenderJobResponse applyCallback(RenderCallbackRequest callback) {
+    public RenderJobResponse applyCallback(String apiKey, RenderCallbackRequest callback) {
+        validateRenderApiKey(apiKey);
+
         RenderJob job = renderJobRepository.findById(callback.jobId())
             .or(() -> renderJobRepository.findByExternalJobId(callback.jobId()))
             .orElseThrow(() -> ApiException.notFound("RenderJob", callback.jobId()));
@@ -215,6 +222,29 @@ public class RenderService {
     private RenderJob getOrThrow(String jobId) {
         return renderJobRepository.findById(jobId)
             .orElseThrow(() -> ApiException.notFound("RenderJob", jobId));
+    }
+
+    /**
+     * Validates the render worker API key against the configured shared secret.
+     * Uses constant-time comparison to prevent timing attacks.
+     *
+     * @throws ApiException 401 if the key is missing or blank
+     * @throws ApiException 403 if the key does not match
+     */
+    private void validateRenderApiKey(String apiKey) {
+        String expectedKey = properties.getRender().getApiKey();
+        if (expectedKey == null || expectedKey.isBlank()) {
+            log.error("RENDER_SERVICE_KEY is not configured — rejecting render callback");
+            throw ApiException.unauthorized("Render API key is not configured on the server");
+        }
+        if (apiKey == null || apiKey.isBlank()) {
+            throw ApiException.unauthorized("Missing X-Render-Api-Key header");
+        }
+        if (!java.security.MessageDigest.isEqual(
+                expectedKey.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                apiKey.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+            throw ApiException.forbidden("Invalid render API key");
+        }
     }
 
     /**

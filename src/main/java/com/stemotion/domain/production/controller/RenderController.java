@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -76,11 +77,16 @@ public class RenderController {
 
     /**
      * Progress webhook for the render worker. Declared permitAll in SecurityConfig
-     * and guarded by the shared render API key instead of a user JWT.
+     * because the worker has no user JWT. Instead, the shared render API key is
+     * verified by {@link RenderService#applyCallback}.
      */
     @PostMapping("/callback")
-    @Operation(summary = "Progress update pushed by the render worker")
-    public ResponseEntity<RenderJobResponse> callback(@Valid @RequestBody RenderCallbackRequest request) {
-        return ResponseEntity.ok(renderService.applyCallback(request));
+    @Operation(summary = "Progress update pushed by the render worker (secured by X-Render-Api-Key header)")
+    public ResponseEntity<RenderJobResponse> callback(
+        @RequestHeader("X-Render-Api-Key") String apiKey,
+        @Valid @RequestBody RenderCallbackRequest request
+    ) {
+        return ResponseEntity.ok(renderService.applyCallback(apiKey, request));
     }
 }
+

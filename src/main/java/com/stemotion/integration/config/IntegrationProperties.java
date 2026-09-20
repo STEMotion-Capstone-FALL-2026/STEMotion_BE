@@ -40,7 +40,7 @@ public class IntegrationProperties {
         /** Google AI Studio key. Keep it in .env, never in application.yml. */
         private String apiKey = "";
         private String baseUrl = "https://generativelanguage.googleapis.com/v1beta";
-        private String model = "gemini-3.6-flash";
+        private String model = "gemini-1.5-flash";
         private int timeoutSeconds = 60;
         /** Falls back to a deterministic stub when no key is configured. */
         private boolean enabled = true;

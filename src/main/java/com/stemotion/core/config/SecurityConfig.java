@@ -24,11 +24,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import java.util.List;
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -45,7 +40,6 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
@@ -54,9 +48,11 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/ai/**").permitAll()
+                // AI endpoints consume Gemini quota — restrict to writers and admins
+                .requestMatchers("/api/v1/ai/**").hasAnyRole("WRITER", "ADMIN")
                 .requestMatchers("/actuator/health").permitAll()
-                // The render worker authenticates with the shared render key, not a user JWT
+                // The render worker authenticates with the shared render API key
+                // validated inside RenderController.callback(), not via JWT.
                 .requestMatchers("/api/v1/render/callback").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
