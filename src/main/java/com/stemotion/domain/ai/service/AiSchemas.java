@@ -39,7 +39,8 @@ final class AiSchemas {
                     "type", "STRING",
                     "enum", List.of(
                         "TITLE_HERO", "MATH_FORMULA", "DIAGRAM_EXPLAINER", "DATA_CHART",
-                        "ALGORITHM_WALKTHROUGH", "STEM_QUIZ", "OUTRO"
+                        "ALGORITHM_WALKTHROUGH", "STEM_QUIZ", "OUTRO",
+                        "CHEMICAL_REACTION", "COMPARISON_SPLIT", "PROCESS_TIMELINE", "GEOMETRY_SPACE"
                     )
                 ),
                 "title", str(),

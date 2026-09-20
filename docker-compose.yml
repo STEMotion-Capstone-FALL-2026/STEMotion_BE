@@ -11,6 +11,13 @@ services:
       - "5433:5432"
     volumes:
       - stemotion_pgdata:/var/lib/postgresql/data
+    # Lets `docker compose up -d --wait` block until Postgres really accepts
+    # connections, instead of the app racing the container on a cold start.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stemotion_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   stemotion_pgdata:

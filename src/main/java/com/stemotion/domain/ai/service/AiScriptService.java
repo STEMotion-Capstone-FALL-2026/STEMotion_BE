@@ -48,7 +48,10 @@ public class AiScriptService {
             Produce between 5 and 7 scenes. Open with TITLE_HERO and close with OUTRO.
             Choose the middle scene types to fit the subject: MATH_FORMULA for derivations,
             DIAGRAM_EXPLAINER for structures, DATA_CHART for measurements,
-            ALGORITHM_WALKTHROUGH for code, STEM_QUIZ to check understanding.
+            ALGORITHM_WALKTHROUGH for code, STEM_QUIZ to check understanding,
+            CHEMICAL_REACTION for chemical equations, COMPARISON_SPLIT to contrast
+            two ideas, PROCESS_TIMELINE for staged processes, GEOMETRY_SPACE for
+            geometry theorems.
             durationInFrames must be 30 times the intended seconds, and the scene
             durations must add up to roughly the target duration.
             """.formatted(request.topic(), request.subject(), request.gradeLevel(), targetDuration);

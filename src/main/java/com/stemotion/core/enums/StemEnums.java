@@ -19,7 +19,7 @@ public final class StemEnums {
         ComputerScience
     }
 
-    /** The seven Remotion scene templates. */
+    /** The Remotion scene templates, mirroring SceneType in stem.ts. */
     public enum SceneType {
         TITLE_HERO,
         MATH_FORMULA,
@@ -27,7 +27,11 @@ public final class StemEnums {
         DATA_CHART,
         ALGORITHM_WALKTHROUGH,
         STEM_QUIZ,
-        OUTRO
+        OUTRO,
+        CHEMICAL_REACTION,
+        COMPARISON_SPLIT,
+        PROCESS_TIMELINE,
+        GEOMETRY_SPACE
     }
 
     /** Editorial state of the written script. */

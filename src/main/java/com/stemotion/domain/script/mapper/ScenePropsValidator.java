@@ -11,19 +11,31 @@ import java.util.Map;
  * Bean Validation cannot reach inside the free-form props map, so each scene
  * type declares the props its Remotion template needs and they are checked here.
  * This keeps a render job from failing late on a missing prop.
+ *
+ * <p>Keep this table in sync with the SceneData union in
+ * STEMotion_FE/src/types/stem.ts; optional props are deliberately left out.
  */
 @Component
 public class ScenePropsValidator {
 
-    private static final Map<SceneType, List<String>> REQUIRED_PROPS = Map.of(
-        SceneType.TITLE_HERO, List.of("subtitle", "subject", "gradeLevel", "badgeText"),
-        SceneType.MATH_FORMULA, List.of("latex", "steps"),
-        SceneType.DIAGRAM_EXPLAINER, List.of("diagramTitle", "labels"),
-        SceneType.DATA_CHART, List.of("chartType", "xAxisLabel", "yAxisLabel", "dataPoints"),
-        SceneType.ALGORITHM_WALKTHROUGH, List.of("language", "codeSnippet", "steps"),
-        SceneType.STEM_QUIZ, List.of("question", "options", "correctIndex", "hint", "explanation"),
-        SceneType.OUTRO, List.of("summaryPoints", "nextLessonSuggestion", "instructorName")
+    private static final Map<SceneType, List<String>> REQUIRED_PROPS = Map.ofEntries(
+        Map.entry(SceneType.TITLE_HERO, List.of("subtitle", "subject", "gradeLevel", "badgeText")),
+        Map.entry(SceneType.MATH_FORMULA, List.of("latex", "steps")),
+        Map.entry(SceneType.DIAGRAM_EXPLAINER, List.of("diagramTitle", "labels")),
+        Map.entry(SceneType.DATA_CHART, List.of("chartType", "xAxisLabel", "yAxisLabel", "dataPoints")),
+        Map.entry(SceneType.ALGORITHM_WALKTHROUGH, List.of("language", "codeSnippet", "steps")),
+        Map.entry(SceneType.STEM_QUIZ, List.of("question", "options", "correctIndex", "hint", "explanation")),
+        Map.entry(SceneType.OUTRO, List.of("summaryPoints", "nextLessonSuggestion", "instructorName")),
+        Map.entry(SceneType.CHEMICAL_REACTION,
+            List.of("equation", "reactants", "products", "condition", "observation")),
+        Map.entry(SceneType.COMPARISON_SPLIT, List.of("topicA", "topicB", "conclusion")),
+        Map.entry(SceneType.PROCESS_TIMELINE, List.of("processTitle", "stages")),
+        Map.entry(SceneType.GEOMETRY_SPACE,
+            List.of("shapeType", "theoremName", "formulaLatex", "dimensions", "explanation"))
     );
+
+    private static final List<String> GEOMETRY_SHAPES =
+        List.of("pythagoras_triangle", "cone_3d", "circle_trig");
 
     public void validate(SceneType type, Map<String, Object> props) {
         if (type == null) {
@@ -40,8 +52,11 @@ public class ScenePropsValidator {
             );
         }
 
-        if (type == SceneType.STEM_QUIZ) {
-            validateQuiz(props);
+        switch (type) {
+            case STEM_QUIZ -> validateQuiz(props);
+            case GEOMETRY_SPACE -> validateGeometry(props);
+            case COMPARISON_SPLIT -> validateComparison(props);
+            default -> { /* the presence check above is enough */ }
         }
     }
 
@@ -56,6 +71,30 @@ public class ScenePropsValidator {
         int value = index.intValue();
         if (value < 0 || value >= optionList.size()) {
             throw ApiException.badRequest("STEM_QUIZ correctIndex is outside the options range");
+        }
+    }
+
+    private void validateGeometry(Map<String, Object> props) {
+        Object shapeType = props.get("shapeType");
+        if (!(shapeType instanceof String shape) || !GEOMETRY_SHAPES.contains(shape)) {
+            throw ApiException.badRequest(
+                "GEOMETRY_SPACE shapeType must be one of " + String.join(", ", GEOMETRY_SHAPES)
+            );
+        }
+        if (!(props.get("dimensions") instanceof Map<?, ?> dimensions)
+            || !dimensions.keySet().containsAll(List.of("a", "b", "c"))) {
+            throw ApiException.badRequest("GEOMETRY_SPACE dimensions must contain a, b and c");
+        }
+    }
+
+    private void validateComparison(Map<String, Object> props) {
+        for (String side : List.of("topicA", "topicB")) {
+            if (!(props.get(side) instanceof Map<?, ?> topic)
+                || !topic.keySet().containsAll(List.of("title", "badge", "points"))) {
+                throw ApiException.badRequest(
+                    "COMPARISON_SPLIT " + side + " must contain title, badge and points"
+                );
+            }
         }
     }
 }
