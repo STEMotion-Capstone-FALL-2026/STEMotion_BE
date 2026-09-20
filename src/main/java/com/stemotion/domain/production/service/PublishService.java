@@ -10,6 +10,8 @@ import com.stemotion.domain.production.entity.PublishRecord;
 import com.stemotion.domain.production.repository.PublishRecordRepository;
 import com.stemotion.domain.project.entity.ClipProject;
 import com.stemotion.domain.project.repository.ClipProjectRepository;
+import com.stemotion.domain.review.dto.QaDtos.QaReport;
+import com.stemotion.domain.review.service.ClipQaService;
 import com.stemotion.domain.script.service.ScriptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +36,7 @@ public class PublishService {
     private final ClipProjectRepository projectRepository;
     private final ScriptService scriptService;
     private final AuthService authService;
+    private final ClipQaService clipQaService;
 
     @Value("${app.publish.embed-base-url}")
     private String embedBaseUrl;
@@ -58,6 +61,15 @@ public class PublishService {
         }
         if (project.getVideoUrl() == null) {
             throw ApiException.badRequest("The project has no rendered video to publish");
+        }
+
+        // Automated QA is the last gate before a clip reaches students.
+        QaReport qa = clipQaService.run(projectId);
+        if (!qa.passed()) {
+            throw ApiException.badRequest(
+                "Kiểm tra tự động chưa đạt (%d lỗi). Xem GET /api/v1/scripts/%s/qa-report."
+                    .formatted(qa.failCount(), projectId)
+            );
         }
 
         String targets = request.targets().stream()

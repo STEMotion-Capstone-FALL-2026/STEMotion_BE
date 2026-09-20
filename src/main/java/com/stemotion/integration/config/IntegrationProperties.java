@@ -42,6 +42,8 @@ public class IntegrationProperties {
         private String baseUrl = "https://generativelanguage.googleapis.com/v1beta";
         private String model = "gemini-1.5-flash";
         private int timeoutSeconds = 60;
+        /** Attempts for a transient 429/503, matching the proposal's budget. */
+        private int maxAttempts = 3;
         /** Falls back to a deterministic stub when no key is configured. */
         private boolean enabled = true;
     }

@@ -33,7 +33,8 @@ app:
     secret: ${JWT_SECRET:stemotion-local-dev-secret-key-change-me-in-production-min-32-bytes}
     expiration-ms: 86400000
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
+    # Patterns; "*" matches any port so a shifted Vite port still works in dev.
+    allowed-origins: ${CORS_ORIGINS:http://localhost:*,http://127.0.0.1:*}
 
   publish:
     embed-base-url: ${EMBED_BASE_URL:http://localhost:3000/embed}

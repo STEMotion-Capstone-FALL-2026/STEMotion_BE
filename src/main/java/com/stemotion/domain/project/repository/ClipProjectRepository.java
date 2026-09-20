@@ -20,4 +20,5 @@ public interface ClipProjectRepository extends JpaRepository<ClipProject, String
     List<ClipProject> findByVideoStatusOrderByCreatedAtDesc(VideoStatus videoStatus);
 
     long countByWorkspaceId(String workspaceId);
+
 }

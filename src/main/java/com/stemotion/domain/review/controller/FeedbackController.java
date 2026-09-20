@@ -3,6 +3,8 @@ package com.stemotion.domain.review.controller;
 import com.stemotion.core.enums.StemEnums.FeedbackStatus;
 import com.stemotion.domain.review.dto.FeedbackDtos.FeedbackRequest;
 import com.stemotion.domain.review.dto.FeedbackDtos.FeedbackResponse;
+import com.stemotion.domain.review.dto.QaDtos.QaReport;
+import com.stemotion.domain.review.service.ClipQaService;
 import com.stemotion.domain.review.service.FeedbackService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,6 +34,7 @@ import java.util.List;
 public class FeedbackController {
 
     private final FeedbackService feedbackService;
+    private final ClipQaService clipQaService;
 
     @GetMapping("/scripts/{projectId}/qa-comments")
     @Operation(summary = "Review notes pinned to a clip")
@@ -73,6 +76,12 @@ public class FeedbackController {
     public ResponseEntity<Void> delete(@PathVariable String commentId) {
         feedbackService.delete(commentId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/scripts/{projectId}/qa-report")
+    @Operation(summary = "Run the automated pre-publish checks")
+    public ResponseEntity<QaReport> qaReport(@PathVariable String projectId) {
+        return ResponseEntity.ok(clipQaService.run(projectId));
     }
 
     @PostMapping("/scripts/{projectId}/approve-video")

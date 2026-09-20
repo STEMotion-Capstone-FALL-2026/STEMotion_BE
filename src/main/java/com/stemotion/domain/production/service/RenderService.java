@@ -165,16 +165,71 @@ public class RenderService {
             project.setVideoStatus(VideoStatus.IN_QA);
             projectRepository.save(project);
         } else if (job.getStatus() == RenderStatus.FAILED) {
-            log.warn("Render job {} failed on attempt {}: {}",
-                job.getId(), job.getAttemptCount(), job.getErrorMessage());
-            project.setVideoStatus(VideoStatus.NOT_RENDERED);
-            projectRepository.save(project);
+            return RenderJobResponse.from(handleFailure(job), null);
         }
 
         return RenderJobResponse.from(job, null);
     }
 
-    /** Re-queues a failed job within the three-attempt budget. */
+    /**
+     * Requeues a failed render automatically, up to the attempt budget from the
+     * project proposal (three tries). Only the final failure is escalated, so a
+     * transient worker crash never needs a human to press retry.
+     *
+     * <p>The retry reuses the same job row and increments its attempt counter,
+     * which keeps one render job per producer request rather than scattering
+     * the history across rows.
+     */
+    private RenderJob handleFailure(RenderJob job) {
+        ClipProject project = job.getProject();
+        int maxAttempts = properties.getRender().getMaxAttempts();
+
+        if (job.getAttemptCount() >= maxAttempts) {
+            log.error("Render job {} gave up after {} attempts: {}",
+                job.getId(), job.getAttemptCount(), job.getErrorMessage());
+            project.setVideoStatus(VideoStatus.NOT_RENDERED);
+            projectRepository.save(project);
+            return renderJobRepository.save(job);
+        }
+
+        int nextAttempt = job.getAttemptCount() + 1;
+        log.warn("Render job {} failed on attempt {} ({}), retrying as attempt {}",
+            job.getId(), job.getAttemptCount(), job.getErrorMessage(), nextAttempt);
+
+        List<Scene> scenes = scriptService.scenesOf(job.getScriptVersion());
+
+        try {
+            RenderServiceClient.EnqueueResult result = renderClient.enqueue(
+                job.getId(),
+                COMPOSITION_ID,
+                toScriptProps(project, scenes),
+                job.getResolution().getWidth(),
+                job.getResolution().getHeight(),
+                job.getFps(),
+                job.getTtsVoice()
+            );
+
+            job.setExternalJobId(result.externalJobId());
+            job.setStatus(RenderStatus.QUEUED);
+            job.setProgress(0);
+            job.setStage("Thử lại lần " + nextAttempt + "/" + maxAttempts);
+            job.setAttemptCount(nextAttempt);
+            // The clip is on its way again, so the project stays in production.
+            project.setVideoStatus(VideoStatus.RENDERING);
+            projectRepository.save(project);
+        } catch (Exception ex) {
+            // The render service is unreachable; stop here rather than spinning.
+            log.error("Render job {} could not be requeued: {}", job.getId(), ex.getMessage());
+            job.setAttemptCount(nextAttempt);
+            job.setErrorMessage(job.getErrorMessage() + " | retry failed: " + ex.getMessage());
+            project.setVideoStatus(VideoStatus.NOT_RENDERED);
+            projectRepository.save(project);
+        }
+
+        return renderJobRepository.save(job);
+    }
+
+    /** Re-queues a failed job manually, outside the automatic budget. */
     @Transactional
     public RenderJobResponse retry(String jobId, String currentUserId) {
         RenderJob failed = getOrThrow(jobId);

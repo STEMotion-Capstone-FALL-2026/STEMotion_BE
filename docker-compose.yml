@@ -19,5 +19,26 @@ services:
       timeout: 5s
       retries: 10
 
+  # Object storage for rendered MP4 files, as the proposal specifies.
+  minio:
+    image: minio/minio:latest
+    container_name: stemotion-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: stemotion
+      MINIO_ROOT_PASSWORD: stemotion123
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web console
+    volumes:
+      - stemotion_minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   stemotion_pgdata:
+  stemotion_minio:

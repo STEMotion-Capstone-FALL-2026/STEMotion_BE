@@ -6,6 +6,8 @@ import com.stemotion.core.exception.ApiException;
 import com.stemotion.integration.config.IntegrationProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -68,25 +70,67 @@ public class GeminiClient {
             )
         );
 
-        try {
-            JsonNode response = restClient.post()
-                .uri("/models/{model}:generateContent?key={key}",
-                    properties.getGemini().getModel(),
-                    properties.getGemini().getApiKey())
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(body)
-                .retrieve()
-                .body(JsonNode.class);
+        return callWithRetry(body);
+    }
 
-            return parseFirstCandidate(response);
-        } catch (ApiException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            log.error("Gemini call failed", ex);
+    /**
+     * Sends the request, retrying the transient failures Gemini raises when a
+     * model is briefly overloaded (503) or the key is rate limited (429).
+     *
+     * <p>The proposal allows three attempts before a job is escalated. Backoff
+     * grows between tries so a busy model is not hammered; anything else, such
+     * as a bad key or a malformed request, fails immediately since retrying it
+     * would only waste the user's quota.
+     */
+    private JsonNode callWithRetry(Map<String, Object> body) {
+        int maxAttempts = properties.getGemini().getMaxAttempts();
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                JsonNode response = restClient.post()
+                    .uri("/models/{model}:generateContent?key={key}",
+                        properties.getGemini().getModel(),
+                        properties.getGemini().getApiKey())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(JsonNode.class);
+
+                return parseFirstCandidate(response);
+            } catch (ApiException ex) {
+                throw ex;
+            } catch (HttpServerErrorException.ServiceUnavailable
+                     | HttpClientErrorException.TooManyRequests ex) {
+                log.warn("Gemini busy on attempt {}/{}: {}", attempt, maxAttempts, ex.getStatusText());
+                if (attempt < maxAttempts) {
+                    sleepBackoff(attempt);
+                }
+            } catch (Exception ex) {
+                log.error("Gemini call failed", ex);
+                throw new ApiException(
+                    HttpStatus.BAD_GATEWAY,
+                    "AI_CALL_FAILED",
+                    "Gemini request failed: " + ex.getMessage()
+                );
+            }
+        }
+
+        log.error("Gemini still unavailable after {} attempts", maxAttempts);
+        throw new ApiException(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "AI_BUSY",
+            "Mô hình AI đang quá tải. Vui lòng thử lại sau ít phút."
+        );
+    }
+
+    /** 1s, then 2s, then 4s — enough for a short demand spike to pass. */
+    private void sleepBackoff(int attempt) {
+        try {
+            Thread.sleep(1000L * (1L << (attempt - 1)));
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
             throw new ApiException(
-                HttpStatus.BAD_GATEWAY,
-                "AI_CALL_FAILED",
-                "Gemini request failed: " + ex.getMessage()
+                HttpStatus.SERVICE_UNAVAILABLE, "AI_INTERRUPTED", "AI request was interrupted"
             );
         }
     }
