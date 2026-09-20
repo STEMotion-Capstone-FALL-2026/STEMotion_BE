@@ -33,20 +33,69 @@ final class AiSchemas {
 
     /** A full draft script: metadata plus an ordered scene list. */
     static Map<String, Object> generatedScript() {
-        Map<String, Object> scene = object(
+        Map<String, Object> stepItem = object(
             Map.of(
-                "type", Map.of(
-                    "type", "STRING",
-                    "enum", List.of(
-                        "TITLE_HERO", "MATH_FORMULA", "DIAGRAM_EXPLAINER", "DATA_CHART",
-                        "ALGORITHM_WALKTHROUGH", "STEM_QUIZ", "OUTRO",
-                        "CHEMICAL_REACTION", "COMPARISON_SPLIT", "PROCESS_TIMELINE", "GEOMETRY_SPACE"
-                    )
-                ),
-                "title", str(),
-                "narration", str(),
-                "durationInFrames", num()
+                "label", str(),
+                "latexSnippet", str(),
+                "explanation", str()
             ),
+            List.of("label", "latexSnippet", "explanation")
+        );
+
+        Map<String, Object> topicSide = object(
+            Map.of(
+                "title", str(),
+                "badge", str(),
+                "points", arrayOf(str())
+            ),
+            List.of("title", "points")
+        );
+
+        Map<String, Object> dataPoint = object(
+            Map.of(
+                "label", str(),
+                "value", num()
+            ),
+            List.of("label", "value")
+        );
+
+        Map<String, Object> sceneProps = Map.ofEntries(
+            Map.entry("type", Map.of(
+                "type", "STRING",
+                "enum", List.of(
+                    "TITLE_HERO", "MATH_FORMULA", "DIAGRAM_EXPLAINER", "DATA_CHART",
+                    "ALGORITHM_WALKTHROUGH", "STEM_QUIZ", "OUTRO",
+                    "CHEMICAL_REACTION", "COMPARISON_SPLIT", "PROCESS_TIMELINE", "GEOMETRY_SPACE"
+                )
+            )),
+            Map.entry("title", str()),
+            Map.entry("narration", str()),
+            Map.entry("durationInFrames", num()),
+            Map.entry("latex", str()),
+            Map.entry("steps", arrayOf(stepItem)),
+            Map.entry("question", str()),
+            Map.entry("options", arrayOf(str())),
+            Map.entry("correctIndex", num()),
+            Map.entry("hint", str()),
+            Map.entry("explanation", str()),
+            Map.entry("topicA", topicSide),
+            Map.entry("topicB", topicSide),
+            Map.entry("conclusion", str()),
+            Map.entry("chartType", str()),
+            Map.entry("xAxisLabel", str()),
+            Map.entry("yAxisLabel", str()),
+            Map.entry("dataPoints", arrayOf(dataPoint)),
+            Map.entry("equation", str()),
+            Map.entry("reactants", str()),
+            Map.entry("products", str()),
+            Map.entry("condition", str()),
+            Map.entry("observation", str()),
+            Map.entry("summaryPoints", arrayOf(str())),
+            Map.entry("nextLessonSuggestion", str())
+        );
+
+        Map<String, Object> scene = object(
+            sceneProps,
             List.of("type", "title", "narration", "durationInFrames")
         );
 

@@ -54,6 +54,14 @@ public class AiScriptService {
             geometry theorems.
             durationInFrames must be 30 times the intended seconds, and the scene
             durations must add up to roughly the target duration.
+
+            CRITICAL REQUIREMENT - Provide accurate scientific details matching the Topic:
+            - For MATH_FORMULA: MUST provide "latex" with the core formula for this topic (e.g. W = \\frac{1}{2}mv^2 + mgh, n_1 \\sin(i) = n_2 \\sin(r), etc.), and "steps" breakdown.
+            - For COMPARISON_SPLIT: MUST provide "topicA" ({title, badge, points}), "topicB" ({title, badge, points}), and "conclusion" comparing two concepts from this topic.
+            - For STEM_QUIZ: MUST provide "question", "options" (4 choices), "correctIndex" (0-3), "hint", and "explanation" directly testing knowledge from this topic.
+            - For DATA_CHART: MUST provide "chartType" ("bar" or "line"), "xAxisLabel", "yAxisLabel", and "dataPoints" with realistic values.
+            - For CHEMICAL_REACTION: MUST provide "equation", "reactants", "products", "condition", and "observation".
+            - For OUTRO: MUST provide "summaryPoints" (key takeaways) and "nextLessonSuggestion".
             """.formatted(request.topic(), request.subject(), request.gradeLevel(), targetDuration);
 
         return call(null, prompt, AiSchemas.generatedScript());
