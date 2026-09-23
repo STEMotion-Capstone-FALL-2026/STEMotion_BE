@@ -47,7 +47,10 @@ public class SecurityConfig {
                 ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**").permitAll()
+                // Only these two are public. /auth/me must stay protected,
+                // otherwise an expired token reaches the controller with a
+                // null principal instead of being rejected with 401.
+                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register").permitAll()
                 // AI endpoints consume Gemini quota — restrict to writers and admins
                 .requestMatchers("/api/v1/ai/**").hasAnyRole("WRITER", "ADMIN")
                 .requestMatchers("/actuator/health").permitAll()
