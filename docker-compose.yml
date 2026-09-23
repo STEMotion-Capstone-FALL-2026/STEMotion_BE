@@ -1,22 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: stemotion-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: stemotion_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
-    volumes:
-      - stemotion_pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d stemotion_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   minio:
     image: minio/minio:latest
     container_name: stemotion-minio
@@ -45,21 +27,18 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/stemotion_db
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
+      DB_URL: ${DB_URL:-jdbc:postgresql://aws-0-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require}
+      DB_USERNAME: ${DB_USERNAME:-postgres.iycanfyquiojkhqgtywd}
+      DB_PASSWORD: ${DB_PASSWORD:-Longtri280204!}
       JWT_SECRET: ${JWT_SECRET:-stemotion-local-dev-secret-key-change-me-in-production-min-32-bytes}
       RENDER_SERVICE_URL: ${RENDER_SERVICE_URL:-http://host.docker.internal:4000}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       CORS_ORIGINS: "http://localhost:*,http://127.0.0.1:*"
     depends_on:
-      postgres:
-        condition: service_healthy
       minio:
         condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
 volumes:
-  stemotion_pgdata:
   stemotion_minio:
