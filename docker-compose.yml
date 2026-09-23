@@ -11,15 +11,12 @@ services:
       - "5433:5432"
     volumes:
       - stemotion_pgdata:/var/lib/postgresql/data
-    # Lets `docker compose up -d --wait` block until Postgres really accepts
-    # connections, instead of the app racing the container on a cold start.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d stemotion_db"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  # Object storage for rendered MP4 files, as the proposal specifies.
   minio:
     image: quay.io/minio/minio:latest
     container_name: stemotion-minio
@@ -38,6 +35,30 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stemotion-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/stemotion_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: ${JWT_SECRET:-stemotion-local-dev-secret-key-change-me-in-production-min-32-bytes}
+      RENDER_SERVICE_URL: ${RENDER_SERVICE_URL:-http://host.docker.internal:4000}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      CORS_ORIGINS: "http://localhost:*,http://127.0.0.1:*"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   stemotion_pgdata:
