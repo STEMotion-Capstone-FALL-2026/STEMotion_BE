@@ -66,7 +66,8 @@ public class GeminiClient {
             "generationConfig", Map.of(
                 "temperature", 0.4,
                 "responseMimeType", "application/json",
-                "responseSchema", responseSchema
+                "responseSchema", responseSchema,
+                "maxOutputTokens", 8192
             )
         );
 

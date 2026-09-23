@@ -62,6 +62,7 @@ public class AiScriptService {
             - For DATA_CHART: MUST provide "chartType" ("bar" or "line"), "xAxisLabel", "yAxisLabel", and "dataPoints" with realistic values.
             - For CHEMICAL_REACTION: MUST provide "equation", "reactants", "products", "condition", and "observation".
             - For OUTRO: MUST provide "summaryPoints" (key takeaways) and "nextLessonSuggestion".
+            - Keep all narration, explanation, and text fields concise, pedagogical, and direct (1-2 sentences per scene).
             """.formatted(request.topic(), request.subject(), request.gradeLevel(), targetDuration);
 
         return call(null, prompt, AiSchemas.generatedScript());
