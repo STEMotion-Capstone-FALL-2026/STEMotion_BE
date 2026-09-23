@@ -4,6 +4,7 @@ import com.stemotion.domain.auth.dto.AuthDtos.AuthResponse;
 import com.stemotion.domain.auth.dto.AuthDtos.LoginRequest;
 import com.stemotion.domain.auth.dto.AuthDtos.RegisterRequest;
 import com.stemotion.domain.auth.dto.AuthDtos.UserResponse;
+import com.stemotion.core.exception.ApiException;
 import com.stemotion.domain.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,6 +43,9 @@ public class AuthController {
     @GetMapping("/me")
     @Operation(summary = "Return the profile of the authenticated user")
     public ResponseEntity<UserResponse> me(@AuthenticationPrincipal UserDetails principal) {
+        if (principal == null) {
+            throw ApiException.unauthorized("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
         return ResponseEntity.ok(authService.getCurrentUser(principal.getUsername()));
     }
 }
