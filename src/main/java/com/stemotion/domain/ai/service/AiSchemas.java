@@ -101,12 +101,14 @@ final class AiSchemas {
 
         return object(
             Map.of(
+                "isValidStemTopic", Map.of("type", "BOOLEAN"),
+                "fallbackMessage", str(),
                 "title", str(),
                 "gradeLevel", str(),
                 "totalDurationSeconds", num(),
                 "scenes", arrayOf(scene)
             ),
-            List.of("title", "scenes")
+            List.of("isValidStemTopic", "scenes")
         );
     }
 

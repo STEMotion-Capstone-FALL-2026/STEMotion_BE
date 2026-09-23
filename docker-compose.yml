@@ -21,7 +21,7 @@ services:
 
   # Object storage for rendered MP4 files, as the proposal specifies.
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     container_name: stemotion-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
