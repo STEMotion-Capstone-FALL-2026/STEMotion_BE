@@ -83,7 +83,9 @@ public class RenderController {
     @PostMapping("/callback")
     @Operation(summary = "Progress update pushed by the render worker (secured by X-Render-Api-Key header)")
     public ResponseEntity<RenderJobResponse> callback(
-        @RequestHeader("X-Render-Api-Key") String apiKey,
+        // Optional at the binding level so a missing key reaches the security
+        // check below and comes back as 401, not a generic 400.
+        @RequestHeader(value = "X-Render-Api-Key", required = false) String apiKey,
         @Valid @RequestBody RenderCallbackRequest request
     ) {
         return ResponseEntity.ok(renderService.applyCallback(apiKey, request));
