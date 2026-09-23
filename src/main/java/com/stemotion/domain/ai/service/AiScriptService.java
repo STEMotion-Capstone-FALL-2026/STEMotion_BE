@@ -60,9 +60,10 @@ public class AiScriptService {
             - For COMPARISON_SPLIT: MUST provide "topicA" ({title, badge, points}), "topicB" ({title, badge, points}), and "conclusion" comparing two concepts from this topic.
             - For STEM_QUIZ: MUST provide "question", "options" (4 choices), "correctIndex" (0-3), "hint", and "explanation" directly testing knowledge from this topic.
             - For DATA_CHART: MUST provide "chartType" ("bar" or "line"), "xAxisLabel", "yAxisLabel", and "dataPoints" with realistic values.
-            - For CHEMICAL_REACTION: MUST provide "equation", "reactants", "products", "condition", and "observation".
+            - For CHEMICAL_REACTION: MUST provide "equation" (concise standard chemical equation, e.g. Cu + 4HNO3 -> Cu(NO3)2 + 2NO2 + 2H2O), "reactants", "products", "condition", and "observation".
             - For OUTRO: MUST provide "summaryPoints" (key takeaways) and "nextLessonSuggestion".
             - Keep all narration, explanation, and text fields concise, pedagogical, and direct (1-2 sentences per scene).
+            - All LaTeX formulas and equations MUST be properly escaped and never end with a trailing unescaped backslash.
             """.formatted(request.topic(), request.subject(), request.gradeLevel(), targetDuration);
 
         return call(null, prompt, AiSchemas.generatedScript());

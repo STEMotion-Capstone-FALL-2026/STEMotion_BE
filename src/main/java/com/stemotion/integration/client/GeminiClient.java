@@ -99,6 +99,11 @@ public class GeminiClient {
 
                 return parseFirstCandidate(response);
             } catch (ApiException ex) {
+                if ("AI_INVALID_JSON".equals(ex.getCode()) && attempt < maxAttempts) {
+                    log.warn("Gemini produced invalid JSON on attempt {}/{}, retrying with backoff...", attempt, maxAttempts);
+                    sleepBackoff(attempt);
+                    continue;
+                }
                 throw ex;
             } catch (HttpServerErrorException.ServiceUnavailable
                      | HttpClientErrorException.TooManyRequests ex) {
@@ -141,18 +146,17 @@ public class GeminiClient {
             throw new ApiException(HttpStatus.BAD_GATEWAY, "AI_EMPTY_RESPONSE", "Gemini returned no body");
         }
 
-        // Thinking models can emit several parts; the answer is the first one
-        // carrying text, the rest being thought signatures.
-        String text = null;
+        // Thinking models can emit several parts; concatenate all valid text parts
+        StringBuilder sb = new StringBuilder();
         for (JsonNode part : response.path("candidates").path(0).path("content").path("parts")) {
             String candidate = part.path("text").asText("");
             if (!candidate.isBlank()) {
-                text = candidate;
-                break;
+                sb.append(candidate);
             }
         }
 
-        if (text == null) {
+        String text = sb.toString().trim();
+        if (text.isBlank()) {
             String reason = response.path("candidates").path(0).path("finishReason").asText("UNKNOWN");
             throw new ApiException(
                 HttpStatus.BAD_GATEWAY,
@@ -161,14 +165,87 @@ public class GeminiClient {
             );
         }
 
+        // Strip markdown code fences if model enclosed JSON in ```json ... ```
+        if (text.startsWith("```json")) {
+            text = text.substring(7);
+        } else if (text.startsWith("```")) {
+            text = text.substring(3);
+        }
+        if (text.endsWith("```")) {
+            text = text.substring(0, text.length() - 3);
+        }
+        text = text.trim();
+
         try {
             return objectMapper.readTree(text);
         } catch (Exception ex) {
-            throw new ApiException(
-                HttpStatus.BAD_GATEWAY,
-                "AI_INVALID_JSON",
-                "Gemini response was not valid JSON: " + ex.getMessage()
-            );
+            log.warn("Gemini JSON parse failed initially, attempting auto-repair... Error: {}", ex.getMessage());
+            try {
+                String repaired = repairJson(text);
+                return objectMapper.readTree(repaired);
+            } catch (Exception repairEx) {
+                log.error("Gemini JSON repair failed: {}", repairEx.getMessage());
+                throw new ApiException(
+                    HttpStatus.BAD_GATEWAY,
+                    "AI_INVALID_JSON",
+                    "Gemini response was not valid JSON: " + ex.getMessage()
+                );
+            }
         }
+    }
+
+    /**
+     * Sanitizes unescaped backslashes in math/chemistry equations and balances
+     * unclosed strings or brackets in truncated JSON responses.
+     */
+    private String repairJson(String json) {
+        if (json == null || json.isBlank()) return json;
+        String s = json.trim();
+
+        // 1. Fix unescaped backslashes in LaTeX: replace single \ that is NOT followed by valid JSON escape character
+        s = s.replaceAll("(?<!\\\\)\\\\(?![\"\\\\/bfnrtu])", "\\\\\\\\");
+
+        // 2. Count unescaped quotes, braces, and brackets
+        boolean inString = false;
+        boolean escaped = false;
+        int openBraces = 0;
+        int openBrackets = 0;
+
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+            if (c == '\\') {
+                escaped = true;
+                continue;
+            }
+            if (c == '"') {
+                inString = !inString;
+                continue;
+            }
+            if (!inString) {
+                if (c == '{') openBraces++;
+                else if (c == '}') openBraces--;
+                else if (c == '[') openBrackets++;
+                else if (c == ']') openBrackets--;
+            }
+        }
+
+        StringBuilder repaired = new StringBuilder(s);
+        if (inString) {
+            repaired.append('"');
+        }
+        while (openBrackets > 0) {
+            repaired.append(']');
+            openBrackets--;
+        }
+        while (openBraces > 0) {
+            repaired.append('}');
+            openBraces--;
+        }
+
+        return repaired.toString();
     }
 }
