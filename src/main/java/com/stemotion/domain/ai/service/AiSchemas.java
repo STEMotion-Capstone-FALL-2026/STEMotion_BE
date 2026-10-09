@@ -59,10 +59,11 @@ final class AiSchemas {
             List.of("label", "value")
         );
 
-        // Icon names are an enum, so Gemini can only pick icons the renderer can draw.
+        // A large icon enum makes Gemini reject this nested schema with HTTP 400.
+        // Supply the catalog in the instruction and validate generated names locally.
         Map<String, Object> flatIcon = object(
             Map.of(
-                "name", Map.of("type", "STRING", "enum", StemIconCatalog.NAMES),
+                "name", str(),
                 "label", str()
             ),
             List.of("name", "label")
@@ -118,7 +119,7 @@ final class AiSchemas {
         return object(
             Map.of(
                 "isValidStemTopic", Map.of("type", "BOOLEAN"),
-                "fallbackMessage", str(),
+                "fallbackMessage", Map.of("type", "STRING", "nullable", true),
                 "title", str(),
                 "gradeLevel", str(),
                 "totalDurationSeconds", num(),
@@ -137,7 +138,7 @@ final class AiSchemas {
                 "narration", str(),
                 "suggestedDurationSec", num(),
                 "concepts", arrayOf(str()),
-                "suggestedIcons", arrayOf(Map.of("type", "STRING", "enum", StemIconCatalog.NAMES))
+                "suggestedIcons", arrayOf(str())
             ),
             List.of("type", "title", "narration", "suggestedDurationSec")
         );

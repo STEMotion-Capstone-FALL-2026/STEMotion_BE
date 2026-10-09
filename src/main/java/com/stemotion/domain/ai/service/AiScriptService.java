@@ -1,6 +1,7 @@
 package com.stemotion.domain.ai.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.stemotion.core.exception.ApiException;
 import com.stemotion.domain.ai.dto.AiDtos.AiAction;
 import com.stemotion.domain.ai.dto.AiDtos.AiActionResponse;
 import com.stemotion.domain.ai.dto.AiDtos.GenerateScriptRequest;
@@ -10,6 +11,7 @@ import com.stemotion.integration.config.IntegrationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 
@@ -147,7 +149,13 @@ public class AiScriptService {
 
     private AiActionResponse call(AiAction action, String prompt, Map<String, Object> schema) {
         long startedAt = System.currentTimeMillis();
-        JsonNode result = geminiClient.generateJson(SYSTEM_INSTRUCTION, prompt, schema);
+        String instruction = SYSTEM_INSTRUCTION;
+        if (action == null || action == AiAction.resegment) {
+            instruction += "\nFor icons[].name and suggestedIcons[], use only these exact names: "
+                + String.join(", ", StemIconCatalog.NAMES) + ".";
+        }
+        JsonNode result = geminiClient.generateJson(instruction, prompt, schema);
+        validateIconNames(result);
         long elapsed = System.currentTimeMillis() - startedAt;
 
         if (elapsed > 15_000) {
@@ -155,5 +163,24 @@ public class AiScriptService {
         }
 
         return new AiActionResponse(action, result, properties.getGemini().getModel(), elapsed);
+    }
+
+    private void validateIconNames(JsonNode result) {
+        if (result == null) return;
+        for (JsonNode scene : result.path("scenes")) {
+            for (JsonNode icon : scene.path("icons")) {
+                requireKnownIcon(icon.path("name"));
+            }
+            for (JsonNode icon : scene.path("suggestedIcons")) {
+                requireKnownIcon(icon);
+            }
+        }
+    }
+
+    private void requireKnownIcon(JsonNode name) {
+        if (!name.isTextual() || !StemIconCatalog.NAMES.contains(name.asText())) {
+            throw new ApiException(HttpStatus.BAD_GATEWAY, "AI_INVALID_RESPONSE",
+                "AI returned an unsupported icon. Please generate the script again.");
+        }
     }
 }
