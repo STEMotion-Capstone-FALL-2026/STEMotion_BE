@@ -1,0 +1,51 @@
+# Cloud Run uses an existing, explicitly migrated database.
+# Never update a shared Supabase schema as a side effect of starting an instance.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+      minimum-idle: 0
+      connection-timeout: 10000
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+  cors:
+    allowed-origins: ${CORS_ORIGINS}
+  publish:
+    embed-base-url: ${EMBED_BASE_URL:}
+  integration:
+    render:
+      base-url: ${RENDER_SERVICE_URL:}
+      api-key: ${RENDER_SERVICE_KEY:}
+      callback-url: ${RENDER_CALLBACK_URL:}
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_MODEL:gemini-2.5-flash}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+
+logging:
+  level:
+    com.stemotion: INFO
+    org.hibernate.SQL: WARN

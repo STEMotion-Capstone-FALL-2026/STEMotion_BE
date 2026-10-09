@@ -53,7 +53,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register").permitAll()
                 // AI endpoints consume Gemini quota — restrict to writers and admins
                 .requestMatchers("/api/v1/ai/**").hasAnyRole("WRITER", "ADMIN")
-                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 // The render worker authenticates with the shared render API key
                 // validated inside RenderController.callback(), not via JWT.
                 .requestMatchers("/api/v1/render/callback").permitAll()

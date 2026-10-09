@@ -9,11 +9,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
+import java.time.Duration;
 
 /**
  * Thin wrapper over the Google AI Studio (Gemini) generateContent endpoint.
@@ -33,8 +35,12 @@ public class GeminiClient {
     public GeminiClient(IntegrationProperties properties, ObjectMapper objectMapper) {
         this.properties = properties;
         this.objectMapper = objectMapper;
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(Duration.ofSeconds(5));
+        requestFactory.setReadTimeout(Duration.ofSeconds(properties.getGemini().getTimeoutSeconds()));
         this.restClient = RestClient.builder()
             .baseUrl(properties.getGemini().getBaseUrl())
+            .requestFactory(requestFactory)
             .build();
     }
 

@@ -25,6 +25,8 @@ Thumbs.db
 # === Environment ===
 .env
 *.env.local
+.env.*
+gha-creds-*.json
 
 # === Logs ===
 *.log
