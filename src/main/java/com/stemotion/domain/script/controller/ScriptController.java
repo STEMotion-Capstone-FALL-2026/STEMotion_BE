@@ -66,8 +66,8 @@ public class ScriptController {
     @GetMapping("/scripts/review-queue")
     @Operation(summary = "Scripts waiting for an editorial decision")
     @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
-    public ResponseEntity<List<ScriptSummaryResponse>> reviewQueue() {
-        return ResponseEntity.ok(scriptService.findReviewQueue());
+    public ResponseEntity<List<ScriptSummaryResponse>> reviewQueue(@AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(scriptService.findReviewQueue(principal.getUsername()));
     }
 
     @GetMapping("/scripts/{id}")

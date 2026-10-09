@@ -62,6 +62,12 @@ public class FeedbackService {
         if (request.timestampSec() != null && request.timestampSec() < 0) {
             throw ApiException.badRequest("timestampSec cannot be negative");
         }
+        if (scene != null && !scene.getScriptVersion().getProject().getId().equals(projectId)) {
+            throw ApiException.badRequest("The scene does not belong to this project");
+        }
+        if (scene == null && request.timestampSec() == null) {
+            throw ApiException.badRequest("A comment requires a scene or a timestamp");
+        }
 
         FeedbackComment comment = feedbackRepository.save(FeedbackComment.builder()
             .project(project)

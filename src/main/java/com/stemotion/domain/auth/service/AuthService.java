@@ -25,6 +25,9 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        if (request.role() == User.UserRole.ADMIN) {
+            throw ApiException.forbidden("Administrator accounts must be provisioned by an administrator");
+        }
         if (userRepository.existsByEmail(request.email())) {
             throw ApiException.conflict("Email '" + request.email() + "' is already registered");
         }

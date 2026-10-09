@@ -46,6 +46,7 @@ public class ScriptService {
     private final AuthService authService;
     private final WorkspaceService workspaceService;
     private final StatusHistoryService statusHistoryService;
+    private final com.stemotion.core.security.WorkspaceAccess workspaceAccess;
 
     // ---------------------------------------------------------------- queries
 
@@ -68,9 +69,10 @@ public class ScriptService {
 
     /** The reviewer queue: everything currently awaiting an editorial decision. */
     @Transactional(readOnly = true)
-    public List<ScriptSummaryResponse> findReviewQueue() {
+    public List<ScriptSummaryResponse> findReviewQueue(String userId) {
         return projectRepository.findByScriptStatusOrderByCreatedAtDesc(ScriptStatus.IN_REVIEW)
             .stream()
+            .filter(project -> workspaceAccess.canRead(project.getWorkspace().getId(), userId))
             .map(this::toSummary)
             .toList();
     }

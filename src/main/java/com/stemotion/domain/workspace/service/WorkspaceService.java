@@ -42,6 +42,7 @@ public class WorkspaceService {
     @Transactional(readOnly = true)
     public List<WorkspaceResponse> findMine(String userId) {
         return memberRepository.findByUserId(userId).stream()
+            .filter(member -> member.getStatus() == MemberStatus.ACTIVE)
             .map(WorkspaceMember::getWorkspace)
             .map(this::toResponse)
             .toList();

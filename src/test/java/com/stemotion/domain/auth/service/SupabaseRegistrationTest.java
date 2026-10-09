@@ -35,7 +35,7 @@ class SupabaseRegistrationTest {
     private String testEmail;
 
     @ParameterizedTest
-    @EnumSource(User.UserRole.class)
+    @EnumSource(value = User.UserRole.class, names = "ADMIN", mode = EnumSource.Mode.EXCLUDE)
     void registrationAndLoginPersistNativeEnumsAndUuid(User.UserRole role) {
         String email = "deployment-smoke-" + UUID.randomUUID() + "@example.invalid";
         testEmail = email;
