@@ -119,6 +119,96 @@ class ScenePropsValidatorTest {
             .hasMessageContaining("topicB");
     }
 
+    private static Map<String, Object> illustratedProps() {
+        Map<String, Object> props = new HashMap<>();
+        props.put("headline", "Quang hop");
+        props.put("ambience", "cell");
+        props.put("layout", "focus");
+        props.put("icons", List.of(
+            Map.of("name", "leaf", "label", "La cay"),
+            Map.of("name", "sun", "label", "Anh sang")
+        ));
+        return props;
+    }
+
+    @Test
+    @DisplayName("a complete flat-explainer scene passes")
+    void acceptsValidIllustrated() {
+        assertThatCode(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, illustratedProps()))
+            .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("ambience and layout may be left out and default in the renderer")
+    void acceptsIllustratedWithoutOptionalProps() {
+        Map<String, Object> props = illustratedProps();
+        props.remove("ambience");
+        props.remove("layout");
+
+        assertThatCode(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, props))
+            .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("an icon outside the approved STEM set is rejected")
+    void rejectsUnknownIcon() {
+        Map<String, Object> props = illustratedProps();
+        props.put("icons", List.of(Map.of("name", "unicorn")));
+
+        assertThatThrownBy(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, props))
+            .isInstanceOf(ApiException.class)
+            .hasMessageContaining("unicorn")
+            .hasMessageContaining("approved STEM icon set");
+    }
+
+    @Test
+    @DisplayName("a flat-explainer scene needs 1 to 6 icons")
+    void rejectsEmptyOrOversizedIconList() {
+        Map<String, Object> empty = illustratedProps();
+        empty.put("icons", List.of());
+        assertThatThrownBy(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, empty))
+            .isInstanceOf(ApiException.class)
+            .hasMessageContaining("1 to 6 icons");
+
+        Map<String, Object> tooMany = illustratedProps();
+        tooMany.put("icons", java.util.Collections.nCopies(7, Map.of("name", "atom")));
+        assertThatThrownBy(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, tooMany))
+            .isInstanceOf(ApiException.class)
+            .hasMessageContaining("1 to 6 icons");
+    }
+
+    @Test
+    @DisplayName("an unknown ambience or layout is rejected")
+    void rejectsUnknownAmbienceOrLayout() {
+        Map<String, Object> badAmbience = illustratedProps();
+        badAmbience.put("ambience", "jungle");
+        assertThatThrownBy(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, badAmbience))
+            .isInstanceOf(ApiException.class)
+            .hasMessageContaining("ambience must be one of");
+
+        Map<String, Object> badLayout = illustratedProps();
+        badLayout.put("layout", "spiral");
+        assertThatThrownBy(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, badLayout))
+            .isInstanceOf(ApiException.class)
+            .hasMessageContaining("layout must be one of");
+    }
+
+    @Test
+    @DisplayName("pastel ambiences, the swarm layout and both detail levels are accepted")
+    void acceptsNewFlatOptions() {
+        Map<String, Object> props = illustratedProps();
+        props.put("ambience", "lilac");
+        props.put("layout", "swarm");
+        props.put("detail", "rich");
+        assertThatCode(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, props))
+            .doesNotThrowAnyException();
+
+        props.put("detail", "cluttered");
+        assertThatThrownBy(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, props))
+            .isInstanceOf(ApiException.class)
+            .hasMessageContaining("detail must be one of");
+    }
+
     @Test
     @DisplayName("a null scene type is rejected before anything else")
     void rejectsNullType() {

@@ -59,13 +59,23 @@ final class AiSchemas {
             List.of("label", "value")
         );
 
+        // Icon names are an enum, so Gemini can only pick icons the renderer can draw.
+        Map<String, Object> flatIcon = object(
+            Map.of(
+                "name", Map.of("type", "STRING", "enum", StemIconCatalog.NAMES),
+                "label", str()
+            ),
+            List.of("name", "label")
+        );
+
         Map<String, Object> sceneProps = Map.ofEntries(
             Map.entry("type", Map.of(
                 "type", "STRING",
                 "enum", List.of(
                     "TITLE_HERO", "MATH_FORMULA", "DIAGRAM_EXPLAINER", "DATA_CHART",
                     "ALGORITHM_WALKTHROUGH", "STEM_QUIZ", "OUTRO",
-                    "CHEMICAL_REACTION", "COMPARISON_SPLIT", "PROCESS_TIMELINE", "GEOMETRY_SPACE"
+                    "CHEMICAL_REACTION", "COMPARISON_SPLIT", "PROCESS_TIMELINE", "GEOMETRY_SPACE",
+                    "ILLUSTRATED_EXPLAINER"
                 )
             )),
             Map.entry("title", str()),
@@ -91,7 +101,13 @@ final class AiSchemas {
             Map.entry("condition", str()),
             Map.entry("observation", str()),
             Map.entry("summaryPoints", arrayOf(str())),
-            Map.entry("nextLessonSuggestion", str())
+            Map.entry("nextLessonSuggestion", str()),
+            Map.entry("headline", str()),
+            Map.entry("caption", str()),
+            Map.entry("ambience", Map.of("type", "STRING", "enum",
+                List.of("space", "cell", "lab", "ocean", "lilac", "sky"))),
+            Map.entry("layout", Map.of("type", "STRING", "enum", List.of("focus", "row", "cluster", "swarm"))),
+            Map.entry("icons", arrayOf(flatIcon))
         );
 
         Map<String, Object> scene = object(
@@ -120,7 +136,8 @@ final class AiSchemas {
                 "title", str(),
                 "narration", str(),
                 "suggestedDurationSec", num(),
-                "concepts", arrayOf(str())
+                "concepts", arrayOf(str()),
+                "suggestedIcons", arrayOf(Map.of("type", "STRING", "enum", StemIconCatalog.NAMES))
             ),
             List.of("type", "title", "narration", "suggestedDurationSec")
         );

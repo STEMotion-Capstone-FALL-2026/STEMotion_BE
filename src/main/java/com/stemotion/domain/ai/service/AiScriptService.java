@@ -64,6 +64,13 @@ public class AiScriptService {
             - DATA_CHART: Cung cấp "chartType" (bar/line), "xAxisLabel", "yAxisLabel", "dataPoints".
             - CHEMICAL_REACTION: Cung cấp "equation", "reactants", "products", "condition", "observation".
             - OUTRO: Cung cấp "summaryPoints" và "nextLessonSuggestion".
+            - ILLUSTRATED_EXPLAINER: dùng cho khái niệm cần hình dung trực quan (cấu tạo, vai trò, quan hệ nhân quả), tối đa 2 cảnh mỗi video.
+              Cung cấp "headline" (tối đa 8 từ), "caption" (một câu ngắn), "ambience" (space: vũ trụ/vật lý; cell: sinh học;
+              lab: hóa học/thí nghiệm; ocean: nước/Trái Đất; lilac, sky: nền sáng pastel cho cảnh nhẹ nhàng, xen kẽ với nền tối),
+              "layout" (focus: một khái niệm trung tâm và các thành phần quanh nó; row: quy trình theo thứ tự;
+              cluster: nhóm khái niệm ngang hàng; swarm: một tập hợp rất nhiều phần tử như tế bào, quần thể, đám mây electron)
+              và "icons" (2-5 biểu tượng, mỗi cái có "name" lấy từ danh sách cho phép và "label" tiếng Việt tối đa 3 từ).
+              Với layout focus và swarm, biểu tượng đầu tiên là tâm điểm.
             """.formatted(request.topic(), request.subject(), request.gradeLevel(), targetDuration);
 
         AiActionResponse response = call(null, prompt, AiSchemas.generatedScript());
@@ -90,6 +97,8 @@ public class AiScriptService {
                 Re-cut the following %s script for %s into 5-7 coherent scenes.
                 For each scene choose the most suitable template type and a duration
                 in seconds proportional to how much the narration covers.
+                Also suggest 2-4 icons per scene from the allowed icon names; the
+                producer may swap them, so pick the ones that best picture the idea.
 
                 Script:
                 %s

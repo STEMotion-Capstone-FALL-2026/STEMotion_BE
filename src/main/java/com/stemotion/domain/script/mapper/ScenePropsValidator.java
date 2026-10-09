@@ -2,6 +2,7 @@ package com.stemotion.domain.script.mapper;
 
 import com.stemotion.core.enums.StemEnums.SceneType;
 import com.stemotion.core.exception.ApiException;
+import com.stemotion.domain.ai.service.StemIconCatalog;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -31,11 +32,17 @@ public class ScenePropsValidator {
         Map.entry(SceneType.COMPARISON_SPLIT, List.of("topicA", "topicB", "conclusion")),
         Map.entry(SceneType.PROCESS_TIMELINE, List.of("processTitle", "stages")),
         Map.entry(SceneType.GEOMETRY_SPACE,
-            List.of("shapeType", "theoremName", "formulaLatex", "dimensions", "explanation"))
+            List.of("shapeType", "theoremName", "formulaLatex", "dimensions", "explanation")),
+        Map.entry(SceneType.ILLUSTRATED_EXPLAINER, List.of("headline", "icons"))
     );
 
     private static final List<String> GEOMETRY_SHAPES =
         List.of("pythagoras_triangle", "cone_3d", "circle_trig");
+
+    private static final List<String> FLAT_AMBIENCES = List.of("space", "cell", "lab", "ocean", "lilac", "sky");
+    private static final List<String> FLAT_LAYOUTS = List.of("focus", "row", "cluster", "swarm");
+    private static final List<String> FLAT_DETAILS = List.of("minimal", "rich");
+    private static final int MAX_FLAT_ICONS = 6;
 
     public void validate(SceneType type, Map<String, Object> props) {
         if (type == null) {
@@ -56,6 +63,7 @@ public class ScenePropsValidator {
             case STEM_QUIZ -> validateQuiz(props);
             case GEOMETRY_SPACE -> validateGeometry(props);
             case COMPARISON_SPLIT -> validateComparison(props);
+            case ILLUSTRATED_EXPLAINER -> validateIllustrated(props);
             default -> { /* the presence check above is enough */ }
         }
     }
@@ -95,6 +103,35 @@ public class ScenePropsValidator {
                     "COMPARISON_SPLIT " + side + " must contain title, badge and points"
                 );
             }
+        }
+    }
+
+    private void validateIllustrated(Map<String, Object> props) {
+        if (!(props.get("icons") instanceof List<?> icons) || icons.isEmpty() || icons.size() > MAX_FLAT_ICONS) {
+            throw ApiException.badRequest(
+                "ILLUSTRATED_EXPLAINER icons must be a list of 1 to " + MAX_FLAT_ICONS + " icons"
+            );
+        }
+        for (Object icon : icons) {
+            Object name = icon instanceof Map<?, ?> m ? m.get("name") : null;
+            if (!(name instanceof String n) || !StemIconCatalog.isKnown(n)) {
+                throw ApiException.badRequest(
+                    "ILLUSTRATED_EXPLAINER icon '" + name + "' is not in the approved STEM icon set"
+                );
+            }
+        }
+        checkOneOf(props, "ambience", FLAT_AMBIENCES);
+        checkOneOf(props, "layout", FLAT_LAYOUTS);
+        checkOneOf(props, "detail", FLAT_DETAILS);
+    }
+
+    /** Optional enum-like prop: absent is fine, an unknown value is not. */
+    private void checkOneOf(Map<String, Object> props, String key, List<String> allowed) {
+        Object value = props.get(key);
+        if (value != null && !allowed.contains(String.valueOf(value))) {
+            throw ApiException.badRequest(
+                "ILLUSTRATED_EXPLAINER " + key + " must be one of " + String.join(", ", allowed)
+            );
         }
     }
 }

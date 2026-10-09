@@ -31,7 +31,8 @@ public final class StemEnums {
         CHEMICAL_REACTION,
         COMPARISON_SPLIT,
         PROCESS_TIMELINE,
-        GEOMETRY_SPACE
+        GEOMETRY_SPACE,
+        ILLUSTRATED_EXPLAINER
     }
 
     /** Editorial state of the written script. */
@@ -63,6 +64,8 @@ public final class StemEnums {
     public enum RenderResolution {
         RES_720P("720p", 1280, 720),
         RES_1080P("1080p", 1920, 1080),
+        /** High-quality publishing preset: sharper on YouTube for a moderate cost. */
+        RES_1440P("1440p", 2560, 1440),
         RES_4K("4k", 3840, 2160);
 
         private final String label;
