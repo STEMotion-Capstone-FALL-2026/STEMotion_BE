@@ -9,6 +9,11 @@ spring:
       maximum-pool-size: ${DB_POOL_SIZE:5}
       minimum-idle: 0
       connection-timeout: 10000
+      # The shared Supabase schema uses PostgreSQL enums and UUIDs, while the
+      # original Flyway schema uses varchar. Let Postgres infer string parameter
+      # types from their target columns so both schemas remain compatible.
+      data-source-properties:
+        stringtype: unspecified
   flyway:
     enabled: false
   jpa:

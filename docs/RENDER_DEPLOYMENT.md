@@ -25,3 +25,9 @@ Render Free provides 512 MB RAM and 0.1 CPU. The Blueprint bounds Java heap at 2
 Free services sleep after 15 minutes without traffic and have cold starts. This is suitable for the current capstone API demo/staging; warm it by opening the health endpoint before a scheduled demo. Keep files in external storage because the instance filesystem is ephemeral.
 
 References: https://render.com/docs/free, https://render.com/docs/compute-plans, https://render.com/docs/blueprint-spec, https://render.com/docs/git-provider.
+
+## Existing Supabase schema compatibility
+
+The shared database uses native PostgreSQL enums (including `user_role`) and UUID columns. The cloud profile sets the JDBC `stringtype=unspecified` property so parameter types are inferred from the target column instead of forced to varchar. Both `users.full_name` and `users.display_name` are required by the existing shared schema; the entity synchronizes display_name with the API's fullName when saving. V5 adds/backfills display_name on the legacy schema; cloud deployments still do not run migrations.
+
+To verify actual registration, login, UUID lookup, enum reads/writes, and rollback against the configured database, explicitly set `STEMOTION_DB_SMOKE=true` and run `mvn verify` with the existing DB/JWT environment. `SupabaseRegistrationTest` rolls back each transaction and confirms no smoke account remains. The test is skipped by default and does not call Gemini or the video worker.
