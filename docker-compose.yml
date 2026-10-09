@@ -31,14 +31,52 @@ services:
       DB_USERNAME: ${DB_USERNAME:-postgres.iycanfyquiojkhqgtywd}
       DB_PASSWORD: ${DB_PASSWORD:-Longtri280204!}
       JWT_SECRET: ${JWT_SECRET:-stemotion-local-dev-secret-key-change-me-in-production-min-32-bytes}
-      RENDER_SERVICE_URL: ${RENDER_SERVICE_URL:-http://host.docker.internal:4000}
+      RENDER_SERVICE_URL: ${RENDER_SERVICE_URL:-http://render:4000}
+      # The render service calls back over the compose network, not localhost.
+      RENDER_CALLBACK_URL: ${RENDER_CALLBACK_URL:-http://backend:8080/api/v1/render/callback}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Without this the container fell back to a retired model and every AI call returned 404.
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
       CORS_ORIGINS: "http://localhost:*,http://127.0.0.1:*"
     depends_on:
       minio:
         condition: service_healthy
+      render:
+        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Remotion render service. It bundles the compositions from STEMotion_FE, so
+  # the three repositories must sit side by side (../STEMotion_RENDER,
+  # ../STEMotion_FE). Run only this service with: docker compose up -d render
+  render:
+    build:
+      context: ../STEMotion_RENDER
+      additional_contexts:
+        fe: ../STEMotion_FE
+    container_name: stemotion-render
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      RENDER_SERVICE_KEY: ${RENDER_SERVICE_KEY:-}
+      API_CALLBACK_URL: http://backend:8080/api/v1/render/callback
+      # Finished clips are served by this service; the browser reaches it on 4000.
+      PUBLIC_BASE_URL: ${RENDER_PUBLIC_BASE_URL:-http://localhost:4000/videos}
+      AUDIO_BASE_URL: http://localhost:4000/audio
+      RENDER_FRAME_CONCURRENCY: ${RENDER_FRAME_CONCURRENCY:-}
+      RENDER_IMAGE_FORMAT: png
+      RENDER_CRF: "16"
+      USE_TTS: ${USE_TTS:-false}
+      TTS_PROVIDER: ${TTS_PROVIDER:-fpt}
+      TTS_API_KEY: ${TTS_API_KEY:-}
+    volumes:
+      - stemotion_render_output:/workspace/STEMotion_RENDER/output
+    # Chromium needs more shared memory than Docker's 64 MB default.
+    shm_size: "1gb"
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
 volumes:
   stemotion_minio:
+  stemotion_render_output:

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -44,6 +45,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleApiException(ApiException ex) {
         log.warn("API Exception: [{}] {}", ex.getCode(), ex.getMessage());
         return build(ex.getStatus(), ex.getCode(), ex.getMessage());
+    }
+
+    /**
+     * Two saves of the same script overlapped and one replaced rows the other
+     * was still writing. That is a conflict the client can retry, not a server
+     * fault, so it answers 409 instead of 500.
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleConcurrentUpdate(ObjectOptimisticLockingFailureException ex) {
+        log.warn("Concurrent update rejected: {}", ex.getMessage());
+        return build(HttpStatus.CONFLICT, "CONCURRENT_UPDATE",
+            "Dữ liệu vừa được lưu bởi một yêu cầu khác. Vui lòng tải lại và thử lại.");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

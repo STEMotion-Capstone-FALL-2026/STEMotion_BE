@@ -65,6 +65,7 @@ public final class AiDtos {
         String title,
         String narration,
         Integer suggestedDurationSec,
-        List<String> concepts
+        List<String> concepts,
+        List<String> suggestedIcons
     ) {}
 }
