@@ -35,6 +35,8 @@ services:
       # The render service calls back over the compose network, not localhost.
       RENDER_CALLBACK_URL: ${RENDER_CALLBACK_URL:-http://backend:8080/api/v1/render/callback}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Without this the container fell back to a retired model and every AI call returned 404.
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
       CORS_ORIGINS: "http://localhost:*,http://127.0.0.1:*"
     depends_on:
       minio:

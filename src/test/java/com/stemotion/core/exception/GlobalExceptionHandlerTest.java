@@ -47,6 +47,17 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("overlapping saves of the same script are a 409 conflict, not a 500")
+    void concurrentUpdateIs409() {
+        ResponseEntity<ErrorResponse> r = handler.handleConcurrentUpdate(
+            new org.springframework.orm.ObjectOptimisticLockingFailureException(
+                "com.stemotion.domain.script.entity.Scene", "f7c27ead"));
+
+        assertThat(status(r)).isEqualTo(409);
+        assertThat(r.getBody().code()).isEqualTo("CONCURRENT_UPDATE");
+    }
+
+    @Test
     @DisplayName("a denied role is 403, not 500")
     void accessDeniedIs403() {
         ResponseEntity<ErrorResponse> r =
