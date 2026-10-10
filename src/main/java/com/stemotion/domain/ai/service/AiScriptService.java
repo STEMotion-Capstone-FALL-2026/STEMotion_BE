@@ -6,7 +6,7 @@ import com.stemotion.domain.ai.dto.AiDtos.AiAction;
 import com.stemotion.domain.ai.dto.AiDtos.AiActionResponse;
 import com.stemotion.domain.ai.dto.AiDtos.GenerateScriptRequest;
 import com.stemotion.domain.ai.dto.AiDtos.ScriptActionRequest;
-import com.stemotion.integration.client.GeminiClient;
+import com.stemotion.integration.client.AiGateway;
 import com.stemotion.integration.config.IntegrationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class AiScriptService {
         Respond only with JSON that satisfies the provided schema.
         """;
 
-    private final GeminiClient geminiClient;
+    private final AiGateway geminiClient;
     private final IntegrationProperties properties;
 
     /** Drafts a complete script the writer can then edit scene by scene. */
@@ -154,7 +154,8 @@ public class AiScriptService {
             instruction += "\nFor icons[].name and suggestedIcons[], use only these exact names: "
                 + String.join(", ", StemIconCatalog.NAMES) + ".";
         }
-        JsonNode result = geminiClient.generateJson(instruction, prompt, schema);
+        var generation = geminiClient.generateJson(instruction, prompt, schema);
+        JsonNode result = generation.result();
         validateIconNames(result);
         long elapsed = System.currentTimeMillis() - startedAt;
 
@@ -162,7 +163,7 @@ public class AiScriptService {
             log.warn("AI action {} took {} ms, over the 15s target", action, elapsed);
         }
 
-        return new AiActionResponse(action, result, properties.getGemini().getModel(), elapsed);
+        return new AiActionResponse(action, result, generation.model(), elapsed);
     }
 
     private void validateIconNames(JsonNode result) {

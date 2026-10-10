@@ -81,7 +81,7 @@ public class WorkspaceController {
 
     @PostMapping("/{id}/members")
     @Operation(summary = "Invite a teacher by email")
-    public ResponseEntity<MemberResponse> invite(
+    public ResponseEntity<com.stemotion.domain.workspace.dto.WorkspaceDtos.InvitationResponse> invite(
         @PathVariable String id,
         @Valid @RequestBody InviteMemberRequest request
     ) {

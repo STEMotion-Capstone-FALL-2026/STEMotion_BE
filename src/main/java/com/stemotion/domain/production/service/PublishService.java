@@ -54,6 +54,11 @@ public class PublishService {
     public PublishResponse publish(String projectId, PublishRequest request, String currentUserId) {
         ClipProject project = scriptService.getOrThrow(projectId);
 
+        if (request.targets().contains(PublishTarget.YOUTUBE) || request.targets().contains(PublishTarget.LMS)) {
+            throw new ApiException(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+                "PUBLISH_TARGET_UNAVAILABLE", "YouTube OAuth and LMS embed publishing are not configured yet");
+        }
+
         if (project.getVideoStatus() != VideoStatus.APPROVED) {
             throw ApiException.badRequest(
                 "Clip is " + project.getVideoStatus() + "; only a QA-approved clip can be published"

@@ -34,6 +34,11 @@ public final class WorkspaceDtos {
         User.UserRole role
     ) {}
 
+    /** Raw token is returned once to the workspace administrator, never in member lists. */
+    public record InvitationResponse(MemberResponse member, String token, java.time.Instant expiresAt) {}
+
+    public record AcceptInvitationRequest(@NotBlank String token) {}
+
     public record MemberResponse(
         String id,
         String userId,

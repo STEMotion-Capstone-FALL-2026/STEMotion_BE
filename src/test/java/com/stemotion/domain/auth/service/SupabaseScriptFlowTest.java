@@ -5,6 +5,7 @@ import com.stemotion.domain.auth.dto.AuthDtos.RegisterRequest;
 import com.stemotion.domain.auth.entity.User.UserRole;
 import com.stemotion.domain.auth.repository.UserRepository;
 import com.stemotion.domain.workspace.dto.WorkspaceDtos.WorkspaceRequest;
+import com.stemotion.domain.workspace.dto.WorkspaceDtos.InviteMemberRequest;
 import com.stemotion.domain.workspace.service.WorkspaceService;
 import com.stemotion.domain.script.dto.SceneDtos.SceneRequest;
 import com.stemotion.domain.script.dto.ScriptDtos.CreateScriptRequest;
@@ -41,6 +42,26 @@ class SupabaseScriptFlowTest {
     @Autowired UserRepository users;
     @Autowired EntityManager em;
     private String email;
+
+    @Test void invitationRequiresSingleUseTokenEvenAfterRegistration() {
+        email = "invite-smoke-" + UUID.randomUUID() + "@example.invalid";
+        var owner = auth.register(new RegisterRequest("Invitation owner", email,
+            UUID.randomUUID().toString(), UserRole.WRITER)).user();
+        String inviteeEmail = "invitee-smoke-" + UUID.randomUUID() + "@example.invalid";
+        var workspace = workspaces.create(new WorkspaceRequest("Invitation smoke", "CS"), owner.id());
+        var invitation = workspaces.invite(workspace.id(), new InviteMemberRequest(inviteeEmail, UserRole.PRODUCER));
+        var invitee = auth.register(new RegisterRequest("Invitee", inviteeEmail,
+            UUID.randomUUID().toString(), UserRole.PRODUCER)).user();
+        em.flush();
+        em.clear();
+        assertTrue(workspaces.findMine(invitee.id()).isEmpty());
+        assertEquals(MemberStatus.ACTIVE, workspaces.acceptInvitation(invitation.token(), invitee.id()).status());
+        em.flush();
+        em.clear();
+        assertEquals(1, workspaces.findMine(invitee.id()).size());
+        assertThrows(com.stemotion.core.exception.ApiException.class,
+            () -> workspaces.acceptInvitation(invitation.token(), invitee.id()));
+    }
 
     @Test void scriptSceneAndBothFeedbackTargetsRoundTrip() {
         email = "schema-smoke-" + UUID.randomUUID() + "@example.invalid";

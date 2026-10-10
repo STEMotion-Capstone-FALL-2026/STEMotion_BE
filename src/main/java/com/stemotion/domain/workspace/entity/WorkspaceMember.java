@@ -39,6 +39,12 @@ import lombok.Setter;
 @Builder
 public class WorkspaceMember extends BaseEntity {
 
+    @Column(name = "invitation_token_hash", length = 64)
+    private String invitationTokenHash;
+
+    @Column(name = "invitation_expires_at")
+    private java.time.Instant invitationExpiresAt;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;

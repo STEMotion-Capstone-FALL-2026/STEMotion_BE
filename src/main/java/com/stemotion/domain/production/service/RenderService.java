@@ -141,11 +141,21 @@ public class RenderService {
             .or(() -> renderJobRepository.findByExternalJobId(callback.jobId()))
             .orElseThrow(() -> ApiException.notFound("RenderJob", callback.jobId()));
 
+        // Duplicate completion and late progress must never undo QA approval,
+        // cancellation or a terminal failure.
+        if (job.getStatus() == RenderStatus.COMPLETED || job.getStatus() == RenderStatus.FAILED) {
+            return RenderJobResponse.from(job, null);
+        }
+        if (callback.status() == RenderStatus.COMPLETED
+                && (callback.videoUrl() == null || callback.videoUrl().isBlank())) {
+            throw ApiException.badRequest("A completed render must include its video URL");
+        }
+
         if (callback.status() != null) {
             job.setStatus(callback.status());
         }
         if (callback.progress() != null) {
-            job.setProgress(Math.max(0, Math.min(100, callback.progress())));
+            job.setProgress(Math.max(job.getProgress(), Math.max(0, Math.min(100, callback.progress()))));
         }
         if (callback.stage() != null) {
             job.setStage(callback.stage());

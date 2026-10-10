@@ -28,6 +28,10 @@ app:
   publish:
     embed-base-url: ${EMBED_BASE_URL:}
   integration:
+    ai:
+      mode: ${AI_SERVICE_MODE:embedded}
+      base-url: ${AI_SERVICE_URL:http://localhost:8000}
+      api-key: ${AI_SERVICE_KEY:}
     render:
       base-url: ${RENDER_SERVICE_URL:}
       api-key: ${RENDER_SERVICE_KEY:}

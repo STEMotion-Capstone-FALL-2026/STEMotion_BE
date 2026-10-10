@@ -93,7 +93,7 @@ class RenderRetryTest {
         RenderJob job = RenderJob.builder()
             .project(project)
             .scriptVersion(new ScriptVersion())
-            .status(RenderStatus.FAILED)
+            .status(RenderStatus.PROCESSING)
             .progress(40)
             .resolution(RenderResolution.RES_1080P)
             .fps(30)
@@ -106,6 +106,36 @@ class RenderRetryTest {
 
     private RenderCallbackRequest failureCallback() {
         return new RenderCallbackRequest("job-1", RenderStatus.FAILED, 40, "Crashed", null, "Chromium died");
+    }
+
+    @Test
+    void completionReplayCannotUndoVideoApproval() {
+        var job = failingJobOnAttempt(1);
+        job.setStatus(RenderStatus.COMPLETED);
+        job.setProgress(100);
+        job.setVideoUrl("https://storage.example/clip.mp4");
+        project.setVideoStatus(VideoStatus.APPROVED);
+        renderService.applyCallback(RENDER_KEY, new RenderCallbackRequest(
+            "job-1", RenderStatus.COMPLETED, 100, "Done", "https://storage.example/clip.mp4", null));
+        renderService.applyCallback(RENDER_KEY, new RenderCallbackRequest(
+            "job-1", RenderStatus.PROCESSING, 20, "Late progress", null, null));
+        assertThat(job.getStatus()).isEqualTo(RenderStatus.COMPLETED);
+        assertThat(job.getProgress()).isEqualTo(100);
+        assertThat(project.getVideoStatus()).isEqualTo(VideoStatus.APPROVED);
+        verify(projectRepository, never()).save(any());
+    }
+
+    @Test
+    void cancelledJobIgnoresLateWorkerCompletion() {
+        var job = failingJobOnAttempt(1);
+        job.setStatus(RenderStatus.FAILED);
+        job.setErrorMessage("Cancelled by user");
+        project.setVideoStatus(VideoStatus.NOT_RENDERED);
+        renderService.applyCallback(RENDER_KEY, new RenderCallbackRequest(
+            "job-1", RenderStatus.COMPLETED, 100, "Done", "https://storage.example/clip.mp4", null));
+        assertThat(job.getStatus()).isEqualTo(RenderStatus.FAILED);
+        assertThat(project.getVideoStatus()).isEqualTo(VideoStatus.NOT_RENDERED);
+        verify(projectRepository, never()).save(any());
     }
 
     @Test

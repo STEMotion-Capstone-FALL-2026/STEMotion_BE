@@ -43,6 +43,10 @@ app:
     embed-base-url: ${EMBED_BASE_URL:http://localhost:3000/embed}
 
   integration:
+    ai:
+      mode: ${AI_SERVICE_MODE:embedded}
+      base-url: ${AI_SERVICE_URL:http://localhost:8000}
+      api-key: ${AI_SERVICE_KEY:}
     render:
       base-url: ${RENDER_SERVICE_URL:http://localhost:4000}
       api-key: ${RENDER_SERVICE_KEY:}

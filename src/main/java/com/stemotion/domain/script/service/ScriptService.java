@@ -146,9 +146,10 @@ public class ScriptService {
     @Transactional
     public ScriptResponse updateDraft(String projectId, UpdateScriptRequest request) {
         ClipProject project = getOrThrow(projectId);
-        if (project.getScriptStatus() == ScriptStatus.APPROVED) {
+        if (project.getScriptStatus() != ScriptStatus.DRAFT
+            && project.getScriptStatus() != ScriptStatus.CHANGE_REQUESTED) {
             throw ApiException.badRequest(
-                "An approved script cannot be edited; create a new version to make changes"
+                "Only a draft or returned script can be edited; submitted versions are immutable"
             );
         }
 

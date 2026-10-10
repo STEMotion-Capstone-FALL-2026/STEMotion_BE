@@ -1,5 +1,10 @@
 # BE environment handoff — 10 October 2026
 
+AI service rollout: keep `AI_SERVICE_MODE=embedded` until `services/ai` is deployed.
+Then set `AI_SERVICE_MODE=remote`, `AI_SERVICE_URL`, and a private `AI_SERVICE_KEY`
+matching the FastAPI service. The Gemini key belongs to FastAPI in remote mode.
+See `services/ai/README.md` and `docs/AUDIT_FIX_PHASE_2.md` for rollout order.
+
 ## Gửi cho teammate
 
 - Team BE: gửi file mẫu `BE_RENDER_ENV.example`; điền DB password, JWT secret

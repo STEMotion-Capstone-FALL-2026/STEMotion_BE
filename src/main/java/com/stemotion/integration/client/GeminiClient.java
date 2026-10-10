@@ -94,9 +94,8 @@ public class GeminiClient {
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 JsonNode response = restClient.post()
-                    .uri("/models/{model}:generateContent?key={key}",
-                        properties.getGemini().getModel(),
-                        properties.getGemini().getApiKey())
+                    .uri("/models/{model}:generateContent", properties.getGemini().getModel())
+                    .header("x-goog-api-key", properties.getGemini().getApiKey())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(body)
                     .retrieve()
@@ -116,7 +115,7 @@ public class GeminiClient {
                 throw new ApiException(
                     HttpStatus.BAD_GATEWAY,
                     "AI_CALL_FAILED",
-                    "Gemini request failed: " + ex.getMessage()
+                    "Gemini request failed; please check the provider configuration"
                 );
             }
         }

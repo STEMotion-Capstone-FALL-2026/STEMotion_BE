@@ -33,6 +33,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or #id == authentication.name")
     public ResponseEntity<UserResponse> findById(@PathVariable String id) {
         return ResponseEntity.ok(userService.findById(id));
     }

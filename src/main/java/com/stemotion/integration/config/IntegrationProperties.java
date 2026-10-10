@@ -19,6 +19,17 @@ public class IntegrationProperties {
 
     private final Render render = new Render();
     private final Gemini gemini = new Gemini();
+    private final Ai ai = new Ai();
+
+    @Getter
+    @Setter
+    public static class Ai {
+        /** Explicit rollout switch; remote failures never fall back to embedded AI. */
+        private String mode = "embedded";
+        private String baseUrl = "http://localhost:8000";
+        private String apiKey = "";
+        private int timeoutSeconds = 70;
+    }
 
     @Getter
     @Setter

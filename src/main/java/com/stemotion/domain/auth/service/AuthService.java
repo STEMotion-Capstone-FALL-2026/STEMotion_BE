@@ -8,7 +8,6 @@ import com.stemotion.domain.auth.dto.AuthDtos.RegisterRequest;
 import com.stemotion.domain.auth.dto.AuthDtos.UserResponse;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.repository.UserRepository;
-import com.stemotion.domain.workspace.service.WorkspaceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,6 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final WorkspaceService workspaceService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -41,8 +39,7 @@ public class AuthService {
             .build();
 
         User saved = userRepository.save(user);
-        // Seats invited by email before this account existed become active now.
-        workspaceService.linkPendingInvitations(saved);
+        // Registration alone never proves ownership of a workspace invitation.
         return buildAuthResponse(saved);
     }
 
