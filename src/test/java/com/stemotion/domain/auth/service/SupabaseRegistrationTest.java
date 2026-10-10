@@ -28,8 +28,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("cloud")
 @EnabledIfEnvironmentVariable(named = "STEMOTION_DB_SMOKE", matches = "true")
 @Transactional
+@org.springframework.security.test.context.support.WithMockUser(roles = "ADMIN")
 class SupabaseRegistrationTest {
     @Autowired AuthService authService;
+    @Autowired UserService provisioning;
     @Autowired UserRepository users;
     @Autowired EntityManager entityManager;
     private String testEmail;
@@ -40,12 +42,12 @@ class SupabaseRegistrationTest {
         String email = "deployment-smoke-" + UUID.randomUUID() + "@example.invalid";
         testEmail = email;
         String password = UUID.randomUUID().toString();
-        var registration = authService.register(new RegisterRequest(
+        var registration = provisioning.create(new RegisterRequest(
             "Deployment smoke test", email, password, role));
         entityManager.flush();
         entityManager.clear();
 
-        var stored = users.findById(registration.user().id()).orElseThrow();
+        var stored = users.findById(registration.id()).orElseThrow();
         assertEquals(role, stored.getRole());
         assertEquals(User.UserStatus.ACTIVE, stored.getStatus());
         assertEquals("Deployment smoke test", stored.getFullName());

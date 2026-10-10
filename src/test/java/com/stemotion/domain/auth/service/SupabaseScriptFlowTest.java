@@ -33,8 +33,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("cloud")
 @EnabledIfEnvironmentVariable(named = "STEMOTION_DB_SMOKE", matches = "true")
 @Transactional
+@org.springframework.security.test.context.support.WithMockUser(roles = "ADMIN")
 class SupabaseScriptFlowTest {
     @Autowired AuthService auth;
+    @Autowired UserService provisioning;
     @Autowired WorkspaceService workspaces;
     @Autowired ScriptService scripts;
     @Autowired FeedbackService feedback;
@@ -45,13 +47,13 @@ class SupabaseScriptFlowTest {
 
     @Test void invitationRequiresSingleUseTokenEvenAfterRegistration() {
         email = "invite-smoke-" + UUID.randomUUID() + "@example.invalid";
-        var owner = auth.register(new RegisterRequest("Invitation owner", email,
-            UUID.randomUUID().toString(), UserRole.WRITER)).user();
+        var owner = provisioning.create(new RegisterRequest("Invitation owner", email,
+            UUID.randomUUID().toString(), UserRole.WRITER));
         String inviteeEmail = "invitee-smoke-" + UUID.randomUUID() + "@example.invalid";
         var workspace = workspaces.create(new WorkspaceRequest("Invitation smoke", "CS"), owner.id());
         var invitation = workspaces.invite(workspace.id(), new InviteMemberRequest(inviteeEmail, UserRole.PRODUCER));
-        var invitee = auth.register(new RegisterRequest("Invitee", inviteeEmail,
-            UUID.randomUUID().toString(), UserRole.PRODUCER)).user();
+        var invitee = provisioning.create(new RegisterRequest("Invitee", inviteeEmail,
+            UUID.randomUUID().toString(), UserRole.PRODUCER));
         em.flush();
         em.clear();
         assertTrue(workspaces.findMine(invitee.id()).isEmpty());
@@ -65,8 +67,8 @@ class SupabaseScriptFlowTest {
 
     @Test void scriptSceneAndBothFeedbackTargetsRoundTrip() {
         email = "schema-smoke-" + UUID.randomUUID() + "@example.invalid";
-        var user = auth.register(new RegisterRequest("Schema smoke", email,
-            UUID.randomUUID().toString(), UserRole.WRITER)).user();
+        var user = provisioning.create(new RegisterRequest("Schema smoke", email,
+            UUID.randomUUID().toString(), UserRole.WRITER));
         var workspace = workspaces.create(new WorkspaceRequest("Schema smoke", "CS"), user.id());
         var scene = new SceneRequest();
         scene.setType(SceneType.TITLE_HERO);

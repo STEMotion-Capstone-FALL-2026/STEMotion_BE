@@ -23,24 +23,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (request.role() == User.UserRole.ADMIN) {
-            throw ApiException.forbidden("Administrator accounts must be provisioned by an administrator");
-        }
-        if (userRepository.existsByEmail(request.email())) {
-            throw ApiException.conflict("Email '" + request.email() + "' is already registered");
-        }
-
-        User user = User.builder()
-            .fullName(request.fullName())
-            .email(request.email())
-            .passwordHash(passwordEncoder.encode(request.password()))
-            .role(request.role() == null ? User.UserRole.WRITER : request.role())
-            .status(User.UserStatus.ACTIVE)
-            .build();
-
-        User saved = userRepository.save(user);
-        // Registration alone never proves ownership of a workspace invitation.
-        return buildAuthResponse(saved);
+        throw ApiException.forbidden("Public registration is disabled. Contact an administrator for an account");
     }
 
     @Transactional(readOnly = true)

@@ -1,6 +1,9 @@
 package com.stemotion.domain.auth.controller;
 
 import com.stemotion.domain.auth.dto.AuthDtos.UpdateUserRequest;
+import com.stemotion.domain.auth.dto.AuthDtos.RegisterRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PostMapping;
 import com.stemotion.domain.auth.dto.AuthDtos.UserResponse;
 import com.stemotion.domain.auth.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +28,14 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> create(
+        @Valid @RequestBody RegisterRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.create(request));
+    }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
