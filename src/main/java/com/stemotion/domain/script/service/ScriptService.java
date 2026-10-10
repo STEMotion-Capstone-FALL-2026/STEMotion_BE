@@ -324,14 +324,49 @@ public class ScriptService {
     // --------------------------------------------------------------- internals
 
     private List<Scene> replaceScenes(ScriptVersion version, List<SceneRequest> requests) {
-        sceneRepository.deleteByScriptVersionId(version.getId());
-        if (requests == null || requests.isEmpty()) {
-            return List.of();
+        List<Scene> existing = sceneRepository.findForUpdateByScriptVersionId(version.getId());
+        List<SceneRequest> incoming = requests == null ? List.of() : requests;
+        java.util.Map<String, Scene> byId = new java.util.HashMap<>();
+        for (Scene scene : existing) {
+            byId.put(scene.getId(), scene);
+            String legacyId = sceneMapper.legacyClientId(scene);
+            if (legacyId != null && !legacyId.isBlank() && !byId.containsKey(legacyId)) byId.put(legacyId, scene);
         }
-        List<Scene> scenes = new java.util.ArrayList<>(requests.size());
-        for (int i = 0; i < requests.size(); i++) {
-            scenes.add(sceneMapper.toEntity(requests.get(i), i + 1, version));
+        java.util.Set<String> received = new java.util.HashSet<>();
+        java.util.Set<String> retained = new java.util.HashSet<>();
+        List<Scene> matches = new java.util.ArrayList<>();
+        // Validate the full identity/deletion plan before mutating any managed row.
+        for (int i = 0; i < incoming.size(); i++) {
+            String id = incoming.get(i).getId();
+            Scene match = null;
+            if (id != null && !id.isBlank()) {
+                if (!received.add(id)) throw ApiException.badRequest("Duplicate scene ID in draft");
+                match = byId.get(id);
+                if (match == null && id.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) {
+                    throw ApiException.badRequest("Scene ID does not belong to the current script version; reload the draft");
+                }
+            } else if (!existing.isEmpty()) {
+                // Compatibility for older id-less clients: in-place edits only.
+                if (incoming.size() != existing.size()) throw ApiException.badRequest("Scene IDs are required when adding or removing scenes");
+                match = existing.get(i);
+            }
+            if (match != null && !retained.add(match.getId())) throw ApiException.badRequest("Scene occurs more than once in draft");
+            matches.add(match);
         }
+        List<Scene> removed = existing.stream().filter(scene -> !retained.contains(scene.getId())).toList();
+        for (Scene scene : removed) {
+            if (sceneRepository.hasFeedback(scene.getId())) {
+                throw ApiException.badRequest("Cannot delete a scene with feedback; review history must be preserved");
+            }
+        }
+        List<Scene> scenes = new java.util.ArrayList<>(incoming.size());
+        for (int i = 0; i < incoming.size(); i++) {
+            Scene scene = matches.get(i);
+            if (scene == null) scene = sceneMapper.toEntity(incoming.get(i), i + 1, version);
+            else sceneMapper.updateEntity(scene, incoming.get(i), i + 1, version);
+            scenes.add(scene);
+        }
+        sceneRepository.deleteAll(removed);
         return sceneRepository.saveAll(scenes);
     }
 

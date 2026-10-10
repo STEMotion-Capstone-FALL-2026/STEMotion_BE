@@ -88,6 +88,16 @@ class SupabaseScriptFlowTest {
         var stored = scenes.findById(sceneId).orElseThrow();
         assertEquals(stored.getOrderNo(), stored.getOrderIndex());
         assertEquals(2, feedback.findByProject(script.id(), null).size());
+        scene.setId(sceneId);
+        scene.setTitle("Edited without changing identity");
+        var updated = scripts.updateDraft(script.id(), new com.stemotion.domain.script.dto.ScriptDtos.UpdateScriptRequest(
+            null, null, null, null, null, List.of(scene)));
+        em.flush(); em.clear();
+        assertEquals(sceneId, updated.scenes().get(0).getId());
+        assertEquals(2, feedback.findByProject(script.id(), null).size());
+        assertTrue(scenes.existsById(sceneId));
+        assertThrows(com.stemotion.core.exception.ApiException.class, () -> scripts.updateDraft(script.id(),
+            new com.stemotion.domain.script.dto.ScriptDtos.UpdateScriptRequest(null, null, null, null, null, List.of())));
     }
 
     @AfterTransaction void fixtureWasRolledBack() {

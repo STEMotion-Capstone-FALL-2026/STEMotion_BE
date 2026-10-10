@@ -39,6 +39,23 @@ public class SceneMapper {
             .build();
     }
 
+    public void updateEntity(Scene entity, SceneRequest request, int orderNo, ScriptVersion version) {
+        Scene values = toEntity(request, orderNo, version);
+        entity.setOrderNo(values.getOrderNo());
+        entity.setSceneType(values.getSceneType());
+        entity.setTitle(values.getTitle());
+        entity.setNarration(values.getNarration());
+        entity.setDurationInFrames(values.getDurationInFrames());
+        entity.setProps(values.getProps());
+    }
+
+    /** Old clients stored temporary scene IDs inside props; recover that alias once. */
+    public String legacyClientId(Scene scene) {
+        try {
+            return scene.getProps() == null ? null : objectMapper.readTree(scene.getProps()).path("id").asText(null);
+        } catch (Exception ex) { return null; }
+    }
+
     public SceneResponse toResponse(Scene scene) {
         return new SceneResponse(
             scene.getId(),
@@ -70,7 +87,12 @@ public class SceneMapper {
             return Map.of();
         }
         try {
-            return objectMapper.readValue(json, PROPS_TYPE);
+            Map<String, Object> props = objectMapper.readValue(json, PROPS_TYPE);
+            // Legacy props must never shadow authoritative response fields.
+            for (String key : List.of("id", "type", "title", "narration", "durationInFrames", "orderNo")) {
+                props.remove(key);
+            }
+            return props;
         } catch (Exception ex) {
             throw ApiException.badRequest("Stored scene props are not valid JSON: " + ex.getMessage());
         }
