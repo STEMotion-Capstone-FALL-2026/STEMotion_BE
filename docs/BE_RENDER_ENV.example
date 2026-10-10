@@ -1,0 +1,26 @@
+# Production BE on Render.com. Replace <...> privately; do not commit secrets.
+SPRING_PROFILES_ACTIVE=cloud
+DB_URL=jdbc:postgresql://<supabase-pooler-host>:6543/postgres?sslmode=require&prepareThreshold=0
+DB_USERNAME=<supabase-pooler-user>
+DB_PASSWORD=<database-password>
+JWT_SECRET=<generate-a-random-secret-with-at-least-32-bytes>
+CORS_ORIGINS=https://stemotion.vercel.app,https://ste-motion-fe.vercel.app,http://localhost:3000,http://localhost:5173
+GEMINI_API_KEY=<google-ai-studio-api-key>
+GEMINI_MODEL=gemini-3.5-flash-lite
+
+# Recommended for the current Render Free instance.
+DB_POOL_SIZE=3
+JAVA_TOOL_OPTIONS=-Xms64m -Xmx256m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m -Djava.security.egd=file:/dev/./urandom
+SERVER_TOMCAT_THREADS_MAX=20
+SERVER_TOMCAT_THREADS_MIN_SPARE=2
+
+# Worker is not deployed yet. Keep URL/key empty: BE reports unavailable.
+# A callback URL alone does not enable the worker.
+RENDER_SERVICE_URL=
+RENDER_SERVICE_KEY=
+RENDER_CALLBACK_URL=https://stemotion-be.onrender.com/api/v1/render/callback
+
+# Leave empty until a real embed page is implemented and verified.
+EMBED_BASE_URL=
+
+# PORT is supplied automatically by Render; do not force 8080.

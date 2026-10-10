@@ -49,7 +49,21 @@ substitute for testing against a complete restored Supabase schema. An opt-in
 Spring context test also passed Hibernate schema validation against Supabase
 with Hikari connections set read-only, Flyway disabled and no API/DB writes.
 This checks the real JDBC metadata/mappings, but not write constraints after
-migration. No production migration was executed.
+migration.
+
+On 10 October 2026, V5–V8 were explicitly applied to the shared Supabase
+database after user confirmation. Flyway validated the existing checksums
+before application, applied four migrations and validated again successfully;
+history records V5–V8 as SUCCESS. An AES-GCM encrypted scoped backup of affected
+columns, constraints, enum definitions and migration history was saved locally
+with owner-only file access before application. This is not a full database
+backup; it is excluded from Git along with its encryption key.
+
+Post-migration opt-in tests passed against Supabase: registration/login for
+all three public roles, read-only Hibernate schema validation, and creation
+of a ComputerScience script with a scene plus inline and timestamp feedback.
+All fixture writes were rolled back, and the tests verified that their users
+did not remain. Five test executions passed with no failures or errors.
 
 Local verification artifacts are in target/check-migrations-local.cjs and
 target/audit-fix-tests.log; the local PGlite dependency lives outside the product

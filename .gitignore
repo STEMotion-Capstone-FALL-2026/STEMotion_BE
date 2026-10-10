@@ -12,6 +12,7 @@ node_modules
 
 # === Maven Build ===
 target/
+.local-backups/
 
 # === Java ===
 *.class
