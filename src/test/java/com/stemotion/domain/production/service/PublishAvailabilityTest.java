@@ -17,14 +17,16 @@ import static org.mockito.Mockito.*;
 
 class PublishAvailabilityTest {
     @ParameterizedTest
-    @EnumSource(value = PublishTarget.class, names = {"YOUTUBE", "LMS"})
+    @EnumSource(value = PublishTarget.class, names = {"YOUTUBE"})
     void unsupportedTargetCannotMarkProjectPublished(PublishTarget target) {
         var projects = mock(ClipProjectRepository.class);
         var records = mock(PublishRecordRepository.class);
         var scripts = mock(ScriptService.class);
         var qa = mock(ClipQaService.class);
         when(scripts.getOrThrow("project")).thenReturn(new ClipProject());
-        var service = new PublishService(records, projects, scripts, mock(AuthService.class), qa);
+        var service = new PublishService(records, projects, scripts, mock(AuthService.class), qa,
+            mock(com.stemotion.domain.production.repository.PublicationRepository.class),
+            mock(ClipArtifactService.class),new com.fasterxml.jackson.databind.ObjectMapper());
         assertThatThrownBy(() -> service.publish("project", new PublishRequest(
             List.of(target), "Video", "Description"), "user"))
             .isInstanceOfSatisfying(ApiException.class,

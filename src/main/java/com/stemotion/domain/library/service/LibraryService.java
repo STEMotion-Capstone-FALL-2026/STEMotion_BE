@@ -11,7 +11,6 @@ import com.stemotion.domain.project.repository.ClipProjectRepository;
 import com.stemotion.domain.script.repository.SceneRepository;
 import com.stemotion.domain.script.service.ScriptService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,9 +29,7 @@ public class LibraryService {
     private final PublishRecordRepository publishRepository;
     private final SceneRepository sceneRepository;
     private final ScriptService scriptService;
-
-    @Value("${app.publish.embed-base-url}")
-    private String embedBaseUrl;
+    private final com.stemotion.domain.production.repository.PublicationRepository publicationRepository;
 
     /** Subjects and grades present in the library, for the filter dropdowns. */
     public record LibraryFilters(List<StemSubject> subjects, List<String> gradeLevels) {}
@@ -56,15 +53,24 @@ public class LibraryService {
     }
 
     private List<ClipProject> publishedProjects() {
-        return projectRepository.findByVideoStatusOrderByCreatedAtDesc(VideoStatus.PUBLISHED);
+        return projectRepository.findByVideoStatusOrderByCreatedAtDesc(VideoStatus.PUBLISHED).stream()
+            .filter(p -> !Boolean.TRUE.equals(p.getArchived()))
+            .filter(p -> publicationRepository.findByProjectIdAndPlatform(p.getId(),
+                com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY)
+                .filter(publication -> publication.getClip()!=null).isPresent())
+            .toList();
     }
 
     @Transactional(readOnly = true)
     public LibraryItem findOne(String projectId) {
         ClipProject project = scriptService.getOrThrow(projectId);
+        if (Boolean.TRUE.equals(project.getArchived())) {
+            throw ApiException.notFound("Library item", projectId);
+        }
         if (project.getVideoStatus() != VideoStatus.PUBLISHED) {
             throw ApiException.badRequest("Clip chưa được xuất bản nên không có trong thư viện");
         }
+        requirePublication(project);
         return toItem(project);
     }
 
@@ -93,6 +99,7 @@ public class LibraryService {
     }
 
     private LibraryItem toItem(ClipProject project) {
+        var publication = requirePublication(project);
         PublishRecord latest = publishRepository
             .findByProjectIdOrderByCreatedAtDesc(project.getId())
             .stream()
@@ -112,17 +119,19 @@ public class LibraryService {
             sceneCount,
             project.getOwner().getFullName(),
             project.getWorkspace().getName(),
-            project.getVideoUrl(),
+            publication.getClip().getVideoUrl(),
             latest != null && latest.getLmsEmbedCode() != null
                 ? latest.getLmsEmbedCode()
-                : buildEmbedCode(project.getId()),
+                : com.stemotion.domain.production.service.VideoEmbed.build(publication.getClip().getVideoUrl()),
             latest == null ? null : latest.getYoutubeUrl(),
             latest == null ? project.getUpdatedAt() : latest.getCreatedAt()
         );
     }
 
-    private String buildEmbedCode(String projectId) {
-        return "<iframe src=\"%s/%s\" width=\"100%%\" height=\"540\" frameborder=\"0\" allowfullscreen></iframe>"
-            .formatted(embedBaseUrl, projectId);
+    private com.stemotion.domain.production.entity.Publication requirePublication(ClipProject project) {
+        return publicationRepository.findByProjectIdAndPlatform(project.getId(),
+            com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY)
+            .filter(p -> p.getClip()!=null)
+            .orElseThrow(() -> ApiException.conflict("No artifact-backed INTERNAL_LIBRARY publication exists"));
     }
 }

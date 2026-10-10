@@ -60,6 +60,9 @@ public class StatusHistoryService {
     public void record(ClipProject project, ProjectStatus from, User changedBy, String note) {
         ProjectStatus to = project.getPipelineStatus();
         statusHistoryRepository.save(StatusHistory.builder()
+            .eventType(StatusHistory.EventType.PIPELINE_TRANSITION)
+            .targetType(StatusHistory.TargetType.PROJECT)
+            .targetId(project.getId())
             .project(project)
             .fromStatus(from)
             .toStatus(to)
@@ -68,5 +71,20 @@ public class StatusHistoryService {
             .build());
 
         log.info("Project [{}] moved {} -> {} by [{}]", project.getId(), from, to, changedBy.getId());
+    }
+
+    /** A review is an event even if the aggregate pipeline state stays unchanged. */
+    @Transactional
+    public void recordReview(ClipProject project, ProjectStatus from, User reviewer,
+            StatusHistory.TargetType targetType, String targetId,
+            StatusHistory.Decision decision, String reason) {
+        if (targetType == StatusHistory.TargetType.PROJECT || targetId == null || decision == null) {
+            throw ApiException.badRequest("Review requires a script version or Clip target and decision");
+        }
+        statusHistoryRepository.save(StatusHistory.builder()
+            .project(project).fromStatus(from).toStatus(project.getPipelineStatus())
+            .changedBy(reviewer).eventType(StatusHistory.EventType.REVIEW_DECISION)
+            .targetType(targetType).targetId(targetId).decision(decision).reason(reason)
+            .build());
     }
 }

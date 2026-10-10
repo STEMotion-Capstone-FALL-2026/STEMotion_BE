@@ -49,6 +49,7 @@ public class RenderService {
     private final RenderServiceClient renderClient;
     private final AuthService authService;
     private final IntegrationProperties properties;
+    private final ClipArtifactService clipArtifactService;
 
     /**
      * Queues a render of the project's current script version.
@@ -59,6 +60,7 @@ public class RenderService {
     @Transactional
     public RenderJobResponse start(String projectId, StartRenderRequest request, String currentUserId) {
         ClipProject project = scriptService.getOrThrow(projectId);
+        scriptService.requireActive(project);
 
         if (project.getScriptStatus() != ScriptStatus.APPROVED) {
             throw ApiException.badRequest(
@@ -171,6 +173,7 @@ public class RenderService {
         ClipProject project = job.getProject();
         if (job.getStatus() == RenderStatus.COMPLETED) {
             job.setProgress(100);
+            clipArtifactService.recordCompleted(job);
             project.setVideoUrl(job.getVideoUrl());
             project.setVideoStatus(VideoStatus.IN_QA);
             projectRepository.save(project);

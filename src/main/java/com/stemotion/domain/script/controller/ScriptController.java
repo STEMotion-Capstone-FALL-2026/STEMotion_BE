@@ -135,8 +135,8 @@ public class ScriptController {
 
     @DeleteMapping("/scripts/{id}")
     @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
-        scriptService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable String id, @AuthenticationPrincipal UserDetails principal) {
+        scriptService.delete(id, principal.getUsername());
         return ResponseEntity.noContent().build();
     }
 }

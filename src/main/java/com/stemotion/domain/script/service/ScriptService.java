@@ -55,6 +55,7 @@ public class ScriptService {
         workspaceService.getOrThrow(workspaceId);
         return projectRepository.findByWorkspaceIdOrderByCreatedAtDesc(workspaceId)
             .stream()
+            .filter(project -> !Boolean.TRUE.equals(project.getArchived()))
             .map(this::toSummary)
             .toList();
     }
@@ -63,6 +64,7 @@ public class ScriptService {
     public List<ScriptSummaryResponse> findByOwner(String ownerId) {
         return projectRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId)
             .stream()
+            .filter(project -> !Boolean.TRUE.equals(project.getArchived()))
             .map(this::toSummary)
             .toList();
     }
@@ -72,6 +74,7 @@ public class ScriptService {
     public List<ScriptSummaryResponse> findReviewQueue(String userId) {
         return projectRepository.findByScriptStatusOrderByCreatedAtDesc(ScriptStatus.IN_REVIEW)
             .stream()
+            .filter(project -> !Boolean.TRUE.equals(project.getArchived()))
             .filter(project -> workspaceAccess.canRead(project.getWorkspace().getId(), userId))
             .map(this::toSummary)
             .toList();
@@ -146,6 +149,7 @@ public class ScriptService {
     @Transactional
     public ScriptResponse updateDraft(String projectId, UpdateScriptRequest request) {
         ClipProject project = getOrThrow(projectId);
+        requireActive(project);
         if (project.getScriptStatus() != ScriptStatus.DRAFT
             && project.getScriptStatus() != ScriptStatus.CHANGE_REQUESTED) {
             throw ApiException.badRequest(
@@ -226,9 +230,11 @@ public class ScriptService {
 
         versionRepository.save(current);
         projectRepository.save(project);
-        statusHistoryService.record(
+        statusHistoryService.recordReview(
             project, from, authService.findUserOrThrow(reviewerId),
-            request == null || request.note() == null ? "Script approved" : request.note());
+            com.stemotion.domain.project.entity.StatusHistory.TargetType.SCRIPT, current.getId(),
+            com.stemotion.domain.project.entity.StatusHistory.Decision.APPROVED,
+            request == null ? null : request.note());
 
         return toResponse(project, current, scenesOf(current));
     }
@@ -266,19 +272,26 @@ public class ScriptService {
         List<Scene> copied = copyScenes(scenesOf(reviewed), next);
         project.setScriptStatus(ScriptStatus.CHANGE_REQUESTED);
         projectRepository.save(project);
-        statusHistoryService.record(
+        statusHistoryService.recordReview(
             project, from, authService.findUserOrThrow(reviewerId),
-            request == null || request.note() == null ? "Changes requested" : request.note());
+            com.stemotion.domain.project.entity.StatusHistory.TargetType.SCRIPT, reviewed.getId(),
+            com.stemotion.domain.project.entity.StatusHistory.Decision.REJECTED,
+            request == null ? null : request.note());
 
         return toResponse(project, next, copied);
     }
 
     @Transactional
-    public void delete(String projectId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw ApiException.notFound("ClipProject", projectId);
+    public void delete(String projectId, String actorId) {
+        ClipProject project = getOrThrow(projectId);
+        if (Boolean.TRUE.equals(project.getArchived())) return;
+        if (project.getVideoStatus() == VideoStatus.RENDERING) {
+            throw com.stemotion.core.exception.ApiException.conflict("Cancel the running render before archiving this project");
         }
-        projectRepository.deleteById(projectId);
+        var from = project.getPipelineStatus();
+        project.setArchived(true);
+        projectRepository.save(project);
+        statusHistoryService.record(project, from, authService.findUserOrThrow(actorId), "Project archived");
     }
 
     // ------------------------------------------------------------- shared API
@@ -411,6 +424,7 @@ public class ScriptService {
     }
 
     private void requireStatus(ClipProject project, ScriptStatus... allowed) {
+        requireActive(project);
         for (ScriptStatus status : allowed) {
             if (project.getScriptStatus() == status) {
                 return;
@@ -419,6 +433,12 @@ public class ScriptService {
         throw ApiException.badRequest(
             "Script is " + project.getScriptStatus() + "; this transition is not allowed from that state"
         );
+    }
+
+    public void requireActive(ClipProject project) {
+        if (Boolean.TRUE.equals(project.getArchived())) {
+            throw ApiException.conflict("An archived project cannot be changed");
+        }
     }
 
     private ScriptSummaryResponse toSummary(ClipProject project) {

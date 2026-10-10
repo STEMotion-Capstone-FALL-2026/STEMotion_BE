@@ -71,7 +71,8 @@ class RenderRetryTest {
             mock(SceneMapper.class),
             renderClient,
             mock(AuthService.class),
-            properties
+            properties,
+            mock(ClipArtifactService.class)
         );
 
         project = ClipProject.builder()

@@ -112,6 +112,7 @@ public final class StemEnums {
 
     /** Where an approved clip gets published. */
     public enum PublishTarget {
+        INTERNAL_LIBRARY,
         LMS,
         YOUTUBE
     }

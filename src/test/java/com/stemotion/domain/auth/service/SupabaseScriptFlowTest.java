@@ -43,7 +43,54 @@ class SupabaseScriptFlowTest {
     @Autowired SceneRepository scenes;
     @Autowired UserRepository users;
     @Autowired EntityManager em;
+    @Autowired com.stemotion.domain.production.repository.RenderJobRepository jobs;
+    @Autowired com.stemotion.domain.production.repository.ClipRepository clips;
+    @Autowired com.stemotion.domain.production.repository.PublicationRepository publications;
+    @Autowired com.stemotion.domain.production.service.ClipArtifactService artifacts;
+    @Autowired com.stemotion.domain.production.service.PublishService publishing;
+    @Autowired com.stemotion.domain.project.service.StatusHistoryService history;
+    @Autowired com.stemotion.domain.ai.repository.AiRequestRepository aiRequests;
     private String email;
+
+    @Test void artifactReviewPublicationAndFailedAiRoundTrip() {
+        email="phase1-smoke-"+UUID.randomUUID()+"@example.invalid";
+        var actor=provisioning.create(new RegisterRequest("Phase1 smoke",email,UUID.randomUUID().toString(),UserRole.ADMIN));
+        var workspace=workspaces.create(new WorkspaceRequest("Phase1 smoke","CS"),actor.id());
+        var scene=new SceneRequest();scene.setType(SceneType.TITLE_HERO);scene.setTitle("Phase1 smoke");
+        scene.setDurationInFrames(600);
+        Map.of("subtitle","Test","subject","ComputerScience","gradeLevel","10","badgeText","CS").forEach(scene::putProp);
+        var draft=scripts.create(workspace.id(),new CreateScriptRequest("Phase1 smoke",StemSubject.ComputerScience,"10",30,List.of(scene)),actor.id());
+        scripts.submitForReview(draft.id(),actor.id());scripts.approve(draft.id(),null,actor.id());
+        var project=scripts.getOrThrow(draft.id());var version=scripts.currentVersion(project);
+        var job=jobs.save(com.stemotion.domain.production.entity.RenderJob.builder().project(project)
+            .scriptVersion(version).requestedBy(auth.findUserOrThrow(actor.id())).status(RenderStatus.COMPLETED)
+            .videoUrl("https://storage.example/phase1-fixture.mp4").progress(100).build());
+        var clip=artifacts.recordCompleted(job);
+        project.setVideoUrl(clip.getVideoUrl());project.setVideoStatus(VideoStatus.IN_QA);
+        em.flush();
+        feedback.approveVideo(project.getId(),actor.id(),"Artifact smoke approval");
+        var result=publishing.publish(project.getId(),new com.stemotion.domain.production.dto.ProductionDtos.PublishRequest(
+            List.of(PublishTarget.INTERNAL_LIBRARY,PublishTarget.LMS),"Phase1 smoke",null),actor.id());
+        assertTrue(result.lmsEmbedCode().contains("https://storage.example/phase1-fixture.mp4"));
+        var request=aiRequests.save(com.stemotion.domain.ai.entity.AiRequest.builder().requester(auth.findUserOrThrow(actor.id()))
+            .requestType(com.stemotion.domain.ai.entity.AiRequest.RequestType.SEGMENTATION).model("fixture-model")
+            .callStatus(com.stemotion.domain.ai.entity.AiRequest.CallStatus.FAILED)
+            .responseData("{\"error\":\"provider failure fixture\"}").build());
+        em.flush();em.clear();
+        assertEquals(clip.getId(),publications.findByProjectIdAndPlatform(project.getId(),
+            com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY).orElseThrow().getClip().getId());
+        assertNull(clips.findById(clip.getId()).orElseThrow().getDurationSec());
+        assertNull(aiRequests.findById(request.getId()).orElseThrow().getMonetaryCost());
+        var review=history.findByProject(project.getId()).stream().filter(h->h.getTargetId().equals(clip.getId())).findFirst().orElseThrow();
+        assertEquals(review.getFromStatus(),review.getToStatus());
+        assertEquals(com.stemotion.domain.project.entity.StatusHistory.Decision.APPROVED,review.getDecision());
+        assertThrows(com.stemotion.core.exception.ApiException.class,()->publishing.publish(project.getId(),
+            new com.stemotion.domain.production.dto.ProductionDtos.PublishRequest(List.of(PublishTarget.INTERNAL_LIBRARY),"Again",null),actor.id()));
+        scripts.delete(project.getId(),actor.id());em.flush();
+        assertTrue(scripts.getOrThrow(project.getId()).getArchived());
+        assertTrue(clips.existsById(clip.getId()));
+        assertFalse(scripts.findByWorkspace(workspace.id()).stream().anyMatch(p->p.id().equals(project.getId())));
+    }
 
     @Test void invitationRequiresSingleUseTokenEvenAfterRegistration() {
         email = "invite-smoke-" + UUID.randomUUID() + "@example.invalid";
