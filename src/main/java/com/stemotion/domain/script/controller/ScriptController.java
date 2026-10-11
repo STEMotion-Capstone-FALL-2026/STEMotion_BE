@@ -78,6 +78,7 @@ public class ScriptController {
 
     @PutMapping("/scripts/{id}")
     @Operation(summary = "Save the working draft, replacing the scene list")
+    @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
     public ResponseEntity<ScriptResponse> update(
         @PathVariable String id,
         @Valid @RequestBody UpdateScriptRequest request
