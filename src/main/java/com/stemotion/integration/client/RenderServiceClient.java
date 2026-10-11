@@ -67,16 +67,16 @@ public class RenderServiceClient {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "RENDER_NOT_CONFIGURED",
                 "Render service URL, shared key and callback URL must be configured");
         }
-        Map<String, Object> body = Map.of(
+        Map<String, Object> body = new java.util.LinkedHashMap<>(Map.of(
             "jobId", jobId,
             "composition", composition,
             "inputProps", Map.of("script", script),
             "width", width,
             "height", height,
             "fps", fps,
-            "ttsVoice", ttsVoice == null ? "banmai" : ttsVoice,
             "callbackUrl", properties.getRender().getCallbackUrl()
-        );
+        ));
+        if(ttsVoice!=null && !ttsVoice.isBlank()) body.put("ttsVoice",ttsVoice);
 
         try {
             JsonNode response = restClient.post()

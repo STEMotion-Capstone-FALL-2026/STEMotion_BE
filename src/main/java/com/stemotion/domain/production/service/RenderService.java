@@ -77,8 +77,9 @@ public class RenderService {
             throw ApiException.badRequest("The approved script has no scenes to render");
         }
 
-        RenderResolution resolution = RenderResolution.fromLabel(request.resolution());
-        int fps = request.fps() == null ? project.getFps() : request.fps();
+        // Proposal output contract: clamp legacy requests to 1080p30.
+        RenderResolution resolution = RenderResolution.RES_1080P;
+        int fps = 30;
 
         RenderJob job = renderJobRepository.save(RenderJob.builder()
             .project(project)
@@ -216,12 +217,14 @@ public class RenderService {
                 job.getId(),
                 COMPOSITION_ID,
                 toScriptProps(project, scenes),
-                job.getResolution().getWidth(),
-                job.getResolution().getHeight(),
-                job.getFps(),
+                1920,
+                1080,
+                30,
                 job.getTtsVoice()
             );
 
+            job.setResolution(RenderResolution.RES_1080P);
+            job.setFps(30);
             job.setExternalJobId(result.externalJobId());
             job.setStatus(RenderStatus.QUEUED);
             job.setProgress(0);
@@ -329,7 +332,8 @@ public class RenderService {
             payload.put("type", dto.getType().name());
             payload.put("title", dto.getTitle());
             payload.put("narration", dto.getNarration());
-            payload.put("durationInFrames", dto.getDurationInFrames());
+            int sourceFps=project.getFps()==null || project.getFps()<=0 ? 30 : project.getFps();
+            payload.put("durationInFrames", Math.toIntExact(Math.max(1,Math.round(dto.getDurationInFrames()*30.0/sourceFps))));
             payload.putAll(dto.getFlattenedProps());
             sceneProps.add(payload);
         }
@@ -342,7 +346,7 @@ public class RenderService {
         script.put("totalDurationSeconds", project.getTotalDurationSeconds());
         script.put("scriptStatus", project.getScriptStatus().name());
         script.put("videoStatus", project.getVideoStatus().name());
-        script.put("fps", project.getFps());
+        script.put("fps", 30);
         script.put("scenes", sceneProps);
         script.put("createdAt", String.valueOf(project.getCreatedAt()));
         return script;
