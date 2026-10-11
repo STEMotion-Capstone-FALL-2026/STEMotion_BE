@@ -17,9 +17,11 @@ public class AiGateway {
     private final GeminiClient embedded;
     private final IntegrationProperties properties;
     private final RestClient remote;
+    private final com.stemotion.domain.ai.service.AiRequestLogService audit;
 
-    public AiGateway(GeminiClient embedded, IntegrationProperties properties) {
+    public AiGateway(GeminiClient embedded, IntegrationProperties properties, com.stemotion.domain.ai.service.AiRequestLogService audit) {
         this.embedded = embedded;
+        this.audit = audit;
         this.properties = properties;
         var factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(5));
@@ -36,7 +38,27 @@ public class AiGateway {
     }
 
     public Generation generateJson(String instruction, String prompt, Map<String, Object> schema) {
-        if (!isRemote()) return new Generation(embedded.generateJson(instruction, prompt, schema), properties.getGemini().getModel());
+        return generateJson(com.stemotion.domain.ai.entity.AiRequest.RequestType.ANALYSIS,instruction,prompt,schema);
+    }
+
+    public Generation generateJson(com.stemotion.domain.ai.entity.AiRequest.RequestType type,String instruction,String prompt,Map<String,Object> schema) {
+        String id=audit.start(type,properties.getGemini().getModel(),new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(Map.of("prompt",prompt)).toString());
+        long started=System.nanoTime();
+        Generation generation;
+        try { generation=invoke(instruction,prompt,schema); }
+        catch(RuntimeException ex) {
+            audit.complete(id,null,(System.nanoTime()-started)/1_000_000,ex instanceof ApiException api?api.getCode():"AI_CALL_FAILED");
+            throw ex;
+        }
+        audit.complete(id,generation,(System.nanoTime()-started)/1_000_000,null);
+        return new Generation(generation.result(),generation.model(),id,generation.inputTokens(),generation.outputTokens(),generation.totalTokens());
+    }
+
+    private Generation invoke(String instruction,String prompt,Map<String,Object> schema) {
+        if (!isRemote()) {
+            var result=embedded.generateWithUsage(instruction,prompt,schema);
+            return new Generation(result.result(),properties.getGemini().getModel(),null,result.inputTokens(),result.outputTokens(),result.totalTokens());
+        }
         if (!isConfigured()) throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
             "AI_NOT_CONFIGURED", "Configure AI_SERVICE_URL and AI_SERVICE_KEY");
         try {
@@ -48,7 +70,7 @@ public class AiGateway {
             if (body == null || !body.path("result").isObject() || body.path("model").asText().isBlank()) {
                 throw new ApiException(HttpStatus.BAD_GATEWAY, "AI_INVALID_RESPONSE", "AI service returned an invalid response");
             }
-            return new Generation(body.get("result"), body.get("model").asText());
+            return new Generation(body.get("result"),body.get("model").asText(),null,token(body,"inputTokens"),token(body,"outputTokens"),token(body,"totalTokens"));
         } catch (ApiException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -57,5 +79,11 @@ public class AiGateway {
     }
 
     private boolean isRemote() { return "remote".equals(properties.getAi().getMode()); }
-    public record Generation(JsonNode result, String model) {}
+    private static Integer token(JsonNode body,String key) {
+        var value=body.path(key);
+        return value.isIntegralNumber() && value.canConvertToInt() && value.asInt()>=0?value.asInt():null;
+    }
+    public record Generation(JsonNode result,String model,String requestId,Integer inputTokens,Integer outputTokens,Integer totalTokens) {
+        public Generation(JsonNode result,String model) { this(result,model,null,null,null,null); }
+    }
 }

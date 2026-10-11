@@ -55,6 +55,10 @@ public class GeminiClient {
      * @param responseSchema an OpenAPI-subset schema Gemini constrains output to
      */
     public JsonNode generateJson(String systemInstruction, String prompt, Map<String, Object> responseSchema) {
+        return generateWithUsage(systemInstruction,prompt,responseSchema).result();
+    }
+
+    public UsageResult generateWithUsage(String systemInstruction,String prompt,Map<String,Object> responseSchema) {
         if (!isConfigured()) {
             throw new ApiException(
                 HttpStatus.SERVICE_UNAVAILABLE,
@@ -76,7 +80,9 @@ public class GeminiClient {
             )
         );
 
-        return callWithRetry(body);
+        var response=callWithRetry(body);
+        var usage=response.path("usageMetadata");
+        return new UsageResult(parseFirstCandidate(response),token(usage,"promptTokenCount"),token(usage,"candidatesTokenCount"),token(usage,"totalTokenCount"));
     }
 
     /**
@@ -101,7 +107,8 @@ public class GeminiClient {
                     .retrieve()
                     .body(JsonNode.class);
 
-                return parseFirstCandidate(response);
+                if(response==null) throw new ApiException(HttpStatus.BAD_GATEWAY,"AI_EMPTY_RESPONSE","Gemini returned no body");
+                return response;
             } catch (ApiException ex) {
                 throw ex;
             } catch (HttpServerErrorException.ServiceUnavailable
@@ -111,7 +118,7 @@ public class GeminiClient {
                     sleepBackoff(attempt);
                 }
             } catch (Exception ex) {
-                log.error("Gemini call failed", ex);
+                log.error("Gemini call failed ({})", ex.getClass().getSimpleName());
                 throw new ApiException(
                     HttpStatus.BAD_GATEWAY,
                     "AI_CALL_FAILED",
@@ -138,6 +145,12 @@ public class GeminiClient {
                 HttpStatus.SERVICE_UNAVAILABLE, "AI_INTERRUPTED", "AI request was interrupted"
             );
         }
+    }
+
+    public record UsageResult(JsonNode result,Integer inputTokens,Integer outputTokens,Integer totalTokens) {}
+    private static Integer token(JsonNode usage,String key) {
+        var value=usage.path(key);
+        return value.isIntegralNumber() && value.canConvertToInt() && value.asInt()>=0?value.asInt():null;
     }
 
     private JsonNode parseFirstCandidate(JsonNode response) {

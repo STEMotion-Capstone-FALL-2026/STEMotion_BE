@@ -56,8 +56,15 @@ public final class AiDtos {
         AiAction action,
         JsonNode result,
         String model,
-        long elapsedMs
-    ) {}
+        long elapsedMs,
+        String requestId
+    ) {
+        public AiActionResponse(AiAction action,JsonNode result,String model,long elapsedMs) {
+            this(action,result,model,elapsedMs,null);
+        }
+    }
+
+    public record AiDecisionRequest(@NotNull com.stemotion.domain.ai.entity.AiRequest.Decision decision) {}
 
     /** Suggestions returned by {@code resegment}, ready to become scenes. */
     public record SuggestedScene(

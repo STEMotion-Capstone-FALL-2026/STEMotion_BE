@@ -154,7 +154,7 @@ public class AiScriptService {
             instruction += "\nFor icons[].name and suggestedIcons[], use only these exact names: "
                 + String.join(", ", StemIconCatalog.NAMES) + ".";
         }
-        var generation = geminiClient.generateJson(instruction, prompt, schema);
+        var generation = geminiClient.generateJson(action==null || action==AiAction.resegment ? com.stemotion.domain.ai.entity.AiRequest.RequestType.SEGMENTATION : com.stemotion.domain.ai.entity.AiRequest.RequestType.ANALYSIS,instruction, prompt, schema);
         JsonNode result = generation.result();
         validateIconNames(result);
         long elapsed = System.currentTimeMillis() - startedAt;
@@ -163,7 +163,7 @@ public class AiScriptService {
             log.warn("AI action {} took {} ms, over the 15s target", action, elapsed);
         }
 
-        return new AiActionResponse(action, result, generation.model(), elapsed);
+        return new AiActionResponse(action, result, generation.model(), elapsed, generation.requestId());
     }
 
     private void validateIconNames(JsonNode result) {

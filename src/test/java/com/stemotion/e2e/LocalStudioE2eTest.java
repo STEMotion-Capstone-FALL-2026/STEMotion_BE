@@ -50,6 +50,7 @@ class LocalStudioE2eTest {
     @Autowired StatusHistoryRepository histories;
     @MockBean GeminiClient gemini;
     @MockBean RenderServiceClient worker;
+    @MockBean com.stemotion.domain.ai.service.AiRequestLogService audit;
     Map<String,String> tokens=new HashMap<>();
     Map<String,User> actors=new HashMap<>();
     String workspace;
@@ -139,7 +140,7 @@ class LocalStudioE2eTest {
         assertEquals(200,r.getStatus(),r.getContentAsString());
     }
     @Test void aiStubAnalysisBaseline() throws Exception {
-        when(gemini.generateJson(anyString(),anyString(),anyMap())).thenReturn(json.readTree("{\"score\":80}"));
+        when(gemini.generateWithUsage(anyString(),anyString(),anyMap())).thenReturn(new GeminiClient.UsageResult(json.readTree("{\"score\":80}"),null,null,null));
         var r=call("POST","/api/v1/ai/script/action","WRITER",Map.of("action","grade","scriptText","Force changes motion","subject","Physics","gradeLevel","10"),200);
         assertEquals(80,r.path("result").path("score").asInt());
         // accept/ignore and persisted logging are the M01 baseline gap, tested after Track 2.

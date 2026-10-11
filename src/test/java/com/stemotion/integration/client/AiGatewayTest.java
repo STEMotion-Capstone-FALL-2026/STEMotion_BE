@@ -13,6 +13,23 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class AiGatewayTest {
+    @Test void embeddedUsageAndFailureBothReachPersistentAuditBoundary() throws Exception {
+        var embedded=mock(GeminiClient.class);
+        var audit=mock(com.stemotion.domain.ai.service.AiRequestLogService.class);
+        var properties=new IntegrationProperties();
+        when(audit.start(any(),anyString(),anyString())).thenReturn("request-id");
+        var payload=new ObjectMapper().readTree("{\"score\":80}");
+        when(embedded.generateWithUsage(anyString(),anyString(),anyMap()))
+            .thenReturn(new GeminiClient.UsageResult(payload,12,8,20));
+        var gateway=new AiGateway(embedded,properties,audit);
+        var result=gateway.generateJson("STEM","Force",Map.of());
+        assertThat(result.requestId()).isEqualTo("request-id");
+        assertThat(result.totalTokens()).isEqualTo(20);
+        verify(audit).complete(eq("request-id"),argThat(g->g!=null && g.inputTokens()==12 && g.outputTokens()==8),anyLong(),isNull());
+        when(embedded.generateWithUsage(anyString(),anyString(),anyMap())).thenThrow(new RuntimeException("provider-secret"));
+        assertThatThrownBy(()->gateway.generateJson("STEM","Force",Map.of())).isInstanceOf(RuntimeException.class);
+        verify(audit).complete(eq("request-id"),isNull(),anyLong(),eq("AI_CALL_FAILED"));
+    }
     @Test
     void remoteBoundaryUsesServiceKeyAndReturnsActualProviderModel() throws Exception {
         var embedded = mock(GeminiClient.class);
@@ -33,7 +50,7 @@ class AiGatewayTest {
         server.start();
         try {
             properties.getAi().setBaseUrl("http://127.0.0.1:" + server.getAddress().getPort());
-            var result = new AiGateway(embedded, properties).generateJson("STEM", "Atoms", Map.of("type", "OBJECT"));
+            var result = new AiGateway(embedded, properties, mock(com.stemotion.domain.ai.service.AiRequestLogService.class)).generateJson("STEM", "Atoms", Map.of("type", "OBJECT"));
             assertThat(result.model()).isEqualTo("remote-gemini");
             assertThat(result.result().path("concepts").isArray()).isTrue();
             assertThat(key.get()).isEqualTo("internal-test-key");
@@ -49,7 +66,7 @@ class AiGatewayTest {
         var properties = new IntegrationProperties();
         properties.getAi().setMode("remote");
         var embedded = mock(GeminiClient.class);
-        var gateway = new AiGateway(embedded, properties);
+        var gateway = new AiGateway(embedded, properties, mock(com.stemotion.domain.ai.service.AiRequestLogService.class));
         assertThat(gateway.isConfigured()).isFalse();
         assertThatThrownBy(() -> gateway.generateJson("STEM", "Atoms", Map.of()))
             .isInstanceOfSatisfying(ApiException.class, ex -> assertThat(ex.getCode()).isEqualTo("AI_NOT_CONFIGURED"));

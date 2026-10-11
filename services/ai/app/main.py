@@ -19,6 +19,9 @@ class GenerationResponse(BaseModel):
     result: dict[str, Any]
     model: str
     elapsedMs: int
+    inputTokens: int | None = Field(default=None, ge=0)
+    outputTokens: int | None = Field(default=None, ge=0)
+    totalTokens: int | None = Field(default=None, ge=0)
 
 
 def require_service_key(x_ai_api_key: str = Header(default="")) -> None:
@@ -44,7 +47,7 @@ def json_schema(value: Any) -> Any:
 
 
 class GeminiProvider:
-    async def generate(self, request: GenerationRequest) -> tuple[dict[str, Any], str]:
+    async def generate(self, request: GenerationRequest) -> tuple[dict[str, Any], str, dict[str, Any]]:
         key = os.getenv("GEMINI_API_KEY", "")
         if not key:
             raise HTTPException(503, "Gemini provider is not configured")
@@ -58,13 +61,15 @@ class GeminiProvider:
         schema = json_schema(request.responseSchema)
         schema.setdefault("title", "STEMotionAIResult")
         schema.setdefault("description", "Structured STEMotion AI response")
-        chain = llm.with_structured_output(schema, method="json_schema")
+        chain = llm.with_structured_output(schema, method="json_schema", include_raw=True)
         result = await asyncio.wait_for(chain.ainvoke([
             SystemMessage(content=request.systemInstruction), HumanMessage(content=request.prompt)
         ]), timeout=60)
-        if not isinstance(result, dict):
+        parsed = result.get("parsed")
+        if result.get("parsing_error") or not isinstance(parsed, dict):
             raise ValueError("Expected structured object")
-        return result, model
+        usage = getattr(result.get("raw"), "usage_metadata", None) or {}
+        return parsed, model, usage
 
 
 def provider() -> GeminiProvider:
@@ -84,8 +89,12 @@ def health():
 async def generate(request: GenerationRequest, client: GeminiProvider = Depends(provider)):
     started = time.monotonic()
     try:
-        result, model = await client.generate(request)
-        return GenerationResponse(result=result, model=model, elapsedMs=int((time.monotonic() - started) * 1000))
+        result, model, usage = await client.generate(request)
+        def count(key):
+            value = usage.get(key)
+            return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
+        return GenerationResponse(result=result, model=model, elapsedMs=int((time.monotonic() - started) * 1000),
+            inputTokens=count("input_tokens"), outputTokens=count("output_tokens"), totalTokens=count("total_tokens"))
     except HTTPException:
         raise
     except TimeoutError:

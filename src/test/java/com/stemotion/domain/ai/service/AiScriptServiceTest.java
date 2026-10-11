@@ -27,10 +27,10 @@ class AiScriptServiceTest {
               {"type":"ILLUSTRATED_EXPLAINER","title":"Atoms","narration":"Atom",
                "durationInFrames":90,"icons":[{"name":"atom","label":"Atom"}]}]}
             """);
-        when(client.generateJson(anyString(), anyString(), anyMap())).thenReturn(new AiGateway.Generation(output, "test-gemini"));
+        when(client.generateJson(any(), anyString(), anyString(), anyMap())).thenReturn(new AiGateway.Generation(output, "test-gemini"));
         assertThat(service.generateScript(request).result()).isEqualTo(output);
         var instruction = ArgumentCaptor.forClass(String.class);
-        verify(client).generateJson(instruction.capture(), anyString(), anyMap());
+        verify(client).generateJson(any(), instruction.capture(), anyString(), anyMap());
         for (String name : StemIconCatalog.NAMES) {
             assertThat(instruction.getValue()).contains(name);
         }
@@ -42,7 +42,7 @@ class AiScriptServiceTest {
 
     @Test
     void rejectsUnknownGeneratedIconBeforeReturningToFrontend() throws Exception {
-        when(client.generateJson(anyString(), anyString(), anyMap())).thenReturn(new AiGateway.Generation(mapper.readTree(
+        when(client.generateJson(any(), anyString(), anyString(), anyMap())).thenReturn(new AiGateway.Generation(mapper.readTree(
             "{\"isValidStemTopic\":true,\"scenes\":[{\"icons\":[{\"name\":\"imaginary-icon\"}]}]}"), "test-gemini"));
         assertThatThrownBy(() -> service.generateScript(request)).isInstanceOfSatisfying(
             ApiException.class, ex -> assertThat(ex.getCode()).isEqualTo("AI_INVALID_RESPONSE"));
@@ -50,7 +50,7 @@ class AiScriptServiceTest {
 
     @Test
     void validatesResegmentedIconSuggestionsToo() throws Exception {
-        when(client.generateJson(anyString(), anyString(), anyMap())).thenReturn(new AiGateway.Generation(mapper.readTree(
+        when(client.generateJson(any(), anyString(), anyString(), anyMap())).thenReturn(new AiGateway.Generation(mapper.readTree(
             "{\"scenes\":[{\"suggestedIcons\":[\"imaginary-icon\"]}]}"), "test-gemini"));
         assertThatThrownBy(() -> service.runAction(new ScriptActionRequest(
             AiAction.resegment, "Atoms", StemSubject.Physics, "10")))
@@ -60,7 +60,7 @@ class AiScriptServiceTest {
 
     @Test
     void preservesInvalidTopicGuardrail() throws Exception {
-        when(client.generateJson(anyString(), anyString(), anyMap())).thenReturn(new AiGateway.Generation(mapper.readTree(
+        when(client.generateJson(any(), anyString(), anyString(), anyMap())).thenReturn(new AiGateway.Generation(mapper.readTree(
             "{\"isValidStemTopic\":false,\"fallbackMessage\":\"Invalid topic\",\"scenes\":[]}"), "test-gemini"));
         assertThatThrownBy(() -> service.generateScript(request))
             .isInstanceOf(ApiException.class).hasMessage("Invalid topic");
