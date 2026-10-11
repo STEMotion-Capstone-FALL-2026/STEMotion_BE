@@ -31,7 +31,7 @@ BE subset evidence: M01 11 passed (4 targeted AI E2E + 3 gateway + 4 script); M1
 - Worker TypeScript build PASS.
 - BE package PASS after resolving file lock: an old Codex local read-only smoke Java process held the JAR. PID/port/read-only flags verified before terminating that process. Two earlier package attempts failed file rename; no source change was required. New packaged local BE health/readiness 200 UP, Hibernate validate, Flyway off, datasource loopback read-only; generated 61-operation OpenAPI. Evidence `.audit/track4-be-package.log`, `track4-openapi-boot.json`.
 - Music-only preview PASS: 1920x1080, 1800 frames, ~60s, audio stream. **Not narrated acceptance video.** Transition/music timeline tests pass; sampled layout snapshots inspected.
-- Live FPT demo FAIL/BLOCKED: HTTP 429 after four attempts/backoff at first narration. No new FPT timings/MP4. No hidden Edge fallback. The user-choice question remains pending.
+- Earlier live FPT attempt FAIL/429 after four attempts/backoff. User subsequently approved Edge for this local demo. Updated narrated export PASS: 60.000s / H.264 / 1920x1080 / 30fps / 1800 frames / AAC, six decoded narration correlation checks >0.9998 with offset 0–16 samples at 48kHz. Measured raw speech 60.384s; final scene frames [240,290,280,297,323,370]. Existing fingerprinted real Edge audio was remeasured/reused; no new online TTS call required. Measured local AAC timestamp calibration removes 2048-sample priming delay; output audio is copied, not encoded again. This does not resolve FPT quota or verify production TTS. Evidence: FE docs/TRACK3_2026-10-11.md and PHASE_B_NARRATED_EVIDENCE_2026-10-11.json.
 
 ## Safety and reproducibility
 
