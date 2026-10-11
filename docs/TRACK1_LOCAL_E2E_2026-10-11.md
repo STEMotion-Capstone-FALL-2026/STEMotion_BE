@@ -20,3 +20,7 @@ Tests are opt-in with `STEMOTION_LOCAL_E2E=true`. Database URL/user are hard-bou
 Run against the local PostgreSQL fixture only: `mvn -Dtest=LocalStudioE2eTest test` with the opt-in variable and a local test JWT secret. The local PostgreSQL listener must use loopback port 15432, not default 5432. Logs retained under workspace `.audit/track1-e2e.log` (ignored/local).
 
 This is API-level E2E through JWT/controller/service/JPA, not browser-click E2E. FE and worker suites are reported separately in Track 4. The whole AI flow cannot be declared PASS until M01 is implemented and re-verified.
+
+## Post-M01 update (same day)
+
+The FAIL entry above is the historical baseline. M01 is now implemented and LocalAiDecisionE2eTest passes 4/4 with persisted accept/ignore/ownership/failure audit. Only that selected AI flow was rerun as requested; the rest of Track 1 baseline remains unchanged. See TRACK2_M01_2026-10-11.md and TEST_REPORT_2026-10-11.md for final scope.
