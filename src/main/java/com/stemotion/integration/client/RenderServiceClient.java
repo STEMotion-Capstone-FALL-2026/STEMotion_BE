@@ -41,7 +41,11 @@ public class RenderServiceClient {
 
     public boolean isConfigured() {
         String baseUrl = properties.getRender().getBaseUrl();
-        return baseUrl != null && !baseUrl.isBlank();
+        String apiKey = properties.getRender().getApiKey();
+        String callbackUrl = properties.getRender().getCallbackUrl();
+        return baseUrl != null && !baseUrl.isBlank()
+            && apiKey != null && !apiKey.isBlank()
+            && callbackUrl != null && !callbackUrl.isBlank();
     }
 
     /**
@@ -61,7 +65,7 @@ public class RenderServiceClient {
     ) {
         if (!isConfigured()) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "RENDER_NOT_CONFIGURED",
-                "Render service is not deployed yet");
+                "Render service URL, shared key and callback URL must be configured");
         }
         Map<String, Object> body = Map.of(
             "jobId", jobId,
