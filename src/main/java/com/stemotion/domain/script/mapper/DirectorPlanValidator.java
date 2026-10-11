@@ -27,7 +27,8 @@ public final class DirectorPlanValidator {
     }
     public static void validate(Object value) {
         JsonNode plan = JSON.valueToTree(value);
-        keys(plan, List.of("template_id", "assets", "narration", "duration_sec"));
+        keys(plan, List.of("template_id", "assets", "narration", "duration_sec", "layout_variant"));
+        require(!plan.has("layout_variant") || List.of("center", "left", "right").contains(plan.path("layout_variant").asText()), "invalid layout_variant");
         String template = plan.path("template_id").asText();
         require(REGISTRY.path("templates").has(template), "unknown template_id");
         require(plan.path("narration").isTextual() && plan.path("narration").asText().length() <= 6000, "invalid narration");
@@ -54,7 +55,8 @@ public final class DirectorPlanValidator {
                 boolean valid = switch (rule.path("type").asText()) {
                     case "string" -> v.isTextual() && v.asText().length() <= rule.path("maxLength").asInt(Integer.MAX_VALUE)
                         && (!rule.has("pattern") || v.asText().matches(rule.path("pattern").asText())) && enumValid;
-                    case "number" -> v.isNumber() && Double.isFinite(v.asDouble())
+                    case "number", "integer" -> v.isNumber() && Double.isFinite(v.asDouble())
+                        && (!rule.path("type").asText().equals("integer") || v.asDouble() == Math.rint(v.asDouble()))
                         && v.asDouble() >= rule.path("minimum").asDouble(Double.NEGATIVE_INFINITY)
                         && v.asDouble() <= rule.path("maximum").asDouble(Double.POSITIVE_INFINITY);
                     default -> false;

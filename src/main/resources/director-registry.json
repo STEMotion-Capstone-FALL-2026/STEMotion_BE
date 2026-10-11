@@ -136,6 +136,305 @@
         "additionalProperties": false
       },
       "id": "kinetic_number"
+    },
+    "force_vector": {
+      "id": "force_vector",
+      "subject": "physics",
+      "tags": [
+        "physics",
+        "force_vector"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "angle": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "magnitude": {
+            "type": "number",
+            "minimum": 50,
+            "maximum": 260
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "orbit_path": {
+      "id": "orbit_path",
+      "subject": "physics",
+      "tags": [
+        "physics",
+        "orbit_path"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "radius": {
+            "type": "number",
+            "minimum": 60,
+            "maximum": 220
+          },
+          "eccentricity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 0.8
+          },
+          "period": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "pendulum": {
+      "id": "pendulum",
+      "subject": "physics",
+      "tags": [
+        "physics",
+        "pendulum"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "amplitude": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 45
+          },
+          "period": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 12
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "lens": {
+      "id": "lens",
+      "subject": "physics",
+      "tags": [
+        "physics",
+        "lens"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "focalLength": {
+            "type": "number",
+            "minimum": 100,
+            "maximum": 270
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "wave": {
+      "id": "wave",
+      "subject": "physics",
+      "tags": [
+        "physics",
+        "wave"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "amplitude": {
+            "type": "number",
+            "minimum": 10,
+            "maximum": 120
+          },
+          "wavelength": {
+            "type": "number",
+            "minimum": 60,
+            "maximum": 300
+          },
+          "frequency": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 3
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "atom": {
+      "id": "atom",
+      "subject": "chemistry",
+      "tags": [
+        "chemistry",
+        "atom"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "protons": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "electrons": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "radius": {
+            "type": "number",
+            "minimum": 60,
+            "maximum": 180
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "molecule": {
+      "id": "molecule",
+      "subject": "chemistry",
+      "tags": [
+        "chemistry",
+        "molecule"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "formula": {
+            "type": "string",
+            "enum": [
+              "water",
+              "carbon_dioxide",
+              "oxygen"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "flask": {
+      "id": "flask",
+      "subject": "chemistry",
+      "tags": [
+        "chemistry",
+        "flask"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "fill": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 0.85
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "element_tile": {
+      "id": "element_tile",
+      "subject": "chemistry",
+      "tags": [
+        "chemistry",
+        "element_tile"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "symbol": {
+            "type": "string",
+            "maxLength": 3
+          },
+          "atomicNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 118
+          },
+          "mass": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 300
+          },
+          "elementName": {
+            "type": "string",
+            "maxLength": 18
+          }
+        },
+        "additionalProperties": false
+      }
     }
   },
   "templates": {
@@ -144,23 +443,79 @@
       "asset_pack": "general@0.1.0",
       "slots": {
         "main": [
-          "glow_body"
+          "glow_body",
+          "force_vector",
+          "orbit_path",
+          "pendulum",
+          "lens",
+          "wave",
+          "atom",
+          "molecule",
+          "flask",
+          "element_tile"
         ],
         "label": [
           "label"
         ],
         "quantity": [
           "kinetic_number"
+        ],
+        "item_1": [
+          "force_vector",
+          "orbit_path",
+          "pendulum",
+          "lens",
+          "wave",
+          "atom",
+          "molecule",
+          "flask",
+          "element_tile"
+        ],
+        "item_2": [
+          "force_vector",
+          "orbit_path",
+          "pendulum",
+          "lens",
+          "wave",
+          "atom",
+          "molecule",
+          "flask",
+          "element_tile"
+        ],
+        "guide": [
+          "mascot"
+        ],
+        "note_1": [
+          "callout"
         ]
       },
-      "id": "cosmic_zoom"
+      "id": "cosmic_zoom",
+      "asset_packs": [
+        "general@0.1.0",
+        "physics@0.1.0",
+        "chemistry@0.1.0"
+      ],
+      "layout_variants": [
+        "center",
+        "left",
+        "right"
+      ]
     },
     "talking_diagram": {
       "subject": "general",
       "asset_pack": "general@0.1.0",
       "slots": {
         "main": [
-          "glow_body"
+          "glow_body",
+          "force_vector",
+          "orbit_path",
+          "pendulum",
+          "lens",
+          "wave",
+          "atom",
+          "molecule",
+          "flask",
+          "element_tile"
         ],
         "guide": [
           "mascot"
@@ -176,9 +531,41 @@
         ],
         "quantity": [
           "kinetic_number"
+        ],
+        "item_1": [
+          "force_vector",
+          "orbit_path",
+          "pendulum",
+          "lens",
+          "wave",
+          "atom",
+          "molecule",
+          "flask",
+          "element_tile"
+        ],
+        "item_2": [
+          "force_vector",
+          "orbit_path",
+          "pendulum",
+          "lens",
+          "wave",
+          "atom",
+          "molecule",
+          "flask",
+          "element_tile"
         ]
       },
-      "id": "talking_diagram"
+      "id": "talking_diagram",
+      "asset_packs": [
+        "general@0.1.0",
+        "physics@0.1.0",
+        "chemistry@0.1.0"
+      ],
+      "layout_variants": [
+        "center",
+        "left",
+        "right"
+      ]
     }
   },
   "infrastructure": {

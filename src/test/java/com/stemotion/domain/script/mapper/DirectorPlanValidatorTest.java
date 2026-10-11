@@ -25,4 +25,15 @@ class DirectorPlanValidatorTest {
         p.remove("durationInFrames");p.put("duration_sec","30");
         assertThatThrownBy(() -> DirectorPlanValidator.validate(p)).isInstanceOf(ApiException.class);
     }
+    @Test void phaseBAssetsAndVariantsMatchAllowlist() {
+        for (String id : List.of("force_vector","orbit_path","pendulum","lens","wave","atom","molecule","flask","element_tile")) {
+            var p = new java.util.HashMap<>(plan(id,"main",Map.of()));
+            p.put("layout_variant","left");
+            assertThatCode(() -> DirectorPlanValidator.validate(p)).doesNotThrowAnyException();
+            p.put("layout_variant","unknown");
+            assertThatThrownBy(() -> DirectorPlanValidator.validate(p)).isInstanceOf(ApiException.class);
+        }
+        assertThatThrownBy(() -> DirectorPlanValidator.validate(plan("atom","main",Map.of("electrons",2.5)))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> DirectorPlanValidator.validate(plan("lens","main",Map.of("focalLength",999)))).isInstanceOf(ApiException.class);
+    }
 }
