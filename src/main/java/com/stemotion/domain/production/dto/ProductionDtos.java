@@ -98,7 +98,10 @@ public final class ProductionDtos {
         String category,
         String propsSchema,
         String previewUrl,
-        Boolean isActive
+        Boolean isActive,
+        String subject,
+        String assetPack,
+        String slots
     ) {}
 
     public record TemplateResponse(
@@ -107,7 +110,10 @@ public final class ProductionDtos {
         String category,
         String propsSchema,
         String previewUrl,
-        Boolean isActive
+        Boolean isActive,
+        String subject,
+        String assetPack,
+        String slots
     ) {
         public static TemplateResponse from(RemotionTemplate template) {
             return new TemplateResponse(
@@ -116,7 +122,10 @@ public final class ProductionDtos {
                 template.getCategory(),
                 template.getPropsSchema(),
                 template.getPreviewUrl(),
-                template.getIsActive()
+                template.getIsActive(),
+                template.getSubject(),
+                template.getAssetPack(),
+                template.getSlots()
             );
         }
     }

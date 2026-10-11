@@ -1,0 +1,227 @@
+{
+  "version": "0.1.0",
+  "assets": {
+    "glow_body": {
+      "subject": "general",
+      "tags": [
+        "sphere",
+        "scale"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "radius": {
+            "type": "number",
+            "minimum": 40,
+            "maximum": 220
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "id": "glow_body"
+    },
+    "mascot": {
+      "subject": "general",
+      "tags": [
+        "guide"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "pose": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "point"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "id": "mascot"
+    },
+    "callout": {
+      "subject": "general",
+      "tags": [
+        "annotation"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "id": "callout"
+    },
+    "arrow": {
+      "subject": "general",
+      "tags": [
+        "annotation"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "id": "arrow"
+    },
+    "label": {
+      "subject": "general",
+      "tags": [
+        "annotation"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "id": "label"
+    },
+    "kinetic_number": {
+      "subject": "general",
+      "tags": [
+        "quantity"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number",
+            "minimum": -1000000000000.0,
+            "maximum": 1000000000000.0
+          },
+          "suffix": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "id": "kinetic_number"
+    }
+  },
+  "templates": {
+    "cosmic_zoom": {
+      "subject": "general",
+      "asset_pack": "general@0.1.0",
+      "slots": {
+        "main": [
+          "glow_body"
+        ],
+        "label": [
+          "label"
+        ],
+        "quantity": [
+          "kinetic_number"
+        ]
+      },
+      "id": "cosmic_zoom"
+    },
+    "talking_diagram": {
+      "subject": "general",
+      "asset_pack": "general@0.1.0",
+      "slots": {
+        "main": [
+          "glow_body"
+        ],
+        "guide": [
+          "mascot"
+        ],
+        "note_1": [
+          "callout"
+        ],
+        "pointer": [
+          "arrow"
+        ],
+        "label": [
+          "label"
+        ],
+        "quantity": [
+          "kinetic_number"
+        ]
+      },
+      "id": "talking_diagram"
+    }
+  },
+  "infrastructure": {
+    "space_background": {
+      "id": "space_background",
+      "subject": "general",
+      "tags": [
+        "background"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "directorSelectable": false
+    },
+    "particle_field": {
+      "id": "particle_field",
+      "subject": "general",
+      "tags": [
+        "seeded",
+        "motion"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "directorSelectable": false
+    },
+    "zoom_camera": {
+      "id": "zoom_camera",
+      "subject": "general",
+      "tags": [
+        "camera",
+        "micro-macro"
+      ],
+      "propsSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "directorSelectable": false
+    }
+  }
+}

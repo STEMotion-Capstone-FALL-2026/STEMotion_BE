@@ -45,6 +45,10 @@ public class ScenePropsValidator {
     private static final int MAX_FLAT_ICONS = 6;
 
     public void validate(SceneType type, Map<String, Object> props) {
+        if (props != null && props.containsKey("visualPlan")) {
+            if (type != SceneType.ILLUSTRATED_EXPLAINER) throw ApiException.badRequest("visualPlan requires ILLUSTRATED_EXPLAINER");
+            DirectorPlanValidator.validate(props.get("visualPlan"));
+        }
         if (type == null) {
             throw ApiException.badRequest("Scene type is required");
         }
