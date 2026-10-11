@@ -36,4 +36,13 @@ class DirectorPlanValidatorTest {
         assertThatThrownBy(() -> DirectorPlanValidator.validate(plan("atom","main",Map.of("electrons",2.5)))).isInstanceOf(ApiException.class);
         assertThatThrownBy(() -> DirectorPlanValidator.validate(plan("lens","main",Map.of("focalLength",999)))).isInstanceOf(ApiException.class);
     }
+    @Test void rejectsUnverifiedChemistryPresets() {
+        for (var p : List.of(plan("atom","main",Map.of("protons",7)),
+            plan("atom","main",Map.of("electrons",5)),
+            plan("element_tile","main",Map.of("symbol","O")),
+            plan("element_tile","main",Map.of("mass",14)),
+            plan("molecule","main",Map.of("formula","carbon_dioxide")))) {
+            assertThatThrownBy(() -> DirectorPlanValidator.validate(p)).isInstanceOf(ApiException.class);
+        }
+    }
 }

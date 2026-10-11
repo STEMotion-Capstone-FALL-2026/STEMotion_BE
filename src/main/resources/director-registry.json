@@ -322,13 +322,13 @@
           },
           "protons": {
             "type": "integer",
-            "minimum": 1,
-            "maximum": 20
+            "minimum": 6,
+            "maximum": 6
           },
           "electrons": {
             "type": "integer",
-            "minimum": 1,
-            "maximum": 12
+            "minimum": 6,
+            "maximum": 6
           },
           "radius": {
             "type": "number",
@@ -337,6 +337,11 @@
           }
         },
         "additionalProperties": false
+      },
+      "verification": {
+        "status": "VERIFIED_PRESET_ONLY",
+        "preset": "neutral_carbon",
+        "checklist": "docs/CHEMISTRY_ACCURACY.md"
       }
     },
     "molecule": {
@@ -360,13 +365,16 @@
           "formula": {
             "type": "string",
             "enum": [
-              "water",
-              "carbon_dioxide",
-              "oxygen"
+              "water"
             ]
           }
         },
         "additionalProperties": false
+      },
+      "verification": {
+        "status": "VERIFIED_PRESET_ONLY",
+        "preset": "water",
+        "checklist": "docs/CHEMISTRY_ACCURACY.md"
       }
     },
     "flask": {
@@ -416,24 +424,35 @@
           },
           "symbol": {
             "type": "string",
-            "maxLength": 3
+            "maxLength": 3,
+            "enum": [
+              "C"
+            ]
           },
           "atomicNumber": {
             "type": "integer",
-            "minimum": 1,
-            "maximum": 118
+            "minimum": 6,
+            "maximum": 6
           },
           "mass": {
             "type": "number",
-            "minimum": 1,
-            "maximum": 300
+            "minimum": 12.011,
+            "maximum": 12.011
           },
           "elementName": {
             "type": "string",
-            "maxLength": 18
+            "maxLength": 18,
+            "enum": [
+              "Carbon"
+            ]
           }
         },
         "additionalProperties": false
+      },
+      "verification": {
+        "status": "VERIFIED_PRESET_ONLY",
+        "preset": "neutral_carbon",
+        "checklist": "docs/CHEMISTRY_ACCURACY.md"
       }
     }
   },
