@@ -6,7 +6,7 @@ services:
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: stemotion
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in an untracked env file}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "9000:9000"   # S3 API
       - "9001:9001"   # Web console
@@ -29,7 +29,7 @@ services:
     environment:
       DB_URL: ${DB_URL:-jdbc:postgresql://aws-0-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require}
       DB_USERNAME: ${DB_USERNAME:-postgres.iycanfyquiojkhqgtywd}
-      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in an untracked env file}
+      DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET to a random production secret}
       RENDER_SERVICE_KEY: ${RENDER_SERVICE_KEY:?Set the same worker key for BE and render}
       RENDER_SERVICE_URL: ${RENDER_SERVICE_URL:-http://render:4000}
