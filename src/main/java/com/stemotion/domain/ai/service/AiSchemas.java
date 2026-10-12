@@ -59,23 +59,31 @@ final class AiSchemas {
             List.of("label", "value")
         );
 
-        // Icon names are an enum, so Gemini can only pick icons the renderer can draw.
+        // Gemini's responseSchema rejects large enums (110 items) with HTTP 400
+        // INVALID_ARGUMENT; the allowed icon names are supplied in the prompt.
         Map<String, Object> flatIcon = object(
             Map.of(
-                "name", Map.of("type", "STRING", "enum", StemIconCatalog.NAMES),
+                "name", str(),
                 "label", str()
             ),
             List.of("name", "label")
+        );
+
+        Map<String, Object> stageItem = object(
+            Map.of(
+                "stageNumber", num(),
+                "title", str(),
+                "description", str()
+            ),
+            List.of("stageNumber", "title", "description")
         );
 
         Map<String, Object> sceneProps = Map.ofEntries(
             Map.entry("type", Map.of(
                 "type", "STRING",
                 "enum", List.of(
-                    "TITLE_HERO", "MATH_FORMULA", "DIAGRAM_EXPLAINER", "DATA_CHART",
-                    "ALGORITHM_WALKTHROUGH", "STEM_QUIZ", "OUTRO",
-                    "CHEMICAL_REACTION", "COMPARISON_SPLIT", "PROCESS_TIMELINE", "GEOMETRY_SPACE",
-                    "ILLUSTRATED_EXPLAINER"
+                    "TITLE_HERO", "ILLUSTRATED_EXPLAINER", "PROCESS_TIMELINE", "COMPARISON_SPLIT",
+                    "MATH_FORMULA", "CHEMICAL_REACTION", "DATA_CHART", "ALGORITHM_WALKTHROUGH", "OUTRO"
                 )
             )),
             Map.entry("title", str()),
@@ -83,14 +91,11 @@ final class AiSchemas {
             Map.entry("durationInFrames", num()),
             Map.entry("latex", str()),
             Map.entry("steps", arrayOf(stepItem)),
-            Map.entry("question", str()),
-            Map.entry("options", arrayOf(str())),
-            Map.entry("correctIndex", num()),
-            Map.entry("hint", str()),
-            Map.entry("explanation", str()),
             Map.entry("topicA", topicSide),
             Map.entry("topicB", topicSide),
             Map.entry("conclusion", str()),
+            Map.entry("processTitle", str()),
+            Map.entry("stages", arrayOf(stageItem)),
             Map.entry("chartType", str()),
             Map.entry("xAxisLabel", str()),
             Map.entry("yAxisLabel", str()),
@@ -137,7 +142,7 @@ final class AiSchemas {
                 "narration", str(),
                 "suggestedDurationSec", num(),
                 "concepts", arrayOf(str()),
-                "suggestedIcons", arrayOf(Map.of("type", "STRING", "enum", StemIconCatalog.NAMES))
+                "suggestedIcons", arrayOf(str())
             ),
             List.of("type", "title", "narration", "suggestedDurationSec")
         );

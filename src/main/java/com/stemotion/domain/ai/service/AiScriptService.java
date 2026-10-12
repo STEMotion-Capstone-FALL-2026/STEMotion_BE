@@ -35,7 +35,23 @@ public class AiScriptService {
 
     /** Drafts a complete script the writer can then edit scene by scene. */
     public AiActionResponse generateScript(GenerateScriptRequest request) {
-        int targetDuration = request.targetDurationSec() == null ? 90 : request.targetDurationSec();
+        int rawDuration = request.targetDurationSec() == null ? 0 : request.targetDurationSec();
+        String pacingInstruction;
+        if (rawDuration <= 0) {
+            pacingInstruction = """
+                - TỰ ĐỘNG QUYẾT ĐỊNH SỐ CẢNH (DYNAMIC SCENE COUNT TỪ 4 ĐẾN 9 CẢNH) dựa vào độ rộng và độ sâu khoa học của Topic:
+                  + Nếu Topic là 1 định nghĩa/công thức đơn lẻ, ngắn gọn -> Tạo đúng 4 hoặc 5 cảnh (tổng ~55-65 giây).
+                  + Nếu Topic là một cơ chế, hiện tượng hoặc quy trình tự nhiên có nhiều bước -> Tạo 6 hoặc 7 cảnh (tổng ~85-105 giây).
+                  + Nếu Topic là chủ đề vĩ mô, nhiều tầng kiến thức sâu sắc kiểu Kurzgesagt (VD: Hố đen, Hệ miễn dịch, Thuyết tương đối, Tiến hóa, Lượng tử...) -> Tạo 8 hoặc 9 cảnh (tổng ~115-145 giây).
+                  + Tuyệt đối KHÔNG mặc định lúc nào cũng 5 cảnh; hãy phân tích độ phức tạp của [%s] để chọn số cảnh phù hợp nhất!
+                """.formatted(request.topic());
+        } else if (rawDuration <= 65) {
+            pacingInstruction = "- Tạo 4-5 cảnh (scenes) cô đọng. Tổng duration các cảnh xấp xỉ %d giây (durationInFrames = giây * 30).".formatted(rawDuration);
+        } else if (rawDuration <= 100) {
+            pacingInstruction = "- Tạo 6-7 cảnh (scenes) tiêu chuẩn. Tổng duration các cảnh xấp xỉ %d giây (durationInFrames = giây * 30).".formatted(rawDuration);
+        } else {
+            pacingInstruction = "- Tạo 8-10 cảnh (scenes) chuyên sâu, phân tích đa chiều. Tổng duration các cảnh xấp xỉ %d giây (durationInFrames = giây * 30).".formatted(rawDuration);
+        }
 
         String prompt = """
             Bạn là một Chuyên gia Thiết kế Bài giảng STEM xuất sắc. Mục tiêu: Tạo kịch bản video giáo dục ngắn, sinh động, chuẩn xác khoa học, không dư thừa từ ngữ.
@@ -48,30 +64,32 @@ public class AiScriptService {
               + Set "fallbackMessage": Lời giải thích ngắn gọn, lịch sự bằng tiếng Việt (VD: "Chủ đề 'bún chả' không phù hợp với môn Vật Lý lớp 10. Vui lòng chọn chủ đề khoa học.").
               + BỎ QUA BƯỚC 2. Trả về mảng scenes rỗng để tiết kiệm token.
 
-            BƯỚC 2: TẠO KỊCH BẢN (NẾU HỢP LỆ)
+            BƯỚC 2: TẠO KỊCH BẢN (NẾU HỢP LỆ) - PHONG CÁCH KURZGESAGT EXPLAINER:
             - Set "isValidStemTopic": true. Set "fallbackMessage": null.
-            - Tạo 5-7 cảnh (scenes). Tổng duration các cảnh phải xấp xỉ %d giây (durationInFrames = giây * 30).
+            %s
             - Yêu cầu chất lượng khắt khe:
               + Cảnh 1 LUÔN dùng template TITLE_HERO.
+              + Các cảnh giữa: ƯU TIÊN dùng nhiều cảnh ILLUSTRATED_EXPLAINER (xen kẽ các layout "focus", "row", "swarm", "cluster" và các ambience khác nhau) kết hợp PROCESS_TIMELINE, COMPARISON_SPLIT hoặc MATH_FORMULA / CHEMICAL_REACTION / DATA_CHART khi cần.
               + Cảnh cuối LUÔN dùng template OUTRO.
+              + KHÔNG dùng STEM_QUIZ, DIAGRAM_EXPLAINER hay GEOMETRY_SPACE.
               + Nội dung khoa học, công thức phải CHÍNH XÁC TUYỆT ĐỐI.
-              + Lời thoại (narration) súc tích, nhịp độ nhanh (tối đa 2.2 từ/giây). Tuyệt đối không dùng từ ngữ sáo rỗng, vòng vo.
+              + Lời thoại (narration) súc tích, cuốn hút kiểu kể chuyện khoa học (tối đa 2.2 từ/giây).
 
             YÊU CẦU ĐẶC THÙ CHO CÁC TEMPLATE STEM:
-            - MATH_FORMULA: Cung cấp "latex" và "steps".
-            - COMPARISON_SPLIT: Cung cấp "topicA", "topicB" và "conclusion".
-            - STEM_QUIZ: Cung cấp "question", "options" (4 lựa chọn), "correctIndex" (0-3), "hint", "explanation".
-            - DATA_CHART: Cung cấp "chartType" (bar/line), "xAxisLabel", "yAxisLabel", "dataPoints".
-            - CHEMICAL_REACTION: Cung cấp "equation", "reactants", "products", "condition", "observation".
-            - OUTRO: Cung cấp "summaryPoints" và "nextLessonSuggestion".
-            - ILLUSTRATED_EXPLAINER: dùng cho khái niệm cần hình dung trực quan (cấu tạo, vai trò, quan hệ nhân quả), tối đa 2 cảnh mỗi video.
+            - ILLUSTRATED_EXPLAINER (Trọng tâm): dùng để hình dung trực quan (cấu tạo, vai trò, chuỗi nhân quả, đám mây hạt).
               Cung cấp "headline" (tối đa 8 từ), "caption" (một câu ngắn), "ambience" (space: vũ trụ/vật lý; cell: sinh học;
-              lab: hóa học/thí nghiệm; ocean: nước/Trái Đất; lilac, sky: nền sáng pastel cho cảnh nhẹ nhàng, xen kẽ với nền tối),
-              "layout" (focus: một khái niệm trung tâm và các thành phần quanh nó; row: quy trình theo thứ tự;
-              cluster: nhóm khái niệm ngang hàng; swarm: một tập hợp rất nhiều phần tử như tế bào, quần thể, đám mây electron)
-              và "icons" (2-5 biểu tượng, mỗi cái có "name" lấy từ danh sách cho phép và "label" tiếng Việt tối đa 3 từ).
+              lab: hóa học/thí nghiệm; ocean: nước/Trái Đất; lilac, sky: nền sáng pastel xen kẽ với nền tối),
+              "layout" (focus: một khái niệm trung tâm và các thành phần quanh nó; row: quy trình theo thứ tự có mũi tên;
+              cluster: nhóm khái niệm ngang hàng; swarm: tập hợp nhiều hạt như tế bào, nguyên tử, đám mây electron)
+              và "icons" (3-5 biểu tượng, mỗi cái có "name" BẮT BUỘC lấy từ danh sách [%s] và "label" tiếng Việt tối đa 3 từ).
               Với layout focus và swarm, biểu tượng đầu tiên là tâm điểm.
-            """.formatted(request.topic(), request.subject(), request.gradeLevel(), targetDuration);
+            - PROCESS_TIMELINE: Cung cấp "processTitle" và "stages" (3-4 giai đoạn, mỗi cái có stageNumber, title, description).
+            - COMPARISON_SPLIT: Cung cấp "topicA" (title, badge, points), "topicB" (title, badge, points) và "conclusion".
+            - MATH_FORMULA: Cung cấp "latex" (bắt buộc không rỗng) và "steps".
+            - CHEMICAL_REACTION: Cung cấp "equation" (bắt buộc không rỗng), "reactants", "products", "condition", "observation".
+            - DATA_CHART: Cung cấp "chartType" (bar/line), "xAxisLabel", "yAxisLabel", "dataPoints" (mảng có label và value là số).
+            - OUTRO: Cung cấp "summaryPoints" (3 ý đúc kết cốt lõi) và "nextLessonSuggestion".
+            """.formatted(request.topic(), request.subject(), request.gradeLevel(), pacingInstruction, String.join(", ", StemIconCatalog.NAMES));
 
         AiActionResponse response = call(null, prompt, AiSchemas.generatedScript());
         
