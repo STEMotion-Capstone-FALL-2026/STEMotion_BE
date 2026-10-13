@@ -11,6 +11,9 @@ final class AiSchemas {
 
     private AiSchemas() {}
 
+    static final List<String> FLAT_AMBIENCES = List.of("space", "cell", "lab", "ocean", "lilac", "sky");
+    static final List<String> FLAT_LAYOUTS = List.of("focus", "row", "cluster", "swarm", "exchange", "zoom");
+
     private static Map<String, Object> str() {
         return Map.of("type", "STRING");
     }
@@ -109,9 +112,8 @@ final class AiSchemas {
             Map.entry("nextLessonSuggestion", str()),
             Map.entry("headline", str()),
             Map.entry("caption", str()),
-            Map.entry("ambience", Map.of("type", "STRING", "enum",
-                List.of("space", "cell", "lab", "ocean", "lilac", "sky"))),
-            Map.entry("layout", Map.of("type", "STRING", "enum", List.of("focus", "row", "cluster", "swarm"))),
+            Map.entry("ambience", Map.of("type", "STRING", "enum", FLAT_AMBIENCES)),
+            Map.entry("layout", Map.of("type", "STRING", "enum", FLAT_LAYOUTS)),
             Map.entry("icons", arrayOf(flatIcon))
         );
 
@@ -147,6 +149,31 @@ final class AiSchemas {
             List.of("type", "title", "narration", "suggestedDurationSec")
         );
         return object(Map.of("scenes", arrayOf(segment)), List.of("scenes"));
+    }
+
+    /**
+     * metaphor: three alternative visual metaphors for one scene. Each carries a
+     * ready ILLUSTRATED_EXPLAINER staging and a narration rewritten around it,
+     * plus where the comparison stops being accurate.
+     */
+    static Map<String, Object> metaphor() {
+        Map<String, Object> icon = object(Map.of("name", str(), "label", str()), List.of("name", "label"));
+        Map<String, Object> option = object(
+            Map.ofEntries(
+                Map.entry("name", str()),
+                Map.entry("idea", str()),
+                Map.entry("whyItHelps", str()),
+                Map.entry("limitation", str()),
+                Map.entry("layout", Map.of("type", "STRING", "enum", FLAT_LAYOUTS)),
+                Map.entry("ambience", Map.of("type", "STRING", "enum", FLAT_AMBIENCES)),
+                Map.entry("headline", str()),
+                Map.entry("caption", str()),
+                Map.entry("icons", arrayOf(icon)),
+                Map.entry("narration", str())
+            ),
+            List.of("name", "idea", "limitation", "layout", "ambience", "headline", "icons", "narration")
+        );
+        return object(Map.of("options", arrayOf(option)), List.of("options"));
     }
 
     /** grade: a readability verdict against the target grade. */

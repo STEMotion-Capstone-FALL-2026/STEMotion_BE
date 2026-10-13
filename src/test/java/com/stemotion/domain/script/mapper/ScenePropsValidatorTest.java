@@ -150,15 +150,42 @@ class ScenePropsValidatorTest {
     }
 
     @Test
-    @DisplayName("an icon outside the approved STEM set is rejected")
-    void rejectsUnknownIcon() {
+    @DisplayName("an icon outside the approved STEM set falls back to the sparkle icon")
+    void replacesUnknownIcon() {
+        Map<String, Object> icon = new HashMap<>(Map.of("name", "unicorn", "label", "Ky lan"));
         Map<String, Object> props = illustratedProps();
-        props.put("icons", List.of(Map.of("name", "unicorn")));
+        props.put("icons", List.of(icon));
+
+        assertThatCode(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, props))
+            .doesNotThrowAnyException();
+        assertThat(icon).containsEntry("name", "sparkle").containsEntry("label", "Ky lan");
+    }
+
+    @Test
+    @DisplayName("an icon without a name is rejected")
+    void rejectsNamelessIcon() {
+        Map<String, Object> props = illustratedProps();
+        props.put("icons", List.of(Map.of("label", "?")));
 
         assertThatThrownBy(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, props))
             .isInstanceOf(ApiException.class)
-            .hasMessageContaining("unicorn")
-            .hasMessageContaining("approved STEM icon set");
+            .hasMessageContaining("non-empty name");
+    }
+
+    @Test
+    @DisplayName("the exchange and zoom layouts are accepted with two or more icons")
+    void acceptsStorytellingLayouts() {
+        for (String layout : List.of("exchange", "zoom")) {
+            Map<String, Object> props = illustratedProps();
+            props.put("layout", layout);
+            assertThatCode(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, props))
+                .doesNotThrowAnyException();
+
+            props.put("icons", List.of(Map.of("name", "leaf")));
+            assertThatThrownBy(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, props))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("needs at least 2 icons");
+        }
     }
 
     @Test

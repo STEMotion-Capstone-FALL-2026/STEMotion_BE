@@ -40,7 +40,10 @@ public class ScenePropsValidator {
         List.of("pythagoras_triangle", "cone_3d", "circle_trig");
 
     private static final List<String> FLAT_AMBIENCES = List.of("space", "cell", "lab", "ocean", "lilac", "sky");
-    private static final List<String> FLAT_LAYOUTS = List.of("focus", "row", "cluster", "swarm");
+    private static final List<String> FLAT_LAYOUTS =
+        List.of("focus", "row", "cluster", "swarm", "exchange", "zoom");
+    /** Layouts that tell a story between objects and so need at least two of them. */
+    private static final List<String> PAIRED_LAYOUTS = List.of("exchange", "zoom");
     private static final List<String> FLAT_DETAILS = List.of("minimal", "rich");
     private static final int MAX_FLAT_ICONS = 6;
 
@@ -138,6 +141,11 @@ public class ScenePropsValidator {
         checkOneOf(props, "ambience", FLAT_AMBIENCES);
         checkOneOf(props, "layout", FLAT_LAYOUTS);
         checkOneOf(props, "detail", FLAT_DETAILS);
+        if (PAIRED_LAYOUTS.contains(String.valueOf(props.get("layout"))) && icons.size() < 2) {
+            throw ApiException.badRequest(
+                "ILLUSTRATED_EXPLAINER layout " + props.get("layout") + " needs at least 2 icons"
+            );
+        }
     }
 
     /** Optional enum-like prop: absent is fine, an unknown value is not. */

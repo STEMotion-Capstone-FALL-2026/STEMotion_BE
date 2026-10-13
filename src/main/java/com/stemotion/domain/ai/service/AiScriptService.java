@@ -74,7 +74,8 @@ public class AiScriptService {
             %s
             - Yêu cầu chất lượng khắt khe:
               + Cảnh 1 LUÔN dùng template TITLE_HERO.
-              + Các cảnh giữa: ƯU TIÊN dùng nhiều cảnh ILLUSTRATED_EXPLAINER (xen kẽ các layout "focus", "row", "swarm", "cluster" và các ambience khác nhau) kết hợp PROCESS_TIMELINE, COMPARISON_SPLIT hoặc MATH_FORMULA / CHEMICAL_REACTION / DATA_CHART khi cần.
+              + Các cảnh giữa: ƯU TIÊN dùng nhiều cảnh ILLUSTRATED_EXPLAINER (xen kẽ các layout "focus", "row", "swarm", "cluster", "exchange", "zoom" và các ambience khác nhau) kết hợp PROCESS_TIMELINE, COMPARISON_SPLIT hoặc MATH_FORMULA / CHEMICAL_REACTION / DATA_CHART khi cần.
+              + Mỗi cảnh ILLUSTRATED_EXPLAINER nên dựng quanh MỘT ẨN DỤ HÌNH ẢNH cụ thể (VD: electron là quả bóng được chuyền, tế bào là nhà máy, hệ miễn dịch là đội quân) thay vì liệt kê khái niệm; ẩn dụ phải đúng bản chất khoa học.
               + Cảnh cuối LUÔN dùng template OUTRO.
               + KHÔNG dùng STEM_QUIZ, DIAGRAM_EXPLAINER hay GEOMETRY_SPACE.
               + Nội dung khoa học, công thức phải CHÍNH XÁC TUYỆT ĐỐI.
@@ -85,7 +86,10 @@ public class AiScriptService {
               Cung cấp "headline" (tối đa 8 từ), "caption" (một câu ngắn), "ambience" (space: vũ trụ/vật lý; cell: sinh học;
               lab: hóa học/thí nghiệm; ocean: nước/Trái Đất; lilac, sky: nền sáng pastel xen kẽ với nền tối),
               "layout" (focus: một khái niệm trung tâm và các thành phần quanh nó; row: quy trình theo thứ tự có mũi tên;
-              cluster: nhóm khái niệm ngang hàng; swarm: tập hợp nhiều hạt như tế bào, nguyên tử, đám mây electron)
+              cluster: nhóm khái niệm ngang hàng; swarm: tập hợp nhiều hạt như tế bào, nguyên tử, đám mây electron;
+              exchange: một bên trao một thứ cho bên kia, biểu tượng 1 là bên trao, 2 là bên nhận, 3 là thứ được trao
+              (VD: chất khử nhường electron cho chất oxi hoá, lá cây nhận ánh sáng từ Mặt Trời);
+              zoom: đi xuyên các thang đo từ lớn đến nhỏ, 2-4 biểu tượng theo thứ tự (VD: lá cây → tế bào → ADN))
               và "icons" (3-5 biểu tượng, mỗi cái có "name" BẮT BUỘC lấy từ danh sách [%s] và "label" tiếng Việt tối đa 3 từ).
               Với layout focus và swarm, biểu tượng đầu tiên là tâm điểm.
             - PROCESS_TIMELINE: Cung cấp "processTitle" và "stages" (3-4 giai đoạn, mỗi cái có stageNumber, title, description).
@@ -144,6 +148,32 @@ public class AiScriptService {
                 %s
                 """.formatted(subject, grade, request.scriptText());
 
+            case metaphor -> """
+                Đây là một cảnh trong video %s cho học sinh %s:
+
+                %s
+
+                Đề xuất ĐÚNG 3 ẩn dụ hình ảnh KHÁC NHAU để minh hoạ ý chính của cảnh này,
+                theo phong cách video giải thích khoa học dạng hoạt hình phẳng: biến khái niệm trừu tượng
+                thành một hình ảnh đời thường dễ nhớ (chuyền bóng, cán cân, nhà máy, đội quân, thành phố...).
+                Ba phương án phải khác nhau về hình ảnh và nên dùng ít nhất 2 layout khác nhau.
+
+                Với mỗi phương án:
+                - "name": tên ngắn của ẩn dụ (tối đa 5 từ).
+                - "idea": một câu mô tả hình ảnh sẽ thấy trên màn hình.
+                - "whyItHelps": vì sao hình ảnh này giúp học sinh hiểu đúng.
+                - "limitation": ẩn dụ này KHÔNG đúng ở điểm nào so với khoa học thật (bắt buộc, trung thực).
+                - "layout": focus (một khái niệm trung tâm và các thành phần quanh nó), row (quy trình theo thứ tự),
+                  cluster (nhóm ngang hàng), swarm (tập hợp rất nhiều hạt), exchange (biểu tượng 1 trao biểu tượng 3
+                  cho biểu tượng 2, lặp lại nhiều lần) hoặc zoom (đi xuyên từ biểu tượng lớn nhất vào nhỏ nhất, 2-4 tầng).
+                - "ambience": space, cell, lab, ocean, lilac hoặc sky, hợp với nội dung.
+                - "headline": tiêu đề trên màn hình, tối đa 8 từ; "caption": một câu ngắn.
+                - "icons": 2-5 biểu tượng, "name" BẮT BUỘC lấy từ danh sách [%s], "label" tiếng Việt tối đa 3 từ.
+                - "narration": viết lại lời thoại của cảnh xoay quanh ẩn dụ này, giữ nguyên kiến thức,
+                  độ dài gần bằng lời thoại gốc, nói rõ đây là phép so sánh.
+                Kiến thức khoa học phải chính xác tuyệt đối; không thêm số liệu không có trong cảnh gốc.
+                """.formatted(subject, grade, request.scriptText(), String.join(", ", StemIconCatalog.NAMES));
+
             case terms -> """
                 Review the following %s script for %s and flag terminology that is
                 wrong, inconsistent between scenes, or above the expected level.
@@ -159,6 +189,7 @@ public class AiScriptService {
             case grade -> AiSchemas.grade();
             case extract -> AiSchemas.extract();
             case terms -> AiSchemas.terms();
+            case metaphor -> AiSchemas.metaphor();
         };
 
         return call(request.action(), prompt, schema);
@@ -195,7 +226,8 @@ public class AiScriptService {
      */
     private void replaceUnknownIcons(JsonNode result) {
         if (result == null) return;
-        for (JsonNode scene : result.path("scenes")) {
+        // "scenes" for generate and resegment, "options" for metaphor suggestions.
+        for (JsonNode scene : concat(result.path("scenes"), result.path("options"))) {
             for (JsonNode icon : scene.path("icons")) {
                 if (icon instanceof ObjectNode node && !isKnownIcon(node.path("name"))) {
                     log.warn("AI suggested unknown icon {}, using {}", node.path("name"), FALLBACK_ICON);
@@ -211,6 +243,13 @@ public class AiScriptService {
                 }
             }
         }
+    }
+
+    private static java.util.List<JsonNode> concat(JsonNode a, JsonNode b) {
+        java.util.List<JsonNode> all = new java.util.ArrayList<>();
+        a.forEach(all::add);
+        b.forEach(all::add);
+        return all;
     }
 
     private static boolean isKnownIcon(JsonNode name) {

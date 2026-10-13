@@ -11,7 +11,7 @@ public final class AiDtos {
 
     private AiDtos() {}
 
-    /** The four on-demand analyses offered in the Writer studio. */
+    /** The on-demand analyses offered in the Writer studio. */
     public enum AiAction {
         /** Re-cut the script into scenes with suggested durations and templates. */
         resegment,
@@ -20,7 +20,12 @@ public final class AiDtos {
         /** Pull out the STEM concepts covered. */
         extract,
         /** Flag inconsistent or wrong scientific terminology. */
-        terms
+        terms,
+        /**
+         * Propose three visual metaphors for one scene, each already staged as an
+         * ILLUSTRATED_EXPLAINER scene. The writer picks one or none.
+         */
+        metaphor
     }
 
     public record GenerateScriptRequest(
