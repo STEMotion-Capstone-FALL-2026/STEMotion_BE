@@ -31,6 +31,8 @@ public class FeedbackService {
     private final ClipProjectRepository projectRepository;
     private final ScriptService scriptService;
     private final AuthService authService;
+    private final com.stemotion.domain.production.service.ClipArtifactService clipArtifactService;
+    private final com.stemotion.domain.project.service.StatusHistoryService statusHistoryService;
 
     @Transactional(readOnly = true)
     public List<FeedbackResponse> findByProject(String projectId, FeedbackStatus status) {
@@ -61,6 +63,12 @@ public class FeedbackService {
 
         if (request.timestampSec() != null && request.timestampSec() < 0) {
             throw ApiException.badRequest("timestampSec cannot be negative");
+        }
+        if (scene != null && !scene.getScriptVersion().getProject().getId().equals(projectId)) {
+            throw ApiException.badRequest("The scene does not belong to this project");
+        }
+        if (scene == null && request.timestampSec() == null) {
+            throw ApiException.badRequest("A comment requires a scene or a timestamp");
         }
 
         FeedbackComment comment = feedbackRepository.save(FeedbackComment.builder()
@@ -100,8 +108,9 @@ public class FeedbackService {
      * cannot reach publishing with unresolved QA findings.
      */
     @Transactional
-    public void approveVideo(String projectId) {
+    public void approveVideo(String projectId, String reviewerId, String reason) {
         ClipProject project = scriptService.getOrThrow(projectId);
+        scriptService.requireActive(project);
 
         if (project.getVideoStatus() != VideoStatus.IN_QA) {
             throw ApiException.badRequest(
@@ -116,19 +125,30 @@ public class FeedbackService {
             );
         }
 
+        var clip = clipArtifactService.requireCurrent(project, scriptService.currentVersion(project).getId());
+        var from = project.getPipelineStatus();
         project.setVideoStatus(VideoStatus.APPROVED);
         projectRepository.save(project);
+        statusHistoryService.recordReview(project, from, authService.findUserOrThrow(reviewerId),
+            com.stemotion.domain.project.entity.StatusHistory.TargetType.CLIP, clip.getId(),
+            com.stemotion.domain.project.entity.StatusHistory.Decision.APPROVED, reason);
     }
 
     /** Sends the clip back to the producer for a re-render. */
     @Transactional
-    public void sendBackToProduction(String projectId) {
+    public void sendBackToProduction(String projectId, String reviewerId, String reason) {
         ClipProject project = scriptService.getOrThrow(projectId);
+        scriptService.requireActive(project);
         if (project.getVideoStatus() != VideoStatus.IN_QA) {
             throw ApiException.badRequest("Only a clip in QA can be sent back to production");
         }
+        var clip = clipArtifactService.requireCurrent(project, scriptService.currentVersion(project).getId());
+        var from = project.getPipelineStatus();
         project.setVideoStatus(VideoStatus.NOT_RENDERED);
         projectRepository.save(project);
+        statusHistoryService.recordReview(project, from, authService.findUserOrThrow(reviewerId),
+            com.stemotion.domain.project.entity.StatusHistory.TargetType.CLIP, clip.getId(),
+            com.stemotion.domain.project.entity.StatusHistory.Decision.REJECTED, reason);
     }
 
     private FeedbackComment getOrThrow(String commentId) {

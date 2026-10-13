@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   application:
@@ -8,10 +8,13 @@ spring:
   datasource:
     # Matches docker-compose.yml, which maps the container's 5432 to 5433
     # so it does not clash with a Postgres already installed on the machine.
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/stemotion_db}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
 
   flyway:
     enabled: true
@@ -20,8 +23,8 @@ spring:
 
   jpa:
     hibernate:
-      # Flyway owns the schema; Hibernate only checks the entities match it.
-      ddl-auto: validate
+      # Let Hibernate automatically add missing columns during development
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -30,7 +33,7 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:stemotion-local-dev-secret-key-change-me-in-production-min-32-bytes}
+    secret: ${JWT_SECRET}
     expiration-ms: 86400000
   cors:
     # Patterns; "*" matches any port so a shifted Vite port still works in dev.
@@ -40,6 +43,10 @@ app:
     embed-base-url: ${EMBED_BASE_URL:http://localhost:3000/embed}
 
   integration:
+    ai:
+      mode: ${AI_SERVICE_MODE:embedded}
+      base-url: ${AI_SERVICE_URL:http://localhost:8000}
+      api-key: ${AI_SERVICE_KEY:}
     render:
       base-url: ${RENDER_SERVICE_URL:http://localhost:4000}
       api-key: ${RENDER_SERVICE_KEY:}

@@ -5,6 +5,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +25,16 @@ public class User extends BaseEntity {
 
     @Column(name = "full_name", nullable = false)
     private String fullName;
+
+    // The shared Supabase schema requires both name columns.
+    @Column(name = "display_name", nullable = false)
+    private String displayName;
+
+    @PrePersist
+    @PreUpdate
+    private void synchronizeDisplayName() {
+        displayName = fullName;
+    }
 
     @Column(name = "email", nullable = false, unique = true)
     private String email;

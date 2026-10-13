@@ -16,6 +16,11 @@ public interface WorkspaceMemberRepository extends JpaRepository<WorkspaceMember
 
     Optional<WorkspaceMember> findByWorkspaceIdAndInvitedEmail(String workspaceId, String invitedEmail);
 
+    Optional<WorkspaceMember> findByWorkspaceIdAndInvitedEmailIgnoreCase(String workspaceId, String invitedEmail);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    Optional<WorkspaceMember> findByInvitationTokenHash(String invitationTokenHash);
+
     boolean existsByWorkspaceIdAndUserId(String workspaceId, String userId);
 
     long countByWorkspaceId(String workspaceId);

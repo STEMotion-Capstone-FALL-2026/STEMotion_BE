@@ -1,0 +1,16 @@
+import {PGlite} from '@electric-sql/pglite';
+import {readFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+const up=readFileSync('../../main/resources/db/migration/V14__director_template_metadata.sql','utf8');
+const down=readFileSync('../../../docs/rollback/V14__director_template_metadata.down.sql','utf8');
+const db=new PGlite();
+await db.exec("CREATE TABLE remotion_templates(id text PRIMARY KEY,name text); INSERT INTO remotion_templates VALUES('legacy','Legacy')");
+await db.exec(up);
+assert.equal((await db.query('SELECT subject FROM remotion_templates')).rows[0].subject,null);
+await assert.rejects(db.exec("UPDATE remotion_templates SET slots='[]'"));
+await db.exec("UPDATE remotion_templates SET subject='general',asset_pack='general@0.1.0',slots='{\"main\":[\"glow_body\"]}'");
+await assert.rejects(db.exec(down));await db.exec('ROLLBACK');
+await db.exec('UPDATE remotion_templates SET subject=NULL,asset_pack=NULL,slots=NULL');
+await db.exec(down);await db.exec(up);
+assert.equal((await db.query('SELECT name FROM remotion_templates')).rows[0].name,'Legacy');
+await db.close();console.log('V14 up/down/reapply and guarded rollback PASS');

@@ -49,6 +49,7 @@ public class RenderService {
     private final RenderServiceClient renderClient;
     private final AuthService authService;
     private final IntegrationProperties properties;
+    private final ClipArtifactService clipArtifactService;
 
     /**
      * Queues a render of the project's current script version.
@@ -59,6 +60,7 @@ public class RenderService {
     @Transactional
     public RenderJobResponse start(String projectId, StartRenderRequest request, String currentUserId) {
         ClipProject project = scriptService.getOrThrow(projectId);
+        scriptService.requireActive(project);
 
         if (project.getScriptStatus() != ScriptStatus.APPROVED) {
             throw ApiException.badRequest(
@@ -75,8 +77,9 @@ public class RenderService {
             throw ApiException.badRequest("The approved script has no scenes to render");
         }
 
-        RenderResolution resolution = RenderResolution.fromLabel(request.resolution());
-        int fps = request.fps() == null ? project.getFps() : request.fps();
+        // Proposal output contract: clamp legacy requests to 1080p30.
+        RenderResolution resolution = RenderResolution.RES_1080P;
+        int fps = 30;
 
         RenderJob job = renderJobRepository.save(RenderJob.builder()
             .project(project)
@@ -141,11 +144,21 @@ public class RenderService {
             .or(() -> renderJobRepository.findByExternalJobId(callback.jobId()))
             .orElseThrow(() -> ApiException.notFound("RenderJob", callback.jobId()));
 
+        // Duplicate completion and late progress must never undo QA approval,
+        // cancellation or a terminal failure.
+        if (job.getStatus() == RenderStatus.COMPLETED || job.getStatus() == RenderStatus.FAILED) {
+            return RenderJobResponse.from(job, null);
+        }
+        if (callback.status() == RenderStatus.COMPLETED
+                && (callback.videoUrl() == null || callback.videoUrl().isBlank())) {
+            throw ApiException.badRequest("A completed render must include its video URL");
+        }
+
         if (callback.status() != null) {
             job.setStatus(callback.status());
         }
         if (callback.progress() != null) {
-            job.setProgress(Math.max(0, Math.min(100, callback.progress())));
+            job.setProgress(Math.max(job.getProgress(), Math.max(0, Math.min(100, callback.progress()))));
         }
         if (callback.stage() != null) {
             job.setStage(callback.stage());
@@ -161,6 +174,7 @@ public class RenderService {
         ClipProject project = job.getProject();
         if (job.getStatus() == RenderStatus.COMPLETED) {
             job.setProgress(100);
+            clipArtifactService.recordCompleted(job);
             project.setVideoUrl(job.getVideoUrl());
             project.setVideoStatus(VideoStatus.IN_QA);
             projectRepository.save(project);
@@ -203,12 +217,14 @@ public class RenderService {
                 job.getId(),
                 COMPOSITION_ID,
                 toScriptProps(project, scenes),
-                job.getResolution().getWidth(),
-                job.getResolution().getHeight(),
-                job.getFps(),
+                1920,
+                1080,
+                30,
                 job.getTtsVoice()
             );
 
+            job.setResolution(RenderResolution.RES_1080P);
+            job.setFps(30);
             job.setExternalJobId(result.externalJobId());
             job.setStatus(RenderStatus.QUEUED);
             job.setProgress(0);
@@ -316,7 +332,8 @@ public class RenderService {
             payload.put("type", dto.getType().name());
             payload.put("title", dto.getTitle());
             payload.put("narration", dto.getNarration());
-            payload.put("durationInFrames", dto.getDurationInFrames());
+            int sourceFps=project.getFps()==null || project.getFps()<=0 ? 30 : project.getFps();
+            payload.put("durationInFrames", Math.toIntExact(Math.max(1,Math.round(dto.getDurationInFrames()*30.0/sourceFps))));
             payload.putAll(dto.getFlattenedProps());
             sceneProps.add(payload);
         }
@@ -329,7 +346,7 @@ public class RenderService {
         script.put("totalDurationSeconds", project.getTotalDurationSeconds());
         script.put("scriptStatus", project.getScriptStatus().name());
         script.put("videoStatus", project.getVideoStatus().name());
-        script.put("fps", project.getFps());
+        script.put("fps", 30);
         script.put("scenes", sceneProps);
         script.put("createdAt", String.valueOf(project.getCreatedAt()));
         return script;

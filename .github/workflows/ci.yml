@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, deploy/render-staging]
   pull_request:
     branches: [main]
 
@@ -12,6 +12,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ai:
+    name: AI service contract
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: services/ai/requirements.lock
+      - run: pip install -r requirements.lock
+      - run: pytest -q
+
   backend:
     name: Backend (Java 17)
     runs-on: ubuntu-latest

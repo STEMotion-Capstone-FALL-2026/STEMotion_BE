@@ -87,16 +87,20 @@ public class FeedbackController {
     @PostMapping("/scripts/{projectId}/approve-video")
     @Operation(summary = "Sign off the rendered clip once every note is resolved")
     @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
-    public ResponseEntity<Void> approveVideo(@PathVariable String projectId) {
-        feedbackService.approveVideo(projectId);
+    public ResponseEntity<Void> approveVideo(@PathVariable String projectId,
+            @AuthenticationPrincipal UserDetails principal,
+            @RequestBody(required = false) com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest request) {
+        feedbackService.approveVideo(projectId, principal.getUsername(), request == null ? null : request.note());
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/scripts/{projectId}/send-back")
     @Operation(summary = "Return the clip to the producer for a re-render")
     @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
-    public ResponseEntity<Void> sendBack(@PathVariable String projectId) {
-        feedbackService.sendBackToProduction(projectId);
+    public ResponseEntity<Void> sendBack(@PathVariable String projectId,
+            @AuthenticationPrincipal UserDetails principal,
+            @RequestBody(required = false) com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest request) {
+        feedbackService.sendBackToProduction(projectId, principal.getUsername(), request == null ? null : request.note());
         return ResponseEntity.noContent().build();
     }
 }

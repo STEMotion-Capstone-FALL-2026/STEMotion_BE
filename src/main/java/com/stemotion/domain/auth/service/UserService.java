@@ -2,6 +2,9 @@ package com.stemotion.domain.auth.service;
 
 import com.stemotion.core.exception.ApiException;
 import com.stemotion.domain.auth.dto.AuthDtos.UpdateUserRequest;
+import com.stemotion.domain.auth.dto.AuthDtos.RegisterRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import com.stemotion.domain.auth.dto.AuthDtos.UserResponse;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.repository.UserRepository;
@@ -16,6 +19,21 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserResponse create(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw ApiException.conflict("Email is already registered");
+        }
+        User user = User.builder().fullName(request.fullName()).email(request.email())
+            .passwordHash(passwordEncoder.encode(request.password()))
+            .role(request.role() == null ? User.UserRole.WRITER : request.role())
+            .status(User.UserStatus.ACTIVE).build();
+        // Return the account only, never a JWT belonging to the new user.
+        return UserResponse.from(userRepository.save(user));
+    }
 
     @Transactional(readOnly = true)
     public List<UserResponse> findAll() {

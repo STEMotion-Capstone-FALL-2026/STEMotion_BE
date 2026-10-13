@@ -8,7 +8,6 @@ import com.stemotion.domain.auth.dto.AuthDtos.RegisterRequest;
 import com.stemotion.domain.auth.dto.AuthDtos.UserResponse;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.repository.UserRepository;
-import com.stemotion.domain.workspace.service.WorkspaceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,26 +20,10 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final WorkspaceService workspaceService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw ApiException.conflict("Email '" + request.email() + "' is already registered");
-        }
-
-        User user = User.builder()
-            .fullName(request.fullName())
-            .email(request.email())
-            .passwordHash(passwordEncoder.encode(request.password()))
-            .role(request.role() == null ? User.UserRole.WRITER : request.role())
-            .status(User.UserStatus.ACTIVE)
-            .build();
-
-        User saved = userRepository.save(user);
-        // Seats invited by email before this account existed become active now.
-        workspaceService.linkPendingInvitations(saved);
-        return buildAuthResponse(saved);
+        throw ApiException.forbidden("Public registration is disabled. Contact an administrator for an account");
     }
 
     @Transactional(readOnly = true)

@@ -1,11 +1,13 @@
 package com.stemotion.domain.ai.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stemotion.domain.ai.dto.AiDtos.AiAction;
 import com.stemotion.domain.ai.dto.AiDtos.AiActionResponse;
 import com.stemotion.domain.ai.dto.AiDtos.GenerateScriptRequest;
 import com.stemotion.domain.ai.dto.AiDtos.ScriptActionRequest;
-import com.stemotion.integration.client.GeminiClient;
+import com.stemotion.integration.client.AiGateway;
 import com.stemotion.integration.config.IntegrationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +32,10 @@ public class AiScriptService {
         Respond only with JSON that satisfies the provided schema.
         """;
 
-    private final GeminiClient geminiClient;
+    /** Shown in place of an icon the renderer does not know. */
+    private static final String FALLBACK_ICON = "sparkle";
+
+    private final AiGateway geminiClient;
     private final IntegrationProperties properties;
 
     /** Drafts a complete script the writer can then edit scene by scene. */
@@ -165,13 +170,50 @@ public class AiScriptService {
 
     private AiActionResponse call(AiAction action, String prompt, Map<String, Object> schema) {
         long startedAt = System.currentTimeMillis();
-        JsonNode result = geminiClient.generateJson(SYSTEM_INSTRUCTION, prompt, schema);
+        String instruction = SYSTEM_INSTRUCTION;
+        if (action == null || action == AiAction.resegment) {
+            instruction += "\nFor icons[].name and suggestedIcons[], use only these exact names: "
+                + String.join(", ", StemIconCatalog.NAMES) + ".";
+        }
+        var generation = geminiClient.generateJson(action==null || action==AiAction.resegment ? com.stemotion.domain.ai.entity.AiRequest.RequestType.SEGMENTATION : com.stemotion.domain.ai.entity.AiRequest.RequestType.ANALYSIS,instruction, prompt, schema);
+        JsonNode result = generation.result();
+        replaceUnknownIcons(result);
         long elapsed = System.currentTimeMillis() - startedAt;
 
         if (elapsed > 15_000) {
             log.warn("AI action {} took {} ms, over the 15s target", action, elapsed);
         }
 
-        return new AiActionResponse(action, result, properties.getGemini().getModel(), elapsed);
+        return new AiActionResponse(action, result, generation.model(), elapsed, generation.requestId());
+    }
+
+    /**
+     * Icon names the renderer cannot draw are swapped for the neutral sparkle
+     * before the result reaches the writer. Regenerating a whole script over
+     * one icon would spend the limited AI quota, and the producer reviews every
+     * icon anyway.
+     */
+    private void replaceUnknownIcons(JsonNode result) {
+        if (result == null) return;
+        for (JsonNode scene : result.path("scenes")) {
+            for (JsonNode icon : scene.path("icons")) {
+                if (icon instanceof ObjectNode node && !isKnownIcon(node.path("name"))) {
+                    log.warn("AI suggested unknown icon {}, using {}", node.path("name"), FALLBACK_ICON);
+                    node.put("name", FALLBACK_ICON);
+                }
+            }
+            if (scene.path("suggestedIcons") instanceof ArrayNode suggested) {
+                for (int i = 0; i < suggested.size(); i++) {
+                    if (!isKnownIcon(suggested.get(i))) {
+                        log.warn("AI suggested unknown icon {}, using {}", suggested.get(i), FALLBACK_ICON);
+                        suggested.set(i, FALLBACK_ICON);
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean isKnownIcon(JsonNode name) {
+        return name.isTextual() && StemIconCatalog.isKnown(name.asText());
     }
 }

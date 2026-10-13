@@ -43,7 +43,7 @@ public class ClipProject extends BaseEntity {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Enumerated(EnumType.STRING)
+    @jakarta.persistence.Convert(converter = com.stemotion.core.enums.StemSubjectConverter.class)
     @Column(name = "subject", nullable = false)
     private StemSubject subject;
 

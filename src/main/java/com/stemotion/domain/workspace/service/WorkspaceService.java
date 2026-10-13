@@ -19,11 +19,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.Instant;
+import java.time.Duration;
+import java.util.Locale;
+import java.util.Base64;
+import java.security.SecureRandom;
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
+import com.stemotion.domain.workspace.dto.WorkspaceDtos.InvitationResponse;
 
 /**
  * Subject departments and their membership. Inviting a teacher who has no
- * account yet records the email only; the seat activates when that email
- * registers and {@link #linkPendingInvitations(User)} runs.
+ * account yet records an inactive seat. Acceptance requires a one-time token
+ * delivered privately by the administrator, plus a matching signed-in account.
  */
 @Service
 @RequiredArgsConstructor
@@ -42,6 +50,7 @@ public class WorkspaceService {
     @Transactional(readOnly = true)
     public List<WorkspaceResponse> findMine(String userId) {
         return memberRepository.findByUserId(userId).stream()
+            .filter(member -> member.getStatus() == MemberStatus.ACTIVE)
             .map(WorkspaceMember::getWorkspace)
             .map(this::toResponse)
             .toList();
@@ -103,35 +112,73 @@ public class WorkspaceService {
     }
 
     @Transactional
-    public MemberResponse invite(String workspaceId, InviteMemberRequest request) {
+    public InvitationResponse invite(String workspaceId, InviteMemberRequest request) {
         Workspace workspace = getOrThrow(workspaceId);
+        String email = request.email().strip().toLowerCase(Locale.ROOT);
+        WorkspaceMember member = memberRepository
+            .findByWorkspaceIdAndInvitedEmailIgnoreCase(workspaceId, email)
+            .orElseGet(() -> WorkspaceMember.builder().workspace(workspace).invitedEmail(email).build());
+        if (member.getStatus() == MemberStatus.ACTIVE) {
+            throw ApiException.conflict("This account is already an active member");
+        }
+        byte[] bytes = new byte[32];
+        new SecureRandom().nextBytes(bytes);
+        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        member.setUser(null);
+        member.setRole(request.role());
+        member.setStatus(MemberStatus.INVITED);
+        member.setInvitationTokenHash(hashToken(token));
+        member.setInvitationExpiresAt(Instant.now().plus(Duration.ofDays(7)));
+        member = memberRepository.save(member);
+        return new InvitationResponse(MemberResponse.from(member), token, member.getInvitationExpiresAt());
+    }
 
-        memberRepository.findByWorkspaceIdAndInvitedEmail(workspaceId, request.email())
-            .ifPresent(existing -> {
-                throw ApiException.conflict(request.email() + " has already been invited to this workspace");
-            });
+    @Transactional
+    public MemberResponse acceptInvitation(String token, String userId) {
+        if (token == null || !token.matches("[A-Za-z0-9_-]{43}")) {
+            throw ApiException.badRequest("Invalid or expired invitation");
+        }
+        WorkspaceMember member = memberRepository.findByInvitationTokenHash(hashToken(token))
+            .orElseThrow(() -> ApiException.badRequest("Invalid or expired invitation"));
+        if (member.getStatus() != MemberStatus.INVITED || member.getInvitationExpiresAt() == null
+            || !member.getInvitationExpiresAt().isAfter(Instant.now())) {
+            throw ApiException.badRequest("Invalid or expired invitation");
+        }
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> ApiException.notFound("User", userId));
+        if (user.getStatus() != User.UserStatus.ACTIVE
+            || !member.getInvitedEmail().equalsIgnoreCase(user.getEmail())) {
+            throw ApiException.forbidden("Sign in with the account this invitation was issued to");
+        }
+        member.setUser(user);
+        member.setStatus(MemberStatus.ACTIVE);
+        member.setInvitationTokenHash(null);
+        member.setInvitationExpiresAt(null);
+        return MemberResponse.from(memberRepository.save(member));
+    }
 
-        User existingUser = userRepository.findByEmail(request.email()).orElse(null);
-
-        WorkspaceMember member = memberRepository.save(WorkspaceMember.builder()
-            .workspace(workspace)
-            .user(existingUser)
-            .invitedEmail(request.email())
-            .role(request.role())
-            .status(existingUser == null ? MemberStatus.INVITED : MemberStatus.ACTIVE)
-            .build());
-
-        return MemberResponse.from(member);
+    private static String hashToken(String token) {
+        try {
+            return java.util.HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                .digest(token.getBytes(StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException(impossible);
+        }
     }
 
     @Transactional
     public MemberResponse updateMember(String workspaceId, String memberId, UpdateMemberRequest request) {
         WorkspaceMember member = memberOrThrow(workspaceId, memberId);
+        if (request.status() == MemberStatus.ACTIVE && member.getStatus() != MemberStatus.ACTIVE) {
+            throw ApiException.badRequest("An inactive seat must accept a new invitation before activation");
+        }
         if (request.role() != null) {
             member.setRole(request.role());
         }
         if (request.status() != null) {
             member.setStatus(request.status());
+            member.setInvitationTokenHash(null);
+            member.setInvitationExpiresAt(null);
         }
         return MemberResponse.from(memberRepository.save(member));
     }
@@ -139,19 +186,6 @@ public class WorkspaceService {
     @Transactional
     public void removeMember(String workspaceId, String memberId) {
         memberRepository.delete(memberOrThrow(workspaceId, memberId));
-    }
-
-    /** Called after registration so seats invited by email become active. */
-    @Transactional
-    public void linkPendingInvitations(User user) {
-        memberRepository.findAll().stream()
-            .filter(member -> member.getUser() == null)
-            .filter(member -> member.getInvitedEmail().equalsIgnoreCase(user.getEmail()))
-            .forEach(member -> {
-                member.setUser(user);
-                member.setStatus(MemberStatus.ACTIVE);
-                memberRepository.save(member);
-            });
     }
 
     @Transactional(readOnly = true)

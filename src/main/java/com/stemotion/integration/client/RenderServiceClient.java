@@ -6,11 +6,13 @@ import com.stemotion.integration.config.IntegrationProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
+import java.time.Duration;
 
 /**
  * Talks to the external Node + Remotion render service.
@@ -28,14 +30,22 @@ public class RenderServiceClient {
 
     public RenderServiceClient(IntegrationProperties properties) {
         this.properties = properties;
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(Duration.ofSeconds(5));
+        requestFactory.setReadTimeout(Duration.ofSeconds(properties.getRender().getTimeoutSeconds()));
         this.restClient = RestClient.builder()
             .baseUrl(properties.getRender().getBaseUrl())
+            .requestFactory(requestFactory)
             .build();
     }
 
     public boolean isConfigured() {
         String baseUrl = properties.getRender().getBaseUrl();
-        return baseUrl != null && !baseUrl.isBlank();
+        String apiKey = properties.getRender().getApiKey();
+        String callbackUrl = properties.getRender().getCallbackUrl();
+        return baseUrl != null && !baseUrl.isBlank()
+            && apiKey != null && !apiKey.isBlank()
+            && callbackUrl != null && !callbackUrl.isBlank();
     }
 
     /**
@@ -53,16 +63,20 @@ public class RenderServiceClient {
         int fps,
         String ttsVoice
     ) {
-        Map<String, Object> body = Map.of(
+        if (!isConfigured()) {
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "RENDER_NOT_CONFIGURED",
+                "Render service URL, shared key and callback URL must be configured");
+        }
+        Map<String, Object> body = new java.util.LinkedHashMap<>(Map.of(
             "jobId", jobId,
             "composition", composition,
             "inputProps", Map.of("script", script),
             "width", width,
             "height", height,
             "fps", fps,
-            "ttsVoice", ttsVoice == null ? "banmai" : ttsVoice,
             "callbackUrl", properties.getRender().getCallbackUrl()
-        );
+        ));
+        if(ttsVoice!=null && !ttsVoice.isBlank()) body.put("ttsVoice",ttsVoice);
 
         try {
             JsonNode response = restClient.post()

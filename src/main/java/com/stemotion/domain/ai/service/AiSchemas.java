@@ -59,8 +59,8 @@ final class AiSchemas {
             List.of("label", "value")
         );
 
-        // Gemini's responseSchema rejects large enums (110 items) with HTTP 400
-        // INVALID_ARGUMENT; the allowed icon names are supplied in the prompt.
+        // A large icon enum makes Gemini reject this nested schema with HTTP 400.
+        // Supply the catalog in the instruction and validate generated names locally.
         Map<String, Object> flatIcon = object(
             Map.of(
                 "name", str(),
@@ -123,7 +123,7 @@ final class AiSchemas {
         return object(
             Map.of(
                 "isValidStemTopic", Map.of("type", "BOOLEAN"),
-                "fallbackMessage", str(),
+                "fallbackMessage", Map.of("type", "STRING", "nullable", true),
                 "title", str(),
                 "gradeLevel", str(),
                 "totalDurationSeconds", num(),
