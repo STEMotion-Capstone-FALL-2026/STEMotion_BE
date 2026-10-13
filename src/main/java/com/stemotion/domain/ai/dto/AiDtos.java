@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.stemotion.core.enums.StemEnums.StemSubject;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
@@ -33,8 +34,15 @@ public final class AiDtos {
         @NotBlank(message = "gradeLevel is required")
         String gradeLevel,
 
-        Integer targetDurationSec
-    ) {}
+        Integer targetDurationSec,
+
+        @Size(max = 500, message = "narrativeBrief must be at most 500 characters")
+        String narrativeBrief
+    ) {
+        public GenerateScriptRequest(String topic, StemSubject subject, String gradeLevel, Integer targetDurationSec) {
+            this(topic, subject, gradeLevel, targetDurationSec, null);
+        }
+    }
 
     public record ScriptActionRequest(
         @NotNull(message = "action is required")

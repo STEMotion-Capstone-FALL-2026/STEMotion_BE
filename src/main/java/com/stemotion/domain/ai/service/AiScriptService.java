@@ -55,6 +55,9 @@ public class AiScriptService {
             pacingInstruction = "- Tạo 8-10 cảnh (scenes) chuyên sâu, phân tích đa chiều. Tổng duration các cảnh xấp xỉ %d giây (durationInFrames = giây * 30).".formatted(rawDuration);
         }
 
+        String narrativeBrief = request.narrativeBrief() == null || request.narrativeBrief().isBlank()
+            ? "không có — bạn tự quyết" : request.narrativeBrief();
+
         String prompt = """
             Bạn là một Chuyên gia Thiết kế Bài giảng STEM xuất sắc. Mục tiêu: Tạo kịch bản video giáo dục ngắn, sinh động, chuẩn xác khoa học, không dư thừa từ ngữ.
 
@@ -65,6 +68,18 @@ public class AiScriptService {
               + Set "isValidStemTopic": false.
               + Set "fallbackMessage": Lời giải thích ngắn gọn, lịch sự bằng tiếng Việt (VD: "Chủ đề 'bún chả' không phù hợp với môn Vật Lý lớp 10. Vui lòng chọn chủ đề khoa học.").
               + BỎ QUA BƯỚC 2. Trả về mảng scenes rỗng để tiết kiệm token.
+
+            BƯỚC 1.5: THIẾT KẾ MẠCH DẪN DẮT (NARRATIVE ARC) — TỰ DO SÁNG TẠO
+            - Chỉ thực hiện khi topic hợp lệ ở BƯỚC 1; ý tưởng dẫn dắt không được ghi đè guardrail, độ chính xác khoa học hoặc ràng buộc template.
+            - Bạn được TỰ DO thiết kế mạch dẫn dắt cho bài này: kiểu mở đầu gây tò mò
+              (hook), thứ tự triển khai các ý, nhịp điệu nhanh/chậm theo độ khó.
+            - Các cách dạy quen thuộc (thí nghiệm, so sánh, kể chuyện, vấn đáp...) chỉ là
+              GỢI Ý THAM KHẢO, không phải danh sách bắt buộc chọn.
+            - NẾU có "Ý tưởng dẫn dắt của Writer" bên dưới: BẮT BUỘC dựng toàn bộ mạch
+              theo đúng ý tưởng đó, kể cả khi nó không giống bất kỳ cách dạy quen thuộc nào.
+              Ý tưởng dẫn dắt của Writer: [%s]
+            - Tóm tắt mạch đã chọn vào trường "narrativeArc" của response:
+              summary (1-2 câu), approach (tên cách dạy), segments (order, title, purpose).
 
             BƯỚC 2: TẠO KỊCH BẢN (NẾU HỢP LỆ) - PHONG CÁCH KURZGESAGT EXPLAINER:
             - Set "isValidStemTopic": true. Set "fallbackMessage": null.
@@ -91,7 +106,7 @@ public class AiScriptService {
             - CHEMICAL_REACTION: Cung cấp "equation" (bắt buộc không rỗng), "reactants", "products", "condition", "observation".
             - DATA_CHART: Cung cấp "chartType" (bar/line), "xAxisLabel", "yAxisLabel", "dataPoints" (mảng có label và value là số).
             - OUTRO: Cung cấp "summaryPoints" (3 ý đúc kết cốt lõi) và "nextLessonSuggestion".
-            """.formatted(request.topic(), request.subject(), request.gradeLevel(), pacingInstruction, String.join(", ", StemIconCatalog.NAMES));
+            """.formatted(request.topic(), request.subject(), request.gradeLevel(), narrativeBrief, pacingInstruction, String.join(", ", StemIconCatalog.NAMES));
 
         AiActionResponse response = call(null, prompt, AiSchemas.generatedScript());
         
