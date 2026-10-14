@@ -32,7 +32,9 @@ public final class StemEnums {
         COMPARISON_SPLIT,
         PROCESS_TIMELINE,
         GEOMETRY_SPACE,
-        ILLUSTRATED_EXPLAINER
+        ILLUSTRATED_EXPLAINER,
+        /** Assembled from blocks by the AI or the producer instead of a fixed template. */
+        COMPOSED
     }
 
     /** Editorial state of the written script. */

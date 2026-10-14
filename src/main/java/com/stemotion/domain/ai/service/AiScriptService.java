@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stemotion.domain.ai.dto.AiDtos.AiAction;
 import com.stemotion.domain.ai.dto.AiDtos.AiActionResponse;
+import com.stemotion.domain.ai.dto.AiDtos.ApproachRequest;
+import com.stemotion.domain.ai.entity.AiRequest;
 import com.stemotion.domain.ai.dto.AiDtos.GenerateScriptRequest;
 import com.stemotion.domain.ai.dto.AiDtos.ScriptActionRequest;
 import com.stemotion.integration.client.AiGateway;
@@ -58,6 +60,20 @@ public class AiScriptService {
             pacingInstruction = "- Tạo 8-10 cảnh (scenes) chuyên sâu, phân tích đa chiều. Tổng duration các cảnh xấp xỉ %d giây (durationInFrames = giây * 30).".formatted(rawDuration);
         }
 
+        String approach = request.approach() == null ? "" : request.approach().strip();
+        String approachInstruction = approach.isEmpty()
+            ? """
+                - CÁCH DẪN DẮT: tự sáng tạo MỘT cách dẫn dắt hợp nhất với bài này. Không có khuôn mẫu bắt buộc:
+                  có thể bắt đầu bằng câu hỏi, thí nghiệm, một hiểu lầm phổ biến, ứng dụng đời sống, lịch sử khám phá,
+                  bài toán mẫu, phép ví von, so sánh, trò chơi đố vui, cuộc điều tra, phỏng vấn một nhân vật khoa học...
+                  hoặc một cách hoàn toàn khác. Ghi tên cách đó vào "approachName" và các bước của mạch vào "flow".
+                """
+            : """
+                - CÁCH DẪN DẮT DO NGƯỜI VIẾT CHỌN (bắt buộc theo, dựng TOÀN BỘ mạch video quanh ý này):
+                  «%s»
+                  Ghi tên cách dẫn dắt vào "approachName" và các bước của mạch vào "flow".
+                """.formatted(approach);
+
         String prompt = """
             Bạn là một Chuyên gia Thiết kế Bài giảng STEM xuất sắc. Mục tiêu: Tạo kịch bản video giáo dục ngắn, sinh động, chuẩn xác khoa học, không dư thừa từ ngữ.
 
@@ -72,16 +88,35 @@ public class AiScriptService {
             BƯỚC 2: TẠO KỊCH BẢN (NẾU HỢP LỆ) - PHONG CÁCH KURZGESAGT EXPLAINER:
             - Set "isValidStemTopic": true. Set "fallbackMessage": null.
             %s
+            %s
             - Yêu cầu chất lượng khắt khe:
-              + Cảnh 1 LUÔN dùng template TITLE_HERO.
-              + Các cảnh giữa: ƯU TIÊN dùng nhiều cảnh ILLUSTRATED_EXPLAINER (xen kẽ các layout "focus", "row", "swarm", "cluster", "exchange", "zoom" và các ambience khác nhau) kết hợp PROCESS_TIMELINE, COMPARISON_SPLIT hoặc MATH_FORMULA / CHEMICAL_REACTION / DATA_CHART khi cần.
+              + Cảnh mở đầu phục vụ cách dẫn dắt: một câu hỏi, một tình huống, một con số gây tò mò (dùng COMPOSED) hoặc TITLE_HERO.
+              + Các cảnh giữa: ƯU TIÊN COMPOSED để hình thức mỗi cảnh đi theo đúng mạch dẫn dắt; xen ILLUSTRATED_EXPLAINER
+                (layout "focus", "row", "swarm", "cluster", "exchange", "zoom") khi cần minh hoạ, và PROCESS_TIMELINE,
+                COMPARISON_SPLIT, MATH_FORMULA, CHEMICAL_REACTION, DATA_CHART khi nội dung khớp đúng khuôn đó.
               + Mỗi cảnh ILLUSTRATED_EXPLAINER nên dựng quanh MỘT ẨN DỤ HÌNH ẢNH cụ thể (VD: electron là quả bóng được chuyền, tế bào là nhà máy, hệ miễn dịch là đội quân) thay vì liệt kê khái niệm; ẩn dụ phải đúng bản chất khoa học.
               + Cảnh cuối LUÔN dùng template OUTRO.
+              + Hai cảnh liền nhau không nên giống nhau về hình thức (đổi frame, đổi loại khối).
               + KHÔNG dùng STEM_QUIZ, DIAGRAM_EXPLAINER hay GEOMETRY_SPACE.
               + Nội dung khoa học, công thức phải CHÍNH XÁC TUYỆT ĐỐI.
               + Lời thoại (narration) súc tích, cuốn hút kiểu kể chuyện khoa học (tối đa 2.2 từ/giây).
 
             YÊU CẦU ĐẶC THÙ CHO CÁC TEMPLATE STEM:
+            - COMPOSED (cảnh lắp ghép, tự do hình thức): cung cấp "frame" và "blocks" (2-6 khối).
+              "frame" chia màn hình thành các ô không chồng nhau: center (top, main, bottom); split (top, left, right, bottom);
+              thirds (top, left, middle, right, bottom); grid (top, tl, tr, bl, br); sidebar (top, main, side).
+              Mỗi khối có "id" (ngắn, duy nhất trong cảnh), "kind", "slot" (một ô của frame) và nội dung theo loại:
+              title/text: "text" (tối đa 12 từ cho title, 25 từ cho text); list: "items" (2-5 ý ngắn);
+              formula: "latex" (đúng cú pháp KaTeX); icon: "icon" {name, label}; icons: "icons" (2-5);
+              number: "value" (số), "unit", "text" (nhãn); chart: "points" [{label, value}] và "unit";
+              choice: "question", "options" (2-4), "answer" (chỉ số đáp án đúng, đếm từ 0), "revealAt";
+              guide: nhân vật dẫn chuyện, "pose" (idle/point) và "text" (lời thoại ngắn trong bong bóng);
+              arrow: "from" và "to" là id của hai khối khác (không cần slot); highlight: "to" là id khối cần nhấn mạnh.
+              Thời điểm: "at" là MỘT cụm 1-3 từ CHÉP NGUYÊN VĂN từ "narration" của cảnh, lúc khối xuất hiện;
+              "until" (cụm từ lúc khối biến mất, để khối khác thay chỗ), "strikeAt" (gạch bỏ một ý sai), "revealAt" (lật đáp án).
+              Tuỳ chọn: "motion" (pop, rise, slide, draw, type, count), "emphasis" (none, pulse, float, shake),
+              "tone" (default, accent, good: ý đúng, bad: ý sai). Mọi biểu tượng dùng tên trong danh sách cho phép bên dưới.
+              Cũng cung cấp "ambience" như ILLUSTRATED_EXPLAINER.
             - ILLUSTRATED_EXPLAINER (Trọng tâm): dùng để hình dung trực quan (cấu tạo, vai trò, chuỗi nhân quả, đám mây hạt).
               Cung cấp "headline" (tối đa 8 từ), "caption" (một câu ngắn), "ambience" (space: vũ trụ/vật lý; cell: sinh học;
               lab: hóa học/thí nghiệm; ocean: nước/Trái Đất; lilac, sky: nền sáng pastel xen kẽ với nền tối),
@@ -98,7 +133,7 @@ public class AiScriptService {
             - CHEMICAL_REACTION: Cung cấp "equation" (bắt buộc không rỗng), "reactants", "products", "condition", "observation".
             - DATA_CHART: Cung cấp "chartType" (bar/line), "xAxisLabel", "yAxisLabel", "dataPoints" (mảng có label và value là số).
             - OUTRO: Cung cấp "summaryPoints" (3 ý đúc kết cốt lõi) và "nextLessonSuggestion".
-            """.formatted(request.topic(), request.subject(), request.gradeLevel(), pacingInstruction, String.join(", ", StemIconCatalog.NAMES));
+            """.formatted(request.topic(), request.subject(), request.gradeLevel(), approachInstruction, pacingInstruction, String.join(", ", StemIconCatalog.NAMES));
 
         AiActionResponse response = call(null, prompt, AiSchemas.generatedScript());
         
@@ -111,6 +146,41 @@ public class AiScriptService {
             throw com.stemotion.core.exception.ApiException.badRequest(fallback);
         }
 
+        return response;
+    }
+
+    /**
+     * Proposes three clearly different ways to lead a video through one lesson.
+     * The writer picks one, edits it, or writes their own before the draft is
+     * generated, so videos on the same lesson do not all follow one pattern.
+     */
+    public AiActionResponse suggestApproaches(ApproachRequest request) {
+        String prompt = """
+            Bài học: [%s] | Môn: [%s] | Cấp độ: [%s]
+
+            Nếu chủ đề không phù hợp hoặc không liên quan đến giáo dục STEM: đặt "isValidStemTopic": false,
+            "fallbackMessage" là lời giải thích ngắn bằng tiếng Việt, "options" rỗng.
+
+            Ngược lại, đặt "isValidStemTopic": true và đề xuất ĐÚNG 3 cách dẫn dắt một video ngắn (60-120 giây)
+            dạy bài này, KHÁC NHAU THẬT SỰ về cách mở đầu và mạch đi (không chỉ đổi lời). Ít nhất một cách phải
+            bất ngờ, sáng tạo (VD: trò chơi đố vui, một cuộc điều tra, phỏng vấn một hạt electron, nhật ký của nhà khoa học,
+            phá một hiểu lầm, thử thách đoán số...). Cả ba phải phù hợp với học sinh %s và giữ kiến thức chính xác.
+
+            Với mỗi cách:
+            - "name": tên ngắn (tối đa 6 từ).
+            - "hook": câu mở đầu video, đúng như sẽ đọc lên (một câu).
+            - "flow": 4-7 bước của mạch, mỗi bước một câu ngắn, từ mở đầu đến chốt kiến thức.
+            - "whyItFits": vì sao cách này giúp học sinh hiểu bài này (một câu).
+            """.formatted(request.topic(), request.subject(), request.gradeLevel(), request.gradeLevel());
+
+        AiActionResponse response = callAs(null, AiRequest.RequestType.ANALYSIS, prompt, AiSchemas.approaches(), false);
+        JsonNode result = response.result();
+        if (result != null && result.has("isValidStemTopic") && !result.get("isValidStemTopic").asBoolean()) {
+            String fallback = result.hasNonNull("fallbackMessage")
+                ? result.get("fallbackMessage").asText()
+                : "Chủ đề bạn nhập không hợp lệ hoặc không liên quan đến giáo dục STEM.";
+            throw com.stemotion.core.exception.ApiException.badRequest(fallback);
+        }
         return response;
     }
 
@@ -200,13 +270,20 @@ public class AiScriptService {
     }
 
     private AiActionResponse call(AiAction action, String prompt, Map<String, Object> schema) {
+        boolean drafting = action == null || action == AiAction.resegment;
+        return callAs(action, drafting ? AiRequest.RequestType.SEGMENTATION : AiRequest.RequestType.ANALYSIS,
+            prompt, schema, drafting);
+    }
+
+    private AiActionResponse callAs(AiAction action, AiRequest.RequestType type, String prompt,
+                                    Map<String, Object> schema, boolean listIcons) {
         long startedAt = System.currentTimeMillis();
         String instruction = SYSTEM_INSTRUCTION;
-        if (action == null || action == AiAction.resegment) {
-            instruction += "\nFor icons[].name and suggestedIcons[], use only these exact names: "
+        if (listIcons) {
+            instruction += "\nFor every icon name (icons[].name, icon.name, suggestedIcons[]), use only these exact names: "
                 + String.join(", ", StemIconCatalog.NAMES) + ".";
         }
-        var generation = geminiClient.generateJson(action==null || action==AiAction.resegment ? com.stemotion.domain.ai.entity.AiRequest.RequestType.SEGMENTATION : com.stemotion.domain.ai.entity.AiRequest.RequestType.ANALYSIS,instruction, prompt, schema);
+        var generation = geminiClient.generateJson(type, instruction, prompt, schema);
         JsonNode result = generation.result();
         replaceUnknownIcons(result);
         long elapsed = System.currentTimeMillis() - startedAt;
@@ -227,7 +304,18 @@ public class AiScriptService {
     private void replaceUnknownIcons(JsonNode result) {
         if (result == null) return;
         // "scenes" for generate and resegment, "options" for metaphor suggestions.
-        for (JsonNode scene : concat(result.path("scenes"), result.path("options"))) {
+        java.util.List<JsonNode> holders = concat(result.path("scenes"), result.path("options"));
+        for (JsonNode scene : java.util.List.copyOf(holders)) {
+            // Blocks of a composed scene carry their own icon or icons.
+            for (JsonNode block : scene.path("blocks")) {
+                holders.add(block);
+                if (block.path("icon") instanceof ObjectNode single && !isKnownIcon(single.path("name"))) {
+                    log.warn("AI suggested unknown icon {}, using {}", single.path("name"), FALLBACK_ICON);
+                    single.put("name", FALLBACK_ICON);
+                }
+            }
+        }
+        for (JsonNode scene : holders) {
             for (JsonNode icon : scene.path("icons")) {
                 if (icon instanceof ObjectNode node && !isKnownIcon(node.path("name"))) {
                     log.warn("AI suggested unknown icon {}, using {}", node.path("name"), FALLBACK_ICON);

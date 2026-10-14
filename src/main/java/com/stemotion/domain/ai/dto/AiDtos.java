@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.stemotion.core.enums.StemEnums.StemSubject;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
@@ -38,7 +39,31 @@ public final class AiDtos {
         @NotBlank(message = "gradeLevel is required")
         String gradeLevel,
 
-        Integer targetDurationSec
+        Integer targetDurationSec,
+
+        /**
+         * How the video should lead the viewer through the lesson, in the
+         * writer's own words or copied from a suggested approach. Empty lets
+         * the AI choose.
+         */
+        @Size(max = 800, message = "approach must be at most 800 characters")
+        String approach
+    ) {
+        public GenerateScriptRequest(String topic, StemSubject subject, String gradeLevel, Integer targetDurationSec) {
+            this(topic, subject, gradeLevel, targetDurationSec, null);
+        }
+    }
+
+    /** Asks for several different ways to lead a video through one lesson. */
+    public record ApproachRequest(
+        @NotBlank(message = "topic is required")
+        String topic,
+
+        @NotNull(message = "subject is required")
+        StemSubject subject,
+
+        @NotBlank(message = "gradeLevel is required")
+        String gradeLevel
     ) {}
 
     public record ScriptActionRequest(

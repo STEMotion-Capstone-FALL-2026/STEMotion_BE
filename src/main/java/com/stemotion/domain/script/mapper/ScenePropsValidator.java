@@ -33,7 +33,8 @@ public class ScenePropsValidator {
         Map.entry(SceneType.PROCESS_TIMELINE, List.of("processTitle", "stages")),
         Map.entry(SceneType.GEOMETRY_SPACE,
             List.of("shapeType", "theoremName", "formulaLatex", "dimensions", "explanation")),
-        Map.entry(SceneType.ILLUSTRATED_EXPLAINER, List.of("headline", "icons"))
+        Map.entry(SceneType.ILLUSTRATED_EXPLAINER, List.of("headline", "icons")),
+        Map.entry(SceneType.COMPOSED, List.of("frame", "blocks"))
     );
 
     private static final List<String> GEOMETRY_SHAPES =
@@ -71,6 +72,7 @@ public class ScenePropsValidator {
             case GEOMETRY_SPACE -> validateGeometry(props);
             case COMPARISON_SPLIT -> validateComparison(props);
             case ILLUSTRATED_EXPLAINER -> validateIllustrated(props);
+            case COMPOSED -> ComposedSceneValidator.validate(props);
             default -> { /* the presence check above is enough */ }
         }
     }

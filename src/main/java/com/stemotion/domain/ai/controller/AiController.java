@@ -46,6 +46,13 @@ public class AiController {
         return ResponseEntity.ok(aiScriptService.generateScript(request));
     }
 
+    @PostMapping("/script/approaches")
+    @Operation(summary = "Suggest three different ways to lead a video through one lesson")
+    public ResponseEntity<AiActionResponse> approaches(
+        @Valid @RequestBody com.stemotion.domain.ai.dto.AiDtos.ApproachRequest request) {
+        return ResponseEntity.ok(aiScriptService.suggestApproaches(request));
+    }
+
     @PostMapping("/script/action")
     @Operation(summary = "Run resegment, grade, extract or terms over a script")
     public ResponseEntity<AiActionResponse> action(@Valid @RequestBody ScriptActionRequest request) {
