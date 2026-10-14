@@ -51,8 +51,8 @@ public class SecurityConfig {
                 // otherwise an expired token reaches the controller with a
                 // null principal instead of being rejected with 401.
                 .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register").permitAll()
-                // AI endpoints consume Gemini quota — restrict to writers and admins
-                .requestMatchers("/api/v1/ai/**").hasAnyRole("WRITER", "ADMIN")
+                // AI endpoints consume Gemini quota — allow any authenticated studio role
+                .requestMatchers("/api/v1/ai/**").authenticated()
                 .requestMatchers("/actuator/health").permitAll()
                 // The render worker authenticates with the shared render API key
                 // validated inside RenderController.callback(), not via JWT.

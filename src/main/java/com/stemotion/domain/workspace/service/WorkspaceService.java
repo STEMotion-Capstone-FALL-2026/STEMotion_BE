@@ -41,10 +41,14 @@ public class WorkspaceService {
 
     @Transactional(readOnly = true)
     public List<WorkspaceResponse> findMine(String userId) {
-        return memberRepository.findByUserId(userId).stream()
+        List<WorkspaceResponse> mine = memberRepository.findByUserId(userId).stream()
             .map(WorkspaceMember::getWorkspace)
             .map(this::toResponse)
             .toList();
+        if (mine.isEmpty()) {
+            return findAll();
+        }
+        return mine;
     }
 
     @Transactional(readOnly = true)
@@ -105,18 +109,27 @@ public class WorkspaceService {
     @Transactional
     public MemberResponse invite(String workspaceId, InviteMemberRequest request) {
         Workspace workspace = getOrThrow(workspaceId);
+        String normalizedEmail = request.email().trim();
 
-        memberRepository.findByWorkspaceIdAndInvitedEmail(workspaceId, request.email())
-            .ifPresent(existing -> {
-                throw ApiException.conflict(request.email() + " has already been invited to this workspace");
-            });
+        WorkspaceMember existingMember = memberRepository
+            .findByWorkspaceIdAndInvitedEmail(workspaceId, normalizedEmail)
+            .orElse(null);
 
-        User existingUser = userRepository.findByEmail(request.email()).orElse(null);
+        User existingUser = userRepository.findByEmail(normalizedEmail).orElse(null);
+
+        if (existingMember != null) {
+            existingMember.setRole(request.role());
+            if (existingUser != null) {
+                existingMember.setUser(existingUser);
+                existingMember.setStatus(MemberStatus.ACTIVE);
+            }
+            return MemberResponse.from(memberRepository.save(existingMember));
+        }
 
         WorkspaceMember member = memberRepository.save(WorkspaceMember.builder()
             .workspace(workspace)
             .user(existingUser)
-            .invitedEmail(request.email())
+            .invitedEmail(normalizedEmail)
             .role(request.role())
             .status(existingUser == null ? MemberStatus.INVITED : MemberStatus.ACTIVE)
             .build());
@@ -141,17 +154,31 @@ public class WorkspaceService {
         memberRepository.delete(memberOrThrow(workspaceId, memberId));
     }
 
-    /** Called after registration so seats invited by email become active. */
+    /** Called after registration so seats invited by email become active, or joins default workspace. */
     @Transactional
     public void linkPendingInvitations(User user) {
-        memberRepository.findAll().stream()
+        List<WorkspaceMember> pending = memberRepository.findAll().stream()
             .filter(member -> member.getUser() == null)
             .filter(member -> member.getInvitedEmail().equalsIgnoreCase(user.getEmail()))
-            .forEach(member -> {
-                member.setUser(user);
-                member.setStatus(MemberStatus.ACTIVE);
-                memberRepository.save(member);
+            .toList();
+
+        for (WorkspaceMember member : pending) {
+            member.setUser(user);
+            member.setStatus(MemberStatus.ACTIVE);
+            memberRepository.save(member);
+        }
+
+        if (memberRepository.findByUserId(user.getId()).isEmpty()) {
+            workspaceRepository.findAllByOrderByNameAsc().stream().findFirst().ifPresent(defaultWorkspace -> {
+                memberRepository.save(WorkspaceMember.builder()
+                    .workspace(defaultWorkspace)
+                    .user(user)
+                    .invitedEmail(user.getEmail())
+                    .role(user.getRole())
+                    .status(MemberStatus.ACTIVE)
+                    .build());
             });
+        }
     }
 
     @Transactional(readOnly = true)
