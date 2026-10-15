@@ -135,7 +135,7 @@ public class ScriptController {
     }
 
     @DeleteMapping("/scripts/{id}")
-    @PreAuthorize("@workspaceAccess.hasProjectRole(#id, authentication.name, 'WRITER')")
+    @PreAuthorize("@workspaceAccess.canArchiveProject(#id, authentication.name)")
     public ResponseEntity<Void> delete(@PathVariable String id, @AuthenticationPrincipal UserDetails principal) {
         scriptService.delete(id, principal.getUsername());
         return ResponseEntity.noContent().build();

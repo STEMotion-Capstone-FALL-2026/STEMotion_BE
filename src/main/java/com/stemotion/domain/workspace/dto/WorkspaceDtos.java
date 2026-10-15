@@ -1,5 +1,7 @@
 package com.stemotion.domain.workspace.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import com.stemotion.core.enums.StemEnums.MemberStatus;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.workspace.entity.WorkspaceMember;
@@ -36,12 +38,15 @@ public final class WorkspaceDtos {
         @NotNull(message = "role is required")
         User.UserRole role,
 
+        /** The front end sends "isLeader", the name used in every response. */
+        @JsonAlias("isLeader")
         Boolean leader
     ) {}
 
     public record UpdateMemberRequest(
         User.UserRole role,
         MemberStatus status,
+        @JsonAlias("isLeader")
         Boolean leader
     ) {}
 

@@ -7,6 +7,7 @@ import com.stemotion.domain.auth.repository.UserRepository;
 import com.stemotion.domain.project.entity.ClipProject;
 import com.stemotion.domain.project.repository.ClipProjectRepository;
 import com.stemotion.domain.production.repository.RenderJobRepository;
+import com.stemotion.domain.review.repository.FeedbackCommentRepository;
 import com.stemotion.domain.workspace.repository.WorkspaceMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -23,10 +24,34 @@ public class WorkspaceAccess {
     private final WorkspaceMemberRepository members;
     private final ClipProjectRepository projects;
     private final RenderJobRepository jobs;
+    private final FeedbackCommentRepository comments;
 
     @Transactional(readOnly = true)
     public boolean isAdmin(String userId) {
         return users.findById(userId).map(u -> u.getRole() == User.UserRole.ADMIN).orElse(false);
+    }
+
+    /**
+     * Archiving removes a project for the whole workspace, so it is kept to the
+     * person responsible for it (the owner), the workspace leader and admins.
+     */
+    @Transactional(readOnly = true)
+    public boolean canArchiveProject(String projectId, String userId) {
+        if (isAdmin(userId)) return true;
+        return projects.findById(projectId)
+            .map(project -> project.getOwner().getId().equals(userId)
+                || isLeader(project.getWorkspace().getId(), userId))
+            // A missing project is reported as 404 by the service, not as 403 here.
+            .orElse(true);
+    }
+
+    /** Role check for a QA comment, through the project it belongs to. */
+    @Transactional(readOnly = true)
+    public boolean hasCommentRole(String commentId, String userId, String... roleNames) {
+        if (isAdmin(userId)) return true;
+        return comments.findById(commentId)
+            .map(comment -> hasProjectRole(comment.getProject().getId(), userId, roleNames))
+            .orElse(true);
     }
 
     @Transactional(readOnly = true)

@@ -3,6 +3,7 @@ package com.stemotion.domain.review.service;
 import com.stemotion.core.enums.StemEnums.FeedbackStatus;
 import com.stemotion.core.enums.StemEnums.VideoStatus;
 import com.stemotion.core.exception.ApiException;
+import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.service.AuthService;
 import com.stemotion.domain.project.entity.ClipProject;
 import com.stemotion.domain.project.repository.ClipProjectRepository;
@@ -99,8 +100,14 @@ public class FeedbackService {
     }
 
     @Transactional
-    public void delete(String commentId) {
-        feedbackRepository.delete(getOrThrow(commentId));
+    public void delete(String commentId, String actorId) {
+        FeedbackComment comment = getOrThrow(commentId);
+        User actor = authService.findUserOrThrow(actorId);
+        boolean author = comment.getAuthor() != null && comment.getAuthor().getId().equals(actorId);
+        if (!author && actor.getRole() != User.UserRole.ADMIN) {
+            throw ApiException.forbidden("Only the author of a note can delete it");
+        }
+        feedbackRepository.delete(comment);
     }
 
     /**

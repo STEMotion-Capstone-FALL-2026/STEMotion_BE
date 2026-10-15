@@ -23,7 +23,7 @@ class WorkspaceAccessTest {
     final WorkspaceMemberRepository members = mock(WorkspaceMemberRepository.class);
     final ClipProjectRepository projects = mock(ClipProjectRepository.class);
     final RenderJobRepository jobs = mock(RenderJobRepository.class);
-    final WorkspaceAccess access = new WorkspaceAccess(users, members, projects, jobs);
+    final WorkspaceAccess access = new WorkspaceAccess(users, members, projects, jobs, mock(com.stemotion.domain.review.repository.FeedbackCommentRepository.class));
 
     void seat(User.UserRole role, MemberStatus status, boolean isLeader) {
         var workspace = new Workspace();

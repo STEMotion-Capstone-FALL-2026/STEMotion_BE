@@ -18,13 +18,22 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     boolean existsByEmail(String email);
 
+    /**
+     * Active accounts that are not yet members of the workspace. The status is
+     * a parameter: Hibernate 6 cannot resolve a nested enum constant written
+     * as a dotted path in JPQL, which stopped the application from starting.
+     */
     @Query("""
         SELECT u FROM User u
-        WHERE u.status = com.stemotion.domain.auth.entity.User.UserStatus.ACTIVE
+        WHERE u.status = :status
           AND u.id NOT IN (
-              SELECT m.user.id FROM com.stemotion.domain.workspace.entity.WorkspaceMember m WHERE m.workspace.id = :workspaceId
+              SELECT m.user.id FROM WorkspaceMember m WHERE m.workspace.id = :workspaceId
           )
         ORDER BY u.fullName ASC
     """)
-    List<User> findCandidatesForWorkspace(@Param("workspaceId") String workspaceId);
+    List<User> findByStatusNotInWorkspace(@Param("workspaceId") String workspaceId, @Param("status") User.UserStatus status);
+
+    default List<User> findCandidatesForWorkspace(String workspaceId) {
+        return findByStatusNotInWorkspace(workspaceId, User.UserStatus.ACTIVE);
+    }
 }

@@ -62,19 +62,27 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackService.findByScene(sceneId));
     }
 
+    /** The producer marks a note fixed; the reviewer may also close it. */
     @PutMapping("/qa-comments/{commentId}/resolve")
+    @PreAuthorize("@workspaceAccess.hasCommentRole(#commentId, authentication.name, 'PRODUCER', 'REVIEWER')")
     public ResponseEntity<FeedbackResponse> resolve(@PathVariable String commentId) {
         return ResponseEntity.ok(feedbackService.resolve(commentId));
     }
 
+    /** Only the reviewer decides that a fix was not good enough. */
     @PutMapping("/qa-comments/{commentId}/reopen")
+    @PreAuthorize("@workspaceAccess.hasCommentRole(#commentId, authentication.name, 'REVIEWER')")
     public ResponseEntity<FeedbackResponse> reopen(@PathVariable String commentId) {
         return ResponseEntity.ok(feedbackService.reopen(commentId));
     }
 
+    /**
+     * Only the author (or an admin) removes a note. Open notes block video
+     * approval, so letting others delete them would let a clip skip QA.
+     */
     @DeleteMapping("/qa-comments/{commentId}")
-    public ResponseEntity<Void> delete(@PathVariable String commentId) {
-        feedbackService.delete(commentId);
+    public ResponseEntity<Void> delete(@PathVariable String commentId, @AuthenticationPrincipal UserDetails principal) {
+        feedbackService.delete(commentId, principal.getUsername());
         return ResponseEntity.noContent().build();
     }
 
