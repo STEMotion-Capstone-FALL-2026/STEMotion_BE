@@ -31,3 +31,7 @@ EMBED_BASE_URL=
 
 # Separate optional shared key for worker -> BE forced alignment endpoint.
 AI_ALIGNMENT_WORKER_KEY=
+
+# Exact provider-model pricing; empty map preserves unknown cost.
+AI_PRICING_JSON={}
+AI_USAGE_ZONE=Asia/Ho_Chi_Minh

@@ -27,3 +27,7 @@ References: [OpenAI structured outputs](https://developers.openai.com/api/docs/g
 ## Caption alignment
 
 `POST /transcribe/align` accepts known narration + uploaded per-scene audio, and returns word timestamps. See `../../docs/AI_ALIGNMENT_CONTRACT.md` for limits, auth, model provisioning, BE proxy and test limitations.
+
+## Usage monitoring
+
+BE owns persisted token/cost estimates and the paginated ADMIN API. See ../../docs/AI_USAGE_CONTRACT.md for env pricing, coverage semantics and the pending manual V15 rollout.

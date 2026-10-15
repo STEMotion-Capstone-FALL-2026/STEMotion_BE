@@ -43,4 +43,7 @@ public class AiRequest extends BaseEntity {
     @Column(name="latency_ms") private Integer latencyMs;
     @Column(name="monetary_cost",precision=20,scale=10) private BigDecimal monetaryCost;
     @Column(name="cost_currency",length=3) private String costCurrency;
+    @Column(name="pricing_version",length=128) private String pricingVersion;
+    @Column(name="pricing_input_per_million",precision=20,scale=10) private BigDecimal pricingInputPerMillion;
+    @Column(name="pricing_output_per_million",precision=20,scale=10) private BigDecimal pricingOutputPerMillion;
 }

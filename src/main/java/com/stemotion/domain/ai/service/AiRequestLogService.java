@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.*;
 public class AiRequestLogService {
     private final AiRequestRepository requests;
     private final UserRepository users;
+    private final AiCostCalculator costs;
 
     @Transactional(propagation=Propagation.REQUIRES_NEW)
     public String start(AiRequest.RequestType type,String model,String requestData) {
@@ -45,7 +46,13 @@ public class AiRequestLogService {
             // Only internal error codes, never provider exception messages/URLs/keys.
             request.setResponseData("{\"error\":\""+failureCode.replaceAll("[^A-Z0-9_]", "")+"\"}");
         }
-        // Monetary cost/currency stay NULL until real pricing is configured.
+        // Stamp the exact rates/version on this request; later config changes cannot reprice history.
+        var estimate = generation == null ? null : costs.estimate(generation.model(), generation.inputTokens(), generation.outputTokens());
+        request.setMonetaryCost(estimate == null ? null : estimate.usd());
+        request.setCostCurrency(estimate == null ? null : "USD");
+        request.setPricingVersion(estimate == null ? null : estimate.price().version());
+        request.setPricingInputPerMillion(estimate == null ? null : estimate.price().inputPerMillion());
+        request.setPricingOutputPerMillion(estimate == null ? null : estimate.price().outputPerMillion());
         requests.saveAndFlush(request);
     }
     @Transactional
