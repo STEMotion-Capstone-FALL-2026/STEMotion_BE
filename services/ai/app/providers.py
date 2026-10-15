@@ -30,3 +30,29 @@ class GeminiProvider:
         usage = getattr(result.get("raw"), "usage_metadata", None) or {}
         return parsed, model, usage
 
+
+
+class OpenAIProvider:
+    """Task routing is explicit; no provider calls happen at import/health time."""
+    async def generate(self, request: GenerationRequest) -> tuple[dict[str, Any], str, dict[str, Any]]:
+        key = os.getenv("OPENAI_API_KEY", "").strip()
+        model = os.getenv("OPENAI_MODEL_DRAFT", "gpt-4o") if request.task == "generate" else os.getenv("OPENAI_MODEL_LIGHT", "gpt-4o-mini")
+        if not key or not model.strip():
+            raise HTTPException(503, "OpenAI provider is not configured")
+        from langchain_openai import ChatOpenAI
+        from langchain_core.messages import HumanMessage, SystemMessage
+        llm = ChatOpenAI(model=model, api_key=key, temperature=0.4, max_retries=2, timeout=55)
+        schema = json_schema(request.responseSchema)
+        schema.setdefault("title", "STEMotionAIResult")
+        schema.setdefault("description", "Structured STEM result; scientific content must not be fabricated")
+        chain = llm.with_structured_output(schema, method="json_schema", strict=False, include_raw=True)
+        response = await asyncio.wait_for(chain.ainvoke([
+            SystemMessage(content=request.systemInstruction), HumanMessage(content=request.prompt)
+        ]), timeout=60)
+        parsed = response.get("parsed")
+        if response.get("parsing_error") or not isinstance(parsed, dict):
+            raise ValueError("Missing structured output or model refusal")
+        raw = response.get("raw")
+        usage = getattr(raw, "usage_metadata", None) or {}
+        metadata = getattr(raw, "response_metadata", None) or {}
+        return parsed, metadata.get("model_name") or model, usage

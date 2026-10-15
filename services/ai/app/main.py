@@ -5,7 +5,7 @@ import os
 import time
 from fastapi import Depends, FastAPI, Header, HTTPException
 from .models import GenerationRequest, GenerationResponse, ScriptInput, AnalysisInput, ActionInput
-from .providers import GeminiProvider
+from .providers import GeminiProvider, OpenAIProvider
 from .schemas import json_schema
 from .prompting import build_request
 from .validation import validate_result
@@ -19,13 +19,21 @@ def require_service_key(x_ai_api_key: str = Header(default="")) -> None:
 
 
 def provider():
-    return GeminiProvider()
+    name = os.getenv("AI_PROVIDER", "openai")
+    if name == "openai":
+        return OpenAIProvider()
+    if name == "gemini":
+        return GeminiProvider()
+    raise HTTPException(503, "Unsupported AI provider configuration")
 
 app = FastAPI(title="STEMotion AI Service", version="2.0.0", docs_url=None, redoc_url=None)
 
 @app.get("/health")
 def health():
-    return {"status": "UP", "configured": bool(os.getenv("AI_SERVICE_KEY") and os.getenv("GEMINI_API_KEY"))}
+    name = os.getenv("AI_PROVIDER", "openai")
+    key_name = "OPENAI_API_KEY" if name == "openai" else "GEMINI_API_KEY" if name == "gemini" else ""
+    return {"status": "UP", "provider": name,
+        "configured": bool(os.getenv("AI_SERVICE_KEY") and key_name and os.getenv(key_name))}
 
 async def execute(request, client, validate_operation=None):
     started = time.monotonic()
