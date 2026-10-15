@@ -1,4 +1,4 @@
--- Migration V16: Admin-provisioned workspace membership and first-login password change.
+-- Migration V17: Admin-provisioned workspace membership and first-login password change.
 --
 -- 1. Data migration for legacy invitation seats:
 --    - Rows in workspace_members with user_id IS NULL (pending email invitations that were never accepted)
@@ -14,7 +14,8 @@
 --    - workspace_members.is_leader BOOLEAN NOT NULL DEFAULT false is added.
 --    - users.must_change_password BOOLEAN NOT NULL DEFAULT false is added.
 
--- Step 1: Temporarily drop or widen status check so that 'INACTIVE' is allowed during data backfill
+-- Step 1: On the varchar baseline drop the status check so 'INACTIVE' is allowed during the backfill.
+-- (On the enum baseline V16 already added INACTIVE, in its own transaction.)
 DO $$
 DECLARE col_type text;
 BEGIN
@@ -22,8 +23,6 @@ BEGIN
         WHERE attrelid = 'workspace_members'::regclass AND attname = 'status';
     IF col_type LIKE 'character varying%' OR col_type = 'text' THEN
         ALTER TABLE workspace_members DROP CONSTRAINT IF EXISTS workspace_members_status_check;
-    ELSE
-        EXECUTE format('ALTER TYPE %s ADD VALUE IF NOT EXISTS %L', col_type, 'INACTIVE');
     END IF;
 END $$;
 

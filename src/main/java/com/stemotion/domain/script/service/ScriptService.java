@@ -69,13 +69,17 @@ public class ScriptService {
             .toList();
     }
 
-    /** The reviewer queue: everything currently awaiting an editorial decision. */
+    /**
+     * The reviewer queue: scripts awaiting a decision in the workspaces where
+     * the user is a reviewer. Workspaces where they only write are left out,
+     * since they could not decide on those scripts anyway.
+     */
     @Transactional(readOnly = true)
     public List<ScriptSummaryResponse> findReviewQueue(String userId) {
         return projectRepository.findByScriptStatusOrderByCreatedAtDesc(ScriptStatus.IN_REVIEW)
             .stream()
             .filter(project -> !Boolean.TRUE.equals(project.getArchived()))
-            .filter(project -> workspaceAccess.canRead(project.getWorkspace().getId(), userId))
+            .filter(project -> workspaceAccess.hasWorkspaceRole(project.getWorkspace().getId(), userId, "REVIEWER"))
             .map(this::toSummary)
             .toList();
     }

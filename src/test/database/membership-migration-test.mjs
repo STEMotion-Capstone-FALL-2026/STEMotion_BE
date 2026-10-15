@@ -28,7 +28,7 @@ for (const file of migrations) {
   await db.exec(sql);
 }
 
-console.log('Seeding baseline data before V16...');
+console.log('Seeding baseline data before V16 and V17...');
 await db.exec(`
   INSERT INTO users (id, created_at, updated_at, full_name, display_name, email, role, status) VALUES
   ('user-1', now(), now(), 'Admin User', 'Admin User', 'admin@example.com', 'ADMIN', 'ACTIVE'),
@@ -51,9 +51,16 @@ await db.exec(`
   ('m-3', now(), now(), 'ws-1', NULL, 'unclaimed@example.com', 'WRITER', 'INVITED');
 `);
 
-console.log('Applying V16 migration...');
-const v16Up = readFileSync('../../main/resources/db/migration/V16__admin_provisioned_membership.sql', 'utf8');
-await db.exec(v16Up);
+// Flyway runs each migration in its own transaction; do the same here.
+const inTransaction = (sql) => db.exec(`BEGIN;
+${sql}
+COMMIT;`);
+const v16Up = readFileSync('../../main/resources/db/migration/V16__member_status_inactive_value.sql', 'utf8');
+const v17Up = readFileSync('../../main/resources/db/migration/V17__admin_provisioned_membership.sql', 'utf8');
+
+console.log('Applying V16 and V17 migrations...');
+await inTransaction(v16Up);
+await inTransaction(v17Up);
 
 // 1. Verify Member 3 was deleted
 const remainingMembers = (await db.query('SELECT * FROM workspace_members ORDER BY id')).rows;
@@ -99,19 +106,61 @@ await assert.rejects(
   /workspace_members_status_check/i
 );
 
-console.log('Testing V16 rollback (down)...');
-const v16Down = readFileSync('../../../docs/rollback/V16__admin_provisioned_membership.down.sql', 'utf8');
-await db.exec(v16Down);
+console.log('Testing V17 rollback (down)...');
+const v17Down = readFileSync('../../../docs/rollback/V17__admin_provisioned_membership.down.sql', 'utf8');
+await db.exec(v17Down);
 
 const rolledBack = (await db.query('SELECT * FROM workspace_members WHERE id = $1', ['m-1'])).rows[0];
 assert.equal(rolledBack.invited_email, 'admin@example.com', 'invited_email restored from user email');
 assert.equal(rolledBack.is_leader, undefined, 'is_leader dropped on rollback');
+assert.equal(rolledBack.role, 'ADMIN', 'a leader goes back to the workspace ADMIN role on rollback');
 
-console.log('Re-applying V16 migration...');
-await db.exec(v16Up);
+console.log('Re-applying V16 and V17 migrations...');
+await inTransaction(v16Up);
+await inTransaction(v17Up);
 
 const reApplied = (await db.query('SELECT * FROM workspace_members WHERE id = $1', ['m-1'])).rows[0];
-assert.equal(reApplied.is_leader, false, 'reapplied column defaults to false unless updated');
+assert.equal(reApplied.is_leader, true, 'the leader survives a rollback and re-apply');
 
 await db.close();
-console.log('V1 -> V16 migration, verification, rollback and re-apply ALL PASSED!');
+
+// The diagram-first Supabase baseline stores member status as an enum without
+// INACTIVE. PostgreSQL rejects a new enum value used in the transaction that
+// added it, which is why V16 adds the value and V17 uses it.
+console.log('Applying V16 and V17 on an enum baseline...');
+for (const hasInactive of [false, true]) {
+  const enumDb = new PGlite();
+  await enumDb.exec(`
+    CREATE TYPE member_status AS ENUM ('INVITED', 'ACTIVE'${hasInactive ? ", 'INACTIVE'" : ''});
+    CREATE TYPE member_role AS ENUM ('WRITER', 'REVIEWER', 'PRODUCER', 'ADMIN');
+    CREATE TABLE users (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), email text);
+    CREATE TABLE workspaces (id uuid PRIMARY KEY DEFAULT gen_random_uuid());
+    CREATE TABLE workspace_members (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), workspace_id uuid REFERENCES workspaces(id),
+      user_id uuid REFERENCES users(id), invited_email text, role member_role NOT NULL,
+      status member_status NOT NULL, invitation_token_hash varchar(64), invitation_expires_at timestamptz,
+      CONSTRAINT uk_workspace_member_email UNIQUE (workspace_id, invited_email));
+    INSERT INTO users (email) VALUES ('lead@example.com'), ('pending@example.com');
+    INSERT INTO workspaces DEFAULT VALUES;
+    INSERT INTO workspace_members (workspace_id, user_id, invited_email, role, status)
+      SELECT w.id, u.id, u.email, CASE WHEN u.email LIKE 'lead%' THEN 'ADMIN' ELSE 'WRITER' END::member_role,
+             CASE WHEN u.email LIKE 'lead%' THEN 'ACTIVE' ELSE 'INVITED' END::member_status
+      FROM users u, workspaces w;
+    INSERT INTO workspace_members (workspace_id, invited_email, role, status)
+      SELECT id, 'unclaimed@example.com', 'WRITER', 'INVITED' FROM workspaces;`);
+  await enumDb.exec(`BEGIN;
+${v16Up}
+COMMIT;`);
+  await enumDb.exec(`BEGIN;
+${v17Up}
+COMMIT;`);
+  const rows = (await enumDb.query(
+    'SELECT u.email, m.status::text AS status, m.is_leader, m.role::text AS role FROM workspace_members m JOIN users u ON u.id = m.user_id ORDER BY u.email')).rows;
+  assert.deepEqual(rows, [
+    { email: 'lead@example.com', status: 'ACTIVE', is_leader: true, role: 'WRITER' },
+    { email: 'pending@example.com', status: 'INACTIVE', is_leader: false, role: 'WRITER' },
+  ], `enum baseline (INACTIVE already present: ${hasInactive})`);
+  await enumDb.close();
+}
+
+console.log('V1 -> V17 migration, verification, rollback, re-apply and enum baseline ALL PASSED!');

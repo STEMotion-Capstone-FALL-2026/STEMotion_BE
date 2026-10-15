@@ -77,6 +77,9 @@ public final class AuthDtos {
         String fullName,
         User.UserRole role,
         User.UserStatus status,
+
+        /** A new temporary password; the user must change it at the next sign-in. */
+        @Size(min = 8, message = "password must be at least 8 characters")
         String password
     ) {}
 }

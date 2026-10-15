@@ -1,11 +1,11 @@
--- Rollback for V16__admin_provisioned_membership.sql
+-- Rollback for V17__admin_provisioned_membership.sql
 -- Take a full database backup before executing this rollback script.
 BEGIN;
 
 -- Check if any members have no corresponding email to restore invited_email
 DO $$ BEGIN
     IF EXISTS (SELECT 1 FROM workspace_members m LEFT JOIN users u ON u.id = m.user_id WHERE u.email IS NULL) THEN
-        RAISE EXCEPTION 'Cannot rollback V16: some workspace members cannot be mapped back to a user email';
+        RAISE EXCEPTION 'Cannot rollback V17: some workspace members cannot be mapped back to a user email';
     END IF;
 END $$;
 
@@ -45,7 +45,7 @@ BEGIN
 END $$;
 
 -- 4. Restore status values and check:
--- Drop V16 status check first so 'INVITED' is accepted during update
+-- Drop V17 status check first so 'INVITED' is accepted during update
 DO $$
 DECLARE col_type text;
 BEGIN
@@ -71,7 +71,11 @@ BEGIN
     END IF;
 END $$;
 
--- 5. Drop added columns
+-- 5. Leaders go back to the old model, where the workspace ADMIN role managed the
+--    workspace; their working role in the workspace is lost.
+UPDATE workspace_members SET role = 'ADMIN' WHERE is_leader;
+
+-- 6. Drop added columns
 ALTER TABLE workspace_members DROP COLUMN IF EXISTS is_leader;
 ALTER TABLE users DROP COLUMN IF EXISTS must_change_password;
 
