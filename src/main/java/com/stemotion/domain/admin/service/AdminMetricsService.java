@@ -39,8 +39,11 @@ public class AdminMetricsService {
     private final ScriptVersionRepository scriptVersionRepository;
     private final SceneRepository sceneRepository;
 
-    @Value("${app.ai.gemini.model:gemini-2.5-flash}")
+    @Value("${app.integration.gemini.model}")
     private String geminiModel;
+
+    @Value("${AI_MONTHLY_BUDGET_USD:#{null}}")
+    private Double monthlyBudgetUsd;
 
     @Transactional(readOnly = true)
     public SystemMetrics collect() {
@@ -61,16 +64,9 @@ public class AdminMetricsService {
             .count();
         long failedToday = finishedToday.size() - completedToday;
 
-        List<RenderJob> allFinished = jobs.stream()
-            .filter(j -> j.getStatus() == RenderStatus.COMPLETED || j.getStatus() == RenderStatus.FAILED)
-            .toList();
-        long allCompleted = allFinished.stream()
-            .filter(j -> j.getStatus() == RenderStatus.COMPLETED)
-            .count();
-
-        double successRate = !finishedToday.isEmpty()
-            ? round((double) completedToday / finishedToday.size() * 100d)
-            : (!allFinished.isEmpty() ? round((double) allCompleted / allFinished.size() * 100d) : 100d);
+        double successRate = finishedToday.isEmpty()
+            ? UNAVAILABLE
+            : round((double) completedToday / finishedToday.size() * 100d);
 
         Runtime runtime = Runtime.getRuntime();
         double usedMemory = runtime.totalMemory() - runtime.freeMemory();
@@ -85,7 +81,7 @@ public class AdminMetricsService {
             UNAVAILABLE,
             memoryUsage,
             active,
-            completedToday > 0 ? completedToday : allCompleted,
+            completedToday,
             storageUsedGb,
             failedToday,
             successRate
@@ -131,24 +127,11 @@ public class AdminMetricsService {
         long totalScriptVersions = scriptVersionRepository.count();
         long totalScenes = sceneRepository.count();
 
-        // Each script version triggers ~2 LLM calls (segmentation + analysis) and each scene triggers 1 TTS synthesis
-        long estimatedAiCalls = Math.max(1, totalScriptVersions * 2 + totalScenes);
-        long estimatedTokens = totalScriptVersions * 3800L + totalScenes * 420L;
-        // Gemini 2.5 Flash pricing (~$0.0025 per script generation + analysis)
-        double estimatedCostUsd = Math.round((totalScriptVersions * 0.012d + totalScenes * 0.0015d) * 1000d) / 1000d;
-        long avgLatencyMs = 4250L;
-
+        // Content counts cannot establish provider calls, token usage, cost or latency.
+        // Keep the overview contract, returning unknown until M01 aggregation is implemented.
         AiUsageStats aiUsage = new AiUsageStats(
-            totalProjects,
-            totalScriptVersions,
-            totalScenes,
-            estimatedAiCalls,
-            avgLatencyMs,
-            estimatedTokens,
-            estimatedCostUsd,
-            20.0d,
-            geminiModel,
-            "Google Vietnamese TTS (unified_vi_v3)"
+            totalProjects, totalScriptVersions, totalScenes,
+            null, null, null, null, monthlyBudgetUsd, geminiModel, null
         );
 
         Map<String, Long> projectsBySubject = new LinkedHashMap<>();
@@ -183,7 +166,7 @@ public class AdminMetricsService {
         }
         double load = osBean.getSystemLoadAverage();
         if (load < 0) {
-            return 12.5d;
+            return UNAVAILABLE;
         }
         int cores = Runtime.getRuntime().availableProcessors();
         return Math.min(100d, load / cores * 100d);
