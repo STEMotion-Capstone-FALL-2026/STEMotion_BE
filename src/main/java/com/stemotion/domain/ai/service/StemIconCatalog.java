@@ -7,9 +7,8 @@ import java.util.Set;
  * The approved STEM icon names for ILLUSTRATED_EXPLAINER scenes.
  *
  * <p>Mirrors STEM_ICONS in STEMotion_FE/src/remotion/flat/stemIcons.ts, where
- * each name is bound to a Phosphor icon. The list is handed to Gemini as an
- * enum, so the AI can only suggest icons the renderer can draw, and the scene
- * validator rejects any other name.
+ * each name is bound to a Phosphor icon. The list is supplied in Gemini's
+ * instructions; both AI responses and saved scenes validate names locally.
  */
 public final class StemIconCatalog {
 

@@ -9,11 +9,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
+import java.time.Duration;
 
 /**
  * Thin wrapper over the Google AI Studio (Gemini) generateContent endpoint.
@@ -33,8 +35,12 @@ public class GeminiClient {
     public GeminiClient(IntegrationProperties properties, ObjectMapper objectMapper) {
         this.properties = properties;
         this.objectMapper = objectMapper;
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(Duration.ofSeconds(5));
+        requestFactory.setReadTimeout(Duration.ofSeconds(properties.getGemini().getTimeoutSeconds()));
         this.restClient = RestClient.builder()
             .baseUrl(properties.getGemini().getBaseUrl())
+            .requestFactory(requestFactory)
             .build();
     }
 
@@ -49,6 +55,10 @@ public class GeminiClient {
      * @param responseSchema an OpenAPI-subset schema Gemini constrains output to
      */
     public JsonNode generateJson(String systemInstruction, String prompt, Map<String, Object> responseSchema) {
+        return generateWithUsage(systemInstruction,prompt,responseSchema).result();
+    }
+
+    public UsageResult generateWithUsage(String systemInstruction,String prompt,Map<String,Object> responseSchema) {
         if (!isConfigured()) {
             throw new ApiException(
                 HttpStatus.SERVICE_UNAVAILABLE,
@@ -70,7 +80,9 @@ public class GeminiClient {
             )
         );
 
-        return callWithRetry(body);
+        var response=callWithRetry(body);
+        var usage=response.path("usageMetadata");
+        return new UsageResult(parseFirstCandidate(response),token(usage,"promptTokenCount"),token(usage,"candidatesTokenCount"),token(usage,"totalTokenCount"));
     }
 
     /**
@@ -88,15 +100,15 @@ public class GeminiClient {
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 JsonNode response = restClient.post()
-                    .uri("/models/{model}:generateContent?key={key}",
-                        properties.getGemini().getModel(),
-                        properties.getGemini().getApiKey())
+                    .uri("/models/{model}:generateContent", properties.getGemini().getModel())
+                    .header("x-goog-api-key", properties.getGemini().getApiKey())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(body)
                     .retrieve()
                     .body(JsonNode.class);
 
-                return parseFirstCandidate(response);
+                if(response==null) throw new ApiException(HttpStatus.BAD_GATEWAY,"AI_EMPTY_RESPONSE","Gemini returned no body");
+                return response;
             } catch (ApiException ex) {
                 throw ex;
             } catch (HttpServerErrorException.ServiceUnavailable
@@ -106,11 +118,11 @@ public class GeminiClient {
                     sleepBackoff(attempt);
                 }
             } catch (Exception ex) {
-                log.error("Gemini call failed", ex);
+                log.error("Gemini call failed ({})", ex.getClass().getSimpleName());
                 throw new ApiException(
                     HttpStatus.BAD_GATEWAY,
                     "AI_CALL_FAILED",
-                    "Gemini request failed: " + ex.getMessage()
+                    "Gemini request failed; please check the provider configuration"
                 );
             }
         }
@@ -133,6 +145,12 @@ public class GeminiClient {
                 HttpStatus.SERVICE_UNAVAILABLE, "AI_INTERRUPTED", "AI request was interrupted"
             );
         }
+    }
+
+    public record UsageResult(JsonNode result,Integer inputTokens,Integer outputTokens,Integer totalTokens) {}
+    private static Integer token(JsonNode usage,String key) {
+        var value=usage.path(key);
+        return value.isIntegralNumber() && value.canConvertToInt() && value.asInt()>=0?value.asInt():null;
     }
 
     private JsonNode parseFirstCandidate(JsonNode response) {

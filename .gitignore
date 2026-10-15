@@ -12,6 +12,10 @@ node_modules
 
 # === Maven Build ===
 target/
+.local-backups/
+.venv/
+__pycache__/
+.pytest_cache/
 
 # === Java ===
 *.class
@@ -25,7 +29,36 @@ Thumbs.db
 # === Environment ===
 .env
 *.env.local
+.env.*
+gha-creds-*.json
 
 # === Logs ===
 *.log
 logs/
+
+# Local diagnostics and generated test artifacts
+.audit/
+.local-backups/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+coverage/
+htmlcov/
+.coverage
+.coverage.*
+*.tsbuildinfo
+*.log
+logs/
+*.tmp
+*.bak
+*.bkp
+
+# Private environment; share templates only
+.env
+.env.*
+!.env.example
+!.env.*.example

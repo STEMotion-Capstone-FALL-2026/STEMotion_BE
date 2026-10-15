@@ -1,0 +1,129 @@
+name: Cloud Run staging (inactive alternative)
+
+# Explicit release until the staging rollout has been verified.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: stemotion-backend-staging-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Render is the active BE deployment target. Requires a separate opt-in.
+    if: vars.ENABLE_CLOUD_RUN_STAGING == 'true'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 30
+    env:
+      GCP_PROJECT_ID: stemotion-511107
+      GCP_REGION: asia-southeast1
+      CLOUD_RUN_SERVICE: stemotion-be-staging
+      WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+      DEPLOY_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      SECRET_BINDINGS: ${{ vars.CLOUD_RUN_SECRET_BINDINGS }}
+      CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+      EMBED_BASE_URL: ${{ vars.EMBED_BASE_URL }}
+      GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+      RENDER_SERVICE_URL: ${{ vars.RENDER_SERVICE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in WIF_PROVIDER DEPLOY_SERVICE_ACCOUNT SECRET_BINDINGS CORS_ORIGINS; do
+            if [ -z "${!key}" ]; then
+              echo "Missing staging environment variable: $key"
+              exit 1
+            fi
+          done
+          for key in DB_URL DB_USERNAME DB_PASSWORD JWT_SECRET; do
+            if [[ ",$SECRET_BINDINGS," != *",$key="* ]]; then
+              echo "Missing secret reference: $key"
+              exit 1
+            fi
+          done
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: maven
+
+      - name: Verify backend
+        run: mvn -B -ntp verify
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Check bootstrap and configure registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run services describe "$CLOUD_RUN_SERVICE" \
+            --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)'
+          gcloud auth configure-docker "$GCP_REGION-docker.pkg.dev" --quiet
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push immutable image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: asia-southeast1-docker.pkg.dev/stemotion-511107/stemotion/backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy candidate revision
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          SERVICE_URL=$(gcloud run services describe "$CLOUD_RUN_SERVICE" \
+            --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format='value(status.url)')
+          export RENDER_CALLBACK_URL="$SERVICE_URL/api/v1/render/callback"
+          python3 - <<'PY'
+          import json, os
+          keys = ['CORS_ORIGINS', 'EMBED_BASE_URL', 'GEMINI_MODEL', 'RENDER_SERVICE_URL', 'RENDER_CALLBACK_URL']
+          config = {key: os.environ.get(key, '') for key in keys}
+          config['SPRING_PROFILES_ACTIVE'] = 'cloud'
+          with open('.env.cloud-vars.json', 'w') as target:
+              json.dump(config, target)
+          PY
+          gcloud run deploy "$CLOUD_RUN_SERVICE" \
+            --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
+            --image="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/stemotion/backend@$IMAGE_DIGEST" \
+            --service-account="stemotion-runtime@$GCP_PROJECT_ID.iam.gserviceaccount.com" \
+            --env-vars-file=.env.cloud-vars.json --set-secrets="$SECRET_BINDINGS" \
+            --cpu=1 --memory=1Gi --concurrency=8 --min-instances=0 --max-instances=2 \
+            --timeout=300 --cpu-boost --no-traffic --tag=candidate \
+            --startup-probe='httpGet.path=/actuator/health/readiness,httpGet.port=8080,periodSeconds=10,timeoutSeconds=5,failureThreshold=24' \
+            --quiet
+
+      - name: Smoke candidate and promote
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run services describe "$CLOUD_RUN_SERVICE" --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" --format=json > service.json
+          CANDIDATE_URL=$(python3 -c "import json; s=json.load(open('service.json')); print(next(t['url'] for t in s['status']['traffic'] if t.get('tag')=='candidate'))")
+          curl --fail --silent --show-error --max-time 60 "$CANDIDATE_URL/actuator/health/readiness" \
+            | python3 -c 'import json,sys; assert json.load(sys.stdin)["status"] == "UP"'
+          STATUS=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --max-time 60 "$CANDIDATE_URL/api/v1/auth/me")
+          test "$STATUS" = 401
+          gcloud run services update-traffic "$CLOUD_RUN_SERVICE" --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" --to-latest --quiet

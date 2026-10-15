@@ -138,11 +138,15 @@ public class TemplateService {
 
     @Transactional
     public TemplateResponse create(TemplateRequest request) {
+        validateMetadata(request);
         templateRepository.findByName(request.name()).ifPresent(existing -> {
             throw ApiException.conflict("Template name already exists: " + request.name());
         });
 
         RemotionTemplate template = RemotionTemplate.builder()
+            .subject(request.subject())
+            .assetPack(request.assetPack())
+            .slots(request.slots())
             .name(request.name())
             .category(request.category())
             .propsSchema(request.propsSchema())
@@ -155,7 +159,11 @@ public class TemplateService {
 
     @Transactional
     public TemplateResponse update(String id, TemplateRequest request) {
+        validateMetadata(request);
         RemotionTemplate template = getOrThrow(id);
+        if (request.subject() != null) template.setSubject(request.subject());
+        if (request.assetPack() != null) template.setAssetPack(request.assetPack());
+        if (request.slots() != null) template.setSlots(request.slots());
         template.setName(request.name());
         template.setCategory(request.category());
         template.setPropsSchema(request.propsSchema());
@@ -177,5 +185,20 @@ public class TemplateService {
     private RemotionTemplate getOrThrow(String id) {
         return templateRepository.findById(id)
             .orElseThrow(() -> ApiException.notFound("RemotionTemplate", id));
+    }
+
+    private void validateMetadata(TemplateRequest request) {
+        if (request.subject() != null && !List.of("general", "physics", "chemistry", "biology", "math", "informatics").contains(request.subject())) {
+            throw ApiException.badRequest("Unknown template subject");
+        }
+        if (request.assetPack() != null && !request.assetPack().matches("[a-z_]+@[0-9]+\\.[0-9]+\\.[0-9]+")) {
+            throw ApiException.badRequest("assetPack must contain a pinned semantic version");
+        }
+        if (request.slots() != null) {
+            try {
+                var slots = new com.fasterxml.jackson.databind.ObjectMapper().readTree(request.slots());
+                if (slots == null || !slots.isObject() || request.slots().length() > 20000) throw new IllegalArgumentException();
+            } catch (Exception e) { throw ApiException.badRequest("slots must be a JSON object"); }
+        }
     }
 }

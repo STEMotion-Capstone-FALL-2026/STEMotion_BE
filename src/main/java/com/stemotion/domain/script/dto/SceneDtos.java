@@ -29,6 +29,9 @@ public final class SceneDtos {
     @Setter
     public static class SceneRequest {
 
+        /** Existing server ID; local non-UUID IDs are temporary identities for new scenes. */
+        private String id;
+
         @NotNull(message = "type is required")
         private SceneType type;
 

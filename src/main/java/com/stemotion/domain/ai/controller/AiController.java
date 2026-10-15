@@ -24,6 +24,15 @@ import java.util.Map;
 public class AiController {
 
     private final AiScriptService aiScriptService;
+    private final com.stemotion.domain.ai.service.AiRequestLogService requestLog;
+
+    @org.springframework.web.bind.annotation.PutMapping("/requests/{requestId}/decision")
+    @Operation(summary = "Accept or ignore an owned AI suggestion (does not save script content)")
+    public ResponseEntity<Map<String,Object>> decision(@org.springframework.web.bind.annotation.PathVariable String requestId,
+        @Valid @RequestBody com.stemotion.domain.ai.dto.AiDtos.AiDecisionRequest request,
+        @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails principal) {
+        return ResponseEntity.ok(Map.of("requestId",requestId,"decision",requestLog.decide(requestId,request.decision(),principal.getUsername())));
+    }
 
     @GetMapping("/health")
     @Operation(summary = "Whether an AI key is configured on this environment")

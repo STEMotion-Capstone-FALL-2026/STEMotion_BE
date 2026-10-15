@@ -13,6 +13,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,6 +34,27 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class FeedbackComment extends BaseEntity {
+
+    @Column(name = "target_type", nullable = false)
+    private String targetType;
+
+    @Column(name = "script_version_id", columnDefinition = "uuid")
+    private String scriptVersionId;
+
+    @Column(name = "scene_key")
+    private String sceneKey;
+
+    @Column(name = "timestamp_val")
+    private Double timestampValue;
+
+    @PrePersist
+    @PreUpdate
+    void synchronizeTarget() {
+        targetType = scene == null ? "CLIP_TIMESTAMP" : "SCRIPT_INLINE";
+        scriptVersionId = scene == null ? null : scene.getScriptVersion().getId();
+        sceneKey = scene == null ? null : scene.getId();
+        timestampValue = timestampSec;
+    }
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)

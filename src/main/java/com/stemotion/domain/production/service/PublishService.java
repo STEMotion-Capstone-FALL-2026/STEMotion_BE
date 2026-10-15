@@ -14,7 +14,6 @@ import com.stemotion.domain.review.dto.QaDtos.QaReport;
 import com.stemotion.domain.review.service.ClipQaService;
 import com.stemotion.domain.script.service.ScriptService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +23,8 @@ import java.util.stream.Collectors;
 /**
  * Publishing an approved clip to the internal library and YouTube.
  *
- * <p>The YouTube upload itself needs an OAuth-connected channel; until that
- * integration is wired, the record is created and the embed code issued while
- * {@code youtubeUrl} stays null.
+ * <p>Internal-library publishing writes the canonical artifact and a legacy API
+ * record atomically. YouTube is rejected until a real OAuth upload is available.
  */
 @Service
 @RequiredArgsConstructor
@@ -37,9 +35,9 @@ public class PublishService {
     private final ScriptService scriptService;
     private final AuthService authService;
     private final ClipQaService clipQaService;
-
-    @Value("${app.publish.embed-base-url}")
-    private String embedBaseUrl;
+    private final com.stemotion.domain.production.repository.PublicationRepository publicationRepository;
+    private final ClipArtifactService clipArtifactService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public List<PublishResponse> findByProject(String projectId) {
@@ -54,6 +52,18 @@ public class PublishService {
     public PublishResponse publish(String projectId, PublishRequest request, String currentUserId) {
         ClipProject project = scriptService.getOrThrow(projectId);
 
+        scriptService.requireActive(project);
+
+        if (request.targets().contains(PublishTarget.YOUTUBE)) {
+            throw new ApiException(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+                "PUBLISH_TARGET_UNAVAILABLE", "YouTube OAuth publishing is not configured yet");
+        }
+
+        if (publicationRepository.existsByProjectIdAndPlatform(projectId,
+                com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY)) {
+            throw ApiException.conflict("This project already has an INTERNAL_LIBRARY publication");
+        }
+
         if (project.getVideoStatus() != VideoStatus.APPROVED) {
             throw ApiException.badRequest(
                 "Clip is " + project.getVideoStatus() + "; only a QA-approved clip can be published"
@@ -62,6 +72,9 @@ public class PublishService {
         if (project.getVideoUrl() == null) {
             throw ApiException.badRequest("The project has no rendered video to publish");
         }
+        var clip = clipArtifactService.requireCurrent(project, scriptService.currentVersion(project).getId());
+        // Library exports must also produce a usable, safely escaped LMS iframe.
+        VideoEmbed.build(clip.getVideoUrl());
 
         // Automated QA is the last gate before a clip reaches students.
         QaReport qa = clipQaService.run(projectId);
@@ -83,11 +96,35 @@ public class PublishService {
             .title(request.title())
             .description(request.description())
             .lmsEmbedCode(
-                request.targets().contains(PublishTarget.LMS) ? buildEmbedCode(project.getId()) : null
+                request.targets().contains(PublishTarget.LMS) ? VideoEmbed.build(clip.getVideoUrl()) : null
             )
             .build();
 
         record = publishRepository.save(record);
+        String metadata;
+        try {
+            var data = new java.util.LinkedHashMap<String,Object>();
+            data.put("legacyRecordId",record.getId());
+            data.put("title",request.title());
+            data.put("description",request.description());
+            data.put("videoUrl",clip.getVideoUrl());
+            data.put("lmsEmbedCode",record.getLmsEmbedCode());
+            metadata=objectMapper.writeValueAsString(data);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            throw new IllegalStateException("Could not serialize publication metadata",ex);
+        }
+        try {
+            publicationRepository.saveAndFlush(com.stemotion.domain.production.entity.Publication.builder()
+            .project(project).clip(clip).publisher(record.getPublishedBy())
+            .platform(com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY)
+            .metadata(metadata).publishedAt(java.time.LocalDateTime.now()).build());
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            if (ex.getMostSpecificCause() instanceof java.sql.SQLException cause
+                    && "23505".equals(cause.getSQLState())) {
+                throw ApiException.conflict("A publication for this project and platform already exists");
+            }
+            throw ex;
+        }
 
         project.setVideoStatus(VideoStatus.PUBLISHED);
         projectRepository.save(project);
@@ -95,8 +132,4 @@ public class PublishService {
         return PublishResponse.from(record);
     }
 
-    private String buildEmbedCode(String projectId) {
-        return "<iframe src=\"%s/%s\" width=\"100%%\" height=\"540\" frameborder=\"0\" allowfullscreen></iframe>"
-            .formatted(embedBaseUrl, projectId);
-    }
 }

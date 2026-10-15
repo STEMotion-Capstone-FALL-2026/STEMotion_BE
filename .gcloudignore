@@ -1,0 +1,17 @@
+.git
+.github
+.agent
+.agents
+.codex
+.env
+.env.*
+target
+node_modules
+docs
+*.log
+gha-creds-*.json
+.audit
+.local-backups
+.venv
+__pycache__
+.pytest_cache

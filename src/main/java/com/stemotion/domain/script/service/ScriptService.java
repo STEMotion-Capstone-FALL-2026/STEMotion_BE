@@ -46,6 +46,7 @@ public class ScriptService {
     private final AuthService authService;
     private final WorkspaceService workspaceService;
     private final StatusHistoryService statusHistoryService;
+    private final com.stemotion.core.security.WorkspaceAccess workspaceAccess;
 
     // ---------------------------------------------------------------- queries
 
@@ -54,6 +55,7 @@ public class ScriptService {
         workspaceService.getOrThrow(workspaceId);
         return projectRepository.findByWorkspaceIdOrderByCreatedAtDesc(workspaceId)
             .stream()
+            .filter(project -> !Boolean.TRUE.equals(project.getArchived()))
             .map(this::toSummary)
             .toList();
     }
@@ -62,15 +64,18 @@ public class ScriptService {
     public List<ScriptSummaryResponse> findByOwner(String ownerId) {
         return projectRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId)
             .stream()
+            .filter(project -> !Boolean.TRUE.equals(project.getArchived()))
             .map(this::toSummary)
             .toList();
     }
 
     /** The reviewer queue: everything currently awaiting an editorial decision. */
     @Transactional(readOnly = true)
-    public List<ScriptSummaryResponse> findReviewQueue() {
+    public List<ScriptSummaryResponse> findReviewQueue(String userId) {
         return projectRepository.findByScriptStatusOrderByCreatedAtDesc(ScriptStatus.IN_REVIEW)
             .stream()
+            .filter(project -> !Boolean.TRUE.equals(project.getArchived()))
+            .filter(project -> workspaceAccess.canRead(project.getWorkspace().getId(), userId))
             .map(this::toSummary)
             .toList();
     }
@@ -144,9 +149,11 @@ public class ScriptService {
     @Transactional
     public ScriptResponse updateDraft(String projectId, UpdateScriptRequest request) {
         ClipProject project = getOrThrow(projectId);
-        if (project.getScriptStatus() == ScriptStatus.APPROVED) {
+        requireActive(project);
+        if (project.getScriptStatus() != ScriptStatus.DRAFT
+            && project.getScriptStatus() != ScriptStatus.CHANGE_REQUESTED) {
             throw ApiException.badRequest(
-                "An approved script cannot be edited; create a new version to make changes"
+                "Only a draft or returned script can be edited; submitted versions are immutable"
             );
         }
 
@@ -223,9 +230,11 @@ public class ScriptService {
 
         versionRepository.save(current);
         projectRepository.save(project);
-        statusHistoryService.record(
+        statusHistoryService.recordReview(
             project, from, authService.findUserOrThrow(reviewerId),
-            request == null || request.note() == null ? "Script approved" : request.note());
+            com.stemotion.domain.project.entity.StatusHistory.TargetType.SCRIPT, current.getId(),
+            com.stemotion.domain.project.entity.StatusHistory.Decision.APPROVED,
+            request == null ? null : request.note());
 
         return toResponse(project, current, scenesOf(current));
     }
@@ -263,19 +272,26 @@ public class ScriptService {
         List<Scene> copied = copyScenes(scenesOf(reviewed), next);
         project.setScriptStatus(ScriptStatus.CHANGE_REQUESTED);
         projectRepository.save(project);
-        statusHistoryService.record(
+        statusHistoryService.recordReview(
             project, from, authService.findUserOrThrow(reviewerId),
-            request == null || request.note() == null ? "Changes requested" : request.note());
+            com.stemotion.domain.project.entity.StatusHistory.TargetType.SCRIPT, reviewed.getId(),
+            com.stemotion.domain.project.entity.StatusHistory.Decision.REJECTED,
+            request == null ? null : request.note());
 
         return toResponse(project, next, copied);
     }
 
     @Transactional
-    public void delete(String projectId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw ApiException.notFound("ClipProject", projectId);
+    public void delete(String projectId, String actorId) {
+        ClipProject project = getOrThrow(projectId);
+        if (Boolean.TRUE.equals(project.getArchived())) return;
+        if (project.getVideoStatus() == VideoStatus.RENDERING) {
+            throw com.stemotion.core.exception.ApiException.conflict("Cancel the running render before archiving this project");
         }
-        projectRepository.deleteById(projectId);
+        var from = project.getPipelineStatus();
+        project.setArchived(true);
+        projectRepository.save(project);
+        statusHistoryService.record(project, from, authService.findUserOrThrow(actorId), "Project archived");
     }
 
     // ------------------------------------------------------------- shared API
@@ -321,14 +337,49 @@ public class ScriptService {
     // --------------------------------------------------------------- internals
 
     private List<Scene> replaceScenes(ScriptVersion version, List<SceneRequest> requests) {
-        sceneRepository.deleteByScriptVersionId(version.getId());
-        if (requests == null || requests.isEmpty()) {
-            return List.of();
+        List<Scene> existing = sceneRepository.findForUpdateByScriptVersionId(version.getId());
+        List<SceneRequest> incoming = requests == null ? List.of() : requests;
+        java.util.Map<String, Scene> byId = new java.util.HashMap<>();
+        for (Scene scene : existing) {
+            byId.put(scene.getId(), scene);
+            String legacyId = sceneMapper.legacyClientId(scene);
+            if (legacyId != null && !legacyId.isBlank() && !byId.containsKey(legacyId)) byId.put(legacyId, scene);
         }
-        List<Scene> scenes = new java.util.ArrayList<>(requests.size());
-        for (int i = 0; i < requests.size(); i++) {
-            scenes.add(sceneMapper.toEntity(requests.get(i), i + 1, version));
+        java.util.Set<String> received = new java.util.HashSet<>();
+        java.util.Set<String> retained = new java.util.HashSet<>();
+        List<Scene> matches = new java.util.ArrayList<>();
+        // Validate the full identity/deletion plan before mutating any managed row.
+        for (int i = 0; i < incoming.size(); i++) {
+            String id = incoming.get(i).getId();
+            Scene match = null;
+            if (id != null && !id.isBlank()) {
+                if (!received.add(id)) throw ApiException.badRequest("Duplicate scene ID in draft");
+                match = byId.get(id);
+                if (match == null && id.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) {
+                    throw ApiException.badRequest("Scene ID does not belong to the current script version; reload the draft");
+                }
+            } else if (!existing.isEmpty()) {
+                // Compatibility for older id-less clients: in-place edits only.
+                if (incoming.size() != existing.size()) throw ApiException.badRequest("Scene IDs are required when adding or removing scenes");
+                match = existing.get(i);
+            }
+            if (match != null && !retained.add(match.getId())) throw ApiException.badRequest("Scene occurs more than once in draft");
+            matches.add(match);
         }
+        List<Scene> removed = existing.stream().filter(scene -> !retained.contains(scene.getId())).toList();
+        for (Scene scene : removed) {
+            if (sceneRepository.hasFeedback(scene.getId())) {
+                throw ApiException.badRequest("Cannot delete a scene with feedback; review history must be preserved");
+            }
+        }
+        List<Scene> scenes = new java.util.ArrayList<>(incoming.size());
+        for (int i = 0; i < incoming.size(); i++) {
+            Scene scene = matches.get(i);
+            if (scene == null) scene = sceneMapper.toEntity(incoming.get(i), i + 1, version);
+            else sceneMapper.updateEntity(scene, incoming.get(i), i + 1, version);
+            scenes.add(scene);
+        }
+        sceneRepository.deleteAll(removed);
         return sceneRepository.saveAll(scenes);
     }
 
@@ -373,6 +424,7 @@ public class ScriptService {
     }
 
     private void requireStatus(ClipProject project, ScriptStatus... allowed) {
+        requireActive(project);
         for (ScriptStatus status : allowed) {
             if (project.getScriptStatus() == status) {
                 return;
@@ -381,6 +433,12 @@ public class ScriptService {
         throw ApiException.badRequest(
             "Script is " + project.getScriptStatus() + "; this transition is not allowed from that state"
         );
+    }
+
+    public void requireActive(ClipProject project) {
+        if (Boolean.TRUE.equals(project.getArchived())) {
+            throw ApiException.conflict("An archived project cannot be changed");
+        }
     }
 
     private ScriptSummaryResponse toSummary(ClipProject project) {

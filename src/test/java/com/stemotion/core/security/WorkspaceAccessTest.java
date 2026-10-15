@@ -1,0 +1,61 @@
+package com.stemotion.core.security;
+
+import com.stemotion.core.enums.StemEnums.MemberStatus;
+import com.stemotion.core.exception.ApiException;
+import com.stemotion.domain.auth.entity.User;
+import com.stemotion.domain.auth.repository.UserRepository;
+import com.stemotion.domain.project.entity.ClipProject;
+import com.stemotion.domain.project.repository.ClipProjectRepository;
+import com.stemotion.domain.workspace.entity.Workspace;
+import com.stemotion.domain.workspace.entity.WorkspaceMember;
+import com.stemotion.domain.workspace.repository.WorkspaceMemberRepository;
+import org.junit.jupiter.api.Test;
+import java.util.List;
+import java.util.Optional;
+import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.*;
+
+class WorkspaceAccessTest {
+    final UserRepository users = mock(UserRepository.class);
+    final WorkspaceMemberRepository members = mock(WorkspaceMemberRepository.class);
+    final ClipProjectRepository projects = mock(ClipProjectRepository.class);
+    final WorkspaceAccess access = new WorkspaceAccess(users, members, projects);
+
+    void seat(User.UserRole role, MemberStatus status) {
+        var workspace = new Workspace(); workspace.setId("one");
+        when(members.findByUserId("writer")).thenReturn(List.of(WorkspaceMember.builder()
+            .workspace(workspace).role(role).status(status).build()));
+    }
+
+    @Test void membersCannotReadAnotherWorkspace() {
+        seat(User.UserRole.WRITER, MemberStatus.ACTIVE);
+        assertThat(access.canRead("one", "writer")).isTrue();
+        assertThat(access.canRead("two", "writer")).isFalse();
+        assertThatThrownBy(() -> access.requireWorkspace("two", "writer", false)).isInstanceOf(ApiException.class);
+    }
+    @Test void invitationIsNotActiveAccess() {
+        seat(User.UserRole.WRITER, MemberStatus.INVITED);
+        assertThat(access.canRead("one", "writer")).isFalse();
+    }
+    @Test void workspaceAdminCanManageWithoutGlobalAdminRole() {
+        seat(User.UserRole.ADMIN, MemberStatus.ACTIVE);
+        assertThatCode(() -> access.requireWorkspace("one", "writer", true)).doesNotThrowAnyException();
+    }
+    @Test void ordinaryMemberCannotManageSeats() {
+        seat(User.UserRole.WRITER, MemberStatus.ACTIVE);
+        assertThatThrownBy(() -> access.requireWorkspace("one", "writer", true)).isInstanceOf(ApiException.class);
+    }
+    @Test void globalAdminCanAccessWorkspace() {
+        when(users.findById("admin")).thenReturn(Optional.of(User.builder().role(User.UserRole.ADMIN).build()));
+        assertThatCode(() -> access.requireWorkspace("one", "admin", true)).doesNotThrowAnyException();
+    }
+    @Test void memberCannotEditAnotherWritersDraft() {
+        seat(User.UserRole.WRITER, MemberStatus.ACTIVE);
+        var workspace = new Workspace(); workspace.setId("one");
+        var owner = new User(); owner.setId("other");
+        when(projects.findById("project")).thenReturn(Optional.of(ClipProject.builder()
+            .workspace(workspace).owner(owner).build()));
+        assertThatThrownBy(() -> access.requireProject("project", "writer", true)).isInstanceOf(ApiException.class);
+        assertThatCode(() -> access.requireProject("project", "writer", false)).doesNotThrowAnyException();
+    }
+}

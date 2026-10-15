@@ -43,11 +43,13 @@ public class TemplateController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TemplateResponse> create(@Valid @RequestBody TemplateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(templateService.create(request));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TemplateResponse> update(
         @PathVariable String id,
         @Valid @RequestBody TemplateRequest request
@@ -56,6 +58,7 @@ public class TemplateController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         templateService.delete(id);
         return ResponseEntity.noContent().build();

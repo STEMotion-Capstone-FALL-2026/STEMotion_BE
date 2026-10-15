@@ -36,8 +36,8 @@ public class WorkspaceController {
     private final WorkspaceService workspaceService;
 
     @GetMapping
-    public ResponseEntity<List<WorkspaceResponse>> findAll() {
-        return ResponseEntity.ok(workspaceService.findAll());
+    public ResponseEntity<List<WorkspaceResponse>> findAll(@AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(workspaceService.findMine(principal.getUsername()));
     }
 
     @GetMapping("/mine")
@@ -61,7 +61,6 @@ public class WorkspaceController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<WorkspaceResponse> update(
         @PathVariable String id,
         @Valid @RequestBody WorkspaceRequest request
@@ -70,7 +69,6 @@ public class WorkspaceController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         workspaceService.delete(id);
         return ResponseEntity.noContent().build();
@@ -83,8 +81,7 @@ public class WorkspaceController {
 
     @PostMapping("/{id}/members")
     @Operation(summary = "Invite a teacher by email")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<MemberResponse> invite(
+    public ResponseEntity<com.stemotion.domain.workspace.dto.WorkspaceDtos.InvitationResponse> invite(
         @PathVariable String id,
         @Valid @RequestBody InviteMemberRequest request
     ) {
@@ -92,7 +89,6 @@ public class WorkspaceController {
     }
 
     @PatchMapping("/{id}/members/{memberId}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MemberResponse> updateMember(
         @PathVariable String id,
         @PathVariable String memberId,
@@ -102,7 +98,6 @@ public class WorkspaceController {
     }
 
     @DeleteMapping("/{id}/members/{memberId}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> removeMember(@PathVariable String id, @PathVariable String memberId) {
         workspaceService.removeMember(id, memberId);
         return ResponseEntity.noContent().build();

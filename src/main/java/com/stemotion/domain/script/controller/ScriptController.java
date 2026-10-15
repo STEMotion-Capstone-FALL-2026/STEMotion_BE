@@ -66,8 +66,8 @@ public class ScriptController {
     @GetMapping("/scripts/review-queue")
     @Operation(summary = "Scripts waiting for an editorial decision")
     @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
-    public ResponseEntity<List<ScriptSummaryResponse>> reviewQueue() {
-        return ResponseEntity.ok(scriptService.findReviewQueue());
+    public ResponseEntity<List<ScriptSummaryResponse>> reviewQueue(@AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(scriptService.findReviewQueue(principal.getUsername()));
     }
 
     @GetMapping("/scripts/{id}")
@@ -78,6 +78,7 @@ public class ScriptController {
 
     @PutMapping("/scripts/{id}")
     @Operation(summary = "Save the working draft, replacing the scene list")
+    @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
     public ResponseEntity<ScriptResponse> update(
         @PathVariable String id,
         @Valid @RequestBody UpdateScriptRequest request
@@ -135,8 +136,8 @@ public class ScriptController {
 
     @DeleteMapping("/scripts/{id}")
     @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
-        scriptService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable String id, @AuthenticationPrincipal UserDetails principal) {
+        scriptService.delete(id, principal.getUsername());
         return ResponseEntity.noContent().build();
     }
 }

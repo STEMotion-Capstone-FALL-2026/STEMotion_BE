@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@org.hibernate.annotations.Immutable
 @Table(name = "status_histories")
 @Getter
 @Setter
@@ -24,6 +25,28 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class StatusHistory extends BaseEntity {
+
+    public enum EventType { PIPELINE_TRANSITION, REVIEW_DECISION }
+    public enum TargetType { PROJECT, SCRIPT, CLIP }
+    public enum Decision { APPROVED, REJECTED }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_type", nullable = false, length = 32)
+    private EventType eventType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_type", nullable = false, length = 16)
+    private TargetType targetType;
+
+    @Column(name = "target_id", nullable = false, length = 36)
+    private String targetId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "decision", length = 16)
+    private Decision decision;
+
+    @Column(name = "reason", columnDefinition = "text")
+    private String reason;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)

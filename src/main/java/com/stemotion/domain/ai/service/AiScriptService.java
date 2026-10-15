@@ -1,15 +1,17 @@
 package com.stemotion.domain.ai.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.stemotion.core.exception.ApiException;
 import com.stemotion.domain.ai.dto.AiDtos.AiAction;
 import com.stemotion.domain.ai.dto.AiDtos.AiActionResponse;
 import com.stemotion.domain.ai.dto.AiDtos.GenerateScriptRequest;
 import com.stemotion.domain.ai.dto.AiDtos.ScriptActionRequest;
-import com.stemotion.integration.client.GeminiClient;
+import com.stemotion.integration.client.AiGateway;
 import com.stemotion.integration.config.IntegrationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
 
 import java.util.Map;
 
@@ -30,7 +32,7 @@ public class AiScriptService {
         Respond only with JSON that satisfies the provided schema.
         """;
 
-    private final GeminiClient geminiClient;
+    private final AiGateway geminiClient;
     private final IntegrationProperties properties;
 
     /** Drafts a complete script the writer can then edit scene by scene. */
@@ -165,13 +167,39 @@ public class AiScriptService {
 
     private AiActionResponse call(AiAction action, String prompt, Map<String, Object> schema) {
         long startedAt = System.currentTimeMillis();
-        JsonNode result = geminiClient.generateJson(SYSTEM_INSTRUCTION, prompt, schema);
+        String instruction = SYSTEM_INSTRUCTION;
+        if (action == null || action == AiAction.resegment) {
+            instruction += "\nFor icons[].name and suggestedIcons[], use only these exact names: "
+                + String.join(", ", StemIconCatalog.NAMES) + ".";
+        }
+        var generation = geminiClient.generateJson(action==null || action==AiAction.resegment ? com.stemotion.domain.ai.entity.AiRequest.RequestType.SEGMENTATION : com.stemotion.domain.ai.entity.AiRequest.RequestType.ANALYSIS,instruction, prompt, schema);
+        JsonNode result = generation.result();
+        validateIconNames(result);
         long elapsed = System.currentTimeMillis() - startedAt;
 
         if (elapsed > 15_000) {
             log.warn("AI action {} took {} ms, over the 15s target", action, elapsed);
         }
 
-        return new AiActionResponse(action, result, properties.getGemini().getModel(), elapsed);
+        return new AiActionResponse(action, result, generation.model(), elapsed, generation.requestId());
+    }
+
+    private void validateIconNames(JsonNode result) {
+        if (result == null) return;
+        for (JsonNode scene : result.path("scenes")) {
+            for (JsonNode icon : scene.path("icons")) {
+                requireKnownIcon(icon.path("name"));
+            }
+            for (JsonNode icon : scene.path("suggestedIcons")) {
+                requireKnownIcon(icon);
+            }
+        }
+    }
+
+    private void requireKnownIcon(JsonNode name) {
+        if (!name.isTextual() || !StemIconCatalog.NAMES.contains(name.asText())) {
+            throw new ApiException(HttpStatus.BAD_GATEWAY, "AI_INVALID_RESPONSE",
+                "AI returned an unsupported icon. Please generate the script again.");
+        }
     }
 }

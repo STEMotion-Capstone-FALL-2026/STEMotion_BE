@@ -47,13 +47,11 @@ public class SecurityConfig {
                 ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             )
             .authorizeHttpRequests(auth -> auth
-                // Only these two are public. /auth/me must stay protected,
-                // otherwise an expired token reaches the controller with a
-                // null principal instead of being rejected with 401.
-                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register").permitAll()
-                // AI endpoints consume Gemini quota — allow any authenticated studio role
-                .requestMatchers("/api/v1/ai/**").authenticated()
-                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/api/v1/auth/register").denyAll()
+                .requestMatchers("/api/v1/auth/login").permitAll()
+                // AI endpoints consume Gemini quota — restrict to writers and admins
+                .requestMatchers("/api/v1/ai/**").hasAnyRole("WRITER", "ADMIN")
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 // The render worker authenticates with the shared render API key
                 // validated inside RenderController.callback(), not via JWT.
                 .requestMatchers("/api/v1/render/callback").permitAll()

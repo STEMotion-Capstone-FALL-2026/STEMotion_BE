@@ -19,6 +19,16 @@ import lombok.Setter;
 @Builder
 public class RemotionTemplate extends BaseEntity {
 
+    @Column(name = "subject")
+    private String subject;
+
+    @Column(name = "asset_pack")
+    private String assetPack;
+
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(name = "slots", columnDefinition = "jsonb")
+    private String slots;
+
     @Column(name = "name", nullable = false, unique = true)
     private String name;
 
