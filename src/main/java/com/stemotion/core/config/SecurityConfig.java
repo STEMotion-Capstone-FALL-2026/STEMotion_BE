@@ -49,6 +49,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/register").denyAll()
                 .requestMatchers("/api/v1/auth/login").permitAll()
+                // Worker alignment has an independent env-backed shared-key guard in its controller.
+                .requestMatchers("/api/v1/ai/internal/transcribe/align").permitAll()
+                .requestMatchers("/api/v1/ai/transcribe/align").hasAnyRole("WRITER", "PRODUCER", "ADMIN")
                 // AI endpoints consume Gemini quota — restrict to writers and admins
                 .requestMatchers("/api/v1/ai/**").hasAnyRole("WRITER", "ADMIN")
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()

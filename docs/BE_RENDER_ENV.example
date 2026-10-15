@@ -28,3 +28,6 @@ RENDER_CALLBACK_URL=https://stemotion-be.onrender.com/api/v1/render/callback
 EMBED_BASE_URL=
 
 # PORT is supplied automatically by Render; do not force 8080.
+
+# Separate optional shared key for worker -> BE forced alignment endpoint.
+AI_ALIGNMENT_WORKER_KEY=

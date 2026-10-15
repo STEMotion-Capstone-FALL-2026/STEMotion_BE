@@ -23,3 +23,7 @@ AI_PROVIDER defaults to openai. OPENAI_API_KEY is read only from the service pro
 LangChain uses JSON schema mode with include_raw=True and strict=False to support the existing optional per-template fields. Independent JSON Schema and scientific-field validation still run on script endpoints; structured output is not treated as proof of scientific truth.
 
 References: [OpenAI structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs), [GPT-4o mini](https://developers.openai.com/api/docs/models/gpt-4o-mini), [LangChain ChatOpenAI](https://docs.langchain.com/oss/python/integrations/chat/openai). Tests mock ChatOpenAI; no actual key or paid request is used.
+
+## Caption alignment
+
+`POST /transcribe/align` accepts known narration + uploaded per-scene audio, and returns word timestamps. See `../../docs/AI_ALIGNMENT_CONTRACT.md` for limits, auth, model provisioning, BE proxy and test limitations.

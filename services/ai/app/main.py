@@ -3,7 +3,9 @@ import asyncio
 import hmac
 import os
 import time
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, UploadFile, File, Form
+from starlette.concurrency import run_in_threadpool
+from .alignment import aligner, MAX_AUDIO_BYTES
 from .models import GenerationRequest, GenerationResponse, ScriptInput, AnalysisInput, ActionInput
 from .providers import GeminiProvider, OpenAIProvider
 from .schemas import json_schema
@@ -73,3 +75,21 @@ def action_handler(operation):
 for operation in ("resegment", "grade", "extract", "terms"):
     app.add_api_route("/script/" + operation, action_handler(operation), methods=["POST"],
         response_model=GenerationResponse, dependencies=[Depends(require_service_key)])
+
+
+@app.post("/transcribe/align", dependencies=[Depends(require_service_key)])
+async def align_audio(file: UploadFile = File(...), text: str = Form(..., min_length=1, max_length=10000),
+        language: str = Form("vi", min_length=2, max_length=8), engine=Depends(aligner)):
+    if not text.strip():
+        raise HTTPException(422, "Known narration text is required for forced alignment")
+    try:
+        audio = await file.read(MAX_AUDIO_BYTES + 1)
+        if not audio or len(audio) > MAX_AUDIO_BYTES:
+            raise HTTPException(413, "Audio must contain 1 to 10 MiB")
+        return await run_in_threadpool(engine.align, audio, text.strip(), language)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(502, "Alignment failed") from None
+    finally:
+        await file.close()

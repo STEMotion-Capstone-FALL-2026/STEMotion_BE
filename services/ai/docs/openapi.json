@@ -370,6 +370,54 @@
           }
         }
       }
+    },
+    "/transcribe/align": {
+      "post": {
+        "summary": "Align Audio",
+        "operationId": "align_audio_transcribe_align_post",
+        "parameters": [
+          {
+            "name": "x-ai-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Ai-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_align_audio_transcribe_align_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -478,6 +526,34 @@
           "scriptText"
         ],
         "title": "AnalysisInput"
+      },
+      "Body_align_audio_transcribe_align_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "language": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 2,
+            "title": "Language",
+            "default": "vi"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "text"
+        ],
+        "title": "Body_align_audio_transcribe_align_post"
       },
       "GenerationRequest": {
         "properties": {
