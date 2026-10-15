@@ -132,18 +132,13 @@ final class ComposedSceneValidator {
         return list.size();
     }
 
-    /** Unknown icon names fall back to the sparkle, as in ILLUSTRATED_EXPLAINER. */
-    @SuppressWarnings("unchecked")
+    /** Icon names must come from the catalogue, as in ILLUSTRATED_EXPLAINER. */
     private static void icon(Object icon, String id) {
         if (!(icon instanceof Map<?, ?> m) || !(m.get("name") instanceof String name) || name.isBlank()) {
             throw bad("block " + id + " icons need a name");
         }
         if (!StemIconCatalog.isKnown(name)) {
-            try {
-                ((Map<String, Object>) m).put("name", "sparkle");
-            } catch (UnsupportedOperationException ignored) {
-                // Immutable map: the renderer falls back to its own default icon.
-            }
+            throw bad("block " + id + " icon '" + name + "' is not in the approved STEM icon set");
         }
     }
 

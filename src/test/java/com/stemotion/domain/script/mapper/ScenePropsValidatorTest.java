@@ -150,15 +150,17 @@ class ScenePropsValidatorTest {
     }
 
     @Test
-    @DisplayName("an icon outside the approved STEM set falls back to the sparkle icon")
-    void replacesUnknownIcon() {
-        Map<String, Object> icon = new HashMap<>(Map.of("name", "unicorn", "label", "Ky lan"));
+    @DisplayName("an icon outside the approved STEM set is rejected when the scene is saved")
+    void rejectsUnknownIcon() {
+        // AI drafts have unknown icons replaced before they reach the editor
+        // (AiScriptService), so a save carrying one is a client error.
         Map<String, Object> props = illustratedProps();
-        props.put("icons", List.of(icon));
+        props.put("icons", List.of(Map.of("name", "unicorn", "label", "Ky lan")));
 
-        assertThatCode(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, props))
-            .doesNotThrowAnyException();
-        assertThat(icon).containsEntry("name", "sparkle").containsEntry("label", "Ky lan");
+        assertThatThrownBy(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, props))
+            .isInstanceOf(ApiException.class)
+            .hasMessageContaining("unicorn")
+            .hasMessageContaining("approved STEM icon set");
     }
 
     @Test
@@ -169,7 +171,7 @@ class ScenePropsValidatorTest {
 
         assertThatThrownBy(() -> validator.validate(SceneType.ILLUSTRATED_EXPLAINER, props))
             .isInstanceOf(ApiException.class)
-            .hasMessageContaining("non-empty name");
+            .hasMessageContaining("approved STEM icon set");
     }
 
     @Test

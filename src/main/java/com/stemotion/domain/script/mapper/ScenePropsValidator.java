@@ -122,22 +122,11 @@ public class ScenePropsValidator {
             );
         }
         for (Object icon : icons) {
-            if (icon instanceof Map<?, ?> m) {
-                Object name = m.get("name");
-                if (!(name instanceof String n) || n.isBlank()) {
-                    throw ApiException.badRequest("ILLUSTRATED_EXPLAINER icon must have a non-empty name");
-                }
-                if (!StemIconCatalog.isKnown(n)) {
-                    try {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> mutableIcon = (Map<String, Object>) m;
-                        mutableIcon.put("name", "sparkle");
-                    } catch (UnsupportedOperationException ignored) {
-                        // Immutable map: Remotion renderer already falls back to a default icon
-                    }
-                }
-            } else {
-                throw ApiException.badRequest("ILLUSTRATED_EXPLAINER icon entry must be an object");
+            Object name = icon instanceof Map<?, ?> m ? m.get("name") : null;
+            if (!(name instanceof String n) || !StemIconCatalog.isKnown(n)) {
+                throw ApiException.badRequest(
+                    "ILLUSTRATED_EXPLAINER icon '" + name + "' is not in the approved STEM icon set"
+                );
             }
         }
         checkOneOf(props, "ambience", FLAT_AMBIENCES);

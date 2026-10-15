@@ -128,11 +128,9 @@ class ComposedSceneValidatorTest {
     }
 
     @Test
-    @DisplayName("an unknown icon in a block falls back to the sparkle")
-    void replacesUnknownBlockIcon() {
-        Map<String, Object> icon = new HashMap<>(Map.of("name", "unicorn", "label", "Kỳ lân"));
-        Map<String, Object> props = scene(List.of(block("i", "icon", "icon", icon)));
-        assertThatCode(() -> validator.validate(SceneType.COMPOSED, props)).doesNotThrowAnyException();
-        assertThat(icon).containsEntry("name", "sparkle");
+    @DisplayName("an unknown icon in a block is rejected, as in illustrated scenes")
+    void rejectsUnknownBlockIcon() {
+        Map<String, Object> props = scene(List.of(block("i", "icon", "icon", Map.of("name", "unicorn", "label", "Kỳ lân"))));
+        assertThatThrownBy(() -> validator.validate(SceneType.COMPOSED, props)).hasMessageContaining("approved STEM icon set");
     }
 }
