@@ -1,28 +1,14 @@
-"""Private AI execution service. BE owns user/workspace authorization and saves."""
+"""Private AI service. BE owns user authorization, durable audit and saves."""
 import asyncio
 import hmac
 import os
 import time
-from typing import Any
-
 from fastapi import Depends, FastAPI, Header, HTTPException
-from pydantic import BaseModel, Field
-
-
-class GenerationRequest(BaseModel):
-    systemInstruction: str = Field(min_length=1, max_length=20000)
-    prompt: str = Field(min_length=1, max_length=80000)
-    responseSchema: dict[str, Any]
-
-
-class GenerationResponse(BaseModel):
-    result: dict[str, Any]
-    model: str
-    elapsedMs: int
-    inputTokens: int | None = Field(default=None, ge=0)
-    outputTokens: int | None = Field(default=None, ge=0)
-    totalTokens: int | None = Field(default=None, ge=0)
-
+from .models import GenerationRequest, GenerationResponse, ScriptInput, AnalysisInput, ActionInput
+from .providers import GeminiProvider
+from .schemas import json_schema
+from .prompting import build_request
+from .validation import validate_result
 
 def require_service_key(x_ai_api_key: str = Header(default="")) -> None:
     expected = os.getenv("AI_SERVICE_KEY", "")
@@ -32,64 +18,21 @@ def require_service_key(x_ai_api_key: str = Header(default="")) -> None:
         raise HTTPException(401, "Invalid service key")
 
 
-def json_schema(value: Any) -> Any:
-    """Translate the existing BE Gemini schema to LangChain JSON Schema."""
-    if isinstance(value, list):
-        return [json_schema(item) for item in value]
-    if not isinstance(value, dict):
-        return value
-    result = {key: json_schema(item) for key, item in value.items() if key != "nullable"}
-    if isinstance(result.get("type"), str):
-        result["type"] = result["type"].lower()
-    if value.get("nullable"):
-        result = {"anyOf": [result, {"type": "null"}]}
-    return result
-
-
-class GeminiProvider:
-    async def generate(self, request: GenerationRequest) -> tuple[dict[str, Any], str, dict[str, Any]]:
-        key = os.getenv("GEMINI_API_KEY", "")
-        if not key:
-            raise HTTPException(503, "Gemini provider is not configured")
-        # Lazy import keeps health checks and isolated contract tests independent
-        # of provider initialization. Keys never leave this service.
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        from langchain_core.messages import HumanMessage, SystemMessage
-
-        model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
-        llm = ChatGoogleGenerativeAI(model=model, api_key=key, temperature=0.4, max_retries=2)
-        schema = json_schema(request.responseSchema)
-        schema.setdefault("title", "STEMotionAIResult")
-        schema.setdefault("description", "Structured STEMotion AI response")
-        chain = llm.with_structured_output(schema, method="json_schema", include_raw=True)
-        result = await asyncio.wait_for(chain.ainvoke([
-            SystemMessage(content=request.systemInstruction), HumanMessage(content=request.prompt)
-        ]), timeout=60)
-        parsed = result.get("parsed")
-        if result.get("parsing_error") or not isinstance(parsed, dict):
-            raise ValueError("Expected structured object")
-        usage = getattr(result.get("raw"), "usage_metadata", None) or {}
-        return parsed, model, usage
-
-
-def provider() -> GeminiProvider:
+def provider():
     return GeminiProvider()
 
-
-app = FastAPI(title="STEMotion AI Service", version="1.0.0", docs_url=None, redoc_url=None)
-
+app = FastAPI(title="STEMotion AI Service", version="2.0.0", docs_url=None, redoc_url=None)
 
 @app.get("/health")
 def health():
-    # Does not call Gemini or expose credentials. Readiness is configuration only.
     return {"status": "UP", "configured": bool(os.getenv("AI_SERVICE_KEY") and os.getenv("GEMINI_API_KEY"))}
 
-
-@app.post("/internal/v1/generate", response_model=GenerationResponse, dependencies=[Depends(require_service_key)])
-async def generate(request: GenerationRequest, client: GeminiProvider = Depends(provider)):
+async def execute(request, client, validate_operation=None):
     started = time.monotonic()
     try:
         result, model, usage = await client.generate(request)
+        if validate_operation:
+            validate_result(validate_operation, result)
         def count(key):
             value = usage.get(key)
             return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
@@ -100,5 +43,25 @@ async def generate(request: GenerationRequest, client: GeminiProvider = Depends(
     except TimeoutError:
         raise HTTPException(504, "AI provider timed out") from None
     except Exception:
-        # Provider exceptions can contain request URLs/keys. Never send them to FE.
         raise HTTPException(502, "AI provider request failed") from None
+
+@app.post("/internal/v1/generate", response_model=GenerationResponse, dependencies=[Depends(require_service_key)])
+async def generate(request: GenerationRequest, client=Depends(provider)):
+    return await execute(request, client)
+
+@app.post("/script/generate", response_model=GenerationResponse, dependencies=[Depends(require_service_key)])
+async def generate_script(request: ScriptInput, client=Depends(provider)):
+    return await execute(build_request("generate", request), client, "generate")
+
+@app.post("/script/action", response_model=GenerationResponse, dependencies=[Depends(require_service_key)])
+async def action(request: ActionInput, client=Depends(provider)):
+    return await execute(build_request(request.action, request), client, request.action)
+
+def action_handler(operation):
+    async def handler(request: AnalysisInput, client=Depends(provider)):
+        return await execute(build_request(operation, request), client, operation)
+    return handler
+
+for operation in ("resegment", "grade", "extract", "terms"):
+    app.add_api_route("/script/" + operation, action_handler(operation), methods=["POST"],
+        response_model=GenerationResponse, dependencies=[Depends(require_service_key)])

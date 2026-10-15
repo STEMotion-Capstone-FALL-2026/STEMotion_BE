@@ -7,7 +7,7 @@ JWT_SECRET=<generate-a-random-secret-with-at-least-32-bytes>
 CORS_ORIGINS=https://stemotion.vercel.app,https://ste-motion-fe.vercel.app,http://localhost:3000,http://localhost:5173
 GEMINI_API_KEY=<google-ai-studio-api-key>
 GEMINI_MODEL=gemini-3.5-flash-lite
-AI_SERVICE_MODE=embedded
+AI_SERVICE_MODE=remote
 # Switch to remote only after deploying and verifying services/ai.
 AI_SERVICE_URL=http://localhost:8000
 AI_SERVICE_KEY=

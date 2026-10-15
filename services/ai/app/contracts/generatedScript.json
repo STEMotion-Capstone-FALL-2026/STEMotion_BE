@@ -1,0 +1,232 @@
+{
+  "required" : [ "isValidStemTopic", "scenes" ],
+  "type" : "OBJECT",
+  "properties" : {
+    "narrativeArc" : {
+      "required" : [ "summary", "approach" ],
+      "type" : "OBJECT",
+      "properties" : {
+        "approach" : {
+          "type" : "STRING"
+        },
+        "segments" : {
+          "items" : {
+            "required" : [ "order", "title", "purpose" ],
+            "type" : "OBJECT",
+            "properties" : {
+              "title" : {
+                "type" : "STRING"
+              },
+              "order" : {
+                "type" : "NUMBER"
+              },
+              "purpose" : {
+                "type" : "STRING"
+              }
+            }
+          },
+          "type" : "ARRAY"
+        },
+        "summary" : {
+          "type" : "STRING"
+        }
+      }
+    },
+    "gradeLevel" : {
+      "type" : "STRING"
+    },
+    "scenes" : {
+      "items" : {
+        "required" : [ "type", "title", "narration", "durationInFrames" ],
+        "type" : "OBJECT",
+        "properties" : {
+          "topicB" : {
+            "required" : [ "title", "points" ],
+            "type" : "OBJECT",
+            "properties" : {
+              "badge" : {
+                "type" : "STRING"
+              },
+              "title" : {
+                "type" : "STRING"
+              },
+              "points" : {
+                "items" : {
+                  "type" : "STRING"
+                },
+                "type" : "ARRAY"
+              }
+            }
+          },
+          "topicA" : {
+            "required" : [ "title", "points" ],
+            "type" : "OBJECT",
+            "properties" : {
+              "badge" : {
+                "type" : "STRING"
+              },
+              "title" : {
+                "type" : "STRING"
+              },
+              "points" : {
+                "items" : {
+                  "type" : "STRING"
+                },
+                "type" : "ARRAY"
+              }
+            }
+          },
+          "stages" : {
+            "items" : {
+              "required" : [ "stageNumber", "title", "description" ],
+              "type" : "OBJECT",
+              "properties" : {
+                "stageNumber" : {
+                  "type" : "NUMBER"
+                },
+                "title" : {
+                  "type" : "STRING"
+                },
+                "description" : {
+                  "type" : "STRING"
+                }
+              }
+            },
+            "type" : "ARRAY"
+          },
+          "durationInFrames" : {
+            "type" : "NUMBER"
+          },
+          "headline" : {
+            "type" : "STRING"
+          },
+          "nextLessonSuggestion" : {
+            "type" : "STRING"
+          },
+          "narration" : {
+            "type" : "STRING"
+          },
+          "caption" : {
+            "type" : "STRING"
+          },
+          "dataPoints" : {
+            "items" : {
+              "required" : [ "label", "value" ],
+              "type" : "OBJECT",
+              "properties" : {
+                "label" : {
+                  "type" : "STRING"
+                },
+                "value" : {
+                  "type" : "NUMBER"
+                }
+              }
+            },
+            "type" : "ARRAY"
+          },
+          "title" : {
+            "type" : "STRING"
+          },
+          "condition" : {
+            "type" : "STRING"
+          },
+          "reactants" : {
+            "type" : "STRING"
+          },
+          "chartType" : {
+            "type" : "STRING"
+          },
+          "latex" : {
+            "type" : "STRING"
+          },
+          "steps" : {
+            "items" : {
+              "required" : [ "label", "latexSnippet", "explanation" ],
+              "type" : "OBJECT",
+              "properties" : {
+                "explanation" : {
+                  "type" : "STRING"
+                },
+                "latexSnippet" : {
+                  "type" : "STRING"
+                },
+                "label" : {
+                  "type" : "STRING"
+                }
+              }
+            },
+            "type" : "ARRAY"
+          },
+          "type" : {
+            "type" : "STRING",
+            "enum" : [ "TITLE_HERO", "ILLUSTRATED_EXPLAINER", "PROCESS_TIMELINE", "COMPARISON_SPLIT", "MATH_FORMULA", "CHEMICAL_REACTION", "DATA_CHART", "ALGORITHM_WALKTHROUGH", "OUTRO" ]
+          },
+          "conclusion" : {
+            "type" : "STRING"
+          },
+          "summaryPoints" : {
+            "items" : {
+              "type" : "STRING"
+            },
+            "type" : "ARRAY"
+          },
+          "yAxisLabel" : {
+            "type" : "STRING"
+          },
+          "xAxisLabel" : {
+            "type" : "STRING"
+          },
+          "processTitle" : {
+            "type" : "STRING"
+          },
+          "icons" : {
+            "items" : {
+              "required" : [ "name", "label" ],
+              "type" : "OBJECT",
+              "properties" : {
+                "label" : {
+                  "type" : "STRING"
+                },
+                "name" : {
+                  "type" : "STRING"
+                }
+              }
+            },
+            "type" : "ARRAY"
+          },
+          "ambience" : {
+            "type" : "STRING",
+            "enum" : [ "space", "cell", "lab", "ocean", "lilac", "sky" ]
+          },
+          "observation" : {
+            "type" : "STRING"
+          },
+          "products" : {
+            "type" : "STRING"
+          },
+          "layout" : {
+            "type" : "STRING",
+            "enum" : [ "focus", "row", "cluster", "swarm" ]
+          },
+          "equation" : {
+            "type" : "STRING"
+          }
+        }
+      },
+      "type" : "ARRAY"
+    },
+    "fallbackMessage" : {
+      "type" : "STRING",
+      "nullable" : true
+    },
+    "totalDurationSeconds" : {
+      "type" : "NUMBER"
+    },
+    "title" : {
+      "type" : "STRING"
+    },
+    "isValidStemTopic" : {
+      "type" : "BOOLEAN"
+    }
+  }
+}

@@ -44,7 +44,7 @@ app:
 
   integration:
     ai:
-      mode: ${AI_SERVICE_MODE:embedded}
+      mode: ${AI_SERVICE_MODE:remote}
       base-url: ${AI_SERVICE_URL:http://localhost:8000}
       api-key: ${AI_SERVICE_KEY:}
     render:

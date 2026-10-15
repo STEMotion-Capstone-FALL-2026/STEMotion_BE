@@ -37,6 +37,15 @@ public class AiScriptService {
 
     /** Drafts a complete script the writer can then edit scene by scene. */
     public AiActionResponse generateScript(GenerateScriptRequest request) {
+        if (geminiClient.isRemote()) {
+            long started = System.nanoTime();
+            var generation = geminiClient.generateScript(request);
+            if (generation.result().path("isValidStemTopic").isBoolean()
+                    && !generation.result().path("isValidStemTopic").asBoolean()) {
+                throw ApiException.badRequest(generation.result().path("fallbackMessage").asText("Invalid STEM topic"));
+            }
+            return new AiActionResponse(null, generation.result(), generation.model(), (System.nanoTime() - started) / 1_000_000, generation.requestId());
+        }
         int rawDuration = request.targetDurationSec() == null ? 0 : request.targetDurationSec();
         String pacingInstruction;
         if (rawDuration <= 0) {
@@ -124,6 +133,12 @@ public class AiScriptService {
 
     /** Runs one of the four on-demand analyses over an existing script. */
     public AiActionResponse runAction(ScriptActionRequest request) {
+        if (geminiClient.isRemote()) {
+            long started = System.nanoTime();
+            var generation = geminiClient.runAction(request);
+            return new AiActionResponse(request.action(), generation.result(), generation.model(),
+                (System.nanoTime() - started) / 1_000_000, generation.requestId());
+        }
         String subject = request.subject() == null ? "STEM" : request.subject().name();
         String grade = request.gradeLevel() == null ? "trung học" : request.gradeLevel();
 

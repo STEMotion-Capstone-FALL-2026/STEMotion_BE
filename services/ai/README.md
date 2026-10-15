@@ -1,46 +1,17 @@
 # STEMotion AI service
 
-Separate FastAPI process with LangChain and Gemini. Kept under the BE repository
-so CI and deployment can use the existing repository; it has its own Dockerfile,
-dependencies and HTTP boundary. FE continues calling BE `/api/v1/ai/*`.
-BE owns authorization, prompts, scene validation and persistence. This service
-executes the model and returns structured JSON; it never connects to Supabase.
+Location: `services/ai/` inside BE. Reuses the existing FastAPI/LangChain boundary instead of creating a second `ai-service/` tree; independently built Python process, no Java runtime dependency.
 
-## Local
+Start: install `requirements.lock`, set `AI_SERVICE_KEY` and provider credentials in process env, then `uvicorn app.main:app --host 127.0.0.1 --port 8000` from this directory. Never copy BE `.env` into the image. Docker exposes the same app on port 8000. Private endpoints require `X-AI-Api-Key`; the BE owns JWT/RBAC and persistent M01 audit. A blank service key rejects requests.
 
-From this directory:
+- `POST /script/generate`: topic, subject, gradeLevel, optional targetDurationSec (0 = auto), narrativeBrief <=500 chars.
+- `POST /script/action`: action=resegment/grade/extract/terms plus scriptText, subject, gradeLevel.
+- `POST /script/resegment`, `/script/grade`, `/script/extract`, `/script/terms`: same analysis body without action.
+- All return the existing result/model/elapsedMs/inputTokens/outputTokens/totalTokens envelope. Unknown usage is null, never a fabricated zero.
+- `/internal/v1/generate` remains for compatibility with the former generic gateway. It is private, accepts a prompt/schema, and is not the new script entrypoint.
 
-```powershell
-python -m venv .venv
-.venv/Scripts/python -m pip install -r requirements.lock
-# Set AI_SERVICE_KEY, GEMINI_API_KEY and GEMINI_MODEL privately.
-.venv/Scripts/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-.venv/Scripts/python -m pytest -q
-```
+Script prompts and schemas were ported from integrated BE base 2bf41da, including guardrail, free narrative arc, dynamic pacing, template exclusions and icon catalog. Python validates structured output before returning it: missing formulas/equations, bad quantitative data, unknown icons, missing scene content or broken structure fail 502; no sample lesson data is substituted. A guardrail rejection returns isValidStemTopic=false and empty scenes; BE preserves the existing 400 user-facing behavior. Validation checks completeness/shape, not proof of scientific truth: review by a human is still required.
 
-## Deployment and rollout
+BE runtime defaults `AI_SERVICE_MODE=remote`, configured through `AI_SERVICE_URL`/`AI_SERVICE_KEY`. `AI_SERVICE_MODE=embedded` explicitly rolls back to the unchanged Java/Gemini prompt path. There is no silent remote-to-embedded fallback. M01 still persists actual model/usage and failures through AiGateway; public BE endpoint contracts stay stable.
 
-Create a separate Docker Web Service with root directory `services/ai`.
-Configure `AI_SERVICE_KEY`, the existing `GEMINI_API_KEY`, and `GEMINI_MODEL` on
-that service. Do not put either key in FE. Use `/health` for the health check;
-`configured` only confirms environment variables, not a successful provider call.
-The internal generation endpoint requires `X-AI-Api-Key` and has no browser CORS.
-
-Once tested, configure BE:
-
-```dotenv
-AI_SERVICE_MODE=remote
-AI_SERVICE_URL=https://<ai-service-host>
-AI_SERVICE_KEY=<same-shared-key-as-ai-service>
-```
-
-Remote mode has no fallback to the embedded provider. An unavailable AI service
-returns an explicit error. Keep `AI_SERVICE_MODE=embedded` during rollout; revert
-to that mode to roll back. Remove the Gemini key from BE only after remote mode
-has been verified. The model reported to FE comes from the service response.
-
-Captions/Whisper, moving prompt ownership into this service and a dedicated
-repository are follow-up work; this change does not claim those are implemented.
-
-References: [LangChain Gemini structured output](https://reference.langchain.com/python/langchain-google-genai/chat_models/ChatGoogleGenerativeAI/with_structured_output),
-[FastAPI testing](https://fastapi.tiangolo.com/tutorial/testing/).
+Tests: `python -m pytest -q`. Providers are dependency-overridden; test collection/health never initializes or downloads a model or calls a paid API.

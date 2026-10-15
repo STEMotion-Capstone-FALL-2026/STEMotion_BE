@@ -1,0 +1,39 @@
+{
+  "required" : [ "scenes" ],
+  "type" : "OBJECT",
+  "properties" : {
+    "scenes" : {
+      "items" : {
+        "required" : [ "type", "title", "narration", "suggestedDurationSec" ],
+        "type" : "OBJECT",
+        "properties" : {
+          "suggestedIcons" : {
+            "items" : {
+              "type" : "STRING"
+            },
+            "type" : "ARRAY"
+          },
+          "title" : {
+            "type" : "STRING"
+          },
+          "suggestedDurationSec" : {
+            "type" : "NUMBER"
+          },
+          "narration" : {
+            "type" : "STRING"
+          },
+          "concepts" : {
+            "items" : {
+              "type" : "STRING"
+            },
+            "type" : "ARRAY"
+          },
+          "type" : {
+            "type" : "STRING"
+          }
+        }
+      },
+      "type" : "ARRAY"
+    }
+  }
+}

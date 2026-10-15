@@ -72,4 +72,35 @@ class AiGatewayTest {
             .isInstanceOfSatisfying(ApiException.class, ex -> assertThat(ex.getCode()).isEqualTo("AI_NOT_CONFIGURED"));
         verifyNoInteractions(embedded);
     }
+
+    @Test void scriptBoundarySendsStructuredInputRatherThanJavaPrompt() throws Exception {
+        var properties = new IntegrationProperties();
+        properties.getAi().setMode("remote"); properties.getAi().setApiKey("test-key");
+        var embedded = mock(GeminiClient.class);
+        var audit = mock(com.stemotion.domain.ai.service.AiRequestLogService.class);
+        when(audit.start(any(), anyString(), anyString())).thenReturn("audit-id");
+        var submitted = new AtomicReference<String>();
+        var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/script/generate", exchange -> {
+            submitted.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            assertThat(exchange.getRequestHeaders().getFirst("X-AI-Api-Key")).isEqualTo("test-key");
+            var response = "{\"result\":{\"isValidStemTopic\":false,\"scenes\":[]},\"model\":\"actual-model\",\"inputTokens\":12,\"outputTokens\":8}".getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, response.length);
+            try (var out = exchange.getResponseBody()) { out.write(response); }
+        }); server.start();
+        try {
+            properties.getAi().setBaseUrl("http://127.0.0.1:" + server.getAddress().getPort());
+            var result = new AiGateway(embedded, properties, audit).generateScript(
+                new com.stemotion.domain.ai.dto.AiDtos.GenerateScriptRequest("Ohm",
+                    com.stemotion.core.enums.StemEnums.StemSubject.Physics, "10", 0, "gameshow"));
+            var body = new ObjectMapper().readTree(submitted.get());
+            assertThat(body.path("narrativeBrief").asText()).isEqualTo("gameshow");
+            assertThat(body.has("prompt")).isFalse();
+            assertThat(result.requestId()).isEqualTo("audit-id");
+            assertThat(result.model()).isEqualTo("actual-model");
+            verify(audit).complete(eq("audit-id"), any(), anyLong(), isNull());
+            verifyNoInteractions(embedded);
+        } finally { server.stop(0); }
+    }
 }

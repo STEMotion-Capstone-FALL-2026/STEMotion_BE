@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "STEMotion AI Service",
-    "version": "1.0.0"
+    "version": "2.0.0"
   },
   "paths": {
     "/health": {
@@ -70,10 +70,415 @@
           }
         }
       }
+    },
+    "/script/generate": {
+      "post": {
+        "summary": "Generate Script",
+        "operationId": "generate_script_script_generate_post",
+        "parameters": [
+          {
+            "name": "x-ai-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Ai-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScriptInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/script/action": {
+      "post": {
+        "summary": "Action",
+        "operationId": "action_script_action_post",
+        "parameters": [
+          {
+            "name": "x-ai-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Ai-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/script/resegment": {
+      "post": {
+        "summary": "Handler",
+        "operationId": "handler_script_resegment_post",
+        "parameters": [
+          {
+            "name": "x-ai-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Ai-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/script/grade": {
+      "post": {
+        "summary": "Handler",
+        "operationId": "handler_script_grade_post",
+        "parameters": [
+          {
+            "name": "x-ai-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Ai-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/script/extract": {
+      "post": {
+        "summary": "Handler",
+        "operationId": "handler_script_extract_post",
+        "parameters": [
+          {
+            "name": "x-ai-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Ai-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/script/terms": {
+      "post": {
+        "summary": "Handler",
+        "operationId": "handler_script_terms_post",
+        "parameters": [
+          {
+            "name": "x-ai-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Ai-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ActionInput": {
+        "properties": {
+          "scriptText": {
+            "type": "string",
+            "maxLength": 60000,
+            "minLength": 1,
+            "title": "Scripttext"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "Math",
+                  "Physics",
+                  "Chemistry",
+                  "Biology",
+                  "ComputerScience",
+                  "CS"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "gradeLevel": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gradelevel"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "resegment",
+              "grade",
+              "extract",
+              "terms"
+            ],
+            "title": "Action"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scriptText",
+          "action"
+        ],
+        "title": "ActionInput"
+      },
+      "AnalysisInput": {
+        "properties": {
+          "scriptText": {
+            "type": "string",
+            "maxLength": 60000,
+            "minLength": 1,
+            "title": "Scripttext"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "Math",
+                  "Physics",
+                  "Chemistry",
+                  "Biology",
+                  "ComputerScience",
+                  "CS"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "gradeLevel": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gradelevel"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scriptText"
+        ],
+        "title": "AnalysisInput"
+      },
       "GenerationRequest": {
         "properties": {
           "systemInstruction": {
@@ -92,6 +497,18 @@
             "additionalProperties": true,
             "type": "object",
             "title": "Responseschema"
+          },
+          "task": {
+            "type": "string",
+            "enum": [
+              "generate",
+              "resegment",
+              "grade",
+              "extract",
+              "terms"
+            ],
+            "title": "Task",
+            "default": "generate"
           }
         },
         "type": "object",
@@ -174,6 +591,67 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "ScriptInput": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Topic"
+          },
+          "subject": {
+            "type": "string",
+            "enum": [
+              "Math",
+              "Physics",
+              "Chemistry",
+              "Biology",
+              "ComputerScience",
+              "CS"
+            ],
+            "title": "Subject"
+          },
+          "gradeLevel": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Gradelevel"
+          },
+          "targetDurationSec": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 300.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetdurationsec"
+          },
+          "narrativeBrief": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Narrativebrief"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "topic",
+          "subject",
+          "gradeLevel"
+        ],
+        "title": "ScriptInput"
       },
       "ValidationError": {
         "properties": {

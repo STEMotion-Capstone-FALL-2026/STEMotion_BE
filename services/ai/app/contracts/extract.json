@@ -1,0 +1,24 @@
+{
+  "required" : [ "concepts" ],
+  "type" : "OBJECT",
+  "properties" : {
+    "concepts" : {
+      "items" : {
+        "required" : [ "name" ],
+        "type" : "OBJECT",
+        "properties" : {
+          "category" : {
+            "type" : "STRING"
+          },
+          "name" : {
+            "type" : "STRING"
+          },
+          "importance" : {
+            "type" : "STRING"
+          }
+        }
+      },
+      "type" : "ARRAY"
+    }
+  }
+}

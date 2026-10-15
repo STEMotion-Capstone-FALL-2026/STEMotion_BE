@@ -1,0 +1,8 @@
+Re-cut the following %s script for %s into 5-7 coherent scenes.
+For each scene choose the most suitable template type and a duration
+in seconds proportional to how much the narration covers.
+Also suggest 2-4 icons per scene from the allowed icon names; the
+producer may swap them, so pick the ones that best picture the idea.
+
+Script:
+%s

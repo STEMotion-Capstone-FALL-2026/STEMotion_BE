@@ -1,0 +1,28 @@
+{
+  "required" : [ "issues" ],
+  "type" : "OBJECT",
+  "properties" : {
+    "issues" : {
+      "items" : {
+        "required" : [ "term", "issue", "severity" ],
+        "type" : "OBJECT",
+        "properties" : {
+          "issue" : {
+            "type" : "STRING"
+          },
+          "suggestion" : {
+            "type" : "STRING"
+          },
+          "severity" : {
+            "type" : "STRING",
+            "enum" : [ "LOW", "MEDIUM", "HIGH" ]
+          },
+          "term" : {
+            "type" : "STRING"
+          }
+        }
+      },
+      "type" : "ARRAY"
+    }
+  }
+}

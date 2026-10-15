@@ -1,0 +1,24 @@
+{
+  "required" : [ "readabilityScore", "estimatedGrade", "verdict" ],
+  "type" : "OBJECT",
+  "properties" : {
+    "verdict" : {
+      "type" : "STRING"
+    },
+    "readabilityScore" : {
+      "type" : "NUMBER"
+    },
+    "estimatedGrade" : {
+      "type" : "STRING"
+    },
+    "suggestions" : {
+      "items" : {
+        "type" : "STRING"
+      },
+      "type" : "ARRAY"
+    },
+    "matchesTargetGrade" : {
+      "type" : "BOOLEAN"
+    }
+  }
+}
