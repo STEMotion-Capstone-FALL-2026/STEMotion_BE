@@ -48,6 +48,21 @@ public class AuthService {
         return UserResponse.from(findUserOrThrow(userId));
     }
 
+    @Transactional
+    public UserResponse changePassword(String userId, com.stemotion.domain.auth.dto.AuthDtos.ChangePasswordRequest request) {
+        User user = findUserOrThrow(userId);
+        if (user.getPasswordHash() == null
+            || !passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw ApiException.badRequest("Current password does not match");
+        }
+        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+            throw ApiException.badRequest("New password must be different from the current password");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        user.setMustChangePassword(false);
+        return UserResponse.from(userRepository.save(user));
+    }
+
     @Transactional(readOnly = true)
     public User findUserOrThrow(String userId) {
         return userRepository.findById(userId)

@@ -48,4 +48,16 @@ public class AuthController {
         }
         return ResponseEntity.ok(authService.getCurrentUser(principal.getUsername()));
     }
+
+    @PostMapping("/change-password")
+    @Operation(summary = "Change password for the authenticated user")
+    public ResponseEntity<UserResponse> changePassword(
+        @AuthenticationPrincipal UserDetails principal,
+        @Valid @RequestBody com.stemotion.domain.auth.dto.AuthDtos.ChangePasswordRequest request
+    ) {
+        if (principal == null) {
+            throw ApiException.unauthorized("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
+        }
+        return ResponseEntity.ok(authService.changePassword(principal.getUsername(), request));
+    }
 }

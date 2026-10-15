@@ -26,6 +26,7 @@ class ScriptDraftAccessTest {
     @MockBean JwtService jwt;
     @MockBean CustomUserDetailsService details;
     @MockBean ResourceAccessInterceptor resources;
+    @MockBean(name = "workspaceAccess") WorkspaceAccess workspaceAccess;
 
     @BeforeEach void allowResourceScopeForRoleChecks() throws Exception {
         when(resources.preHandle(any(), any(), any())).thenReturn(true);
@@ -37,6 +38,7 @@ class ScriptDraftAccessTest {
     }
     @ParameterizedTest @ValueSource(strings = {"PRODUCER", "REVIEWER"})
     void nonWriterCannotSaveDraftEvenWhenResourceScopeAllowsIt(String role) throws Exception {
+        when(workspaceAccess.hasProjectRole(eq("project-id"), eq("owner"), eq("WRITER"))).thenReturn(false);
         mvc.perform(put("/api/v1/scripts/project-id").with(user("owner").roles(role))
             .contentType(MediaType.APPLICATION_JSON).content("{}"))
             .andExpect(status().isForbidden());
@@ -44,6 +46,7 @@ class ScriptDraftAccessTest {
     }
     @ParameterizedTest @ValueSource(strings = {"WRITER", "ADMIN"})
     void writerAndAdminReachDraftService(String role) throws Exception {
+        when(workspaceAccess.hasProjectRole(eq("project-id"), eq("owner"), eq("WRITER"))).thenReturn(true);
         mvc.perform(put("/api/v1/scripts/project-id").with(user("owner").roles(role))
             .contentType(MediaType.APPLICATION_JSON).content("{}"))
             .andExpect(status().isOk());

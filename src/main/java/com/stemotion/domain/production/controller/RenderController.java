@@ -34,7 +34,7 @@ public class RenderController {
 
     @PostMapping("/projects/{projectId}/start")
     @Operation(summary = "Queue a render of the approved script")
-    @PreAuthorize("hasAnyRole('PRODUCER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasProjectRole(#projectId, authentication.name, 'PRODUCER')")
     public ResponseEntity<RenderJobResponse> start(
         @PathVariable String projectId,
         @RequestBody(required = false) StartRenderRequest request,
@@ -60,7 +60,7 @@ public class RenderController {
     }
 
     @PostMapping("/jobs/{jobId}/retry")
-    @PreAuthorize("hasAnyRole('PRODUCER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasJobRole(#jobId, authentication.name, 'PRODUCER')")
     public ResponseEntity<RenderJobResponse> retry(
         @PathVariable String jobId,
         @AuthenticationPrincipal UserDetails principal
@@ -69,7 +69,7 @@ public class RenderController {
     }
 
     @DeleteMapping("/jobs/{jobId}")
-    @PreAuthorize("hasAnyRole('PRODUCER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasJobRole(#jobId, authentication.name, 'PRODUCER')")
     public ResponseEntity<Void> cancel(@PathVariable String jobId) {
         renderService.cancel(jobId);
         return ResponseEntity.noContent().build();

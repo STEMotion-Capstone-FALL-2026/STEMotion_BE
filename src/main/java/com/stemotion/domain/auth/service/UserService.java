@@ -30,7 +30,9 @@ public class UserService {
         User user = User.builder().fullName(request.fullName()).email(request.email())
             .passwordHash(passwordEncoder.encode(request.password()))
             .role(request.role() == null ? User.UserRole.WRITER : request.role())
-            .status(User.UserStatus.ACTIVE).build();
+            .status(User.UserStatus.ACTIVE)
+            .mustChangePassword(true)
+            .build();
         // Return the account only, never a JWT belonging to the new user.
         return UserResponse.from(userRepository.save(user));
     }
@@ -51,6 +53,10 @@ public class UserService {
         if (request.fullName() != null) user.setFullName(request.fullName());
         if (request.role() != null) user.setRole(request.role());
         if (request.status() != null) user.setStatus(request.status());
+        if (request.password() != null && !request.password().isBlank()) {
+            user.setPasswordHash(passwordEncoder.encode(request.password()));
+            user.setMustChangePassword(true);
+        }
         return UserResponse.from(userRepository.save(user));
     }
 

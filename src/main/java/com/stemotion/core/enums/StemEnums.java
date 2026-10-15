@@ -122,6 +122,6 @@ public final class StemEnums {
     /** Membership state inside a workspace. */
     public enum MemberStatus {
         ACTIVE,
-        INVITED
+        INACTIVE
     }
 }

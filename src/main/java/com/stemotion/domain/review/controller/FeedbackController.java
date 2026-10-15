@@ -86,7 +86,7 @@ public class FeedbackController {
 
     @PostMapping("/scripts/{projectId}/approve-video")
     @Operation(summary = "Sign off the rendered clip once every note is resolved")
-    @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasProjectRole(#projectId, authentication.name, 'REVIEWER')")
     public ResponseEntity<Void> approveVideo(@PathVariable String projectId,
             @AuthenticationPrincipal UserDetails principal,
             @RequestBody(required = false) com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest request) {
@@ -96,7 +96,7 @@ public class FeedbackController {
 
     @PostMapping("/scripts/{projectId}/send-back")
     @Operation(summary = "Return the clip to the producer for a re-render")
-    @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasProjectRole(#projectId, authentication.name, 'REVIEWER')")
     public ResponseEntity<Void> sendBack(@PathVariable String projectId,
             @AuthenticationPrincipal UserDetails principal,
             @RequestBody(required = false) com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest request) {

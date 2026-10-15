@@ -3,7 +3,6 @@ package com.stemotion.domain.workspace.dto;
 import com.stemotion.core.enums.StemEnums.MemberStatus;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.workspace.entity.WorkspaceMember;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -14,7 +13,10 @@ public final class WorkspaceDtos {
     public record WorkspaceRequest(
         @NotBlank(message = "name is required")
         String name,
-        String department
+        String department,
+        @NotBlank(message = "leaderUserId is required")
+        String leaderUserId,
+        User.UserRole leaderRole
     ) {}
 
     public record WorkspaceResponse(
@@ -22,22 +24,26 @@ public final class WorkspaceDtos {
         String name,
         String department,
         long membersCount,
-        long activeProjects
+        long activeProjects,
+        User.UserRole myRole,
+        Boolean isLeader
     ) {}
 
-    public record InviteMemberRequest(
-        @NotBlank(message = "email is required")
-        @Email(message = "email must be a valid address")
-        String email,
+    public record AddMemberRequest(
+        @NotBlank(message = "userId is required")
+        String userId,
 
         @NotNull(message = "role is required")
-        User.UserRole role
+        User.UserRole role,
+
+        Boolean leader
     ) {}
 
-    /** Raw token is returned once to the workspace administrator, never in member lists. */
-    public record InvitationResponse(MemberResponse member, String token, java.time.Instant expiresAt) {}
-
-    public record AcceptInvitationRequest(@NotBlank String token) {}
+    public record UpdateMemberRequest(
+        User.UserRole role,
+        MemberStatus status,
+        Boolean leader
+    ) {}
 
     public record MemberResponse(
         String id,
@@ -45,23 +51,30 @@ public final class WorkspaceDtos {
         String name,
         String email,
         User.UserRole role,
+        boolean isLeader,
         MemberStatus status
     ) {
         public static MemberResponse from(WorkspaceMember member) {
             User user = member.getUser();
             return new MemberResponse(
                 member.getId(),
-                user == null ? null : user.getId(),
-                user == null ? member.getInvitedEmail() : user.getFullName(),
-                member.getInvitedEmail(),
+                user.getId(),
+                user.getFullName(),
+                user.getEmail(),
                 member.getRole(),
+                member.isLeader(),
                 member.getStatus()
             );
         }
     }
 
-    public record UpdateMemberRequest(
-        User.UserRole role,
-        MemberStatus status
-    ) {}
+    public record CandidateUserResponse(
+        String id,
+        String fullName,
+        String email
+    ) {
+        public static CandidateUserResponse from(User user) {
+            return new CandidateUserResponse(user.getId(), user.getFullName(), user.getEmail());
+        }
+    }
 }

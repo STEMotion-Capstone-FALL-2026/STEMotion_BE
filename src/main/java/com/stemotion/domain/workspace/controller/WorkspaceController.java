@@ -1,6 +1,7 @@
 package com.stemotion.domain.workspace.controller;
 
-import com.stemotion.domain.workspace.dto.WorkspaceDtos.InviteMemberRequest;
+import com.stemotion.domain.workspace.dto.WorkspaceDtos.AddMemberRequest;
+import com.stemotion.domain.workspace.dto.WorkspaceDtos.CandidateUserResponse;
 import com.stemotion.domain.workspace.dto.WorkspaceDtos.MemberResponse;
 import com.stemotion.domain.workspace.dto.WorkspaceDtos.UpdateMemberRequest;
 import com.stemotion.domain.workspace.dto.WorkspaceDtos.WorkspaceRequest;
@@ -52,6 +53,8 @@ public class WorkspaceController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Admin creates a workspace with a designated leader")
     public ResponseEntity<WorkspaceResponse> create(
         @Valid @RequestBody WorkspaceRequest request,
         @AuthenticationPrincipal UserDetails principal
@@ -61,6 +64,7 @@ public class WorkspaceController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<WorkspaceResponse> update(
         @PathVariable String id,
         @Valid @RequestBody WorkspaceRequest request
@@ -69,6 +73,7 @@ public class WorkspaceController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         workspaceService.delete(id);
         return ResponseEntity.noContent().build();
@@ -79,16 +84,23 @@ public class WorkspaceController {
         return ResponseEntity.ok(workspaceService.findMembers(id));
     }
 
+    @GetMapping("/{id}/candidates")
+    @Operation(summary = "List active users eligible to be added to this workspace")
+    public ResponseEntity<List<CandidateUserResponse>> candidates(@PathVariable String id) {
+        return ResponseEntity.ok(workspaceService.findCandidates(id));
+    }
+
     @PostMapping("/{id}/members")
-    @Operation(summary = "Invite a teacher by email")
-    public ResponseEntity<com.stemotion.domain.workspace.dto.WorkspaceDtos.InvitationResponse> invite(
+    @Operation(summary = "Directly assign an existing user to this workspace")
+    public ResponseEntity<MemberResponse> addMember(
         @PathVariable String id,
-        @Valid @RequestBody InviteMemberRequest request
+        @Valid @RequestBody AddMemberRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(workspaceService.invite(id, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(workspaceService.addMember(id, request));
     }
 
     @PatchMapping("/{id}/members/{memberId}")
+    @Operation(summary = "Update member role, status, or leader designation")
     public ResponseEntity<MemberResponse> updateMember(
         @PathVariable String id,
         @PathVariable String memberId,
@@ -98,6 +110,7 @@ public class WorkspaceController {
     }
 
     @DeleteMapping("/{id}/members/{memberId}")
+    @Operation(summary = "Remove a member from this workspace")
     public ResponseEntity<Void> removeMember(@PathVariable String id, @PathVariable String memberId) {
         workspaceService.removeMember(id, memberId);
         return ResponseEntity.noContent().build();

@@ -6,17 +6,44 @@ import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.repository.UserRepository;
 import com.stemotion.domain.project.entity.ClipProject;
 import com.stemotion.domain.project.repository.ClipProjectRepository;
+import com.stemotion.domain.production.repository.RenderJobRepository;
 import com.stemotion.domain.workspace.repository.WorkspaceMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-@Component
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Component("workspaceAccess")
 @RequiredArgsConstructor
 public class WorkspaceAccess {
     private final UserRepository users;
     private final WorkspaceMemberRepository members;
     private final ClipProjectRepository projects;
+    private final RenderJobRepository jobs;
+
+    @Transactional(readOnly = true)
+    public boolean isAdmin(String userId) {
+        return users.findById(userId).map(u -> u.getRole() == User.UserRole.ADMIN).orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isLeader(String workspaceId, String userId) {
+        if (isAdmin(userId)) return true;
+        return members.findByUserId(userId).stream().anyMatch(member ->
+            member.getStatus() == MemberStatus.ACTIVE
+            && member.getWorkspace().getId().equals(workspaceId)
+            && member.isLeader());
+    }
+
+    @Transactional(readOnly = true)
+    public void requireLeaderOrAdmin(String workspaceId, String userId) {
+        if (!isLeader(workspaceId, userId)) {
+            throw ApiException.forbidden("Requires workspace leader or system administrator access");
+        }
+    }
 
     @Transactional(readOnly = true)
     public boolean canRead(String workspaceId, String userId) {
@@ -27,23 +54,88 @@ public class WorkspaceAccess {
     @Transactional(readOnly = true)
     public void requireWorkspace(String workspaceId, String userId, boolean manage) {
         if (isAdmin(userId)) return;
-        boolean allowed = members.findByUserId(userId).stream().anyMatch(member ->
-            member.getStatus() == MemberStatus.ACTIVE && member.getWorkspace().getId().equals(workspaceId)
-            && (!manage || member.getRole() == User.UserRole.ADMIN));
-        if (!allowed) throw ApiException.forbidden("You do not have access to this workspace");
+        if (manage) {
+            requireLeaderOrAdmin(workspaceId, userId);
+        } else {
+            if (!canRead(workspaceId, userId)) {
+                throw ApiException.forbidden("You do not have access to this workspace");
+            }
+        }
     }
 
     @Transactional(readOnly = true)
     public void requireProject(String projectId, String userId, boolean editDraft) {
         ClipProject project = projects.findById(projectId)
             .orElseThrow(() -> ApiException.notFound("Script", projectId));
-        requireWorkspace(project.getWorkspace().getId(), userId, false);
-        if (editDraft && !isAdmin(userId) && !project.getOwner().getId().equals(userId)) {
-            requireWorkspace(project.getWorkspace().getId(), userId, true);
+        if (editDraft) {
+            requireProjectRole(projectId, userId, Set.of(User.UserRole.WRITER));
+        } else {
+            requireWorkspace(project.getWorkspace().getId(), userId, false);
         }
     }
 
-    private boolean isAdmin(String userId) {
-        return users.findById(userId).map(u -> u.getRole() == User.UserRole.ADMIN).orElse(false);
+    @Transactional(readOnly = true)
+    public void requireProjectRole(String projectId, String userId, Set<User.UserRole> allowedRoles) {
+        if (isAdmin(userId)) return;
+        ClipProject project = projects.findById(projectId)
+            .orElseThrow(() -> ApiException.notFound("Script", projectId));
+        requireWorkspaceRole(project.getWorkspace().getId(), userId, allowedRoles);
+    }
+
+    @Transactional(readOnly = true)
+    public void requireWorkspaceRole(String workspaceId, String userId, Set<User.UserRole> allowedRoles) {
+        if (isAdmin(userId)) return;
+        boolean allowed = members.findByUserId(userId).stream().anyMatch(member ->
+            member.getStatus() == MemberStatus.ACTIVE
+            && member.getWorkspace().getId().equals(workspaceId)
+            && allowedRoles.contains(member.getRole()));
+        if (!allowed) {
+            throw ApiException.forbidden("You do not have the required role in this workspace");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasWorkspaceRole(String workspaceId, String userId, String... roleNames) {
+        if (isAdmin(userId)) return true;
+        Set<User.UserRole> roles = Arrays.stream(roleNames)
+            .map(User.UserRole::valueOf)
+            .collect(Collectors.toSet());
+        return members.findByUserId(userId).stream().anyMatch(member ->
+            member.getStatus() == MemberStatus.ACTIVE
+            && member.getWorkspace().getId().equals(workspaceId)
+            && roles.contains(member.getRole()));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasProjectRole(String projectId, String userId, String... roleNames) {
+        if (isAdmin(userId)) return true;
+        return projects.findById(projectId)
+            .map(project -> hasWorkspaceRole(project.getWorkspace().getId(), userId, roleNames))
+            .orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasJobRole(String jobId, String userId, String... roleNames) {
+        if (isAdmin(userId)) return true;
+        return jobs.findById(jobId)
+            .map(job -> hasProjectRole(job.getProject().getId(), userId, roleNames))
+            .orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isReviewerAnywhere(String userId) {
+        if (isAdmin(userId)) return true;
+        return members.findByUserId(userId).stream().anyMatch(m ->
+            m.getStatus() == MemberStatus.ACTIVE && m.getRole() == User.UserRole.REVIEWER);
+    }
+
+    @Transactional(readOnly = true)
+    public void requireAiAccess(String userId) {
+        if (isAdmin(userId)) return;
+        boolean hasActiveWriter = members.findByUserId(userId).stream().anyMatch(m ->
+            m.getStatus() == MemberStatus.ACTIVE && m.getRole() == User.UserRole.WRITER);
+        if (!hasActiveWriter) {
+            throw ApiException.forbidden("Requires WRITER membership in at least one workspace or ADMIN role");
+        }
     }
 }

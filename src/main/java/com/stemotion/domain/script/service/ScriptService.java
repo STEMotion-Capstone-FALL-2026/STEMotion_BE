@@ -193,7 +193,7 @@ public class ScriptService {
     public ScriptResponse submitForReview(String projectId, String currentUserId) {
         ClipProject project = getOrThrow(projectId);
         requireStatus(project, ScriptStatus.DRAFT, ScriptStatus.CHANGE_REQUESTED);
-        requireOwner(project, currentUserId);
+        workspaceAccess.requireProjectRole(projectId, currentUserId, java.util.Set.of(User.UserRole.WRITER));
 
         ScriptVersion current = currentVersion(project);
         List<Scene> scenes = scenesOf(current);

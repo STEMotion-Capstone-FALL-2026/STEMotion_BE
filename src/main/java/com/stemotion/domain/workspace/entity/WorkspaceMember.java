@@ -19,17 +19,17 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Links a user to a workspace with the role they play inside it.
+ * Links an active user to a workspace with the role they play inside it.
  *
- * <p>An invited teacher has no account yet, so {@code user} stays null
- * until the invitation is accepted and only {@code invitedEmail} is set.
+ * <p>Members are provisioned directly by administrators or workspace leaders.
+ * A member can optionally be designated as a workspace leader ({@code isLeader}).
  */
 @Entity
 @Table(
     name = "workspace_members",
     uniqueConstraints = @UniqueConstraint(
-        name = "uk_workspace_member_email",
-        columnNames = {"workspace_id", "invited_email"}
+        name = "uk_workspace_member_user",
+        columnNames = {"workspace_id", "user_id"}
     )
 )
 @Getter
@@ -39,29 +39,24 @@ import lombok.Setter;
 @Builder
 public class WorkspaceMember extends BaseEntity {
 
-    @Column(name = "invitation_token_hash", length = 64)
-    private String invitationTokenHash;
-
-    @Column(name = "invitation_expires_at")
-    private java.time.Instant invitationExpiresAt;
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @Column(name = "invited_email", nullable = false)
-    private String invitedEmail;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private User.UserRole role;
 
+    @Column(name = "is_leader", nullable = false)
+    @Builder.Default
+    private boolean isLeader = false;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @Builder.Default
-    private MemberStatus status = MemberStatus.INVITED;
+    private MemberStatus status = MemberStatus.ACTIVE;
 }

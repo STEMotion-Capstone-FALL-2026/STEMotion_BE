@@ -5,7 +5,8 @@ import com.stemotion.core.exception.ApiException;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.repository.UserRepository;
 import com.stemotion.domain.project.repository.ClipProjectRepository;
-import com.stemotion.domain.workspace.dto.WorkspaceDtos.InviteMemberRequest;
+import com.stemotion.domain.workspace.dto.WorkspaceDtos.AddMemberRequest;
+import com.stemotion.domain.workspace.dto.WorkspaceDtos.CandidateUserResponse;
 import com.stemotion.domain.workspace.dto.WorkspaceDtos.MemberResponse;
 import com.stemotion.domain.workspace.dto.WorkspaceDtos.UpdateMemberRequest;
 import com.stemotion.domain.workspace.dto.WorkspaceDtos.WorkspaceRequest;
@@ -19,19 +20,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.time.Instant;
-import java.time.Duration;
-import java.util.Locale;
-import java.util.Base64;
-import java.security.SecureRandom;
-import java.security.MessageDigest;
-import java.nio.charset.StandardCharsets;
-import com.stemotion.domain.workspace.dto.WorkspaceDtos.InvitationResponse;
 
 /**
- * Subject departments and their membership. Inviting a teacher who has no
- * account yet records an inactive seat. Acceptance requires a one-time token
- * delivered privately by the administrator, plus a matching signed-in account.
+ * Subject departments ("tổ bộ môn") and their memberships.
+ * Members are assigned directly by administrators or workspace leaders without email tokens.
  */
 @Service
 @RequiredArgsConstructor
@@ -51,8 +43,15 @@ public class WorkspaceService {
     public List<WorkspaceResponse> findMine(String userId) {
         return memberRepository.findByUserId(userId).stream()
             .filter(member -> member.getStatus() == MemberStatus.ACTIVE)
-            .map(WorkspaceMember::getWorkspace)
-            .map(this::toResponse)
+            .map(member -> new WorkspaceResponse(
+                member.getWorkspace().getId(),
+                member.getWorkspace().getName(),
+                member.getWorkspace().getDepartment(),
+                memberRepository.countByWorkspaceId(member.getWorkspace().getId()),
+                projectRepository.countByWorkspaceId(member.getWorkspace().getId()),
+                member.getRole(),
+                member.isLeader()
+            ))
             .toList();
     }
 
@@ -61,11 +60,20 @@ public class WorkspaceService {
         return toResponse(getOrThrow(id));
     }
 
-    /** The creator is seated as ADMIN so a new workspace is never orphaned. */
+    /**
+     * Admin creates a workspace and immediately seats the designated leader.
+     */
     @Transactional
     public WorkspaceResponse create(WorkspaceRequest request, String currentUserId) {
         User creator = userRepository.findById(currentUserId)
             .orElseThrow(() -> ApiException.notFound("User", currentUserId));
+
+        User leader = userRepository.findById(request.leaderUserId())
+            .orElseThrow(() -> ApiException.notFound("User", request.leaderUserId()));
+
+        if (leader.getStatus() != User.UserStatus.ACTIVE) {
+            throw ApiException.badRequest("Selected workspace leader must be an active user");
+        }
 
         Workspace workspace = workspaceRepository.save(Workspace.builder()
             .name(request.name())
@@ -73,11 +81,16 @@ public class WorkspaceService {
             .createdBy(creator)
             .build());
 
+        User.UserRole leaderRole = request.leaderRole() != null ? request.leaderRole() : User.UserRole.WRITER;
+        if (leaderRole == User.UserRole.ADMIN) {
+            leaderRole = User.UserRole.WRITER;
+        }
+
         memberRepository.save(WorkspaceMember.builder()
             .workspace(workspace)
-            .user(creator)
-            .invitedEmail(creator.getEmail())
-            .role(User.UserRole.ADMIN)
+            .user(leader)
+            .role(leaderRole)
+            .isLeader(true)
             .status(MemberStatus.ACTIVE)
             .build());
 
@@ -111,81 +124,83 @@ public class WorkspaceService {
             .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<CandidateUserResponse> findCandidates(String workspaceId) {
+        getOrThrow(workspaceId);
+        return userRepository.findCandidatesForWorkspace(workspaceId)
+            .stream()
+            .map(CandidateUserResponse::from)
+            .toList();
+    }
+
     @Transactional
-    public InvitationResponse invite(String workspaceId, InviteMemberRequest request) {
+    public MemberResponse addMember(String workspaceId, AddMemberRequest request) {
         Workspace workspace = getOrThrow(workspaceId);
-        String email = request.email().strip().toLowerCase(Locale.ROOT);
-        WorkspaceMember member = memberRepository
-            .findByWorkspaceIdAndInvitedEmailIgnoreCase(workspaceId, email)
-            .orElseGet(() -> WorkspaceMember.builder().workspace(workspace).invitedEmail(email).build());
-        if (member.getStatus() == MemberStatus.ACTIVE) {
-            throw ApiException.conflict("This account is already an active member");
-        }
-        byte[] bytes = new byte[32];
-        new SecureRandom().nextBytes(bytes);
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        member.setUser(null);
-        member.setRole(request.role());
-        member.setStatus(MemberStatus.INVITED);
-        member.setInvitationTokenHash(hashToken(token));
-        member.setInvitationExpiresAt(Instant.now().plus(Duration.ofDays(7)));
-        member = memberRepository.save(member);
-        return new InvitationResponse(MemberResponse.from(member), token, member.getInvitationExpiresAt());
-    }
+        User user = userRepository.findById(request.userId())
+            .orElseThrow(() -> ApiException.notFound("User", request.userId()));
 
-    @Transactional
-    public MemberResponse acceptInvitation(String token, String userId) {
-        if (token == null || !token.matches("[A-Za-z0-9_-]{43}")) {
-            throw ApiException.badRequest("Invalid or expired invitation");
+        if (user.getStatus() != User.UserStatus.ACTIVE) {
+            throw ApiException.badRequest("User is not active and cannot be added to a workspace");
         }
-        WorkspaceMember member = memberRepository.findByInvitationTokenHash(hashToken(token))
-            .orElseThrow(() -> ApiException.badRequest("Invalid or expired invitation"));
-        if (member.getStatus() != MemberStatus.INVITED || member.getInvitationExpiresAt() == null
-            || !member.getInvitationExpiresAt().isAfter(Instant.now())) {
-            throw ApiException.badRequest("Invalid or expired invitation");
-        }
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> ApiException.notFound("User", userId));
-        if (user.getStatus() != User.UserStatus.ACTIVE
-            || !member.getInvitedEmail().equalsIgnoreCase(user.getEmail())) {
-            throw ApiException.forbidden("Sign in with the account this invitation was issued to");
-        }
-        member.setUser(user);
-        member.setStatus(MemberStatus.ACTIVE);
-        member.setInvitationTokenHash(null);
-        member.setInvitationExpiresAt(null);
-        return MemberResponse.from(memberRepository.save(member));
-    }
 
-    private static String hashToken(String token) {
-        try {
-            return java.util.HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                .digest(token.getBytes(StandardCharsets.UTF_8)));
-        } catch (java.security.NoSuchAlgorithmException impossible) {
-            throw new IllegalStateException(impossible);
+        if (memberRepository.existsByWorkspaceIdAndUserId(workspaceId, user.getId())) {
+            throw ApiException.conflict("This user is already a member of this workspace");
         }
+
+        User.UserRole memberRole = request.role();
+        if (memberRole == User.UserRole.ADMIN) {
+            memberRole = User.UserRole.WRITER;
+        }
+
+        WorkspaceMember member = memberRepository.save(WorkspaceMember.builder()
+            .workspace(workspace)
+            .user(user)
+            .role(memberRole)
+            .isLeader(Boolean.TRUE.equals(request.leader()))
+            .status(MemberStatus.ACTIVE)
+            .build());
+
+        return MemberResponse.from(member);
     }
 
     @Transactional
     public MemberResponse updateMember(String workspaceId, String memberId, UpdateMemberRequest request) {
         WorkspaceMember member = memberOrThrow(workspaceId, memberId);
-        if (request.status() == MemberStatus.ACTIVE && member.getStatus() != MemberStatus.ACTIVE) {
-            throw ApiException.badRequest("An inactive seat must accept a new invitation before activation");
+
+        boolean isDemotingLeader = member.isLeader() && Boolean.FALSE.equals(request.leader());
+        boolean isDeactivatingLeader = member.isLeader() && request.status() == MemberStatus.INACTIVE;
+
+        if ((isDemotingLeader || isDeactivatingLeader) && member.getStatus() == MemberStatus.ACTIVE) {
+            long activeLeaders = memberRepository.countByWorkspaceIdAndIsLeaderTrueAndStatus(workspaceId, MemberStatus.ACTIVE);
+            if (activeLeaders <= 1) {
+                throw ApiException.badRequest("Cannot remove or deactivate the last active leader of the workspace");
+            }
         }
+
         if (request.role() != null) {
-            member.setRole(request.role());
+            User.UserRole newRole = request.role() == User.UserRole.ADMIN ? User.UserRole.WRITER : request.role();
+            member.setRole(newRole);
         }
         if (request.status() != null) {
             member.setStatus(request.status());
-            member.setInvitationTokenHash(null);
-            member.setInvitationExpiresAt(null);
         }
+        if (request.leader() != null) {
+            member.setLeader(request.leader());
+        }
+
         return MemberResponse.from(memberRepository.save(member));
     }
 
     @Transactional
     public void removeMember(String workspaceId, String memberId) {
-        memberRepository.delete(memberOrThrow(workspaceId, memberId));
+        WorkspaceMember member = memberOrThrow(workspaceId, memberId);
+        if (member.isLeader() && member.getStatus() == MemberStatus.ACTIVE) {
+            long activeLeaders = memberRepository.countByWorkspaceIdAndIsLeaderTrueAndStatus(workspaceId, MemberStatus.ACTIVE);
+            if (activeLeaders <= 1) {
+                throw ApiException.badRequest("Cannot delete the last active leader of the workspace");
+            }
+        }
+        memberRepository.delete(member);
     }
 
     @Transactional(readOnly = true)
@@ -209,7 +224,9 @@ public class WorkspaceService {
             workspace.getName(),
             workspace.getDepartment(),
             memberRepository.countByWorkspaceId(workspace.getId()),
-            projectRepository.countByWorkspaceId(workspace.getId())
+            projectRepository.countByWorkspaceId(workspace.getId()),
+            null,
+            null
         );
     }
 }

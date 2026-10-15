@@ -1,5 +1,6 @@
 package com.stemotion.domain.workspace.repository;
 
+import com.stemotion.core.enums.StemEnums.MemberStatus;
 import com.stemotion.domain.workspace.entity.WorkspaceMember;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,14 +15,13 @@ public interface WorkspaceMemberRepository extends JpaRepository<WorkspaceMember
 
     List<WorkspaceMember> findByUserId(String userId);
 
-    Optional<WorkspaceMember> findByWorkspaceIdAndInvitedEmail(String workspaceId, String invitedEmail);
-
-    Optional<WorkspaceMember> findByWorkspaceIdAndInvitedEmailIgnoreCase(String workspaceId, String invitedEmail);
-
-    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
-    Optional<WorkspaceMember> findByInvitationTokenHash(String invitationTokenHash);
+    Optional<WorkspaceMember> findByWorkspaceIdAndUserId(String workspaceId, String userId);
 
     boolean existsByWorkspaceIdAndUserId(String workspaceId, String userId);
+
+    boolean existsByWorkspaceIdAndUserIdAndStatus(String workspaceId, String userId, MemberStatus status);
+
+    long countByWorkspaceIdAndIsLeaderTrueAndStatus(String workspaceId, MemberStatus status);
 
     long countByWorkspaceId(String workspaceId);
 }

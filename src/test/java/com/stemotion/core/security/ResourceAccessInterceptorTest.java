@@ -1,5 +1,6 @@
 package com.stemotion.core.security;
 
+import com.stemotion.domain.auth.repository.UserRepository;
 import com.stemotion.domain.production.entity.RenderJob;
 import com.stemotion.domain.production.repository.RenderJobRepository;
 import com.stemotion.domain.project.entity.ClipProject;
@@ -18,8 +19,9 @@ import static org.mockito.Mockito.*;
 
 class ResourceAccessInterceptorTest {
     final WorkspaceAccess access = mock(WorkspaceAccess.class);
+    final UserRepository users = mock(UserRepository.class);
     final RenderJobRepository jobs = mock(RenderJobRepository.class);
-    final ResourceAccessInterceptor interceptor = new ResourceAccessInterceptor(access, jobs,
+    final ResourceAccessInterceptor interceptor = new ResourceAccessInterceptor(access, users, jobs,
         mock(SceneRepository.class), mock(FeedbackCommentRepository.class));
     @AfterEach void clear() { SecurityContextHolder.clearContext(); }
     void check(String method, String uri, Map<String, String> variables) {
