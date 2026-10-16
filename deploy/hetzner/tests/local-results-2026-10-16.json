@@ -1,0 +1,29 @@
+{
+  "worker": "stemotion-render:gcp-20261011",
+  "paidApiCalls": 0,
+  "modelDownloaded": false,
+  "runningImageSnapshot": "PASS (4 exact container image IDs)",
+  "/health": 200,
+  "/ai/health": 200,
+  "/worker/health": 200,
+  "redisAuth": "PASS",
+  "redisRestartPersistence": "PASS",
+  "workerRedisBootstrap": "PASS",
+  "readiness": "503 as expected (empty weights/key)",
+  "publishedServices": [
+    "caddy"
+  ],
+  "heavyRenderTested": false,
+  "date": "2026-10-16",
+  "sourceWorkerBuild": "FAIL: RENDER manifest 4.0.526 vs lock 4.0.527",
+  "workerSourceCommit": "97ac5c1678144211effae788061659003b5a0750",
+  "feSourceCommit": "daaf47f1f7cc9772ac30a94cec8118ffafeb950a",
+  "workerImageId": "sha256:26c3c46f6ce01a8710395fecb52ebfb644896fd01484a0e2e4274931cd3e112b",
+  "workerImageEquivalentToCurrentSource": "unverified",
+  "setupSimulation": "PASS twice with package/systemd/UFW/swap mocks",
+  "shellcheck": "PASS",
+  "preflightUnitTests": 4,
+  "prodCaddyValidation": "PASS --network none; no ACME issuance",
+  "realVpsCreated": false,
+  "hostFirewallOrSwapApplied": false
+}

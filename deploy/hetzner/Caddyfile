@@ -1,0 +1,10 @@
+{
+	admin off
+	email {$ACME_EMAIL:ops@example.invalid}
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+}
+# Container-local liveness, never published on the host.
+http://127.0.0.1:8081 {
+	respond /health "ok" 200
+}
+import /etc/caddy/modes/{$DEPLOY_MODE:test}.caddy

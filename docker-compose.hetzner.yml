@@ -1,0 +1,136 @@
+# Run from BE root with: docker compose --env-file deploy/hetzner/.env -f docker-compose.hetzner.yml ...
+name: stemotion-hetzner
+x-logging: &logging
+  driver: json-file
+  options: {max-size: "10m", max-file: "3"}
+services:
+  ai-service:
+    image: ${AI_IMAGE:-stemotion-ai:hetzner-local}
+    build: {context: ./services/ai, dockerfile: Dockerfile}
+    restart: unless-stopped
+    mem_limit: 2.5g
+    cpus: 1.0
+    environment:
+      PORT: "8000"
+      AI_PROVIDER: openai
+      AI_SERVICE_SHARED_KEY: ${AI_SERVICE_SHARED_KEY:?Set AI_SERVICE_SHARED_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL_DRAFT: ${OPENAI_MODEL_DRAFT:-gpt-4o-2024-08-06}
+      OPENAI_MODEL_LIGHT: ${OPENAI_MODEL_LIGHT:-gpt-4o-mini-2024-07-18}
+      WHISPER_MODEL_DIR: /models/faster-whisper-small
+      WHISPER_LOCAL_FILES_ONLY: "true"
+      WHISPER_STARTUP_MODE: ${WHISPER_STARTUP_MODE:-required}
+      WHISPER_MIN_WORD_PROBABILITY: ${WHISPER_MIN_WORD_PROBABILITY:-0.05}
+      UVICORN_WORKERS: "1"
+      OMP_NUM_THREADS: "1"
+    volumes: ["${WHISPER_HOST_DIR:-./models}:/models:ro"]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 120s
+      retries: 5
+    networks: [private]
+    logging: *logging
+
+  worker:
+    image: ${WORKER_IMAGE:-stemotion-worker:hetzner-local}
+    build:
+      context: ${WORKER_BUILD_CONTEXT:-../STEMotion_RENDER}
+      additional_contexts:
+        fe: ${WORKER_FE_BUILD_CONTEXT:-../STEMotion_FE}
+    restart: unless-stopped
+    mem_limit: 1.5g
+    cpus: 1.0
+    shm_size: 256m
+    stop_grace_period: 5m
+    environment:
+      PORT: "4000"
+      RENDER_SERVICE_KEY: ${RENDER_SERVICE_KEY:?Set RENDER_SERVICE_KEY}
+      USE_REDIS: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+      # Deployment-only ioredis defaults; frozen worker currently ignores password env.
+      NODE_OPTIONS: --require=/opt/stemotion/redis-auth.cjs
+      RENDER_CONCURRENCY: "1"
+      RENDER_FRAME_CONCURRENCY: "1"
+      API_CALLBACK_URL: ${API_CALLBACK_URL:?Set the BE callback URL}
+      PUBLIC_BASE_URL: ${WORKER_PUBLIC_BASE_URL:?Set public videos URL}
+      AUDIO_BASE_URL: http://worker:4000/audio
+      OUTPUT_DIR: /workspace/STEMotion_RENDER/output
+      USE_MINIO: "false"
+      USE_TTS: ${USE_TTS:-false}
+      TTS_PROVIDER: ${TTS_PROVIDER:-fpt}
+      TTS_API_KEY: ${TTS_API_KEY:-}
+      TTS_VOICE: ${TTS_VOICE:-banmai}
+      TTS_SPEED: ${TTS_SPEED:-0}
+    volumes:
+      - ./deploy/hetzner/redis-auth.cjs:/opt/stemotion/redis-auth.cjs:ro
+      - worker_output:/workspace/STEMotion_RENDER/output
+    depends_on:
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:4000/health').then(r=>r.json()).then(j=>process.exit(j.status==='UP'&&j.queue==='bullmq'?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    networks: [private]
+    logging: *logging
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    mem_limit: 192m
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+    command: [sh, /opt/stemotion/redis-start.sh]
+    volumes:
+      - redis_data:/data
+      - ./deploy/hetzner/redis-start.sh:/opt/stemotion/redis-start.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -qx PONG']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [private]
+    logging: *logging
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      DEPLOY_MODE: ${DEPLOY_MODE:-test}
+      AI_DOMAIN: ${AI_DOMAIN:-ai.example.invalid}
+      WORKER_DOMAIN: ${WORKER_DOMAIN:-worker.example.invalid}
+      ACME_EMAIL: ${ACME_EMAIL:-ops@example.invalid}
+      RENDER_SERVICE_KEY: ${RENDER_SERVICE_KEY:?Set RENDER_SERVICE_KEY}
+    ports:
+      - "${CADDY_BIND_IP:-0.0.0.0}:${HTTP_PORT:-80}:80"
+      - "${CADDY_BIND_IP:-0.0.0.0}:${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./deploy/hetzner/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/hetzner/caddy:/etc/caddy/modes:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      ai-service: {condition: service_healthy}
+      worker: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8081/health]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+    networks: [private]
+    logging: *logging
+
+# Single unpublished bridge; outbound internet is needed for OpenAI/TTS/ACME.
+networks:
+  private: {driver: bridge}
+volumes:
+  redis_data:
+  worker_output:
+  caddy_data:
+  caddy_config:
