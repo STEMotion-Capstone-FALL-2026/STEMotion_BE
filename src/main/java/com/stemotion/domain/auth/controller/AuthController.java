@@ -49,6 +49,21 @@ public class AuthController {
         return ResponseEntity.ok(authService.getCurrentUser(principal.getUsername()));
     }
 
+    /** Body: {"credential": "<Google ID token>"} from Google Identity Services. */
+    @PostMapping("/google")
+    @Operation(summary = "Sign in with Google (accounts provisioned by an admin only)")
+    public ResponseEntity<com.stemotion.domain.auth.dto.AuthDtos.AuthResponse> google(
+        @jakarta.validation.Valid @RequestBody com.stemotion.domain.auth.dto.AuthDtos.GoogleLoginRequest request
+    ) {
+        return ResponseEntity.ok(authService.loginWithGoogle(request.credential()));
+    }
+
+    @GetMapping("/google/enabled")
+    @Operation(summary = "Whether Google sign-in is configured on this server")
+    public ResponseEntity<java.util.Map<String, Boolean>> googleEnabled() {
+        return ResponseEntity.ok(java.util.Map.of("enabled", authService.isGoogleLoginEnabled()));
+    }
+
     @PostMapping("/change-password")
     @Operation(summary = "Change password for the authenticated user")
     public ResponseEntity<UserResponse> changePassword(

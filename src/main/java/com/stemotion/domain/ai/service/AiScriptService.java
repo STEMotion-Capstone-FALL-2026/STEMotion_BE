@@ -90,14 +90,19 @@ public class AiScriptService {
             %s
             %s
             - Yêu cầu chất lượng khắt khe:
-              + Cảnh mở đầu phục vụ cách dẫn dắt: một câu hỏi, một tình huống, một con số gây tò mò (dùng COMPOSED) hoặc TITLE_HERO.
-              + Các cảnh giữa: ƯU TIÊN COMPOSED để hình thức mỗi cảnh đi theo đúng mạch dẫn dắt; xen ILLUSTRATED_EXPLAINER
-                (layout "focus", "row", "swarm", "cluster", "exchange", "zoom") khi cần minh hoạ, và PROCESS_TIMELINE,
-                COMPARISON_SPLIT, MATH_FORMULA, CHEMICAL_REACTION, DATA_CHART khi nội dung khớp đúng khuôn đó.
-              + Mỗi cảnh ILLUSTRATED_EXPLAINER nên dựng quanh MỘT ẨN DỤ HÌNH ẢNH cụ thể (VD: electron là quả bóng được chuyền, tế bào là nhà máy, hệ miễn dịch là đội quân) thay vì liệt kê khái niệm; ẩn dụ phải đúng bản chất khoa học.
+              + Đây là BẢN NHÁP GỢI Ý cho giáo viên (Writer) duyệt và sửa lại; viết rõ ràng, đúng chương trình, không phô diễn.
+              + Cảnh 1 dùng TITLE_HERO (hoặc một cảnh nêu vấn đề nếu cách dẫn dắt mở đầu bằng câu hỏi/tình huống).
+              + ƯU TIÊN bộ template chuẩn của nền tảng, chọn đúng khuôn với nội dung:
+                MATH_FORMULA (công thức, biến đổi từng bước), DIAGRAM_EXPLAINER (sơ đồ có chú thích),
+                DATA_CHART (số liệu), ALGORITHM_WALKTHROUGH (thuật toán, Tin học), STEM_QUIZ (câu hỏi kiểm tra),
+                CHEMICAL_REACTION, PROCESS_TIMELINE (quy trình), COMPARISON_SPLIT (so sánh).
+                Chỉ dùng ILLUSTRATED_EXPLAINER hoặc COMPOSED khi các template trên không thể hiện được ý.
+              + Nên có MỘT cảnh STEM_QUIZ trước OUTRO để học sinh tự kiểm tra.
               + Cảnh cuối LUÔN dùng template OUTRO.
-              + Hai cảnh liền nhau không nên giống nhau về hình thức (đổi frame, đổi loại khối).
-              + KHÔNG dùng STEM_QUIZ, DIAGRAM_EXPLAINER hay GEOMETRY_SPACE.
+              + Mỗi cảnh có "stemPhase" theo 5 hoạt động bài học STEM của Công văn 3089/BGDĐT-GDTrH, theo đúng thứ tự:
+                PROBLEM (xác định vấn đề), RESEARCH (nghiên cứu kiến thức nền), SOLUTION (đề xuất, lựa chọn giải pháp),
+                PROTOTYPE (chế tạo mẫu, thử nghiệm, đánh giá), SHARE (chia sẻ, thảo luận, điều chỉnh).
+                Video ngắn không bắt buộc đủ 5 pha, nhưng phải có PROBLEM ở đầu, RESEARCH ở giữa và SHARE ở cảnh cuối.
               + Nội dung khoa học, công thức phải CHÍNH XÁC TUYỆT ĐỐI.
               + Lời thoại (narration) súc tích, cuốn hút kiểu kể chuyện khoa học (tối đa 2.2 từ/giây).
 
@@ -127,6 +132,10 @@ public class AiScriptService {
               zoom: đi xuyên các thang đo từ lớn đến nhỏ, 2-4 biểu tượng theo thứ tự (VD: lá cây → tế bào → ADN))
               và "icons" (3-5 biểu tượng, mỗi cái có "name" BẮT BUỘC lấy từ danh sách [%s] và "label" tiếng Việt tối đa 3 từ).
               Với layout focus và swarm, biểu tượng đầu tiên là tâm điểm.
+            - STEM_QUIZ: Cung cấp "question", "options" (3-4 phương án), "correctIndex" (0-3, đếm từ 0), "hint", "explanation".
+            - DIAGRAM_EXPLAINER: Cung cấp "diagramTitle", "svgType" (pendulum, atom, circuit hoặc cell; chọn cái gần nhất)
+              và "labels" (2-5 chú thích, mỗi cái có "name", "description", "xPercent", "yPercent" từ 0 đến 100).
+            - ALGORITHM_WALKTHROUGH: Cung cấp "language", "codeSnippet" (mã ngắn, chạy được) và "steps".
             - PROCESS_TIMELINE: Cung cấp "processTitle" và "stages" (3-4 giai đoạn, mỗi cái có stageNumber, title, description).
             - COMPARISON_SPLIT: Cung cấp "topicA" (title, badge, points), "topicB" (title, badge, points) và "conclusion".
             - MATH_FORMULA: Cung cấp "latex" (bắt buộc không rỗng) và "steps".

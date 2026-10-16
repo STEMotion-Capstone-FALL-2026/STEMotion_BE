@@ -49,6 +49,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/register").denyAll()
                 .requestMatchers("/api/v1/auth/login").permitAll()
+                .requestMatchers("/api/v1/auth/google", "/api/v1/auth/google/enabled").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 // The render worker authenticates with the shared render API key
                 // validated inside RenderController.callback(), not via JWT.

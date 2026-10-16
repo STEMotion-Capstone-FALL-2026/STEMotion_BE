@@ -123,7 +123,8 @@ public class RenderService {
         scriptService.getOrThrow(projectId);
         return renderJobRepository.findByProjectIdOrderByCreatedAtDesc(projectId)
             .stream()
-            .map(job -> RenderJobResponse.from(job, null))
+            .map(job -> RenderJobResponse.from(job, null,
+                job.getScriptVersion() == null ? null : job.getScriptVersion().getVersionNo()))
             .toList();
     }
 
@@ -340,6 +341,8 @@ public class RenderService {
 
         Map<String, Object> script = new LinkedHashMap<>();
         script.put("id", project.getId());
+        // Seeds the shared look of every clip of the workspace (FE flat/variation.ts).
+        script.put("workspaceId", project.getWorkspace() == null ? null : project.getWorkspace().getId());
         script.put("title", project.getTitle());
         script.put("subject", project.getSubject().name());
         script.put("gradeLevel", project.getGradeLevel());

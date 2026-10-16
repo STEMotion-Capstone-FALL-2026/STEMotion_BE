@@ -38,6 +38,8 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       # Without this the container fell back to a retired model and every AI call returned 404.
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
+      # Google Sign-In for admin-provisioned accounts; empty keeps it off.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       CORS_ORIGINS: "http://localhost:*,http://127.0.0.1:*"
     depends_on:
       minio:

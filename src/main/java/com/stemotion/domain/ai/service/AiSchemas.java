@@ -13,6 +13,8 @@ final class AiSchemas {
 
     static final List<String> FLAT_AMBIENCES = List.of("space", "cell", "lab", "ocean", "lilac", "sky");
     static final List<String> FLAT_LAYOUTS = List.of("focus", "row", "cluster", "swarm", "exchange", "zoom");
+    /** The five activities of a STEM lesson in Công văn 3089/BGDĐT-GDTrH. */
+    static final List<String> STEM_PHASES = List.of("PROBLEM", "RESEARCH", "SOLUTION", "PROTOTYPE", "SHARE");
     static final List<String> COMPOSED_FRAMES = List.of("center", "split", "thirds", "grid", "sidebar");
     static final List<String> COMPOSED_SLOTS =
         List.of("top", "main", "bottom", "left", "right", "middle", "tl", "tr", "bl", "br", "side");
@@ -129,8 +131,10 @@ final class AiSchemas {
             Map.entry("type", Map.of(
                 "type", "STRING",
                 "enum", List.of(
-                    "TITLE_HERO", "COMPOSED", "ILLUSTRATED_EXPLAINER", "PROCESS_TIMELINE", "COMPARISON_SPLIT",
-                    "MATH_FORMULA", "CHEMICAL_REACTION", "DATA_CHART", "ALGORITHM_WALKTHROUGH", "OUTRO"
+                    // The registered template set first (proposal 3.2.c), the flat-explainer scenes last.
+                    "TITLE_HERO", "MATH_FORMULA", "DIAGRAM_EXPLAINER", "DATA_CHART", "ALGORITHM_WALKTHROUGH",
+                    "STEM_QUIZ", "OUTRO", "CHEMICAL_REACTION", "PROCESS_TIMELINE", "COMPARISON_SPLIT",
+                    "ILLUSTRATED_EXPLAINER", "COMPOSED"
                 )
             )),
             Map.entry("title", str()),
@@ -160,6 +164,19 @@ final class AiSchemas {
             Map.entry("layout", Map.of("type", "STRING", "enum", FLAT_LAYOUTS)),
             Map.entry("icons", arrayOf(flatIcon)),
             Map.entry("frame", enumOf(COMPOSED_FRAMES)),
+            Map.entry("stemPhase", enumOf(STEM_PHASES)),
+            Map.entry("question", str()),
+            Map.entry("options", arrayOf(str())),
+            Map.entry("correctIndex", num()),
+            Map.entry("hint", str()),
+            Map.entry("explanation", str()),
+            Map.entry("diagramTitle", str()),
+            Map.entry("labels", arrayOf(object(
+                Map.of("name", str(), "description", str(), "xPercent", num(), "yPercent", num()),
+                List.of("name", "description")))),
+            Map.entry("svgType", enumOf(List.of("pendulum", "atom", "circuit", "cell"))),
+            Map.entry("language", str()),
+            Map.entry("codeSnippet", str()),
             Map.entry("blocks", arrayOf(composedBlock()))
         );
 

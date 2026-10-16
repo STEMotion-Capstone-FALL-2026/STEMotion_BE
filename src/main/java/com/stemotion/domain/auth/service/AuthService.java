@@ -20,6 +20,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final com.stemotion.integration.client.GoogleTokenVerifier googleTokenVerifier;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -41,6 +42,34 @@ public class AuthService {
         }
 
         return buildAuthResponse(user);
+    }
+
+    /**
+     * Google Sign-In for accounts an admin has already provisioned: the verified
+     * Google email must match an existing account. Nobody can create an account
+     * by signing in with Google. The first sign-in links the Google id; later
+     * ones must come from the same Google account.
+     */
+    @Transactional
+    public AuthResponse loginWithGoogle(String idToken) {
+        var identity = googleTokenVerifier.verify(idToken);
+        User user = userRepository.findByEmail(identity.email())
+            .orElseThrow(() -> ApiException.forbidden(
+                "Email này chưa được quản trị viên cấp tài khoản STEMotion."));
+        if (user.getStatus() != User.UserStatus.ACTIVE) {
+            throw ApiException.badRequest("Account is " + user.getStatus().name().toLowerCase());
+        }
+        if (user.getGoogleId() == null) {
+            user.setGoogleId(identity.subject());
+            userRepository.save(user);
+        } else if (!user.getGoogleId().equals(identity.subject())) {
+            throw ApiException.forbidden("Tài khoản này đã liên kết với một tài khoản Google khác.");
+        }
+        return buildAuthResponse(user);
+    }
+
+    public boolean isGoogleLoginEnabled() {
+        return googleTokenVerifier.isConfigured();
     }
 
     @Transactional(readOnly = true)

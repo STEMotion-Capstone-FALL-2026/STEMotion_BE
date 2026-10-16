@@ -35,6 +35,11 @@ public final class AuthDtos {
         String password
     ) {}
 
+    public record GoogleLoginRequest(
+        @NotBlank(message = "credential is required")
+        String credential
+    ) {}
+
     public record ChangePasswordRequest(
         @NotBlank(message = "currentPassword is required")
         String currentPassword,
