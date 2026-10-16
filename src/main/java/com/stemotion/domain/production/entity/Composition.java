@@ -25,7 +25,7 @@ public class Composition extends BaseEntity {
     private ClipProject project;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "version_id", nullable = false, unique = true)
+    @JoinColumn(name = "script_version_id", nullable = false, unique = true)
     private ScriptVersion scriptVersion;
 
     /** Composition version: 1 on the first save, +1 on every later save. */
@@ -37,7 +37,8 @@ public class Composition extends BaseEntity {
     @Column(name = "scenes", nullable = false, columnDefinition = "jsonb")
     private String scenes;
 
+    /** The producer who saved the latest revision (ERD: Producer edits Composition). */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "updated_by")
-    private User updatedBy;
+    @JoinColumn(name = "producer_id")
+    private User producer;
 }

@@ -88,7 +88,7 @@ public class CompositionService {
             : Composition.builder().project(project).scriptVersion(version).build();
         composition.setRevision(currentRevision + 1);
         composition.setScenes(write(scenes));
-        composition.setUpdatedBy(authService.findUserOrThrow(userId));
+        composition.setProducer(authService.findUserOrThrow(userId));
         Composition saved = compositions.save(composition);
         return response(project, version, saved, scenes);
     }
@@ -182,7 +182,7 @@ public class CompositionService {
             lockedReason(project),
             scenes,
             saved == null ? null : saved.getUpdatedAt(),
-            saved == null || saved.getUpdatedBy() == null ? null : saved.getUpdatedBy().getFullName()
+            saved == null || saved.getProducer() == null ? null : saved.getProducer().getFullName()
         );
     }
 
