@@ -19,6 +19,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * Tracks one Remotion render handled by the external Node worker pool.
@@ -84,4 +86,18 @@ public class RenderJob extends BaseEntity {
     @Column(name = "attempt_count", nullable = false)
     @Builder.Default
     private Integer attemptCount = 0;
+
+    /** The composition that triggered this render (ERD); null when rendered straight from the script. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "composition_id")
+    private Composition composition;
+
+    /** Composition version rendered; null when rendered straight from the approved script. */
+    @Column(name = "composition_revision")
+    private Integer compositionRevision;
+
+    /** Exact props sent to the worker, so a retry renders the same composition version. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "input_props", columnDefinition = "jsonb")
+    private String inputProps;
 }

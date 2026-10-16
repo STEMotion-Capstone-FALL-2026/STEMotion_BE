@@ -154,13 +154,25 @@ public class WorkspaceAccess {
             m.getStatus() == MemberStatus.ACTIVE && m.getRole() == User.UserRole.REVIEWER);
     }
 
+    /** Whether the user holds one of these roles, actively, in any workspace. Roles are per workspace. */
+    @Transactional(readOnly = true)
+    public boolean hasRoleAnywhere(String userId, String... roleNames) {
+        if (isAdmin(userId)) return true;
+        Set<User.UserRole> roles = Arrays.stream(roleNames)
+            .map(User.UserRole::valueOf)
+            .collect(Collectors.toSet());
+        return members.findByUserId(userId).stream().anyMatch(m ->
+            m.getStatus() == MemberStatus.ACTIVE && roles.contains(m.getRole()));
+    }
+
+    /**
+     * AI is used by writers (script assistance) and producers (narration,
+     * captions and asset suggestions in production), as the proposal lists.
+     */
     @Transactional(readOnly = true)
     public void requireAiAccess(String userId) {
-        if (isAdmin(userId)) return;
-        boolean hasActiveWriter = members.findByUserId(userId).stream().anyMatch(m ->
-            m.getStatus() == MemberStatus.ACTIVE && m.getRole() == User.UserRole.WRITER);
-        if (!hasActiveWriter) {
-            throw ApiException.forbidden("Requires WRITER membership in at least one workspace or ADMIN role");
+        if (!hasRoleAnywhere(userId, "WRITER", "PRODUCER")) {
+            throw ApiException.forbidden("Requires WRITER or PRODUCER membership in a workspace, or ADMIN role");
         }
     }
 }

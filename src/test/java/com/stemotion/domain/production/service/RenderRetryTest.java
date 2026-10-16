@@ -13,7 +13,6 @@ import com.stemotion.domain.production.repository.RenderJobRepository;
 import com.stemotion.domain.project.entity.ClipProject;
 import com.stemotion.domain.project.repository.ClipProjectRepository;
 import com.stemotion.domain.script.entity.ScriptVersion;
-import com.stemotion.domain.script.mapper.SceneMapper;
 import com.stemotion.domain.script.service.ScriptService;
 import com.stemotion.integration.client.RenderServiceClient;
 import com.stemotion.integration.config.IntegrationProperties;
@@ -48,6 +47,7 @@ class RenderRetryTest {
     private ClipProjectRepository projectRepository;
     private ScriptService scriptService;
     private RenderServiceClient renderClient;
+    private CompositionService compositionService;
     private IntegrationProperties properties;
     private RenderService renderService;
 
@@ -59,6 +59,7 @@ class RenderRetryTest {
         projectRepository = mock(ClipProjectRepository.class);
         scriptService = mock(ScriptService.class);
         renderClient = mock(RenderServiceClient.class);
+        compositionService = mock(CompositionService.class);
         properties = new IntegrationProperties();
         properties.getRender().setMaxAttempts(3);
         // The callback is now authenticated with the shared render key.
@@ -68,7 +69,8 @@ class RenderRetryTest {
             renderJobRepository,
             projectRepository,
             scriptService,
-            mock(SceneMapper.class),
+            compositionService,
+            new com.fasterxml.jackson.databind.ObjectMapper(),
             renderClient,
             mock(AuthService.class),
             properties,
@@ -84,7 +86,7 @@ class RenderRetryTest {
             .build();
         project.setId("project-1");
 
-        when(scriptService.scenesOf(any())).thenReturn(List.of());
+        when(compositionService.scriptScenes(any())).thenReturn(List.of());
         when(renderJobRepository.save(any(RenderJob.class))).thenAnswer(inv -> inv.getArgument(0));
         when(renderClient.enqueue(anyString(), anyString(), any(), anyInt(), anyInt(), anyInt(), any()))
             .thenReturn(new RenderServiceClient.EnqueueResult("external-2", 45));
@@ -246,17 +248,36 @@ class RenderRetryTest {
     }
 
     @Test
-    @DisplayName("the scene payload is rebuilt for the retry, not reused blindly")
-    void rebuildsPayloadOnRetry() {
+    @DisplayName("a job from before compositions is rebuilt from its script version on retry")
+    void rebuildsLegacyPayloadOnRetry() {
         failingJobOnAttempt(1);
 
         renderService.applyCallback(RENDER_KEY, failureCallback());
 
-        verify(scriptService).scenesOf(any());
+        verify(compositionService).scriptScenes(any());
         ArgumentCaptor<Map<String, Object>> props = ArgumentCaptor.forClass(Map.class);
         verify(renderClient).enqueue(
             anyString(), anyString(), props.capture(), anyInt(), anyInt(), anyInt(), any()
         );
         assertThat(props.getValue()).containsKey("scenes");
+    }
+
+    @Test
+    @DisplayName("a retry renders the same composition version the job was sent (proposal: idempotent per version)")
+    void retrySendsTheSameCompositionVersion() {
+        RenderJob job = failingJobOnAttempt(1);
+        job.setCompositionRevision(4);
+        job.setInputProps("{\"id\":\"project-1\",\"scenes\":[{\"id\":\"s1\",\"title\":\"Revision 4\"}]}");
+
+        renderService.applyCallback(RENDER_KEY, failureCallback());
+
+        verify(compositionService, never()).scriptScenes(any());
+        verify(compositionService, never()).renderInput(any());
+        ArgumentCaptor<Map<String, Object>> props = ArgumentCaptor.forClass(Map.class);
+        verify(renderClient).enqueue(
+            anyString(), anyString(), props.capture(), anyInt(), anyInt(), anyInt(), any()
+        );
+        assertThat(props.getValue().get("scenes").toString()).contains("Revision 4");
+        assertThat(job.getCompositionRevision()).isEqualTo(4);
     }
 }

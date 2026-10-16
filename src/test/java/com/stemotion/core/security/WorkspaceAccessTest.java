@@ -106,4 +106,24 @@ class WorkspaceAccessTest {
         when(users.findById("other")).thenReturn(Optional.of(User.builder().role(User.UserRole.WRITER).build()));
         assertThatThrownBy(() -> access.requireAiAccess("other")).isInstanceOf(ApiException.class);
     }
+
+    @Test
+    void producersUseAiForNarrationAndCaptionsButReviewersDoNot() {
+        seat(User.UserRole.PRODUCER, MemberStatus.ACTIVE, false);
+        assertThatCode(() -> access.requireAiAccess("writer")).doesNotThrowAnyException();
+        seat(User.UserRole.REVIEWER, MemberStatus.ACTIVE, false);
+        assertThatThrownBy(() -> access.requireAiAccess("writer")).isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void roleAnywhereIgnoresTheAccountRoleAndInactiveSeats() {
+        // Account role says WRITER, but the only seat is inactive: no access.
+        when(users.findById("writer")).thenReturn(Optional.of(User.builder().role(User.UserRole.WRITER).build()));
+        seat(User.UserRole.WRITER, MemberStatus.INACTIVE, false);
+        assertThat(access.hasRoleAnywhere("writer", "WRITER", "PRODUCER")).isFalse();
+        // Account role says REVIEWER, but the seat is PRODUCER: access.
+        when(users.findById("writer")).thenReturn(Optional.of(User.builder().role(User.UserRole.REVIEWER).build()));
+        seat(User.UserRole.PRODUCER, MemberStatus.ACTIVE, false);
+        assertThat(access.hasRoleAnywhere("writer", "WRITER", "PRODUCER")).isTrue();
+    }
 }

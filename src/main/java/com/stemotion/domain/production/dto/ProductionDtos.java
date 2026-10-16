@@ -5,11 +5,16 @@ import com.stemotion.core.enums.StemEnums.RenderStatus;
 import com.stemotion.domain.production.entity.PublishRecord;
 import com.stemotion.domain.production.entity.RemotionTemplate;
 import com.stemotion.domain.production.entity.RenderJob;
+import com.stemotion.domain.script.dto.SceneDtos.SceneRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public final class ProductionDtos {
 
@@ -34,7 +39,9 @@ public final class ProductionDtos {
         Integer estimatedSeconds,
         LocalDateTime createdAt,
         /** Script version the clip was rendered from, so re-renders can be compared. */
-        Integer scriptVersionNo
+        Integer scriptVersionNo,
+        /** Composition version rendered; null when rendered straight from the script. */
+        Integer compositionRevision
     ) {
         public static RenderJobResponse from(RenderJob job, Integer estimatedSeconds) {
             return from(job, estimatedSeconds, null);
@@ -51,10 +58,39 @@ public final class ProductionDtos {
                 job.getErrorMessage(),
                 estimatedSeconds,
                 job.getCreatedAt(),
-                scriptVersionNo
+                scriptVersionNo,
+                job.getCompositionRevision()
             );
         }
     }
+
+    // ------------------------------------------------------------ composition
+
+    /**
+     * The producer's draft of an approved script. {@code revision} 0 means
+     * nothing has been saved yet and the scenes are the approved script's.
+     */
+    public record CompositionResponse(
+        String projectId,
+        Integer scriptVersionNo,
+        Integer revision,
+        boolean editable,
+        /** Why the draft cannot change right now; null when editable. */
+        String lockedReason,
+        List<Map<String, Object>> scenes,
+        LocalDateTime updatedAt,
+        String updatedByName
+    ) {}
+
+    public record UpdateCompositionRequest(
+        /** The revision the edit started from; a different current revision is a conflict. */
+        @NotNull(message = "baseRevision is required")
+        @Min(value = 0, message = "baseRevision must not be negative")
+        Integer baseRevision,
+
+        @NotEmpty(message = "scenes are required")
+        List<@Valid SceneRequest> scenes
+    ) {}
 
     /** Progress pushed back by the Node render worker. */
     public record RenderCallbackRequest(

@@ -1,5 +1,7 @@
 package com.stemotion.domain.production.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stemotion.core.enums.StemEnums.RenderResolution;
 import com.stemotion.core.enums.StemEnums.RenderStatus;
 import com.stemotion.core.enums.StemEnums.ScriptStatus;
@@ -9,14 +11,12 @@ import com.stemotion.domain.auth.service.AuthService;
 import com.stemotion.domain.production.dto.ProductionDtos.RenderCallbackRequest;
 import com.stemotion.domain.production.dto.ProductionDtos.RenderJobResponse;
 import com.stemotion.domain.production.dto.ProductionDtos.StartRenderRequest;
+import com.stemotion.domain.production.entity.Composition;
 import com.stemotion.domain.production.entity.RenderJob;
 import com.stemotion.domain.production.repository.RenderJobRepository;
 import com.stemotion.domain.project.entity.ClipProject;
 import com.stemotion.domain.project.repository.ClipProjectRepository;
-import com.stemotion.domain.script.dto.SceneDtos.SceneResponse;
-import com.stemotion.domain.script.entity.Scene;
 import com.stemotion.domain.script.entity.ScriptVersion;
-import com.stemotion.domain.script.mapper.SceneMapper;
 import com.stemotion.domain.script.service.ScriptService;
 import com.stemotion.integration.client.RenderServiceClient;
 import com.stemotion.integration.config.IntegrationProperties;
@@ -45,20 +45,33 @@ public class RenderService {
     private final RenderJobRepository renderJobRepository;
     private final ClipProjectRepository projectRepository;
     private final ScriptService scriptService;
-    private final SceneMapper sceneMapper;
+    private final CompositionService compositionService;
+    private final ObjectMapper objectMapper;
     private final RenderServiceClient renderClient;
     private final AuthService authService;
     private final IntegrationProperties properties;
     private final ClipArtifactService clipArtifactService;
 
     /**
-     * Queues a render of the project's current script version.
+     * Queues a render of the producer's composition of the approved script,
+     * or of the approved script itself when the producer has not edited it.
      *
      * <p>Only an approved script may be rendered: producing a clip from an
      * unreviewed script would put unchecked content in front of students.
      */
     @Transactional
     public RenderJobResponse start(String projectId, StartRenderRequest request, String currentUserId) {
+        ClipProject project = requireRenderable(projectId);
+        ScriptVersion version = scriptService.currentVersion(project);
+        CompositionService.RenderInput input = compositionService.renderInput(version);
+        if (input.scenes().isEmpty()) {
+            throw ApiException.badRequest("The approved script has no scenes to render");
+        }
+        return enqueueNew(project, version, toScriptProps(project, input.scenes()), input.composition(),
+            input.revision(), request.ttsVoice(), currentUserId);
+    }
+
+    private ClipProject requireRenderable(String projectId) {
         ClipProject project = scriptService.getOrThrow(projectId);
         scriptService.requireActive(project);
 
@@ -70,13 +83,12 @@ public class RenderService {
         if (project.getVideoStatus() == VideoStatus.RENDERING) {
             throw ApiException.conflict("A render is already running for this project");
         }
+        return project;
+    }
 
-        ScriptVersion version = scriptService.currentVersion(project);
-        List<Scene> scenes = scriptService.scenesOf(version);
-        if (scenes.isEmpty()) {
-            throw ApiException.badRequest("The approved script has no scenes to render");
-        }
-
+    private RenderJobResponse enqueueNew(ClipProject project, ScriptVersion version, Map<String, Object> scriptProps,
+                                         Composition composition, Integer compositionRevision, String ttsVoice,
+                                         String currentUserId) {
         // Proposal output contract: clamp legacy requests to 1080p30.
         RenderResolution resolution = RenderResolution.RES_1080P;
         int fps = 30;
@@ -90,18 +102,21 @@ public class RenderService {
             .stage("Queued")
             .resolution(resolution)
             .fps(fps)
-            .ttsVoice(request.ttsVoice())
+            .ttsVoice(ttsVoice)
             .attemptCount(1)
+            .composition(composition)
+            .compositionRevision(compositionRevision)
+            .inputProps(writeProps(scriptProps))
             .build());
 
         RenderServiceClient.EnqueueResult result = renderClient.enqueue(
             job.getId(),
             COMPOSITION_ID,
-            toScriptProps(project, scenes),
+            scriptProps,
             resolution.getWidth(),
             resolution.getHeight(),
             fps,
-            request.ttsVoice()
+            ttsVoice
         );
 
         job.setExternalJobId(result.externalJobId());
@@ -211,13 +226,11 @@ public class RenderService {
         log.warn("Render job {} failed on attempt {} ({}), retrying as attempt {}",
             job.getId(), job.getAttemptCount(), job.getErrorMessage(), nextAttempt);
 
-        List<Scene> scenes = scriptService.scenesOf(job.getScriptVersion());
-
         try {
             RenderServiceClient.EnqueueResult result = renderClient.enqueue(
                 job.getId(),
                 COMPOSITION_ID,
-                toScriptProps(project, scenes),
+                propsOf(job),
                 1920,
                 1080,
                 30,
@@ -259,12 +272,10 @@ public class RenderService {
             );
         }
 
-        StartRenderRequest request = new StartRenderRequest(
-            failed.getResolution().getLabel(),
-            failed.getFps(),
-            failed.getTtsVoice()
-        );
-        RenderJobResponse response = start(failed.getProject().getId(), request, currentUserId);
+        // Same composition version as the failed job, even if the draft changed since.
+        ClipProject project = requireRenderable(failed.getProject().getId());
+        RenderJobResponse response = enqueueNew(project, failed.getScriptVersion(), propsOf(failed),
+            failed.getComposition(), failed.getCompositionRevision(), failed.getTtsVoice(), currentUserId);
 
         RenderJob retried = getOrThrow(response.jobId());
         retried.setAttemptCount(failed.getAttemptCount() + 1);
@@ -324,18 +335,18 @@ public class RenderService {
      * {@code script} prop — the same shape the Remotion Player previews in the
      * front end, so preview and render stay identical.
      */
-    private Map<String, Object> toScriptProps(ClipProject project, List<Scene> scenes) {
+    private Map<String, Object> toScriptProps(ClipProject project, List<Map<String, Object>> scenes) {
         List<Map<String, Object>> sceneProps = new ArrayList<>(scenes.size());
-        for (Scene scene : scenes) {
-            SceneResponse dto = sceneMapper.toResponse(scene);
+        int sourceFps = project.getFps() == null || project.getFps() <= 0 ? 30 : project.getFps();
+        for (Map<String, Object> scene : scenes) {
             Map<String, Object> payload = new LinkedHashMap<>();
-            payload.put("id", dto.getId());
-            payload.put("type", dto.getType().name());
-            payload.put("title", dto.getTitle());
-            payload.put("narration", dto.getNarration());
-            int sourceFps=project.getFps()==null || project.getFps()<=0 ? 30 : project.getFps();
-            payload.put("durationInFrames", Math.toIntExact(Math.max(1,Math.round(dto.getDurationInFrames()*30.0/sourceFps))));
-            payload.putAll(dto.getFlattenedProps());
+            payload.put("id", scene.get("id"));
+            payload.put("type", scene.get("type"));
+            payload.put("title", scene.get("title"));
+            payload.put("narration", scene.get("narration"));
+            long frames = ((Number) scene.get("durationInFrames")).longValue();
+            payload.put("durationInFrames", Math.toIntExact(Math.max(1, Math.round(frames * 30.0 / sourceFps))));
+            scene.forEach(payload::putIfAbsent);
             sceneProps.add(payload);
         }
 
@@ -353,5 +364,25 @@ public class RenderService {
         script.put("scenes", sceneProps);
         script.put("createdAt", String.valueOf(project.getCreatedAt()));
         return script;
+    }
+
+    /** The props a job was sent; jobs from before V19 are rebuilt from their script version. */
+    private Map<String, Object> propsOf(RenderJob job) {
+        if (job.getInputProps() != null) {
+            try {
+                return objectMapper.readValue(job.getInputProps(), new TypeReference<Map<String, Object>>() {});
+            } catch (Exception ex) {
+                throw new IllegalStateException("Render job " + job.getId() + " has unreadable input props", ex);
+            }
+        }
+        return toScriptProps(job.getProject(), compositionService.scriptScenes(job.getScriptVersion()));
+    }
+
+    private String writeProps(Map<String, Object> props) {
+        try {
+            return objectMapper.writeValueAsString(props);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Render props could not be serialised", ex);
+        }
     }
 }

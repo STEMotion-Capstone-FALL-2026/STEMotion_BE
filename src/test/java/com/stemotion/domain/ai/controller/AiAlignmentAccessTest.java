@@ -26,16 +26,20 @@ class AiAlignmentAccessTest {
     @MockBean JwtService jwt;
     @MockBean CustomUserDetailsService details;
     @MockBean ResourceAccessInterceptor resources;
+    @MockBean(name = "workspaceAccess") WorkspaceAccess workspaceAccess;
     final IntegrationProperties config=new IntegrationProperties();
     @BeforeEach void setup() throws Exception {
         when(properties.getAi()).thenReturn(config.getAi());
         when(resources.preHandle(any(),any(),any())).thenReturn(true);
+        // Roles are per workspace; the account role ("roles" below) is not what counts.
+        when(workspaceAccess.hasRoleAnywhere("producer","WRITER","PRODUCER")).thenReturn(true);
+        when(workspaceAccess.hasRoleAnywhere("review","WRITER","PRODUCER")).thenReturn(false);
     }
     MockMultipartFile file(){return new MockMultipartFile("file","x.wav","audio/wav",new byte[]{1});}
     @Test void onlyAuthorizedRolesUsePublicAlignment() throws Exception {
         mvc.perform(multipart("/api/v1/ai/transcribe/align").file(file()).param("text","Ohm")).andExpect(status().isUnauthorized());
-        mvc.perform(multipart("/api/v1/ai/transcribe/align").file(file()).param("text","Ohm").with(user("review").roles("REVIEWER"))).andExpect(status().isForbidden());
-        mvc.perform(multipart("/api/v1/ai/transcribe/align").file(file()).param("text","Ohm").with(user("producer").roles("PRODUCER"))).andExpect(status().isOk());
+        mvc.perform(multipart("/api/v1/ai/transcribe/align").file(file()).param("text","Ohm").with(user("review").roles("WRITER"))).andExpect(status().isForbidden());
+        mvc.perform(multipart("/api/v1/ai/transcribe/align").file(file()).param("text","Ohm").with(user("producer").roles("REVIEWER"))).andExpect(status().isOk());
         verify(client).align(any(),eq("Ohm"),eq("vi"));
     }
     @Test void workerMustHaveSeparateConfiguredKey() throws Exception {

@@ -21,7 +21,8 @@ public class AiAlignmentController {
     private final IntegrationProperties properties;
 
     @PostMapping(value="/transcribe/align", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('WRITER','PRODUCER','ADMIN')")
+    // Roles are per workspace: the account-level role says nothing about it.
+    @PreAuthorize("@workspaceAccess.hasRoleAnywhere(authentication.name, 'WRITER', 'PRODUCER')")
     public JsonNode align(@RequestParam MultipartFile file, @RequestParam String text,
                          @RequestParam(defaultValue="vi") String language) {
         return client.align(file, text, language);
