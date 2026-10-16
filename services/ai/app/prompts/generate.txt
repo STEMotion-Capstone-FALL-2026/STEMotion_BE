@@ -20,7 +20,7 @@ BƯỚC 1.5: THIẾT KẾ MẠCH DẪN DẮT (NARRATIVE ARC) — TỰ DO SÁNG T
 - Tóm tắt mạch đã chọn vào trường "narrativeArc" của response:
   summary (1-2 câu), approach (tên cách dạy), segments (order, title, purpose).
 
-BƯỚC 2: TẠO KỊCH BẢN (NẾU HỢP LỆ) - PHONG CÁCH KURZGESAGT EXPLAINER:
+BƯỚC 2: TẠO KỊCH BẢN (NẾU HỢP LỆ) - VIDEO GIẢI THÍCH STEM NGẮN, HOẠT HỌA PHẲNG:
 - Set "isValidStemTopic": true. Set "fallbackMessage": null.
 %s
 %s

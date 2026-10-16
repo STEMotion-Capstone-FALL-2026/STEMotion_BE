@@ -51,7 +51,7 @@ public class TemplateService {
                 .isActive(true)
                 .build(),
             RemotionTemplate.builder()
-                .name("ILLUSTRATED_EXPLAINER — Hoạt Họa Flat Vector (Kurzgesagt Style)")
+                .name("ILLUSTRATED_EXPLAINER — Hoạt Họa Flat Vector Giải Thích Khái Niệm")
                 .category("Physics")
                 .propsSchema("{\"sceneType\":\"ILLUSTRATED_EXPLAINER\",\"stemPillar\":\"Science\",\"fields\":[\"themePalette\",\"heroEntities\",\"floatingLabels\",\"bottomCaption\"]}")
                 .previewUrl("ILLUSTRATED_EXPLAINER")

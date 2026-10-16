@@ -59,7 +59,7 @@ public class AiScriptService {
                 - TỰ ĐỘNG QUYẾT ĐỊNH SỐ CẢNH (DYNAMIC SCENE COUNT TỪ 4 ĐẾN 9 CẢNH) dựa vào độ rộng và độ sâu khoa học của Topic:
                   + Nếu Topic là 1 định nghĩa/công thức đơn lẻ, ngắn gọn -> Tạo đúng 4 hoặc 5 cảnh (tổng ~55-65 giây).
                   + Nếu Topic là một cơ chế, hiện tượng hoặc quy trình tự nhiên có nhiều bước -> Tạo 6 hoặc 7 cảnh (tổng ~85-105 giây).
-                  + Nếu Topic là chủ đề vĩ mô, nhiều tầng kiến thức sâu sắc kiểu Kurzgesagt (VD: Hố đen, Hệ miễn dịch, Thuyết tương đối, Tiến hóa, Lượng tử...) -> Tạo 8 hoặc 9 cảnh (tổng ~115-145 giây).
+                  + Nếu Topic là chủ đề vĩ mô, nhiều tầng kiến thức sâu sắc (VD: Hố đen, Hệ miễn dịch, Thuyết tương đối, Tiến hóa, Lượng tử...) -> Tạo 8 hoặc 9 cảnh (tổng ~115-145 giây).
                   + Tuyệt đối KHÔNG mặc định lúc nào cũng 5 cảnh; hãy phân tích độ phức tạp của [%s] để chọn số cảnh phù hợp nhất!
                 """.formatted(request.topic());
         } else if (rawDuration <= 65) {
@@ -109,7 +109,7 @@ public class AiScriptService {
             - Tóm tắt mạch đã chọn vào trường "narrativeArc" của response:
               summary (1-2 câu), approach (tên cách dạy), segments (order, title, purpose).
 
-            BƯỚC 2: TẠO KỊCH BẢN (NẾU HỢP LỆ) - PHONG CÁCH KURZGESAGT EXPLAINER:
+            BƯỚC 2: TẠO KỊCH BẢN (NẾU HỢP LỆ) - VIDEO GIẢI THÍCH STEM NGẮN, HOẠT HỌA PHẲNG:
             - Set "isValidStemTopic": true. Set "fallbackMessage": null.
             %s
             %s
