@@ -40,6 +40,10 @@ services:
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
       # Google Sign-In for admin-provisioned accounts; empty keeps it off.
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # Set both in .env to keep a local stack from migrating a production database:
+      # SPRING_FLYWAY_ENABLED=false and SPRING_JPA_HIBERNATE_DDL_AUTO=validate.
+      SPRING_FLYWAY_ENABLED: ${SPRING_FLYWAY_ENABLED:-true}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
       CORS_ORIGINS: "http://localhost:*,http://127.0.0.1:*"
     depends_on:
       minio:

@@ -22,12 +22,13 @@
 **Đối chiếu đề tài (16/10, sau họp 14/10 thấy lạc đề):** đề tài là *nền tảng quản lý quy trình sản xuất* clip STEM, AI hỗ trợ vừa phải (human-in-the-loop), template để clip **đồng nhất**. Đã chỉnh:
 - AI soạn kịch bản giờ là **bản nháp gợi ý**: Writer xem từng cảnh rồi chọn "Dùng" hoặc "Bỏ qua, tự viết"; quyết định chỉ ghi lúc đó (trước đây tự ghi ACCEPTED). Mặc định tạo dự án là Writer tự viết.
 - Prompt **bỏ lệnh cấm STEM_QUIZ / DIAGRAM_EXPLAINER**, ưu tiên bộ template đề cương (title, formula, diagram, chart, algorithm, quiz, outro); illustrated/composed chỉ dùng khi template chuẩn không thể hiện được. Schema AI có lại các trường quiz, diagram, algorithm.
-- Mỗi cảnh có **pha bài học STEM theo Công văn 3089** (`stemPhase`: PROBLEM, RESEARCH, SOLUTION, PROTOTYPE, SHARE), như nhóm đã cam kết ở Review 1; Writer Studio hiện độ phủ 5 pha và cảnh báo thiếu pha bắt buộc.
 - Phong cách clip **cố định theo tổ** (seed = workspace) thay vì mỗi video một kiểu.
 - Khôi phục **bảng quy trình** 6 trạng thái (Draft → Script Review → Approved → In Production → Clip Review → Published) và bảng dự án của tổ theo trạng thái.
 - **So sánh hai bản render** của một clip (Reviewer), lịch sử render có số phiên bản kịch bản.
 - **Đăng nhập Google OAuth 2.0** cho tài khoản admin đã cấp (khớp email đã xác minh, không tự tạo tài khoản); bật bằng `GOOGLE_CLIENT_ID` (BE) và `VITE_GOOGLE_CLIENT_ID` (FE).
-Còn lại cần người/tài khoản: YouTube Data API (cần Google Cloud project + OAuth consent của nhóm), Whisper caption + QA khớp phụ đề (nhánh `feat/ai-microservice`), beta 10+ clip thật và test với giáo viên.
+Phạm vi chỉ theo **cấu trúc đề tài đã đăng ký** (không theo biên bản review). Còn lại cần người/tài khoản: YouTube Data API (cần Google Cloud project + OAuth consent của nhóm), Whisper caption + QA khớp phụ đề (nhánh `feat/ai-microservice`), beta 10+ clip thật (Package 7).
+
+**DB production (Supabase `cigrdndtbanbgeonskbg`, kiểm tra chỉ-đọc 16/10):** đang ở **V14** (V1 là baseline, checksum V2–V14 khớp code). Code `main` cần **V15–V17** (`COMPOSED`, giá trị `INACTIVE`, `is_leader`, `must_change_password`, bỏ cột lời mời). Dữ liệu hiện tại (2 user, 3 project, 0 cảnh, 2 thành viên ACTIVE) không vướng ràng buộc mới. Cần áp V15–V17 theo quy trình như V14 (backup → transaction → kiểm tra), V16 chạy và commit riêng trước V17. Cho tới lúc đó, `.env` local đặt `SPRING_FLYWAY_ENABLED=false` và `SPRING_JPA_HIBERNATE_DDL_AUTO=validate` để BE chạy ở máy không tự migrate production.
 
 **Lỗi mới tìm thấy khi chạy BE thật và đã sửa (16/10):**
 - BE không khởi động được: JPQL tìm ứng viên tổ viết enum lồng dạng `User.UserStatus.ACTIVE` (Hibernate 6 không hiểu) → đổi sang tham số.

@@ -47,8 +47,7 @@ public class ScenePropsValidator {
     private static final List<String> PAIRED_LAYOUTS = List.of("exchange", "zoom");
     private static final List<String> FLAT_DETAILS = List.of("minimal", "rich");
     private static final int MAX_FLAT_ICONS = 6;
-    /** The five activities of a STEM lesson in Công văn 3089/BGDĐT-GDTrH; optional on every scene. */
-    static final List<String> STEM_PHASES = List.of("PROBLEM", "RESEARCH", "SOLUTION", "PROTOTYPE", "SHARE");
+
 
     public void validate(SceneType type, Map<String, Object> props) {
         if (props != null && props.containsKey("visualPlan")) {
@@ -67,11 +66,6 @@ public class ScenePropsValidator {
             throw ApiException.badRequest(
                 "Scene of type " + type + " is missing required props: " + String.join(", ", missing)
             );
-        }
-
-        Object phase = props == null ? null : props.get("stemPhase");
-        if (phase != null && !STEM_PHASES.contains(String.valueOf(phase))) {
-            throw ApiException.badRequest("stemPhase must be one of " + String.join(", ", STEM_PHASES));
         }
 
         switch (type) {

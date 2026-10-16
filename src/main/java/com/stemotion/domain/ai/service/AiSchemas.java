@@ -13,8 +13,6 @@ final class AiSchemas {
 
     static final List<String> FLAT_AMBIENCES = List.of("space", "cell", "lab", "ocean", "lilac", "sky");
     static final List<String> FLAT_LAYOUTS = List.of("focus", "row", "cluster", "swarm", "exchange", "zoom");
-    /** The five activities of a STEM lesson in Công văn 3089/BGDĐT-GDTrH. */
-    static final List<String> STEM_PHASES = List.of("PROBLEM", "RESEARCH", "SOLUTION", "PROTOTYPE", "SHARE");
     static final List<String> COMPOSED_FRAMES = List.of("center", "split", "thirds", "grid", "sidebar");
     static final List<String> COMPOSED_SLOTS =
         List.of("top", "main", "bottom", "left", "right", "middle", "tl", "tr", "bl", "br", "side");
@@ -164,7 +162,6 @@ final class AiSchemas {
             Map.entry("layout", Map.of("type", "STRING", "enum", FLAT_LAYOUTS)),
             Map.entry("icons", arrayOf(flatIcon)),
             Map.entry("frame", enumOf(COMPOSED_FRAMES)),
-            Map.entry("stemPhase", enumOf(STEM_PHASES)),
             Map.entry("question", str()),
             Map.entry("options", arrayOf(str())),
             Map.entry("correctIndex", num()),

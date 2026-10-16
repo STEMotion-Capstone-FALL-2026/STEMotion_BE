@@ -99,10 +99,6 @@ public class AiScriptService {
                 Chỉ dùng ILLUSTRATED_EXPLAINER hoặc COMPOSED khi các template trên không thể hiện được ý.
               + Nên có MỘT cảnh STEM_QUIZ trước OUTRO để học sinh tự kiểm tra.
               + Cảnh cuối LUÔN dùng template OUTRO.
-              + Mỗi cảnh có "stemPhase" theo 5 hoạt động bài học STEM của Công văn 3089/BGDĐT-GDTrH, theo đúng thứ tự:
-                PROBLEM (xác định vấn đề), RESEARCH (nghiên cứu kiến thức nền), SOLUTION (đề xuất, lựa chọn giải pháp),
-                PROTOTYPE (chế tạo mẫu, thử nghiệm, đánh giá), SHARE (chia sẻ, thảo luận, điều chỉnh).
-                Video ngắn không bắt buộc đủ 5 pha, nhưng phải có PROBLEM ở đầu, RESEARCH ở giữa và SHARE ở cảnh cuối.
               + Nội dung khoa học, công thức phải CHÍNH XÁC TUYỆT ĐỐI.
               + Lời thoại (narration) súc tích, cuốn hút kiểu kể chuyện khoa học (tối đa 2.2 từ/giây).
 
