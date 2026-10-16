@@ -12,7 +12,6 @@ import com.stemotion.domain.project.repository.ClipProjectRepository;
 import com.stemotion.domain.script.repository.SceneRepository;
 import com.stemotion.domain.script.repository.ScriptVersionRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,9 +37,9 @@ public class AdminMetricsService {
     private final ClipProjectRepository clipProjectRepository;
     private final ScriptVersionRepository scriptVersionRepository;
     private final SceneRepository sceneRepository;
+    private final com.stemotion.domain.ai.repository.AiRequestRepository aiRequestRepository;
+    private final com.stemotion.integration.config.IntegrationProperties integrationProperties;
 
-    @Value("${app.ai.gemini.model:gemini-2.5-flash}")
-    private String geminiModel;
 
     @Transactional(readOnly = true)
     public SystemMetrics collect() {
@@ -131,12 +130,14 @@ public class AdminMetricsService {
         long totalScriptVersions = scriptVersionRepository.count();
         long totalScenes = sceneRepository.count();
 
-        // Each script version triggers ~2 LLM calls (segmentation + analysis) and each scene triggers 1 TTS synthesis
-        long estimatedAiCalls = Math.max(1, totalScriptVersions * 2 + totalScenes);
-        long estimatedTokens = totalScriptVersions * 3800L + totalScenes * 420L;
-        // Gemini 2.5 Flash pricing (~$0.0025 per script generation + analysis)
-        double estimatedCostUsd = Math.round((totalScriptVersions * 0.012d + totalScenes * 0.0015d) * 1000d) / 1000d;
-        long avgLatencyMs = 4250L;
+        // Measured, not estimated: every AI call is recorded in ai_requests with
+        // its latency, tokens and (when the gateway knows it) its cost. The DTO
+        // keeps its "estimated" field names so the dashboard needs no change.
+        var usage = aiRequestRepository.usageTotals();
+        long estimatedAiCalls = usage.getCalls();
+        long avgLatencyMs = usage.getAvgLatencyMs() == null ? 0L : Math.round(usage.getAvgLatencyMs());
+        long estimatedTokens = usage.getTokens() == null ? 0L : usage.getTokens();
+        double estimatedCostUsd = usage.getCost() == null ? 0d : usage.getCost().doubleValue();
 
         AiUsageStats aiUsage = new AiUsageStats(
             totalProjects,
@@ -147,7 +148,7 @@ public class AdminMetricsService {
             estimatedTokens,
             estimatedCostUsd,
             20.0d,
-            geminiModel,
+            integrationProperties.getGemini().getModel(),
             "Google Vietnamese TTS (unified_vi_v3)"
         );
 
