@@ -51,7 +51,7 @@ app:
       alignment-worker-key: ${AI_ALIGNMENT_WORKER_KEY:}
       mode: ${AI_SERVICE_MODE:remote}
       base-url: ${AI_SERVICE_URL:http://localhost:8000}
-      api-key: ${AI_SERVICE_KEY:}
+      api-key: ${AI_SERVICE_SHARED_KEY:${AI_SERVICE_KEY:}}
     render:
       base-url: ${RENDER_SERVICE_URL:http://localhost:4000}
       api-key: ${RENDER_SERVICE_KEY:}

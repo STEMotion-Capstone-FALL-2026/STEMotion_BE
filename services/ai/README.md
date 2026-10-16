@@ -31,3 +31,7 @@ References: [OpenAI structured outputs](https://developers.openai.com/api/docs/g
 ## Usage monitoring
 
 BE owns persisted token/cost estimates and the paginated ADMIN API. See ../../docs/AI_USAGE_CONTRACT.md for env pricing, coverage semantics and the pending manual V15 rollout.
+
+## Deployment preparation
+
+See ../../docs/AI_SERVICE_DEPLOY.md for the Python 3.12 image, offline weight preflight, /health vs /ready, Compose smoke and proposed Render sizing. Container CMD uses python -m app.launch; direct uvicorn is only the earlier unit-development path and does not run deployment preflight.

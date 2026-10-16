@@ -21,6 +21,25 @@
         }
       }
     },
+    "/ready": {
+      "get": {
+        "summary": "Ready",
+        "operationId": "ready_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "503": {
+            "description": "Configuration or Whisper preflight is not ready"
+          }
+        }
+      }
+    },
     "/internal/v1/generate": {
       "post": {
         "summary": "Generate",

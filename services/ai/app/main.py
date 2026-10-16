@@ -5,6 +5,8 @@ import os
 import time
 from fastapi import Depends, FastAPI, Header, HTTPException, UploadFile, File, Form
 from starlette.concurrency import run_in_threadpool
+from fastapi.responses import JSONResponse
+from .deployment import shared_key, configured, readiness
 from .alignment import aligner, MAX_AUDIO_BYTES
 from .models import GenerationRequest, GenerationResponse, ScriptInput, AnalysisInput, ActionInput
 from .providers import GeminiProvider, OpenAIProvider
@@ -13,7 +15,7 @@ from .prompting import build_request
 from .validation import validate_result
 
 def require_service_key(x_ai_api_key: str = Header(default="")) -> None:
-    expected = os.getenv("AI_SERVICE_KEY", "")
+    expected = shared_key()
     if not expected:
         raise HTTPException(503, "AI service key is not configured")
     if not hmac.compare_digest(expected.encode(), x_ai_api_key.encode()):
@@ -33,9 +35,13 @@ app = FastAPI(title="STEMotion AI Service", version="2.0.0", docs_url=None, redo
 @app.get("/health")
 def health():
     name = os.getenv("AI_PROVIDER", "openai")
-    key_name = "OPENAI_API_KEY" if name == "openai" else "GEMINI_API_KEY" if name == "gemini" else ""
     return {"status": "UP", "provider": name,
-        "configured": bool(os.getenv("AI_SERVICE_KEY") and key_name and os.getenv(key_name))}
+        "configured": configured()}
+
+@app.get("/ready", responses={503: {"description": "Configuration or Whisper preflight is not ready"}})
+def ready():
+    state = readiness()
+    return JSONResponse(state, status_code=200 if state["status"] == "READY" else 503)
 
 async def execute(request, client, validate_operation=None):
     started = time.monotonic()

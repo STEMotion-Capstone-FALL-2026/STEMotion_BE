@@ -10,7 +10,7 @@ GEMINI_MODEL=gemini-3.5-flash-lite
 AI_SERVICE_MODE=remote
 # Switch to remote only after deploying and verifying services/ai.
 AI_SERVICE_URL=http://localhost:8000
-AI_SERVICE_KEY=
+AI_SERVICE_SHARED_KEY=
 
 # Recommended for the current Render Free instance.
 DB_POOL_SIZE=3
