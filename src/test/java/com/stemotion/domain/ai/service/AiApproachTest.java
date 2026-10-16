@@ -68,7 +68,7 @@ class AiApproachTest {
         when(client.generateJson(any(), anyString(), anyString(), anyMap())).thenReturn(new AiGateway.Generation(
             mapper.readTree("{\"isValidStemTopic\":true,\"scenes\":[]}"), "test-gemini"));
         String prompt = promptOf(() -> service.generateScript(new GenerateScriptRequest(
-            "Định luật Ôm", StemSubject.Physics, "11", 0, "Điều tra vì sao cầu chì bị cháy")));
+            "Định luật Ôm", StemSubject.Physics, "11", 0, null, "Điều tra vì sao cầu chì bị cháy")));
         assertThat(prompt).contains("«Điều tra vì sao cầu chì bị cháy»").contains("COMPOSED");
     }
 

@@ -1,4 +1,30 @@
 services:
+  # AI is independent of Postgres: persistent audit/usage belongs to BE.
+  ai-service:
+    build:
+      context: ./services/ai
+      dockerfile: Dockerfile
+      args:
+        BAKE_WHISPER_MODEL: "false"
+    image: stemotion-ai:local
+    restart: "no"
+    env_file:
+      - path: ${AI_SERVICE_ENV_FILE:-./services/ai/.env}
+        required: false
+    environment:
+      PORT: "8000"
+      AI_SERVICE_SHARED_KEY: ${AI_SERVICE_SHARED_KEY:-}
+      WHISPER_MODEL_DIR: /models/${WHISPER_MODEL:-small}
+      WHISPER_STARTUP_MODE: ${WHISPER_STARTUP_MODE:-required}
+      WHISPER_LOCAL_FILES_ONLY: "true"
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-1}
+    ports:
+      - "127.0.0.1:${AI_LOCAL_PORT:-8000}:8000"
+    volumes:
+      - ./models:/models:ro
+    mem_limit: 2g
+    cpus: 1.0
+
   minio:
     image: minio/minio:latest
     container_name: stemotion-minio
@@ -38,6 +64,11 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       # Without this the container fell back to a retired model and every AI call returned 404.
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
+      AI_SERVICE_MODE: remote
+      AI_SERVICE_URL: http://ai-service:8000
+      AI_SERVICE_SHARED_KEY: ${AI_SERVICE_SHARED_KEY:-}
+      AI_PRICING_JSON: ${AI_PRICING_JSON:-{}}
+      AI_USAGE_ZONE: ${AI_USAGE_ZONE:-Asia/Ho_Chi_Minh}
       # Google Sign-In for admin-provisioned accounts; empty keeps it off.
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       # Set both in .env to keep a local stack from migrating a production database:
@@ -46,6 +77,8 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
       CORS_ORIGINS: "http://localhost:*,http://127.0.0.1:*"
     depends_on:
+      ai-service:
+        condition: service_healthy
       minio:
         condition: service_healthy
       render:

@@ -1,0 +1,6 @@
+Review the following %s script for %s and flag terminology that is
+wrong, inconsistent between scenes, or above the expected level.
+Do not flag correct terminology.
+
+Script:
+%s

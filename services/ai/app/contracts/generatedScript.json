@@ -1,0 +1,423 @@
+{
+  "required" : [ "isValidStemTopic", "scenes" ],
+  "type" : "OBJECT",
+  "properties" : {
+    "isValidStemTopic" : {
+      "type" : "BOOLEAN"
+    },
+    "flow" : {
+      "items" : {
+        "type" : "STRING"
+      },
+      "type" : "ARRAY"
+    },
+    "title" : {
+      "type" : "STRING"
+    },
+    "totalDurationSeconds" : {
+      "type" : "NUMBER"
+    },
+    "narrativeArc" : {
+      "required" : [ "summary", "approach" ],
+      "type" : "OBJECT",
+      "properties" : {
+        "approach" : {
+          "type" : "STRING"
+        },
+        "segments" : {
+          "items" : {
+            "required" : [ "order", "title", "purpose" ],
+            "type" : "OBJECT",
+            "properties" : {
+              "purpose" : {
+                "type" : "STRING"
+              },
+              "title" : {
+                "type" : "STRING"
+              },
+              "order" : {
+                "type" : "NUMBER"
+              }
+            }
+          },
+          "type" : "ARRAY"
+        },
+        "summary" : {
+          "type" : "STRING"
+        }
+      }
+    },
+    "gradeLevel" : {
+      "type" : "STRING"
+    },
+    "scenes" : {
+      "items" : {
+        "required" : [ "type", "title", "narration", "durationInFrames" ],
+        "type" : "OBJECT",
+        "properties" : {
+          "correctIndex" : {
+            "type" : "NUMBER"
+          },
+          "caption" : {
+            "type" : "STRING"
+          },
+          "ambience" : {
+            "enum" : [ "space", "cell", "lab", "ocean", "lilac", "sky" ],
+            "type" : "STRING"
+          },
+          "steps" : {
+            "items" : {
+              "required" : [ "label", "latexSnippet", "explanation" ],
+              "type" : "OBJECT",
+              "properties" : {
+                "label" : {
+                  "type" : "STRING"
+                },
+                "explanation" : {
+                  "type" : "STRING"
+                },
+                "latexSnippet" : {
+                  "type" : "STRING"
+                }
+              }
+            },
+            "type" : "ARRAY"
+          },
+          "labels" : {
+            "items" : {
+              "required" : [ "name", "description" ],
+              "type" : "OBJECT",
+              "properties" : {
+                "name" : {
+                  "type" : "STRING"
+                },
+                "yPercent" : {
+                  "type" : "NUMBER"
+                },
+                "xPercent" : {
+                  "type" : "NUMBER"
+                },
+                "description" : {
+                  "type" : "STRING"
+                }
+              }
+            },
+            "type" : "ARRAY"
+          },
+          "question" : {
+            "type" : "STRING"
+          },
+          "stages" : {
+            "items" : {
+              "required" : [ "stageNumber", "title", "description" ],
+              "type" : "OBJECT",
+              "properties" : {
+                "description" : {
+                  "type" : "STRING"
+                },
+                "stageNumber" : {
+                  "type" : "NUMBER"
+                },
+                "title" : {
+                  "type" : "STRING"
+                }
+              }
+            },
+            "type" : "ARRAY"
+          },
+          "processTitle" : {
+            "type" : "STRING"
+          },
+          "svgType" : {
+            "enum" : [ "pendulum", "atom", "circuit", "cell" ],
+            "type" : "STRING"
+          },
+          "products" : {
+            "type" : "STRING"
+          },
+          "summaryPoints" : {
+            "items" : {
+              "type" : "STRING"
+            },
+            "type" : "ARRAY"
+          },
+          "observation" : {
+            "type" : "STRING"
+          },
+          "dataPoints" : {
+            "items" : {
+              "required" : [ "label", "value" ],
+              "type" : "OBJECT",
+              "properties" : {
+                "value" : {
+                  "type" : "NUMBER"
+                },
+                "label" : {
+                  "type" : "STRING"
+                }
+              }
+            },
+            "type" : "ARRAY"
+          },
+          "headline" : {
+            "type" : "STRING"
+          },
+          "hint" : {
+            "type" : "STRING"
+          },
+          "title" : {
+            "type" : "STRING"
+          },
+          "type" : {
+            "enum" : [ "TITLE_HERO", "MATH_FORMULA", "DIAGRAM_EXPLAINER", "DATA_CHART", "ALGORITHM_WALKTHROUGH", "STEM_QUIZ", "OUTRO", "CHEMICAL_REACTION", "PROCESS_TIMELINE", "COMPARISON_SPLIT", "ILLUSTRATED_EXPLAINER", "COMPOSED" ],
+            "type" : "STRING"
+          },
+          "diagramTitle" : {
+            "type" : "STRING"
+          },
+          "condition" : {
+            "type" : "STRING"
+          },
+          "chartType" : {
+            "type" : "STRING"
+          },
+          "durationInFrames" : {
+            "type" : "NUMBER"
+          },
+          "reactants" : {
+            "type" : "STRING"
+          },
+          "latex" : {
+            "type" : "STRING"
+          },
+          "nextLessonSuggestion" : {
+            "type" : "STRING"
+          },
+          "equation" : {
+            "type" : "STRING"
+          },
+          "narration" : {
+            "type" : "STRING"
+          },
+          "language" : {
+            "type" : "STRING"
+          },
+          "yAxisLabel" : {
+            "type" : "STRING"
+          },
+          "topicB" : {
+            "required" : [ "title", "points" ],
+            "type" : "OBJECT",
+            "properties" : {
+              "badge" : {
+                "type" : "STRING"
+              },
+              "title" : {
+                "type" : "STRING"
+              },
+              "points" : {
+                "items" : {
+                  "type" : "STRING"
+                },
+                "type" : "ARRAY"
+              }
+            }
+          },
+          "topicA" : {
+            "required" : [ "title", "points" ],
+            "type" : "OBJECT",
+            "properties" : {
+              "badge" : {
+                "type" : "STRING"
+              },
+              "title" : {
+                "type" : "STRING"
+              },
+              "points" : {
+                "items" : {
+                  "type" : "STRING"
+                },
+                "type" : "ARRAY"
+              }
+            }
+          },
+          "explanation" : {
+            "type" : "STRING"
+          },
+          "codeSnippet" : {
+            "type" : "STRING"
+          },
+          "options" : {
+            "items" : {
+              "type" : "STRING"
+            },
+            "type" : "ARRAY"
+          },
+          "xAxisLabel" : {
+            "type" : "STRING"
+          },
+          "icons" : {
+            "items" : {
+              "required" : [ "name", "label" ],
+              "type" : "OBJECT",
+              "properties" : {
+                "label" : {
+                  "type" : "STRING"
+                },
+                "name" : {
+                  "type" : "STRING"
+                }
+              }
+            },
+            "type" : "ARRAY"
+          },
+          "frame" : {
+            "enum" : [ "center", "split", "thirds", "grid", "sidebar" ],
+            "type" : "STRING"
+          },
+          "layout" : {
+            "enum" : [ "focus", "row", "cluster", "swarm", "exchange", "zoom" ],
+            "type" : "STRING"
+          },
+          "blocks" : {
+            "items" : {
+              "required" : [ "id", "kind" ],
+              "type" : "OBJECT",
+              "properties" : {
+                "motion" : {
+                  "enum" : [ "pop", "rise", "slide", "draw", "type", "count" ],
+                  "type" : "STRING"
+                },
+                "question" : {
+                  "type" : "STRING"
+                },
+                "strikeAt" : {
+                  "type" : "STRING"
+                },
+                "kind" : {
+                  "enum" : [ "title", "text", "list", "formula", "icon", "icons", "number", "chart", "choice", "arrow", "highlight", "guide" ],
+                  "type" : "STRING"
+                },
+                "tone" : {
+                  "enum" : [ "default", "accent", "good", "bad" ],
+                  "type" : "STRING"
+                },
+                "to" : {
+                  "type" : "STRING"
+                },
+                "from" : {
+                  "type" : "STRING"
+                },
+                "at" : {
+                  "type" : "STRING"
+                },
+                "unit" : {
+                  "type" : "STRING"
+                },
+                "pose" : {
+                  "enum" : [ "idle", "point" ],
+                  "type" : "STRING"
+                },
+                "latex" : {
+                  "type" : "STRING"
+                },
+                "value" : {
+                  "type" : "NUMBER"
+                },
+                "items" : {
+                  "items" : {
+                    "type" : "STRING"
+                  },
+                  "type" : "ARRAY"
+                },
+                "until" : {
+                  "type" : "STRING"
+                },
+                "answer" : {
+                  "type" : "NUMBER"
+                },
+                "text" : {
+                  "type" : "STRING"
+                },
+                "emphasis" : {
+                  "enum" : [ "none", "pulse", "float", "shake" ],
+                  "type" : "STRING"
+                },
+                "id" : {
+                  "type" : "STRING"
+                },
+                "icons" : {
+                  "items" : {
+                    "required" : [ "name" ],
+                    "type" : "OBJECT",
+                    "properties" : {
+                      "label" : {
+                        "type" : "STRING"
+                      },
+                      "name" : {
+                        "type" : "STRING"
+                      }
+                    }
+                  },
+                  "type" : "ARRAY"
+                },
+                "icon" : {
+                  "required" : [ "name" ],
+                  "type" : "OBJECT",
+                  "properties" : {
+                    "label" : {
+                      "type" : "STRING"
+                    },
+                    "name" : {
+                      "type" : "STRING"
+                    }
+                  }
+                },
+                "points" : {
+                  "items" : {
+                    "required" : [ "label", "value" ],
+                    "type" : "OBJECT",
+                    "properties" : {
+                      "value" : {
+                        "type" : "NUMBER"
+                      },
+                      "label" : {
+                        "type" : "STRING"
+                      }
+                    }
+                  },
+                  "type" : "ARRAY"
+                },
+                "revealAt" : {
+                  "type" : "STRING"
+                },
+                "options" : {
+                  "items" : {
+                    "type" : "STRING"
+                  },
+                  "type" : "ARRAY"
+                },
+                "slot" : {
+                  "enum" : [ "top", "main", "bottom", "left", "right", "middle", "tl", "tr", "bl", "br", "side" ],
+                  "type" : "STRING"
+                }
+              }
+            },
+            "type" : "ARRAY"
+          },
+          "conclusion" : {
+            "type" : "STRING"
+          }
+        }
+      },
+      "type" : "ARRAY"
+    },
+    "fallbackMessage" : {
+      "nullable" : true,
+      "type" : "STRING"
+    },
+    "approachName" : {
+      "type" : "STRING"
+    }
+  }
+}

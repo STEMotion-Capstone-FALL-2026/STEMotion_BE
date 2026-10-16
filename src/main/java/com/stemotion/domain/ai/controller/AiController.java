@@ -20,7 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/ai")
 @RequiredArgsConstructor
-@Tag(name = "AI Script Intelligence", description = "Gemini-backed drafting and analysis, human-in-the-loop")
+@Tag(name = "AI Script Intelligence", description = "Service-backed drafting and analysis, human-in-the-loop")
 public class AiController {
 
     private final AiScriptService aiScriptService;

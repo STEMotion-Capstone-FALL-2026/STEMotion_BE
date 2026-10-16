@@ -1,0 +1,18 @@
+http://:80 {
+	respond /health "test proxy ok" 200
+	handle_path /ai/* {
+		reverse_proxy ai-service:8000
+	}
+	handle_path /worker/* {
+		@public path /health /videos/* /audio/* /images/* /render-status/*
+		handle @public {
+			reverse_proxy worker:4000
+		}
+		@authorized header X-Api-Key {$RENDER_SERVICE_KEY}
+		handle @authorized {
+			reverse_proxy worker:4000
+		}
+		respond "Worker key required" 401
+	}
+	respond "Unknown route" 404
+}

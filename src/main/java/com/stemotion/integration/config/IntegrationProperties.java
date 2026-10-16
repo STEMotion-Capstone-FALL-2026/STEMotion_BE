@@ -32,6 +32,7 @@ public class IntegrationProperties {
     @Getter
     @Setter
     public static class Ai {
+        private String alignmentWorkerKey = "";
         /** Explicit rollout switch; remote failures never fall back to embedded AI. */
         private String mode = "embedded";
         private String baseUrl = "http://localhost:8000";

@@ -1,0 +1,5 @@
+List the %s concepts taught in the following script for %s.
+Give each concept a short category and mark how central it is.
+
+Script:
+%s

@@ -13,6 +13,7 @@ import com.stemotion.domain.script.repository.SceneRepository;
 import com.stemotion.domain.script.repository.ScriptVersionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
@@ -41,6 +42,9 @@ public class AdminMetricsService {
     private final com.stemotion.integration.config.IntegrationProperties integrationProperties;
 
 
+    @Value("${AI_MONTHLY_BUDGET_USD:#{null}}")
+    private Double monthlyBudgetUsd;
+
     @Transactional(readOnly = true)
     public SystemMetrics collect() {
         List<RenderJob> jobs = renderJobRepository.findAll();
@@ -60,16 +64,9 @@ public class AdminMetricsService {
             .count();
         long failedToday = finishedToday.size() - completedToday;
 
-        List<RenderJob> allFinished = jobs.stream()
-            .filter(j -> j.getStatus() == RenderStatus.COMPLETED || j.getStatus() == RenderStatus.FAILED)
-            .toList();
-        long allCompleted = allFinished.stream()
-            .filter(j -> j.getStatus() == RenderStatus.COMPLETED)
-            .count();
-
-        double successRate = !finishedToday.isEmpty()
-            ? round((double) completedToday / finishedToday.size() * 100d)
-            : (!allFinished.isEmpty() ? round((double) allCompleted / allFinished.size() * 100d) : 100d);
+        double successRate = finishedToday.isEmpty()
+            ? UNAVAILABLE
+            : round((double) completedToday / finishedToday.size() * 100d);
 
         Runtime runtime = Runtime.getRuntime();
         double usedMemory = runtime.totalMemory() - runtime.freeMemory();
@@ -84,7 +81,7 @@ public class AdminMetricsService {
             UNAVAILABLE,
             memoryUsage,
             active,
-            completedToday > 0 ? completedToday : allCompleted,
+            completedToday,
             storageUsedGb,
             failedToday,
             successRate
@@ -137,7 +134,7 @@ public class AdminMetricsService {
         long estimatedAiCalls = usage.getCalls();
         long avgLatencyMs = usage.getAvgLatencyMs() == null ? 0L : Math.round(usage.getAvgLatencyMs());
         long estimatedTokens = usage.getTokens() == null ? 0L : usage.getTokens();
-        double estimatedCostUsd = usage.getCost() == null ? 0d : usage.getCost().doubleValue();
+        Double estimatedCostUsd = usage.getCost() == null ? null : usage.getCost().doubleValue();
 
         AiUsageStats aiUsage = new AiUsageStats(
             totalProjects,
@@ -147,9 +144,9 @@ public class AdminMetricsService {
             avgLatencyMs,
             estimatedTokens,
             estimatedCostUsd,
-            20.0d,
+            monthlyBudgetUsd,
             integrationProperties.getGemini().getModel(),
-            "Google Vietnamese TTS (unified_vi_v3)"
+            null
         );
 
         Map<String, Long> projectsBySubject = new LinkedHashMap<>();
@@ -184,7 +181,7 @@ public class AdminMetricsService {
         }
         double load = osBean.getSystemLoadAverage();
         if (load < 0) {
-            return 12.5d;
+            return UNAVAILABLE;
         }
         int cores = Runtime.getRuntime().availableProcessors();
         return Math.min(100d, load / cores * 100d);

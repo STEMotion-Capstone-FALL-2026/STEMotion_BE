@@ -34,7 +34,8 @@ public class ResourceAccessInterceptor implements HandlerInterceptor {
         if ("OPTIONS".equals(request.getMethod())) return true;
 
         String path = request.getRequestURI();
-        if (path.startsWith("/api/v1/auth/login") || path.startsWith("/api/v1/render/callback") || path.startsWith("/actuator")) {
+        if (path.startsWith("/api/v1/auth/login") || path.startsWith("/api/v1/render/callback") || path.startsWith("/actuator")
+                || path.equals("/api/v1/ai/internal/transcribe/align")) {
             return true;
         }
 
@@ -59,7 +60,8 @@ public class ResourceAccessInterceptor implements HandlerInterceptor {
         }
 
         // AI endpoints quota protection: requires active WRITER role in at least one workspace or ADMIN
-        if (path.startsWith("/api/v1/ai/") && !path.equals("/api/v1/ai/health")) {
+        if (path.startsWith("/api/v1/ai/") && !path.equals("/api/v1/ai/health")
+                && !path.equals("/api/v1/ai/transcribe/align")) {
             access.requireAiAccess(userId);
         }
 

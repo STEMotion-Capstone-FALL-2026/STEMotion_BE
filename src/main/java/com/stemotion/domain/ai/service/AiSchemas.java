@@ -80,6 +80,15 @@ final class AiSchemas {
 
     /** A full draft script: metadata plus an ordered scene list. */
     static Map<String, Object> generatedScript() {
+        Map<String, Object> arcSegment = object(
+            Map.of("order", num(), "title", str(), "purpose", str()),
+            List.of("order", "title", "purpose")
+        );
+        Map<String, Object> narrativeArc = object(
+            Map.of("summary", str(), "approach", str(), "segments", arrayOf(arcSegment)),
+            List.of("summary", "approach")
+        );
+
         Map<String, Object> stepItem = object(
             Map.of(
                 "label", str(),
@@ -189,6 +198,7 @@ final class AiSchemas {
                 "title", str(),
                 "gradeLevel", str(),
                 "totalDurationSeconds", num(),
+                "narrativeArc", narrativeArc,
                 "approachName", str(),
                 "flow", arrayOf(str()),
                 "scenes", arrayOf(scene)

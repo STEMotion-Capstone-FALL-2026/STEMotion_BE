@@ -1,0 +1,22 @@
+[
+  {
+    "reference": [
+      "thí"
+    ],
+    "asr": [
+      "thi"
+    ]
+  },
+  {
+    "reference": [
+      "đọc",
+      "vạch",
+      "chia"
+    ],
+    "asr": [
+      "độc",
+      "vật",
+      "chi"
+    ]
+  }
+]

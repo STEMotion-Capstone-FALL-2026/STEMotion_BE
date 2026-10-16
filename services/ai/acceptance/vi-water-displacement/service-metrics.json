@@ -1,0 +1,172 @@
+{
+  "elapsedSec": 3.6879999999998745,
+  "audioSha256": "0a5642705219ca0439770394d5df8d9e8db7c3897ffa0fd0c4578e0b75b201d7",
+  "serviceVsEdge": {
+    "referenceUnits": 78,
+    "actualUnits": 78,
+    "matchedUnits": 78,
+    "textCoverage": 1.0,
+    "comparedBoundaries": 156,
+    "meanErrorSec": 0.03355769230769239,
+    "p95ErrorSec": 0.07500000000000018,
+    "maxErrorSec": 0.125,
+    "boundariesBelow300ms": 156,
+    "allBelow300msAndFullText": true,
+    "worst": [
+      {
+        "text": "khi",
+        "boundary": "start",
+        "reference": 0.125,
+        "actual": 0.0,
+        "errorSec": 0.125
+      },
+      {
+        "text": "mực",
+        "boundary": "start",
+        "reference": 2.125,
+        "actual": 2.24,
+        "errorSec": 0.11500000000000021
+      },
+      {
+        "text": "rồi",
+        "boundary": "start",
+        "reference": 9.5875,
+        "actual": 9.7,
+        "errorSec": 0.11249999999999893
+      },
+      {
+        "text": "sau",
+        "boundary": "end",
+        "reference": 9.3875,
+        "actual": 9.28,
+        "errorSec": 0.10749999999999993
+      },
+      {
+        "text": "hãy",
+        "boundary": "start",
+        "reference": 17.7375,
+        "actual": 17.84,
+        "errorSec": 0.10249999999999915
+      },
+      {
+        "text": "lên",
+        "boundary": "end",
+        "reference": 3.125,
+        "actual": 3.04,
+        "errorSec": 0.08499999999999996
+      },
+      {
+        "text": "tránh",
+        "boundary": "start",
+        "reference": 19.1625,
+        "actual": 19.24,
+        "errorSec": 0.07749999999999702
+      },
+      {
+        "text": "có",
+        "boundary": "end",
+        "reference": 5.325,
+        "actual": 5.4,
+        "errorSec": 0.07500000000000018
+      },
+      {
+        "text": "thể",
+        "boundary": "start",
+        "reference": 5.325,
+        "actual": 5.4,
+        "errorSec": 0.07500000000000018
+      },
+      {
+        "text": "tầm",
+        "boundary": "end",
+        "reference": 21.625,
+        "actual": 21.7,
+        "errorSec": 0.07499999999999929
+      }
+    ]
+  },
+  "serviceVsDirectAsr": {
+    "referenceUnits": 78,
+    "actualUnits": 78,
+    "matchedUnits": 74,
+    "textCoverage": 0.9487179487179487,
+    "comparedBoundaries": 148,
+    "meanErrorSec": 0.005270270270270223,
+    "p95ErrorSec": 0.020000000000000018,
+    "maxErrorSec": 0.0600000000000005,
+    "boundariesBelow300ms": 148,
+    "allBelow300msAndFullText": false,
+    "worst": [
+      {
+        "text": "trước",
+        "boundary": "end",
+        "reference": 8.78,
+        "actual": 8.84,
+        "errorSec": 0.0600000000000005
+      },
+      {
+        "text": "và",
+        "boundary": "start",
+        "reference": 8.78,
+        "actual": 8.84,
+        "errorSec": 0.0600000000000005
+      },
+      {
+        "text": "trước",
+        "boundary": "end",
+        "reference": 11.64,
+        "actual": 11.68,
+        "errorSec": 0.03999999999999915
+      },
+      {
+        "text": "thể",
+        "boundary": "end",
+        "reference": 5.56,
+        "actual": 5.58,
+        "errorSec": 0.020000000000000462
+      },
+      {
+        "text": "tích",
+        "boundary": "start",
+        "reference": 5.56,
+        "actual": 5.58,
+        "errorSec": 0.020000000000000462
+      },
+      {
+        "text": "tích",
+        "boundary": "end",
+        "reference": 5.76,
+        "actual": 5.78,
+        "errorSec": 0.020000000000000462
+      },
+      {
+        "text": "bằng",
+        "boundary": "start",
+        "reference": 5.76,
+        "actual": 5.78,
+        "errorSec": 0.020000000000000462
+      },
+      {
+        "text": "đặt",
+        "boundary": "end",
+        "reference": 0.44,
+        "actual": 0.46,
+        "errorSec": 0.020000000000000018
+      },
+      {
+        "text": "một",
+        "boundary": "start",
+        "reference": 0.44,
+        "actual": 0.46,
+        "errorSec": 0.020000000000000018
+      },
+      {
+        "text": "vào",
+        "boundary": "end",
+        "reference": 1.4,
+        "actual": 1.38,
+        "errorSec": 0.020000000000000018
+      }
+    ]
+  }
+}

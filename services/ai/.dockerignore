@@ -1,5 +1,13 @@
-.venv
-.env
-tests
-__pycache__
-.pytest_cache
+# Allowlist: no credentials, tests, caches or local venv in build context.
+**
+!Dockerfile
+!requirements.lock
+!app/
+!app/**
+!models/
+!models/**
+**/__pycache__
+**/*.pyc
+**/.env*
+**/*.pem
+**/*.key

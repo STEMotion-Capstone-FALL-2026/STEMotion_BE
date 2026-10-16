@@ -62,3 +62,7 @@ logs/
 .env.*
 !.env.example
 !.env.*.example
+
+# Local Whisper weight mount; provision separately, never commit model binaries.
+/models/
+/deploy/hetzner/releases/

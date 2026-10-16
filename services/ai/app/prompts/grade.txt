@@ -1,0 +1,6 @@
+Assess whether the following %s script is readable for students at %s.
+Give a readability score from 0 to 100, the grade level the text
+actually reads at, and concrete suggestions to close any gap.
+
+Script:
+%s

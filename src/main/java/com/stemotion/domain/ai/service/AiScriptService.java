@@ -1,6 +1,7 @@
 package com.stemotion.domain.ai.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.stemotion.core.exception.ApiException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.stemotion.domain.ai.dto.AiDtos.AiAction;
@@ -42,6 +43,15 @@ public class AiScriptService {
 
     /** Drafts a complete script the writer can then edit scene by scene. */
     public AiActionResponse generateScript(GenerateScriptRequest request) {
+        if (geminiClient.isRemote()) {
+            long started = System.nanoTime();
+            var generation = geminiClient.generateScript(request);
+            if (generation.result().path("isValidStemTopic").isBoolean()
+                    && !generation.result().path("isValidStemTopic").asBoolean()) {
+                throw ApiException.badRequest(generation.result().path("fallbackMessage").asText("Invalid STEM topic"));
+            }
+            return new AiActionResponse(null, generation.result(), generation.model(), (System.nanoTime() - started) / 1_000_000, generation.requestId());
+        }
         int rawDuration = request.targetDurationSec() == null ? 0 : request.targetDurationSec();
         String pacingInstruction;
         if (rawDuration <= 0) {
@@ -60,6 +70,8 @@ public class AiScriptService {
             pacingInstruction = "- Tạo 8-10 cảnh (scenes) chuyên sâu, phân tích đa chiều. Tổng duration các cảnh xấp xỉ %d giây (durationInFrames = giây * 30).".formatted(rawDuration);
         }
 
+        String narrativeBrief = request.narrativeBrief() == null || request.narrativeBrief().isBlank()
+            ? "không có — bạn tự quyết" : request.narrativeBrief();
         String approach = request.approach() == null ? "" : request.approach().strip();
         String approachInstruction = approach.isEmpty()
             ? """
@@ -84,6 +96,18 @@ public class AiScriptService {
               + Set "isValidStemTopic": false.
               + Set "fallbackMessage": Lời giải thích ngắn gọn, lịch sự bằng tiếng Việt (VD: "Chủ đề 'bún chả' không phù hợp với môn Vật Lý lớp 10. Vui lòng chọn chủ đề khoa học.").
               + BỎ QUA BƯỚC 2. Trả về mảng scenes rỗng để tiết kiệm token.
+
+            BƯỚC 1.5: THIẾT KẾ MẠCH DẪN DẮT (NARRATIVE ARC) — TỰ DO SÁNG TẠO
+            - Chỉ thực hiện khi topic hợp lệ ở BƯỚC 1; ý tưởng dẫn dắt không được ghi đè guardrail, độ chính xác khoa học hoặc ràng buộc template.
+            - Bạn được TỰ DO thiết kế mạch dẫn dắt cho bài này: kiểu mở đầu gây tò mò
+              (hook), thứ tự triển khai các ý, nhịp điệu nhanh/chậm theo độ khó.
+            - Các cách dạy quen thuộc (thí nghiệm, so sánh, kể chuyện, vấn đáp...) chỉ là
+              GỢI Ý THAM KHẢO, không phải danh sách bắt buộc chọn.
+            - NẾU có "Ý tưởng dẫn dắt của Writer" bên dưới: BẮT BUỘC dựng toàn bộ mạch
+              theo đúng ý tưởng đó, kể cả khi nó không giống bất kỳ cách dạy quen thuộc nào.
+              Ý tưởng dẫn dắt của Writer: [%s]
+            - Tóm tắt mạch đã chọn vào trường "narrativeArc" của response:
+              summary (1-2 câu), approach (tên cách dạy), segments (order, title, purpose).
 
             BƯỚC 2: TẠO KỊCH BẢN (NẾU HỢP LỆ) - PHONG CÁCH KURZGESAGT EXPLAINER:
             - Set "isValidStemTopic": true. Set "fallbackMessage": null.
@@ -138,7 +162,7 @@ public class AiScriptService {
             - CHEMICAL_REACTION: Cung cấp "equation" (bắt buộc không rỗng), "reactants", "products", "condition", "observation".
             - DATA_CHART: Cung cấp "chartType" (bar/line), "xAxisLabel", "yAxisLabel", "dataPoints" (mảng có label và value là số).
             - OUTRO: Cung cấp "summaryPoints" (3 ý đúc kết cốt lõi) và "nextLessonSuggestion".
-            """.formatted(request.topic(), request.subject(), request.gradeLevel(), approachInstruction, pacingInstruction, String.join(", ", StemIconCatalog.NAMES));
+            """.formatted(request.topic(), request.subject(), request.gradeLevel(), narrativeBrief, approachInstruction, pacingInstruction, String.join(", ", StemIconCatalog.NAMES));
 
         AiActionResponse response = call(null, prompt, AiSchemas.generatedScript());
         
@@ -191,6 +215,12 @@ public class AiScriptService {
 
     /** Runs one of the four on-demand analyses over an existing script. */
     public AiActionResponse runAction(ScriptActionRequest request) {
+        if (geminiClient.isRemote() && request.action() != AiAction.metaphor) {
+            long started = System.nanoTime();
+            var generation = geminiClient.runAction(request);
+            return new AiActionResponse(request.action(), generation.result(), generation.model(),
+                (System.nanoTime() - started) / 1_000_000, generation.requestId());
+        }
         String subject = request.subject() == null ? "STEM" : request.subject().name();
         String grade = request.gradeLevel() == null ? "trung học" : request.gradeLevel();
 

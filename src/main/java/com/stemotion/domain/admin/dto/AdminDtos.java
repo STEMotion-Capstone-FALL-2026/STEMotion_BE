@@ -42,15 +42,16 @@ public final class AdminDtos {
         LocalDateTime updatedAt
     ) {}
 
+    /** Nullable usage fields mean unavailable until real request aggregation is wired. */
     public record AiUsageStats(
         long totalProjects,
         long totalScriptVersions,
         long totalScenesGenerated,
-        long estimatedAiCalls,
-        long avgLatencyMs,
-        long estimatedTokensUsed,
-        double estimatedCostUsd,
-        double monthlyBudgetUsd,
+        Long estimatedAiCalls,
+        Long avgLatencyMs,
+        Long estimatedTokensUsed,
+        Double estimatedCostUsd,
+        Double monthlyBudgetUsd,
         String modelName,
         String ttsProvider
     ) {}

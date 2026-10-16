@@ -61,16 +61,49 @@ public class AiGateway {
         }
         if (!isConfigured()) throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
             "AI_NOT_CONFIGURED", "Configure AI_SERVICE_URL and AI_SERVICE_KEY");
+        return invokeRemote("/internal/v1/generate", Map.of("systemInstruction", instruction, "prompt", prompt, "responseSchema", schema));
+    }
+
+    public Generation generateScript(com.stemotion.domain.ai.dto.AiDtos.GenerateScriptRequest request) {
+        return scriptRequest(com.stemotion.domain.ai.entity.AiRequest.RequestType.SEGMENTATION, "/script/generate", request);
+    }
+
+    public Generation runAction(com.stemotion.domain.ai.dto.AiDtos.ScriptActionRequest request) {
+        var type = request.action() == com.stemotion.domain.ai.dto.AiDtos.AiAction.resegment
+            ? com.stemotion.domain.ai.entity.AiRequest.RequestType.SEGMENTATION
+            : com.stemotion.domain.ai.entity.AiRequest.RequestType.ANALYSIS;
+        return scriptRequest(type, "/script/action", request);
+    }
+
+    private Generation scriptRequest(com.stemotion.domain.ai.entity.AiRequest.RequestType type, String path, Object request) {
+        var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        String id = audit.start(type, "remote", mapper.valueToTree(request).toString());
+        long started = System.nanoTime();
         try {
-            var body = remote.post().uri("/internal/v1/generate")
+            if (!isRemote()) throw new IllegalStateException("Script endpoints require remote mode");
+            Generation result = invokeRemote(path, request);
+            audit.complete(id, result, (System.nanoTime() - started) / 1_000_000, null);
+            return new Generation(result.result(), result.model(), id, result.inputTokens(), result.outputTokens(), result.totalTokens());
+        } catch (RuntimeException ex) {
+            audit.complete(id, null, (System.nanoTime() - started) / 1_000_000,
+                ex instanceof ApiException api ? api.getCode() : "AI_CALL_FAILED");
+            throw ex;
+        }
+    }
+
+    private Generation invokeRemote(String path, Object payload) {
+        if (!isConfigured()) throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
+            "AI_NOT_CONFIGURED", "Configure AI_SERVICE_URL and AI_SERVICE_KEY");
+        try {
+            var body = remote.post().uri(path)
                 .header("X-AI-Api-Key", properties.getAi().getApiKey())
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Map.of("systemInstruction", instruction, "prompt", prompt, "responseSchema", schema))
+                .contentType(MediaType.APPLICATION_JSON).body(payload)
                 .retrieve().body(JsonNode.class);
             if (body == null || !body.path("result").isObject() || body.path("model").asText().isBlank()) {
                 throw new ApiException(HttpStatus.BAD_GATEWAY, "AI_INVALID_RESPONSE", "AI service returned an invalid response");
             }
-            return new Generation(body.get("result"),body.get("model").asText(),null,token(body,"inputTokens"),token(body,"outputTokens"),token(body,"totalTokens"));
+            return new Generation(body.get("result"), body.get("model").asText(), null,
+                token(body,"inputTokens"), token(body,"outputTokens"), token(body,"totalTokens"));
         } catch (ApiException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -78,7 +111,7 @@ public class AiGateway {
         }
     }
 
-    private boolean isRemote() { return "remote".equals(properties.getAi().getMode()); }
+    public boolean isRemote() { return "remote".equals(properties.getAi().getMode()); }
     private static Integer token(JsonNode body,String key) {
         var value=body.path(key);
         return value.isIntegralNumber() && value.canConvertToInt() && value.asInt()>=0?value.asInt():null;

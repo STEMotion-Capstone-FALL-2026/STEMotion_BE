@@ -49,6 +49,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/register").denyAll()
                 .requestMatchers("/api/v1/auth/login").permitAll()
+                // Worker alignment has an independent env-backed shared-key guard in its controller.
+                .requestMatchers("/api/v1/ai/internal/transcribe/align").permitAll()
+                .requestMatchers("/api/v1/ai/transcribe/align").hasAnyRole("WRITER", "PRODUCER", "ADMIN")
+                // Drafting uses active workspace membership via ResourceAccessInterceptor.
                 .requestMatchers("/api/v1/auth/google", "/api/v1/auth/google/enabled").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 // The render worker authenticates with the shared render API key

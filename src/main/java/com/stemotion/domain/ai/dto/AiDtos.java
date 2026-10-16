@@ -41,6 +41,8 @@ public final class AiDtos {
 
         Integer targetDurationSec,
 
+        @Size(max = 500, message = "narrativeBrief must be at most 500 characters")
+        String narrativeBrief,
         /**
          * How the video should lead the viewer through the lesson, in the
          * writer's own words or copied from a suggested approach. Empty lets
@@ -50,7 +52,7 @@ public final class AiDtos {
         String approach
     ) {
         public GenerateScriptRequest(String topic, StemSubject subject, String gradeLevel, Integer targetDurationSec) {
-            this(topic, subject, gradeLevel, targetDurationSec, null);
+            this(topic, subject, gradeLevel, targetDurationSec, null, null);
         }
     }
 

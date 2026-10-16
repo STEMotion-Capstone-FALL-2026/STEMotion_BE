@@ -53,4 +53,15 @@ class ResourceAccessInterceptorTest {
         check("GET", "/api/v1/render/status/job", Map.of("jobId", "job"));
         verify(access).requireProject("one", "writer-id", false);
     }
+
+    @Test void draftingAndApproachesRequireActiveWriterMembership() {
+        check("POST", "/api/v1/ai/script/generate", Map.of());
+        check("POST", "/api/v1/ai/script/approaches", Map.of());
+        verify(access, times(2)).requireAiAccess("writer-id");
+    }
+    @Test void alignmentRetainsItsOwnControllerGuards() {
+        check("POST", "/api/v1/ai/transcribe/align", Map.of());
+        check("POST", "/api/v1/ai/internal/transcribe/align", Map.of());
+        verifyNoInteractions(access);
+    }
 }
