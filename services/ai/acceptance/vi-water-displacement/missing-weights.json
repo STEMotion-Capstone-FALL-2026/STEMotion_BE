@@ -1,0 +1,6 @@
+{
+  "exitCode": 1,
+  "elapsedSec": 0.125,
+  "log": "ERROR ai.startup: Startup rejected: Whisper weights missing: WHISPER_MODEL_DIR must contain model.bin, config.json and tokenizer.json; provision bake/volume first",
+  "directoryRestored": true
+}

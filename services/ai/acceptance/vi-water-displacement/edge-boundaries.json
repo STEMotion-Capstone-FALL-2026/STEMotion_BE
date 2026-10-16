@@ -1,0 +1,397 @@
+{
+  "voice": "vi-VN-HoaiMyNeural",
+  "durationSec": 22.68,
+  "bytes": 136080,
+  "words": [
+    {
+      "text": "Khi",
+      "start": 0.125,
+      "end": 0.25
+    },
+    {
+      "text": "đặt",
+      "start": 0.25,
+      "end": 0.4625
+    },
+    {
+      "text": "một",
+      "start": 0.4625,
+      "end": 0.675
+    },
+    {
+      "text": "viên",
+      "start": 0.675,
+      "end": 0.9
+    },
+    {
+      "text": "đá",
+      "start": 0.9,
+      "end": 1.15
+    },
+    {
+      "text": "vào",
+      "start": 1.15,
+      "end": 1.3875
+    },
+    {
+      "text": "cốc",
+      "start": 1.3875,
+      "end": 1.6125
+    },
+    {
+      "text": "nước",
+      "start": 1.6125,
+      "end": 1.9
+    },
+    {
+      "text": "mực",
+      "start": 2.125,
+      "end": 2.35
+    },
+    {
+      "text": "nước",
+      "start": 2.35,
+      "end": 2.6
+    },
+    {
+      "text": "dâng",
+      "start": 2.6,
+      "end": 2.8125
+    },
+    {
+      "text": "lên",
+      "start": 2.8125,
+      "end": 3.125
+    },
+    {
+      "text": "Phần",
+      "start": 3.9875,
+      "end": 4.175
+    },
+    {
+      "text": "nước",
+      "start": 4.175,
+      "end": 4.425
+    },
+    {
+      "text": "bị",
+      "start": 4.425,
+      "end": 4.6375
+    },
+    {
+      "text": "chiếm",
+      "start": 4.6375,
+      "end": 4.875
+    },
+    {
+      "text": "chỗ",
+      "start": 4.875,
+      "end": 5.1625
+    },
+    {
+      "text": "có",
+      "start": 5.1625,
+      "end": 5.325
+    },
+    {
+      "text": "thể",
+      "start": 5.325,
+      "end": 5.55
+    },
+    {
+      "text": "tích",
+      "start": 5.55,
+      "end": 5.75
+    },
+    {
+      "text": "bằng",
+      "start": 5.75,
+      "end": 5.975
+    },
+    {
+      "text": "thể",
+      "start": 5.975,
+      "end": 6.1875
+    },
+    {
+      "text": "tích",
+      "start": 6.1875,
+      "end": 6.4
+    },
+    {
+      "text": "viên",
+      "start": 6.4,
+      "end": 6.625
+    },
+    {
+      "text": "đá",
+      "start": 6.625,
+      "end": 6.95
+    },
+    {
+      "text": "Ta",
+      "start": 7.825,
+      "end": 7.975
+    },
+    {
+      "text": "đo",
+      "start": 7.975,
+      "end": 8.15
+    },
+    {
+      "text": "mực",
+      "start": 8.15,
+      "end": 8.375
+    },
+    {
+      "text": "nước",
+      "start": 8.375,
+      "end": 8.575
+    },
+    {
+      "text": "trước",
+      "start": 8.575,
+      "end": 8.8
+    },
+    {
+      "text": "và",
+      "start": 8.8,
+      "end": 8.9875
+    },
+    {
+      "text": "sau",
+      "start": 8.9875,
+      "end": 9.3875
+    },
+    {
+      "text": "rồi",
+      "start": 9.5875,
+      "end": 9.775
+    },
+    {
+      "text": "lấy",
+      "start": 9.775,
+      "end": 9.9875
+    },
+    {
+      "text": "giá",
+      "start": 9.9875,
+      "end": 10.1875
+    },
+    {
+      "text": "trị",
+      "start": 10.1875,
+      "end": 10.4625
+    },
+    {
+      "text": "sau",
+      "start": 10.4625,
+      "end": 10.7375
+    },
+    {
+      "text": "trừ",
+      "start": 10.7375,
+      "end": 10.9375
+    },
+    {
+      "text": "giá",
+      "start": 10.9375,
+      "end": 11.1625
+    },
+    {
+      "text": "trị",
+      "start": 11.1625,
+      "end": 11.3875
+    },
+    {
+      "text": "trước",
+      "start": 11.3875,
+      "end": 11.6875
+    },
+    {
+      "text": "Cách",
+      "start": 12.5625,
+      "end": 12.7
+    },
+    {
+      "text": "đo",
+      "start": 12.7,
+      "end": 12.875
+    },
+    {
+      "text": "này",
+      "start": 12.875,
+      "end": 13.1375
+    },
+    {
+      "text": "giúp",
+      "start": 13.1375,
+      "end": 13.325
+    },
+    {
+      "text": "tìm",
+      "start": 13.325,
+      "end": 13.5625
+    },
+    {
+      "text": "thể",
+      "start": 13.5625,
+      "end": 13.75
+    },
+    {
+      "text": "tích",
+      "start": 13.75,
+      "end": 13.95
+    },
+    {
+      "text": "của",
+      "start": 13.95,
+      "end": 14.1
+    },
+    {
+      "text": "vật",
+      "start": 14.1,
+      "end": 14.3
+    },
+    {
+      "text": "rắn",
+      "start": 14.3,
+      "end": 14.575
+    },
+    {
+      "text": "có",
+      "start": 14.575,
+      "end": 14.7625
+    },
+    {
+      "text": "hình",
+      "start": 14.7625,
+      "end": 14.975
+    },
+    {
+      "text": "dạng",
+      "start": 14.975,
+      "end": 15.275
+    },
+    {
+      "text": "không",
+      "start": 15.275,
+      "end": 15.5
+    },
+    {
+      "text": "đều",
+      "start": 15.5,
+      "end": 15.8
+    },
+    {
+      "text": "Khi",
+      "start": 16.6625,
+      "end": 16.7625
+    },
+    {
+      "text": "làm",
+      "start": 16.7625,
+      "end": 16.9875
+    },
+    {
+      "text": "thí",
+      "start": 16.9875,
+      "end": 17.15
+    },
+    {
+      "text": "nghiệm",
+      "start": 17.15,
+      "end": 17.55
+    },
+    {
+      "text": "hãy",
+      "start": 17.7375,
+      "end": 17.9125
+    },
+    {
+      "text": "thả",
+      "start": 17.9125,
+      "end": 18.125
+    },
+    {
+      "text": "vật",
+      "start": 18.125,
+      "end": 18.3375
+    },
+    {
+      "text": "nhẹ",
+      "start": 18.3375,
+      "end": 18.525
+    },
+    {
+      "text": "nhàng",
+      "start": 18.525,
+      "end": 18.925
+    },
+    {
+      "text": "tránh",
+      "start": 19.1625,
+      "end": 19.325
+    },
+    {
+      "text": "làm",
+      "start": 19.325,
+      "end": 19.525
+    },
+    {
+      "text": "nước",
+      "start": 19.525,
+      "end": 19.725
+    },
+    {
+      "text": "bắn",
+      "start": 19.725,
+      "end": 19.9375
+    },
+    {
+      "text": "ra",
+      "start": 19.9375,
+      "end": 20.1125
+    },
+    {
+      "text": "ngoài",
+      "start": 20.1125,
+      "end": 20.4125
+    },
+    {
+      "text": "và",
+      "start": 20.4125,
+      "end": 20.6
+    },
+    {
+      "text": "đọc",
+      "start": 20.6,
+      "end": 20.775
+    },
+    {
+      "text": "vạch",
+      "start": 20.775,
+      "end": 20.9875
+    },
+    {
+      "text": "chia",
+      "start": 20.9875,
+      "end": 21.1375
+    },
+    {
+      "text": "ngang",
+      "start": 21.1375,
+      "end": 21.425
+    },
+    {
+      "text": "tầm",
+      "start": 21.425,
+      "end": 21.625
+    },
+    {
+      "text": "mắt",
+      "start": 21.625,
+      "end": 21.825
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "health": 200,
+  "ready": {
+    "status": "READY",
+    "configured": true,
+    "weightsPresent": true,
+    "whisperVerified": true
+  },
+  "localFilesOnly": true,
+  "openaiCredential": "test placeholder only; no OpenAI request",
+  "compatAvProbe": false
+}

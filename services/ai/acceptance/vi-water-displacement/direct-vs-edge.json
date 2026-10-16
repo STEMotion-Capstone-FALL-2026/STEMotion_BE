@@ -1,0 +1,84 @@
+{
+  "referenceUnits": 78,
+  "actualUnits": 78,
+  "matchedUnits": 74,
+  "textCoverage": 0.9487179487179487,
+  "comparedBoundaries": 148,
+  "meanErrorSec": 0.03280405405405415,
+  "p95ErrorSec": 0.07500000000000018,
+  "maxErrorSec": 0.125,
+  "boundariesBelow300ms": 148,
+  "allBelow300msAndFullText": false,
+  "worst": [
+    {
+      "text": "khi",
+      "boundary": "start",
+      "reference": 0.125,
+      "actual": 0.0,
+      "errorSec": 0.125
+    },
+    {
+      "text": "mực",
+      "boundary": "start",
+      "reference": 2.125,
+      "actual": 2.24,
+      "errorSec": 0.11500000000000021
+    },
+    {
+      "text": "sau",
+      "boundary": "end",
+      "reference": 9.3875,
+      "actual": 9.28,
+      "errorSec": 0.10749999999999993
+    },
+    {
+      "text": "hãy",
+      "boundary": "start",
+      "reference": 17.7375,
+      "actual": 17.84,
+      "errorSec": 0.10249999999999915
+    },
+    {
+      "text": "rồi",
+      "boundary": "start",
+      "reference": 9.5875,
+      "actual": 9.68,
+      "errorSec": 0.09249999999999936
+    },
+    {
+      "text": "lên",
+      "boundary": "end",
+      "reference": 3.125,
+      "actual": 3.04,
+      "errorSec": 0.08499999999999996
+    },
+    {
+      "text": "tránh",
+      "boundary": "start",
+      "reference": 19.1625,
+      "actual": 19.24,
+      "errorSec": 0.07749999999999702
+    },
+    {
+      "text": "có",
+      "boundary": "end",
+      "reference": 5.325,
+      "actual": 5.4,
+      "errorSec": 0.07500000000000018
+    },
+    {
+      "text": "thể",
+      "boundary": "start",
+      "reference": 5.325,
+      "actual": 5.4,
+      "errorSec": 0.07500000000000018
+    },
+    {
+      "text": "tầm",
+      "boundary": "end",
+      "reference": 21.625,
+      "actual": 21.7,
+      "errorSec": 0.07499999999999929
+    }
+  ]
+}

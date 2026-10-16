@@ -1,0 +1,981 @@
+{
+  "detectedLanguage": "vi",
+  "languageProbability": 0.9995779395103455,
+  "configuredLanguage": "vi",
+  "elapsedSec": 9.859000000000151,
+  "segments": [
+    {
+      "text": " Khi đặt một viên đá vào cốc nước, mực nước dâng lên.",
+      "start": 0.0,
+      "end": 3.04,
+      "words": [
+        {
+          "text": " Khi",
+          "start": 0.0,
+          "end": 0.3,
+          "probability": 0.7551476359367371
+        },
+        {
+          "text": " đặt",
+          "start": 0.3,
+          "end": 0.44,
+          "probability": 0.9454686939716339
+        },
+        {
+          "text": " một",
+          "start": 0.44,
+          "end": 0.68,
+          "probability": 0.6705203652381897
+        },
+        {
+          "text": " viên",
+          "start": 0.68,
+          "end": 0.94,
+          "probability": 0.9914705455303192
+        },
+        {
+          "text": " đá",
+          "start": 0.94,
+          "end": 1.16,
+          "probability": 0.9822469651699066
+        },
+        {
+          "text": " vào",
+          "start": 1.16,
+          "end": 1.4,
+          "probability": 0.9927910566329956
+        },
+        {
+          "text": " cốc",
+          "start": 1.4,
+          "end": 1.6,
+          "probability": 0.7997739911079407
+        },
+        {
+          "text": " nước,",
+          "start": 1.6,
+          "end": 1.84,
+          "probability": 0.9977437257766724
+        },
+        {
+          "text": " mực",
+          "start": 2.24,
+          "end": 2.38,
+          "probability": 0.9316636025905609
+        },
+        {
+          "text": " nước",
+          "start": 2.38,
+          "end": 2.56,
+          "probability": 0.9974234104156494
+        },
+        {
+          "text": " dâng",
+          "start": 2.56,
+          "end": 2.88,
+          "probability": 0.7644209861755371
+        },
+        {
+          "text": " lên.",
+          "start": 2.88,
+          "end": 3.04,
+          "probability": 0.9943751096725464
+        }
+      ]
+    },
+    {
+      "text": " Phần nước bị chiếm chỗ có thể tích bằng thể tích viên đá.",
+      "start": 4.02,
+      "end": 6.92,
+      "words": [
+        {
+          "text": " Phần",
+          "start": 4.02,
+          "end": 4.2,
+          "probability": 0.9702004790306091
+        },
+        {
+          "text": " nước",
+          "start": 4.2,
+          "end": 4.38,
+          "probability": 0.9993284940719604
+        },
+        {
+          "text": " bị",
+          "start": 4.38,
+          "end": 4.64,
+          "probability": 0.9986144304275513
+        },
+        {
+          "text": " chiếm",
+          "start": 4.64,
+          "end": 4.92,
+          "probability": 0.8874844511349996
+        },
+        {
+          "text": " chỗ",
+          "start": 4.92,
+          "end": 5.18,
+          "probability": 0.9070349633693695
+        },
+        {
+          "text": " có",
+          "start": 5.18,
+          "end": 5.4,
+          "probability": 0.9979299306869507
+        },
+        {
+          "text": " thể",
+          "start": 5.4,
+          "end": 5.56,
+          "probability": 0.9988204836845398
+        },
+        {
+          "text": " tích",
+          "start": 5.56,
+          "end": 5.76,
+          "probability": 0.9086721539497375
+        },
+        {
+          "text": " bằng",
+          "start": 5.76,
+          "end": 5.98,
+          "probability": 0.9710875451564789
+        },
+        {
+          "text": " thể",
+          "start": 5.98,
+          "end": 6.2,
+          "probability": 0.9942967295646667
+        },
+        {
+          "text": " tích",
+          "start": 6.2,
+          "end": 6.44,
+          "probability": 0.9933642446994781
+        },
+        {
+          "text": " viên",
+          "start": 6.44,
+          "end": 6.68,
+          "probability": 0.9988669753074646
+        },
+        {
+          "text": " đá.",
+          "start": 6.68,
+          "end": 6.92,
+          "probability": 0.9990510940551758
+        }
+      ]
+    },
+    {
+      "text": " Ta đo mực nước trước và sau, rồi lấy giá trị sau trừ giá trị trước.",
+      "start": 7.8,
+      "end": 11.64,
+      "words": [
+        {
+          "text": " Ta",
+          "start": 7.8,
+          "end": 8.0,
+          "probability": 0.9309651851654053
+        },
+        {
+          "text": " đo",
+          "start": 8.0,
+          "end": 8.18,
+          "probability": 0.9385813474655151
+        },
+        {
+          "text": " mực",
+          "start": 8.18,
+          "end": 8.36,
+          "probability": 0.993811309337616
+        },
+        {
+          "text": " nước",
+          "start": 8.36,
+          "end": 8.56,
+          "probability": 0.9985849857330322
+        },
+        {
+          "text": " trước",
+          "start": 8.56,
+          "end": 8.78,
+          "probability": 0.9969984292984009
+        },
+        {
+          "text": " và",
+          "start": 8.78,
+          "end": 9.02,
+          "probability": 0.9903019070625305
+        },
+        {
+          "text": " sau,",
+          "start": 9.02,
+          "end": 9.28,
+          "probability": 0.9886210560798645
+        },
+        {
+          "text": " rồi",
+          "start": 9.68,
+          "end": 9.82,
+          "probability": 0.9476192593574524
+        },
+        {
+          "text": " lấy",
+          "start": 9.82,
+          "end": 10.0,
+          "probability": 0.997936338186264
+        },
+        {
+          "text": " giá",
+          "start": 10.0,
+          "end": 10.24,
+          "probability": 0.9639317393302917
+        },
+        {
+          "text": " trị",
+          "start": 10.24,
+          "end": 10.46,
+          "probability": 0.9896788597106934
+        },
+        {
+          "text": " sau",
+          "start": 10.46,
+          "end": 10.7,
+          "probability": 0.946244478225708
+        },
+        {
+          "text": " trừ",
+          "start": 10.7,
+          "end": 10.98,
+          "probability": 0.946661114692688
+        },
+        {
+          "text": " giá",
+          "start": 10.98,
+          "end": 11.22,
+          "probability": 0.9983233213424683
+        },
+        {
+          "text": " trị",
+          "start": 11.22,
+          "end": 11.42,
+          "probability": 0.9944703876972198
+        },
+        {
+          "text": " trước.",
+          "start": 11.42,
+          "end": 11.64,
+          "probability": 0.9959962368011475
+        }
+      ]
+    },
+    {
+      "text": " Cách đo này giúp tìm thể tích của vật rắn có hình dạng không đều.",
+      "start": 12.6,
+      "end": 15.76,
+      "words": [
+        {
+          "text": " Cách",
+          "start": 12.6,
+          "end": 12.76,
+          "probability": 0.9528199136257172
+        },
+        {
+          "text": " đo",
+          "start": 12.76,
+          "end": 12.92,
+          "probability": 0.9530048072338104
+        },
+        {
+          "text": " này",
+          "start": 12.92,
+          "end": 13.12,
+          "probability": 0.9970983266830444
+        },
+        {
+          "text": " giúp",
+          "start": 13.12,
+          "end": 13.34,
+          "probability": 0.9422522485256195
+        },
+        {
+          "text": " tìm",
+          "start": 13.34,
+          "end": 13.6,
+          "probability": 0.9878651897112528
+        },
+        {
+          "text": " thể",
+          "start": 13.6,
+          "end": 13.78,
+          "probability": 0.964665949344635
+        },
+        {
+          "text": " tích",
+          "start": 13.78,
+          "end": 13.98,
+          "probability": 0.9870436191558838
+        },
+        {
+          "text": " của",
+          "start": 13.98,
+          "end": 14.14,
+          "probability": 0.9947697520256042
+        },
+        {
+          "text": " vật",
+          "start": 14.14,
+          "end": 14.3,
+          "probability": 0.9843957126140594
+        },
+        {
+          "text": " rắn",
+          "start": 14.3,
+          "end": 14.54,
+          "probability": 0.9129622280597687
+        },
+        {
+          "text": " có",
+          "start": 14.54,
+          "end": 14.78,
+          "probability": 0.9984105825424194
+        },
+        {
+          "text": " hình",
+          "start": 14.78,
+          "end": 14.98,
+          "probability": 0.9989683926105499
+        },
+        {
+          "text": " dạng",
+          "start": 14.98,
+          "end": 15.32,
+          "probability": 0.9143203695615133
+        },
+        {
+          "text": " không",
+          "start": 15.32,
+          "end": 15.48,
+          "probability": 0.9536247849464417
+        },
+        {
+          "text": " đều.",
+          "start": 15.48,
+          "end": 15.76,
+          "probability": 0.9601089954376221
+        }
+      ]
+    },
+    {
+      "text": " Khi làm thi nghiệm, hãy thả vật nhẹ nhàng, tránh làm nước bắn ra ngoài và độc vật chi ngang tầm mắt.",
+      "start": 16.64,
+      "end": 21.82,
+      "words": [
+        {
+          "text": " Khi",
+          "start": 16.64,
+          "end": 16.82,
+          "probability": 0.9893119931221008
+        },
+        {
+          "text": " làm",
+          "start": 16.82,
+          "end": 17.0,
+          "probability": 0.9976944327354431
+        },
+        {
+          "text": " thi",
+          "start": 17.0,
+          "end": 17.18,
+          "probability": 0.538802981376648
+        },
+        {
+          "text": " nghiệm,",
+          "start": 17.18,
+          "end": 17.54,
+          "probability": 0.8626732428868612
+        },
+        {
+          "text": " hãy",
+          "start": 17.84,
+          "end": 17.96,
+          "probability": 0.885974258184433
+        },
+        {
+          "text": " thả",
+          "start": 17.96,
+          "end": 18.14,
+          "probability": 0.9528323709964752
+        },
+        {
+          "text": " vật",
+          "start": 18.14,
+          "end": 18.34,
+          "probability": 0.8493346571922302
+        },
+        {
+          "text": " nhẹ",
+          "start": 18.34,
+          "end": 18.58,
+          "probability": 0.953944981098175
+        },
+        {
+          "text": " nhàng,",
+          "start": 18.58,
+          "end": 18.88,
+          "probability": 0.898007869720459
+        },
+        {
+          "text": " tránh",
+          "start": 19.24,
+          "end": 19.38,
+          "probability": 0.9631045162677765
+        },
+        {
+          "text": " làm",
+          "start": 19.38,
+          "end": 19.56,
+          "probability": 0.9737962484359741
+        },
+        {
+          "text": " nước",
+          "start": 19.56,
+          "end": 19.72,
+          "probability": 0.9982600808143616
+        },
+        {
+          "text": " bắn",
+          "start": 19.72,
+          "end": 19.92,
+          "probability": 0.7739757299423218
+        },
+        {
+          "text": " ra",
+          "start": 19.92,
+          "end": 20.12,
+          "probability": 0.9990600943565369
+        },
+        {
+          "text": " ngoài",
+          "start": 20.12,
+          "end": 20.42,
+          "probability": 0.9985813796520233
+        },
+        {
+          "text": " và",
+          "start": 20.42,
+          "end": 20.62,
+          "probability": 0.9918082356452942
+        },
+        {
+          "text": " độc",
+          "start": 20.62,
+          "end": 20.82,
+          "probability": 0.7959770560264587
+        },
+        {
+          "text": " vật",
+          "start": 20.82,
+          "end": 20.98,
+          "probability": 0.9354715347290039
+        },
+        {
+          "text": " chi",
+          "start": 20.98,
+          "end": 21.18,
+          "probability": 0.8177661299705505
+        },
+        {
+          "text": " ngang",
+          "start": 21.18,
+          "end": 21.44,
+          "probability": 0.911308079957962
+        },
+        {
+          "text": " tầm",
+          "start": 21.44,
+          "end": 21.7,
+          "probability": 0.9308505654335022
+        },
+        {
+          "text": " mắt.",
+          "start": 21.7,
+          "end": 21.82,
+          "probability": 0.8719725012779236
+        }
+      ]
+    }
+  ],
+  "words": [
+    {
+      "text": " Khi",
+      "start": 0.0,
+      "end": 0.3,
+      "probability": 0.7551476359367371
+    },
+    {
+      "text": " đặt",
+      "start": 0.3,
+      "end": 0.44,
+      "probability": 0.9454686939716339
+    },
+    {
+      "text": " một",
+      "start": 0.44,
+      "end": 0.68,
+      "probability": 0.6705203652381897
+    },
+    {
+      "text": " viên",
+      "start": 0.68,
+      "end": 0.94,
+      "probability": 0.9914705455303192
+    },
+    {
+      "text": " đá",
+      "start": 0.94,
+      "end": 1.16,
+      "probability": 0.9822469651699066
+    },
+    {
+      "text": " vào",
+      "start": 1.16,
+      "end": 1.4,
+      "probability": 0.9927910566329956
+    },
+    {
+      "text": " cốc",
+      "start": 1.4,
+      "end": 1.6,
+      "probability": 0.7997739911079407
+    },
+    {
+      "text": " nước,",
+      "start": 1.6,
+      "end": 1.84,
+      "probability": 0.9977437257766724
+    },
+    {
+      "text": " mực",
+      "start": 2.24,
+      "end": 2.38,
+      "probability": 0.9316636025905609
+    },
+    {
+      "text": " nước",
+      "start": 2.38,
+      "end": 2.56,
+      "probability": 0.9974234104156494
+    },
+    {
+      "text": " dâng",
+      "start": 2.56,
+      "end": 2.88,
+      "probability": 0.7644209861755371
+    },
+    {
+      "text": " lên.",
+      "start": 2.88,
+      "end": 3.04,
+      "probability": 0.9943751096725464
+    },
+    {
+      "text": " Phần",
+      "start": 4.02,
+      "end": 4.2,
+      "probability": 0.9702004790306091
+    },
+    {
+      "text": " nước",
+      "start": 4.2,
+      "end": 4.38,
+      "probability": 0.9993284940719604
+    },
+    {
+      "text": " bị",
+      "start": 4.38,
+      "end": 4.64,
+      "probability": 0.9986144304275513
+    },
+    {
+      "text": " chiếm",
+      "start": 4.64,
+      "end": 4.92,
+      "probability": 0.8874844511349996
+    },
+    {
+      "text": " chỗ",
+      "start": 4.92,
+      "end": 5.18,
+      "probability": 0.9070349633693695
+    },
+    {
+      "text": " có",
+      "start": 5.18,
+      "end": 5.4,
+      "probability": 0.9979299306869507
+    },
+    {
+      "text": " thể",
+      "start": 5.4,
+      "end": 5.56,
+      "probability": 0.9988204836845398
+    },
+    {
+      "text": " tích",
+      "start": 5.56,
+      "end": 5.76,
+      "probability": 0.9086721539497375
+    },
+    {
+      "text": " bằng",
+      "start": 5.76,
+      "end": 5.98,
+      "probability": 0.9710875451564789
+    },
+    {
+      "text": " thể",
+      "start": 5.98,
+      "end": 6.2,
+      "probability": 0.9942967295646667
+    },
+    {
+      "text": " tích",
+      "start": 6.2,
+      "end": 6.44,
+      "probability": 0.9933642446994781
+    },
+    {
+      "text": " viên",
+      "start": 6.44,
+      "end": 6.68,
+      "probability": 0.9988669753074646
+    },
+    {
+      "text": " đá.",
+      "start": 6.68,
+      "end": 6.92,
+      "probability": 0.9990510940551758
+    },
+    {
+      "text": " Ta",
+      "start": 7.8,
+      "end": 8.0,
+      "probability": 0.9309651851654053
+    },
+    {
+      "text": " đo",
+      "start": 8.0,
+      "end": 8.18,
+      "probability": 0.9385813474655151
+    },
+    {
+      "text": " mực",
+      "start": 8.18,
+      "end": 8.36,
+      "probability": 0.993811309337616
+    },
+    {
+      "text": " nước",
+      "start": 8.36,
+      "end": 8.56,
+      "probability": 0.9985849857330322
+    },
+    {
+      "text": " trước",
+      "start": 8.56,
+      "end": 8.78,
+      "probability": 0.9969984292984009
+    },
+    {
+      "text": " và",
+      "start": 8.78,
+      "end": 9.02,
+      "probability": 0.9903019070625305
+    },
+    {
+      "text": " sau,",
+      "start": 9.02,
+      "end": 9.28,
+      "probability": 0.9886210560798645
+    },
+    {
+      "text": " rồi",
+      "start": 9.68,
+      "end": 9.82,
+      "probability": 0.9476192593574524
+    },
+    {
+      "text": " lấy",
+      "start": 9.82,
+      "end": 10.0,
+      "probability": 0.997936338186264
+    },
+    {
+      "text": " giá",
+      "start": 10.0,
+      "end": 10.24,
+      "probability": 0.9639317393302917
+    },
+    {
+      "text": " trị",
+      "start": 10.24,
+      "end": 10.46,
+      "probability": 0.9896788597106934
+    },
+    {
+      "text": " sau",
+      "start": 10.46,
+      "end": 10.7,
+      "probability": 0.946244478225708
+    },
+    {
+      "text": " trừ",
+      "start": 10.7,
+      "end": 10.98,
+      "probability": 0.946661114692688
+    },
+    {
+      "text": " giá",
+      "start": 10.98,
+      "end": 11.22,
+      "probability": 0.9983233213424683
+    },
+    {
+      "text": " trị",
+      "start": 11.22,
+      "end": 11.42,
+      "probability": 0.9944703876972198
+    },
+    {
+      "text": " trước.",
+      "start": 11.42,
+      "end": 11.64,
+      "probability": 0.9959962368011475
+    },
+    {
+      "text": " Cách",
+      "start": 12.6,
+      "end": 12.76,
+      "probability": 0.9528199136257172
+    },
+    {
+      "text": " đo",
+      "start": 12.76,
+      "end": 12.92,
+      "probability": 0.9530048072338104
+    },
+    {
+      "text": " này",
+      "start": 12.92,
+      "end": 13.12,
+      "probability": 0.9970983266830444
+    },
+    {
+      "text": " giúp",
+      "start": 13.12,
+      "end": 13.34,
+      "probability": 0.9422522485256195
+    },
+    {
+      "text": " tìm",
+      "start": 13.34,
+      "end": 13.6,
+      "probability": 0.9878651897112528
+    },
+    {
+      "text": " thể",
+      "start": 13.6,
+      "end": 13.78,
+      "probability": 0.964665949344635
+    },
+    {
+      "text": " tích",
+      "start": 13.78,
+      "end": 13.98,
+      "probability": 0.9870436191558838
+    },
+    {
+      "text": " của",
+      "start": 13.98,
+      "end": 14.14,
+      "probability": 0.9947697520256042
+    },
+    {
+      "text": " vật",
+      "start": 14.14,
+      "end": 14.3,
+      "probability": 0.9843957126140594
+    },
+    {
+      "text": " rắn",
+      "start": 14.3,
+      "end": 14.54,
+      "probability": 0.9129622280597687
+    },
+    {
+      "text": " có",
+      "start": 14.54,
+      "end": 14.78,
+      "probability": 0.9984105825424194
+    },
+    {
+      "text": " hình",
+      "start": 14.78,
+      "end": 14.98,
+      "probability": 0.9989683926105499
+    },
+    {
+      "text": " dạng",
+      "start": 14.98,
+      "end": 15.32,
+      "probability": 0.9143203695615133
+    },
+    {
+      "text": " không",
+      "start": 15.32,
+      "end": 15.48,
+      "probability": 0.9536247849464417
+    },
+    {
+      "text": " đều.",
+      "start": 15.48,
+      "end": 15.76,
+      "probability": 0.9601089954376221
+    },
+    {
+      "text": " Khi",
+      "start": 16.64,
+      "end": 16.82,
+      "probability": 0.9893119931221008
+    },
+    {
+      "text": " làm",
+      "start": 16.82,
+      "end": 17.0,
+      "probability": 0.9976944327354431
+    },
+    {
+      "text": " thi",
+      "start": 17.0,
+      "end": 17.18,
+      "probability": 0.538802981376648
+    },
+    {
+      "text": " nghiệm,",
+      "start": 17.18,
+      "end": 17.54,
+      "probability": 0.8626732428868612
+    },
+    {
+      "text": " hãy",
+      "start": 17.84,
+      "end": 17.96,
+      "probability": 0.885974258184433
+    },
+    {
+      "text": " thả",
+      "start": 17.96,
+      "end": 18.14,
+      "probability": 0.9528323709964752
+    },
+    {
+      "text": " vật",
+      "start": 18.14,
+      "end": 18.34,
+      "probability": 0.8493346571922302
+    },
+    {
+      "text": " nhẹ",
+      "start": 18.34,
+      "end": 18.58,
+      "probability": 0.953944981098175
+    },
+    {
+      "text": " nhàng,",
+      "start": 18.58,
+      "end": 18.88,
+      "probability": 0.898007869720459
+    },
+    {
+      "text": " tránh",
+      "start": 19.24,
+      "end": 19.38,
+      "probability": 0.9631045162677765
+    },
+    {
+      "text": " làm",
+      "start": 19.38,
+      "end": 19.56,
+      "probability": 0.9737962484359741
+    },
+    {
+      "text": " nước",
+      "start": 19.56,
+      "end": 19.72,
+      "probability": 0.9982600808143616
+    },
+    {
+      "text": " bắn",
+      "start": 19.72,
+      "end": 19.92,
+      "probability": 0.7739757299423218
+    },
+    {
+      "text": " ra",
+      "start": 19.92,
+      "end": 20.12,
+      "probability": 0.9990600943565369
+    },
+    {
+      "text": " ngoài",
+      "start": 20.12,
+      "end": 20.42,
+      "probability": 0.9985813796520233
+    },
+    {
+      "text": " và",
+      "start": 20.42,
+      "end": 20.62,
+      "probability": 0.9918082356452942
+    },
+    {
+      "text": " độc",
+      "start": 20.62,
+      "end": 20.82,
+      "probability": 0.7959770560264587
+    },
+    {
+      "text": " vật",
+      "start": 20.82,
+      "end": 20.98,
+      "probability": 0.9354715347290039
+    },
+    {
+      "text": " chi",
+      "start": 20.98,
+      "end": 21.18,
+      "probability": 0.8177661299705505
+    },
+    {
+      "text": " ngang",
+      "start": 21.18,
+      "end": 21.44,
+      "probability": 0.911308079957962
+    },
+    {
+      "text": " tầm",
+      "start": 21.44,
+      "end": 21.7,
+      "probability": 0.9308505654335022
+    },
+    {
+      "text": " mắt.",
+      "start": 21.7,
+      "end": 21.82,
+      "probability": 0.8719725012779236
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "gpt-4o-2024-08-06": {
+    "inputPerMillion": 2.5,
+    "outputPerMillion": 10,
+    "version": "openai-standard-text-2026-10-16"
+  },
+  "gpt-4o-mini-2024-07-18": {
+    "inputPerMillion": 0.15,
+    "outputPerMillion": 0.6,
+    "version": "openai-standard-text-2026-10-16"
+  }
+}
