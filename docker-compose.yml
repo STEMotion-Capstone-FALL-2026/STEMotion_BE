@@ -64,7 +64,9 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       # Without this the container fell back to a retired model and every AI call returned 404.
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
-      AI_SERVICE_MODE: remote
+      # remote: prompts run in ai-service (FastAPI). embedded: the backend calls Gemini
+      # itself, for machines without the Whisper weights ai-service needs to start.
+      AI_SERVICE_MODE: ${AI_SERVICE_MODE:-remote}
       AI_SERVICE_URL: http://ai-service:8000
       AI_SERVICE_SHARED_KEY: ${AI_SERVICE_SHARED_KEY:-}
       AI_PRICING_JSON: ${AI_PRICING_JSON:-{}}
