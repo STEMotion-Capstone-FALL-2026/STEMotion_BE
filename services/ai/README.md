@@ -30,7 +30,7 @@ References: [OpenAI structured outputs](https://developers.openai.com/api/docs/g
 
 ## Usage monitoring
 
-BE owns persisted token/cost estimates and the paginated ADMIN API. See ../../docs/AI_USAGE_CONTRACT.md for env pricing, coverage semantics and the pending manual V15 rollout.
+BE owns persisted token/cost estimates and the paginated ADMIN API. See ../../docs/AI_USAGE_CONTRACT.md for env pricing, coverage semantics and the pending manual V18 rollout.
 
 ## Deployment preparation
 
