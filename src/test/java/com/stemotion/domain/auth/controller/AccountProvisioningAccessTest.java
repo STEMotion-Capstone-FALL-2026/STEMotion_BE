@@ -47,7 +47,7 @@ class AccountProvisioningAccessTest {
         verifyNoInteractions(users);
     }
     @Test void adminCreatesAccountWithoutReceivingItsSession() throws Exception {
-        when(users.create(any())).thenReturn(new UserResponse("new-id", "Teacher", "teacher@example.invalid", User.UserRole.WRITER, User.UserStatus.ACTIVE, null));
+        when(users.create(any())).thenReturn(new UserResponse("new-id", "Teacher", "teacher@example.invalid", User.UserRole.WRITER, User.UserStatus.ACTIVE, true, null));
         mvc.perform(post("/api/v1/users").with(user("admin-id").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.id").value("new-id"))
             .andExpect(jsonPath("$.accessToken").doesNotExist()).andExpect(jsonPath("$.passwordHash").doesNotExist());

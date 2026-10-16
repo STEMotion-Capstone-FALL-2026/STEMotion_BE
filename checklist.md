@@ -1,0 +1,103 @@
+# Checklist STEMotion_BE — đối chiếu đề cương (cập nhật 2026-10-14)
+
+## 🔄 Cập nhật 2026-10-16 (sau khi gộp staging + flow admin cấp tài khoản vào `main`)
+
+> Phần dưới ("Đã làm", "Chưa làm"…) là bản audit gốc ngày 14/10, giữ nguyên để đối chiếu. Bảng này ghi trạng thái **mới** trên `main` (BE `c80e616`, RENDER kèm sửa retry). Kiểm chứng: 219 test BE, 14 test RENDER, và chạy BE thật trên Postgres tạm (Flyway V1–V17, `ddl-auto=validate`) với 118 bước gọi API theo flow + 19 ca đầu vào xấu, đều qua.
+
+| Mục | Trạng thái mới | Bằng chứng |
+|---|---|---|
+| BE-12, BE-31 | ✅ Chốt **chặn icon lạ khi lưu**; bản nháp AI được thay icon lạ bằng `sparkle` trước khi tới FE. Test khớp. | `ScenePropsValidator.java:128`, `AiScriptService.java:304` |
+| BE-13 | ✅ Đã gộp AiGateway + audit; API quyết định gợi ý AI có trên BE (đã gọi thử, ID lạ trả 404). | `AiController.java:29` |
+| BE-14, BE-27 | ✅ BE ép 1080p30 khi tạo và khi retry job. | `RenderService.java:80` |
+| BE-30 | ✅ Đã gộp `deploy/render-staging`, flow admin cấp tài khoản và các nhánh FE/BE vào `main`. **Lưu ý:** `feat/ai-microservice` (16/10) tách từ trước bản gộp, cần gộp `main` vào trước khi làm tiếp. | `git log main` |
+| BE-20, BE-S4, BE-26 | ✅ M01 (token, độ trễ, quyết định) đã lên main. Dashboard admin giờ cộng **số liệu thật** từ `ai_requests` thay cho số ước lượng tự đặt; tên model đọc đúng cấu hình. Chi phí tiền chỉ có khi gateway ghi `monetary_cost`. | `AdminMetricsService.java:136`, `AiRequestRepository.java:22` |
+| BE-22, BE-32 | ✅ Sửa lỗi thật: BullMQ **bỏ qua lặng lẽ** lệnh retry vì job fail cũ cùng mã vẫn được giữ (`removeOnFail`), nên với Redis retry không bao giờ chạy. Worker giờ xoá job đã xong/đã fail trước khi thêm lại, không thêm trùng job đang chờ/đang chạy. Còn thiếu: test tích hợp với Redis thật. | `STEMotion_RENDER/src/jobStore.ts:14`, `RenderService.java:197` |
+| BE-23 | 🟡 Đã có timeout (Gemini 60s/lần, tối đa 3 lần có backoff); mục tiêu "AI < 15s" và tải 200 user/300 job vẫn cần benchmark. | `GeminiClient.java:40` |
+| BE-15 | 🟡 Code FastAPI/LangChain đã lên main (`services/ai`) nhưng mặc định vẫn gọi Gemini trực tiếp (`AI_SERVICE_MODE=embedded`). Nhánh `feat/ai-microservice` của LeTran đang chuyển prompt sang FastAPI. | `application.yml:53`, `AiGateway.java:14` |
+| BE-16, BE-17, BE-S1, BE-S2, BE-S3 | ⏳ Đang làm trên `feat/ai-microservice` (OpenAI, Whisper alignment), chưa lên main. Không làm trùng. | nhánh `origin/feat/ai-microservice` |
+| BE-24 | ⚠️ Trùng ý: main đã có "chọn cách dẫn dắt" (AI gợi ý 3 cách, writer chọn hoặc tự viết) + cảnh lắp ghép `COMPOSED`; `feat/ai-microservice` có narrative arc + `narrativeBrief`. Cần chọn giữ một bản khi gộp. | `AiScriptService.java:157` |
+| BE-18, BE-19, BE-21, BE-33 | ⏳ CHỜ HỌP: YouTube upload, Google OAuth, mapping Composition theo ERD. | — |
+| BE-29 | ➕ Workspace giờ là trục của flow đã chốt (admin cấp tài khoản, gán thành viên trực tiếp, role theo từng tổ); nên ghi vào báo cáo là mở rộng có chủ đích. | V16–V17 |
+
+**Đối chiếu đề tài (16/10, sau họp 14/10 thấy lạc đề):** đề tài là *nền tảng quản lý quy trình sản xuất* clip STEM, AI hỗ trợ vừa phải (human-in-the-loop), template để clip **đồng nhất**. Đã chỉnh:
+- AI soạn kịch bản giờ là **bản nháp gợi ý**: Writer xem từng cảnh rồi chọn "Dùng" hoặc "Bỏ qua, tự viết"; quyết định chỉ ghi lúc đó (trước đây tự ghi ACCEPTED). Mặc định tạo dự án là Writer tự viết.
+- Prompt **bỏ lệnh cấm STEM_QUIZ / DIAGRAM_EXPLAINER**, ưu tiên bộ template đề cương (title, formula, diagram, chart, algorithm, quiz, outro); illustrated/composed chỉ dùng khi template chuẩn không thể hiện được. Schema AI có lại các trường quiz, diagram, algorithm.
+- Phong cách clip **cố định theo tổ** (seed = workspace) thay vì mỗi video một kiểu.
+- Khôi phục **bảng quy trình** 6 trạng thái (Draft → Script Review → Approved → In Production → Clip Review → Published) và bảng dự án của tổ theo trạng thái.
+- **So sánh hai bản render** của một clip (Reviewer), lịch sử render có số phiên bản kịch bản.
+- **Đăng nhập Google OAuth 2.0** cho tài khoản admin đã cấp (khớp email đã xác minh, không tự tạo tài khoản); bật bằng `GOOGLE_CLIENT_ID` (BE) và `VITE_GOOGLE_CLIENT_ID` (FE).
+Phạm vi chỉ theo **cấu trúc đề tài đã đăng ký** (không theo biên bản review). Còn lại cần người/tài khoản: YouTube Data API (cần Google Cloud project + OAuth consent của nhóm), Whisper caption + QA khớp phụ đề (nhánh `feat/ai-microservice`), beta 10+ clip thật (Package 7).
+
+**DB production (Supabase `cigrdndtbanbgeonskbg`, kiểm tra chỉ-đọc 16/10):** đang ở **V14** (V1 là baseline, checksum V2–V14 khớp code). Code `main` cần **V15–V17** (`COMPOSED`, giá trị `INACTIVE`, `is_leader`, `must_change_password`, bỏ cột lời mời). Dữ liệu hiện tại (2 user, 3 project, 0 cảnh, 2 thành viên ACTIVE) không vướng ràng buộc mới. Cần áp V15–V17 theo quy trình như V14 (backup → transaction → kiểm tra), V16 chạy và commit riêng trước V17. Cho tới lúc đó, `.env` local đặt `SPRING_FLYWAY_ENABLED=false` và `SPRING_JPA_HIBERNATE_DDL_AUTO=validate` để BE chạy ở máy không tự migrate production.
+
+**Lỗi mới tìm thấy khi chạy BE thật và đã sửa (16/10):**
+- BE không khởi động được: JPQL tìm ứng viên tổ viết enum lồng dạng `User.UserStatus.ACTIVE` (Hibernate 6 không hiểu) → đổi sang tham số.
+- Mọi lệnh gọi AI trả 500: bảng `ai_requests`/`clips`/`publications` dùng cột `uuid` nhưng profile mặc định thiếu `stringtype: unspecified` (chỉ profile cloud có) → `application.yml:23`.
+- Cờ tổ trưởng bị bỏ qua: FE gửi `isLeader`, BE đọc `leader` → nhận cả hai tên.
+- Thành viên nào cũng xoá được nhận xét QA của Reviewer, mà nhận xét mở là thứ chặn duyệt video → chỉ tác giả/admin được xoá; Producer/Reviewer đánh dấu đã xử lý; chỉ Reviewer mở lại (`FeedbackService.java:108`).
+- Writer nào cũng lưu trữ (ẩn) được project của người khác → chỉ owner, tổ trưởng, admin (`WorkspaceAccess.java:39`).
+- Ai đã build trước 15/10 phải chạy `mvn clean`: file build cũ `V16__admin_provisioned_membership.sql` còn trong `target/` làm Flyway báo trùng V16.
+
+> Trạng thái: treo chờ họp team.
+
+
+Nguồn chuẩn: `../FA26SE054_STEMOTION_AI_ASSISTED_STEM_VIDEO_PRODUCT_hungld.pdf`, trang 2–4 (GVHD Lại Đức Hùng). Đã đọc trực tiếp PDF; tài liệu 10/10 chỉ dùng làm gợi ý kiểm tra.
+Ba diagram được khôi phục trực tiếp từ mxfile nhúng trong `../Diagram/DB Diagram.drawio.png`: các page `Conceptual ERD chính` (zSC5lsinmhmytekVOFV1), `Usecase Diagram chính` (_NVHilQU-TT4CWfU4AiK), `DB Diagram` (hR3o_WWvYJ1BRLBpgeb0). Đối chiếu thêm các PNG Week2 và Usecase. Không dùng bản Phase0 DRAFT thay cho diagram đã accept. PNG không có số dòng: định danh page/cell dùng cho nguồn diagram; từng mục bên dưới vẫn có evidence code file:dòng hoặc commit.
+Quy ước: “Đã làm” = có implementation trong phạm vi ghi rõ, không đồng nghĩa đã nghiệm thu/production. “Chưa làm” gồm bug mở và việc chưa xác minh được; “Thiếu” là khoảng cách với PDF/diagram. Todo có thể nhắc lại khoảng cách để giao việc, không phải chức năng độc lập. Phần “Thừa” phân biệt mở rộng thực sự với chi tiết triển khai/hardening vốn phục vụ yêu cầu đã đăng ký. Không có bằng chứng duyệt chính thức các mở rộng trong các nguồn đã đọc.
+
+Snapshot: working tree `feat/narrative-arc-step1` tại `052547589113c7e95506ebea3b1045e235effb44`; có `.local-backups/` untracked từ trước, không đọc nội dung backup hoặc đưa vào commit. Local `main` = `07bf74b`, remote-tracking `origin/main` = `3c13c06`, `deploy/render-staging` = `5b90623`. Đây là refs local, không xác nhận trạng thái server Git hiện tại. Narrative arc chỉ thấy ở feature HEAD; dynamic pacing có ở origin/main, không có ở local main/staging. Không ghi nhầm “Step 1 đã trên main”.
+Evidence dạng `5b90623:path:dòng` là file đọc bằng `git show` trên staging, không phải file trong working tree. Log V14 là bằng chứng lịch sử, không phải truy vấn production mới ngày 14/10.
+
+## ✅ Đã làm
+
+- BE-01: Có script project create/update và version history/diff; phạm vi chức năng code, chưa khẳng định mọi chỉnh sửa đều sinh immutable version. Evidence: `src/main/java/com/stemotion/domain/script/service/ScriptService.java:86`, `src/main/java/com/stemotion/domain/script/service/ScriptService.java:110`, `src/main/java/com/stemotion/domain/script/service/ScriptService.java:145`.
+- BE-02: Có workflow submit/approve/request changes với status history và chặn sửa script đã duyệt. Evidence: `src/main/java/com/stemotion/domain/script/service/ScriptService.java:145`, `src/main/java/com/stemotion/domain/script/service/ScriptService.java:186`, `src/main/java/com/stemotion/domain/script/service/ScriptService.java:212`.
+- BE-03: Có feedback theo scene/project, resolve/reopen và approve/send-back clip. Evidence: `src/main/java/com/stemotion/domain/review/service/FeedbackService.java:45`, `src/main/java/com/stemotion/domain/review/service/FeedbackService.java:80`, `src/main/java/com/stemotion/domain/review/service/FeedbackService.java:103`.
+- BE-04: Bốn action AI on-demand và draft dùng response schema; AI trả tư vấn, không tự gọi lưu script trong service này. Evidence: `src/main/java/com/stemotion/domain/ai/service/AiScriptService.java:124`, `src/main/java/com/stemotion/domain/ai/service/AiScriptService.java:167`.
+- BE-05: Có validate props cho 12 scene types, gồm illustrated explainer; riêng unknown icon còn bug hợp đồng test ở BE-12. Evidence: `src/main/java/com/stemotion/domain/script/mapper/ScenePropsValidator.java:22`.
+- BE-06: Render tạo job theo script version, enqueue worker và nhận callback progress/video URL; callback có kiểm shared key. Evidence: `src/main/java/com/stemotion/domain/production/service/RenderService.java:72`, `src/main/java/com/stemotion/domain/production/service/RenderService.java:137`, `src/main/java/com/stemotion/domain/production/service/RenderService.java:292`.
+- BE-07: Có retry render dùng lại job row và bounded retry Gemini cho 429/503; chưa đồng nghĩa đã chứng minh mọi failure tự phục hồi. Evidence: `src/main/java/com/stemotion/domain/production/service/RenderService.java:182`, `src/main/java/com/stemotion/integration/client/GeminiClient.java:85`.
+- BE-08: QA kiểm cấu trúc, duration, narration pacing, text overflow và contrast; publish chạy QA gate. Evidence: `src/main/java/com/stemotion/domain/review/service/ClipQaService.java:61`, `src/main/java/com/stemotion/domain/production/service/PublishService.java:66`.
+- BE-09: Internal publish lưu record; library có filter subject/grade. Evidence: `src/main/java/com/stemotion/domain/production/service/PublishService.java:79`, `src/main/java/com/stemotion/domain/library/service/LibraryService.java:47`.
+- BE-10: Admin metrics có queue count, completed/failed/success rate và disk usage của host BE; không gọi đó là AI cost/object-storage monitoring. Evidence: `src/main/java/com/stemotion/domain/admin/service/AdminMetricsService.java:32`, `src/main/java/com/stemotion/domain/admin/service/AdminMetricsService.java:58`.
+- BE-11: V14 đã apply thủ công ngày 11/10 theo log APPLIED + VERIFIED và báo cáo rollout trên staging, không còn “chưa apply”. Working tree hiện chỉ có V1–V4; không suy ra schema production từ thư mục migration HEAD. Evidence: `../.audit/v14-rollout/apply.redacted.log:1`, `../.audit/v14-rollout/verify.redacted.log:1`; `5b90623:docs/V14_ROLLOUT_2026-10-11.md`.
+
+## ❌ Chưa làm
+
+- BE-12: `rejectsUnknownIcon` đang fail: test muốn exception nhưng validator thay tên bằng `sparkle`/bỏ qua map immutable. Đã đối chiếu code với report có sẵn, không tuyên bố chạy lại toàn suite trong audit tài liệu này. Evidence: `src/test/java/com/stemotion/domain/script/mapper/ScenePropsValidatorTest.java:154`, `src/main/java/com/stemotion/domain/script/mapper/ScenePropsValidator.java:121`, `target/surefire-reports/com.stemotion.domain.script.mapper.ScenePropsValidatorTest.txt:4`.
+- BE-13: Chưa hợp nhất GeminiClient nhúng + narrative arc ở HEAD với AiGateway/audit ở staging; FE decision API không được bảo đảm bởi BE hiện tại. Evidence: `src/main/java/com/stemotion/domain/ai/service/AiScriptService.java:33`, `src/main/java/com/stemotion/domain/ai/service/AiScriptService.java:190`; `5b90623:src/main/java/com/stemotion/domain/ai/service/AiScriptService.java:35`.
+- BE-14: Chưa đồng bộ render contract: HEAD cho request resolution/FPS, worker hiện chỉ nhận 1080p30; M14 clamp nằm staging. Evidence: `src/main/java/com/stemotion/domain/production/service/RenderService.java:78`, `../STEMotion_RENDER/src/security.ts:25`; `5b90623:docs/TRACK2_M14_2026-10-11.md`.
+
+## ⚠️ Thiếu so với đề cương
+
+- BE-15: Working tree chưa có AI microservice riêng FastAPI/LangChain (PDF tr.3–4): gọi trực tiếp Gemini. Tuy nhiên staging ĐÃ có process Python/LangChain, không được kết luận cả repo hoàn toàn chưa làm. Evidence: `src/main/java/com/stemotion/domain/ai/service/AiScriptService.java:183`; `5b90623:services/ai/app/main.py:56`, `5b90623:services/ai/app/main.py:79`.
+- BE-16: Provider hiện Gemini thay GPT-4o-mini/GPT-4o đăng ký; staging FastAPI cũng dùng ChatGoogleGenerativeAI. Evidence: `src/main/java/com/stemotion/integration/client/GeminiClient.java:89`; `5b90623:services/ai/app/main.py:60`; PDF tr.3.
+- BE-17: Caption/audio sync QA chưa thật: narration words/time chỉ là proxy, chưa đo word timestamps Whisper. Evidence: `src/main/java/com/stemotion/domain/review/service/ClipQaService.java:159`; PDF tr.3.
+- BE-18: YouTube upload/OAuth channel chưa có, youtubeUrl để null nhưng code vẫn lưu record publish; không đánh dấu YouTube hoàn thành. Evidence: `src/main/java/com/stemotion/domain/production/service/PublishService.java:27`, `src/main/java/com/stemotion/domain/production/service/PublishService.java:79`; PDF tr.3.
+- BE-19: Google login OAuth 2.0 chưa có endpoint trong AuthController; hiện register/login/me. Evidence: `src/main/java/com/stemotion/domain/auth/controller/AuthController.java:31`, `src/main/java/com/stemotion/domain/auth/controller/AuthController.java:43`; PDF tr.3, UC login.
+- BE-20: AI cost/usage monitoring còn thiếu: HEAD trả result/model/elapsed, không requestId/token audit; staging M01 mới có token/decision, chưa dashboard tiền. Disk BE không đo bucket worker. Evidence: `src/main/java/com/stemotion/domain/ai/service/AiScriptService.java:190`, `src/main/java/com/stemotion/domain/admin/service/AdminMetricsService.java:58`; `5b90623:src/main/java/com/stemotion/domain/ai/entity/AiRequest.java:40`.
+- BE-21: HEAD khác ERD đã accept: Scene/RenderJob nối ScriptVersion trực tiếp, chưa đường Composition → Scene/RenderJob và Clip → Publication như diagram. Không gộp tình trạng staging vào HEAD. Evidence: `src/main/java/com/stemotion/domain/script/entity/Scene.java:64`, `src/main/java/com/stemotion/domain/production/entity/RenderJob.java:44`; diagram DB cells wSuPyeNvn9H-84VXmWRb-66/-79/-97/-106.
+- BE-22: Chưa bảo đảm retry “ba lần”/idempotent theo composition version end-to-end: retry reuse jobId, worker BullMQ giữ failed job cùng ID và attempts=1; cần kiểm chứng requeue thật. Evidence: `src/main/java/com/stemotion/domain/production/service/RenderService.java:202`, `../STEMotion_RENDER/src/queue.ts:47`; PDF tr.3. Đây là rủi ro từ code, chưa tái hiện Redis trong audit này.
+- BE-23: NFR AI <15s mới có warning, không timeout/SLA evidence; chưa đủ benchmark 200 users/300 render jobs/ngày. Evidence: `src/main/java/com/stemotion/domain/ai/service/AiScriptService.java:186`, `src/main/java/com/stemotion/domain/admin/service/AdminMetricsService.java:33`; PDF tr.3.
+
+## ➕ Thừa so với đề cương (làm ngoài đề cương, chưa được duyệt chính thức)
+
+- BE-24: Step 1 narrative arc tự do + writer narrativeBrief tối đa 500 ký tự là mở rộng chi tiết ngoài yêu cầu draft/segmentation; chỉ ở feature HEAD, chưa local main/origin main/staging. Evidence: `src/main/java/com/stemotion/domain/ai/dto/AiDtos.java:39`, `src/main/java/com/stemotion/domain/ai/service/AiScriptService.java:70`; commit `0525475`.
+- BE-25: Dynamic scene pacing/Kurzgesagt là chính sách thêm: auto 4–9 cảnh, target lớn 8–10, có thể dài 115–145s. Không phải chính PDF yêu cầu thuật toán này; cần chốt tương thích QA. Evidence: `src/main/java/com/stemotion/domain/ai/service/AiScriptService.java:38`; commit `3c13c06`.
+- BE-26: M01 (audit token + explicit decision) là gói triển khai bổ sung ở staging, KHÔNG phải chức năng thừa: PDF/diagram đã yêu cầu accept/ignore và cost/usage. Hiện chưa có ở HEAD. Evidence: `5b90623:src/main/java/com/stemotion/domain/ai/service/AiRequestLogService.java:53`, `5b90623:src/main/java/com/stemotion/domain/ai/entity/AiRequest.java:40`.
+- BE-27: M14 clamp 1080p30/forward voice là hardening thực thi đúng output PDF, không phải mở rộng sản phẩm cần loại bỏ; hiện ở staging. N08 sửa Google credential transport thuộc worker, không nhận là code BE. Evidence: `5b90623:docs/TRACK2_M14_2026-10-11.md`; `../STEMotion_RENDER/src/googleCloudNarration.ts:13`.
+- BE-28: LMS embed thêm đích publish ngoài YouTube/internal; cần quyết định phạm vi. Evidence: `src/main/java/com/stemotion/domain/production/service/PublishService.java:85`, `src/main/java/com/stemotion/domain/production/service/PublishService.java:98`.
+- BE-29: Workspace/tổ bộ môn là lớp tổ chức bổ sung ngoài bốn vai trò và project flow trong PDF/diagram chính. Evidence: `src/main/java/com/stemotion/domain/workspace/service/WorkspaceService.java:1`, `src/main/java/com/stemotion/domain/workspace/entity/WorkspaceMember.java:1`.
+
+## 📝 Todo
+
+- [CHỜ HỌP] BE-S1 (seed): Tách AI microservice riêng Python FastAPI + LangChain theo đề cương, hoặc giữ gộp BE và viết ADR. Tận dụng implementation đã có ở staging; quyết định merge/activate, không làm lại từ đầu. Evidence: `src/main/java/com/stemotion/domain/ai/service/AiScriptService.java:183`; `5b90623:services/ai/app/main.py:79`.
+- [CHỜ HỌP] BE-S2 (seed): Kiếm key GPT-4o-mini cho segmentation/classification, GPT-4o cho drafting, hoặc chốt Gemini và ghi lý do kỹ thuật/chi phí; không gọi API trả phí trong lượt checklist. Evidence: `src/main/java/com/stemotion/integration/client/GeminiClient.java:89`; `5b90623:services/ai/app/main.py:60`; PDF tr.3.
+- [CHỜ HỌP] BE-S3 (seed): Whisper forced alignment để căn timestamp từng từ với audio TTS đã sinh, KHÔNG phải mục tiêu STT transcription. Đề xuất đặt ở RENDER worker nơi tạo audio; BE nhận/lưu caption timing và QA. Evidence: `../STEMotion_RENDER/src/renderer.ts:38`, `src/main/java/com/stemotion/domain/review/service/ClipQaService.java:159`; PDF tr.3.
+- [CHỜ HỌP] BE-S4 (seed): AI cost/usage monitoring cho admin: M01 staging mới có token + accept/ignore, chưa dashboard đầy đủ; HEAD còn chưa mang audit này. Evidence: `5b90623:src/main/java/com/stemotion/domain/ai/entity/AiRequest.java:40`, `src/main/java/com/stemotion/domain/admin/service/AdminMetricsService.java:62`.
+- [CHỜ HỌP] BE-30: Chốt branch tích hợp canonical, hợp nhất narrative arc/pacing với gateway, M01/M14 và migration history V14; không apply lại V14 theo trạng thái thư mục HEAD. Evidence: commits `0525475`, `3c13c06`, `5b90623`; `../.audit/v14-rollout/verify.redacted.log:1`.
+- [CHỜ HỌP] BE-31: Chọn reject unknown icon hay fallback `sparkle`, rồi sửa implementation/test đồng bộ; không chỉ xóa test đang đỏ. Evidence: `src/main/java/com/stemotion/domain/script/mapper/ScenePropsValidator.java:121`, `src/test/java/com/stemotion/domain/script/mapper/ScenePropsValidatorTest.java:154`.
+- BE-32: Test tích hợp BE–worker với Redis cho retry cùng jobId, failure callback và format 1080p30 trước kết luận reliability đạt. Evidence: `src/main/java/com/stemotion/domain/production/service/RenderService.java:202`, `../STEMotion_RENDER/src/queue.ts:47`, `../STEMotion_RENDER/src/security.ts:25`.
+- [CHỜ HỌP] BE-33: Chốt roadmap OAuth/YouTube và mapping Composition/Clip/Publication theo diagram; ghi ADR cho mapping khác nếu giữ. Evidence: `src/main/java/com/stemotion/domain/auth/controller/AuthController.java:31`, `src/main/java/com/stemotion/domain/production/service/PublishService.java:27`, `src/main/java/com/stemotion/domain/production/entity/RenderJob.java:44`.
+
+Tự review 2026-10-14: chọn ngẫu nhiên 4 mục bằng seed 20261014 (BE-31, BE-12, BE-10, BE-S2), mở lại code tại evidence để đối chiếu; kiểm tra tồn tại file/số dòng cho toàn bộ citations. Chỉ audit tài liệu; không chạy lại test suite, không gọi production. Các kết quả test/smoke cũ đều được ghi là evidence có sẵn.

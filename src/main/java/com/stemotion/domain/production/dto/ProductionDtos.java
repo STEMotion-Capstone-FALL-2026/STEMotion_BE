@@ -32,9 +32,15 @@ public final class ProductionDtos {
         String videoUrl,
         String errorMessage,
         Integer estimatedSeconds,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        /** Script version the clip was rendered from, so re-renders can be compared. */
+        Integer scriptVersionNo
     ) {
         public static RenderJobResponse from(RenderJob job, Integer estimatedSeconds) {
+            return from(job, estimatedSeconds, null);
+        }
+
+        public static RenderJobResponse from(RenderJob job, Integer estimatedSeconds, Integer scriptVersionNo) {
             return new RenderJobResponse(
                 job.getId(),
                 job.getProject().getId(),
@@ -44,7 +50,8 @@ public final class ProductionDtos {
                 job.getVideoUrl(),
                 job.getErrorMessage(),
                 estimatedSeconds,
-                job.getCreatedAt()
+                job.getCreatedAt(),
+                scriptVersionNo
             );
         }
     }

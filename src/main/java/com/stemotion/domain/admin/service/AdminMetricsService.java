@@ -12,8 +12,8 @@ import com.stemotion.domain.project.repository.ClipProjectRepository;
 import com.stemotion.domain.script.repository.SceneRepository;
 import com.stemotion.domain.script.repository.ScriptVersionRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
@@ -38,9 +38,9 @@ public class AdminMetricsService {
     private final ClipProjectRepository clipProjectRepository;
     private final ScriptVersionRepository scriptVersionRepository;
     private final SceneRepository sceneRepository;
+    private final com.stemotion.domain.ai.repository.AiRequestRepository aiRequestRepository;
+    private final com.stemotion.integration.config.IntegrationProperties integrationProperties;
 
-    @Value("${app.integration.gemini.model}")
-    private String geminiModel;
 
     @Value("${AI_MONTHLY_BUDGET_USD:#{null}}")
     private Double monthlyBudgetUsd;
@@ -127,11 +127,26 @@ public class AdminMetricsService {
         long totalScriptVersions = scriptVersionRepository.count();
         long totalScenes = sceneRepository.count();
 
-        // Content counts cannot establish provider calls, token usage, cost or latency.
-        // Keep the overview contract, returning unknown until M01 aggregation is implemented.
+        // Measured, not estimated: every AI call is recorded in ai_requests with
+        // its latency, tokens and (when the gateway knows it) its cost. The DTO
+        // keeps its "estimated" field names so the dashboard needs no change.
+        var usage = aiRequestRepository.usageTotals();
+        long estimatedAiCalls = usage.getCalls();
+        long avgLatencyMs = usage.getAvgLatencyMs() == null ? 0L : Math.round(usage.getAvgLatencyMs());
+        long estimatedTokens = usage.getTokens() == null ? 0L : usage.getTokens();
+        Double estimatedCostUsd = usage.getCost() == null ? null : usage.getCost().doubleValue();
+
         AiUsageStats aiUsage = new AiUsageStats(
-            totalProjects, totalScriptVersions, totalScenes,
-            null, null, null, null, monthlyBudgetUsd, geminiModel, null
+            totalProjects,
+            totalScriptVersions,
+            totalScenes,
+            estimatedAiCalls,
+            avgLatencyMs,
+            estimatedTokens,
+            estimatedCostUsd,
+            monthlyBudgetUsd,
+            integrationProperties.getGemini().getModel(),
+            null
         );
 
         Map<String, Long> projectsBySubject = new LinkedHashMap<>();

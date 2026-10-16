@@ -56,6 +56,10 @@ public class User extends BaseEntity {
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
 
+    @Column(name = "must_change_password", nullable = false)
+    @Builder.Default
+    private boolean mustChangePassword = false;
+
     public enum UserRole {
         WRITER,
         REVIEWER,

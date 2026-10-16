@@ -19,6 +19,12 @@ spring:
     hikari:
       maximum-pool-size: 5
       minimum-idle: 1
+      # Tables added from V10 on (ai_requests, clips, publications) use uuid
+      # columns while the entities hold ids as strings. Let Postgres infer the
+      # type of string parameters from the target column, as the cloud profile
+      # does; without it every AI call failed to log and returned HTTP 500.
+      data-source-properties:
+        stringtype: unspecified
 
   flyway:
     enabled: true
@@ -47,6 +53,9 @@ app:
     embed-base-url: ${EMBED_BASE_URL:http://localhost:3000/embed}
 
   integration:
+    google:
+      # Google Sign-In for accounts an admin already created (matched by verified email).
+      client-id: ${GOOGLE_CLIENT_ID:}
     ai:
       alignment-worker-key: ${AI_ALIGNMENT_WORKER_KEY:}
       mode: ${AI_SERVICE_MODE:remote}

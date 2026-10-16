@@ -65,10 +65,10 @@ class LocalStudioE2eTest {
             tokens.put(role.name(),login.path("accessToken").asText());
             assertFalse(tokens.get(role.name()).isBlank());
         }
-        workspace=call("POST","/api/v1/workspaces","WRITER",Map.of("name","Local E2E","subject","Physics"),201).path("id").asText();
+        workspace=call("POST","/api/v1/workspaces","ADMIN",Map.of("name","Local E2E","department","Physics","leaderUserId",actors.get("WRITER").getId()),201).path("id").asText();
         for (String role:List.of("REVIEWER","PRODUCER")) members.saveAndFlush(WorkspaceMember.builder()
             .workspace(workspaces.findById(workspace).orElseThrow()).user(actors.get(role))
-            .invitedEmail(actors.get(role).getEmail()).role(actors.get(role).getRole()).status(MemberStatus.ACTIVE).build());
+            .role(actors.get(role).getRole()).status(MemberStatus.ACTIVE).build());
         when(gemini.isConfigured()).thenReturn(true);
         when(worker.enqueue(anyString(),anyString(),anyMap(),anyInt(),anyInt(),anyInt(),nullable(String.class)))
             .thenAnswer(i->new RenderServiceClient.EnqueueResult(i.getArgument(0),5));

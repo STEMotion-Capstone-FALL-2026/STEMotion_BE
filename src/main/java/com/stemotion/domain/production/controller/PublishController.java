@@ -36,7 +36,7 @@ public class PublishController {
 
     @PostMapping("/publish")
     @Operation(summary = "Publish an approved clip to the selected targets")
-    @PreAuthorize("hasAnyRole('PRODUCER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasProjectRole(#projectId, authentication.name, 'PRODUCER')")
     public ResponseEntity<PublishResponse> publish(
         @PathVariable String projectId,
         @Valid @RequestBody PublishRequest request,

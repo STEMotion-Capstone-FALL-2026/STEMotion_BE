@@ -5,7 +5,7 @@ import com.stemotion.domain.auth.dto.AuthDtos.RegisterRequest;
 import com.stemotion.domain.auth.entity.User.UserRole;
 import com.stemotion.domain.auth.repository.UserRepository;
 import com.stemotion.domain.workspace.dto.WorkspaceDtos.WorkspaceRequest;
-import com.stemotion.domain.workspace.dto.WorkspaceDtos.InviteMemberRequest;
+import com.stemotion.domain.workspace.dto.WorkspaceDtos.AddMemberRequest;
 import com.stemotion.domain.workspace.service.WorkspaceService;
 import com.stemotion.domain.script.dto.SceneDtos.SceneRequest;
 import com.stemotion.domain.script.dto.ScriptDtos.CreateScriptRequest;
@@ -55,7 +55,7 @@ class SupabaseScriptFlowTest {
     @Test void artifactReviewPublicationAndFailedAiRoundTrip() {
         email="phase1-smoke-"+UUID.randomUUID()+"@example.invalid";
         var actor=provisioning.create(new RegisterRequest("Phase1 smoke",email,UUID.randomUUID().toString(),UserRole.ADMIN));
-        var workspace=workspaces.create(new WorkspaceRequest("Phase1 smoke","CS"),actor.id());
+        var workspace=workspaces.create(new WorkspaceRequest("Phase1 smoke","CS", actor.id(), UserRole.WRITER),actor.id());
         var scene=new SceneRequest();scene.setType(SceneType.TITLE_HERO);scene.setTitle("Phase1 smoke");
         scene.setDurationInFrames(600);
         Map.of("subtitle","Test","subject","ComputerScience","gradeLevel","10","badgeText","CS").forEach(scene::putProp);
@@ -92,31 +92,31 @@ class SupabaseScriptFlowTest {
         assertFalse(scripts.findByWorkspace(workspace.id()).stream().anyMatch(p->p.id().equals(project.getId())));
     }
 
-    @Test void invitationRequiresSingleUseTokenEvenAfterRegistration() {
-        email = "invite-smoke-" + UUID.randomUUID() + "@example.invalid";
-        var owner = provisioning.create(new RegisterRequest("Invitation owner", email,
+    @Test void directMemberAssignmentBecomesActiveImmediately() {
+        email = "assign-smoke-" + UUID.randomUUID() + "@example.invalid";
+        var leader = provisioning.create(new RegisterRequest("Leader user", email,
             UUID.randomUUID().toString(), UserRole.WRITER));
-        String inviteeEmail = "invitee-smoke-" + UUID.randomUUID() + "@example.invalid";
-        var workspace = workspaces.create(new WorkspaceRequest("Invitation smoke", "CS"), owner.id());
-        var invitation = workspaces.invite(workspace.id(), new InviteMemberRequest(inviteeEmail, UserRole.PRODUCER));
-        var invitee = provisioning.create(new RegisterRequest("Invitee", inviteeEmail,
+        var workspace = workspaces.create(new WorkspaceRequest("Assign smoke", "CS", leader.id(), UserRole.WRITER), leader.id());
+        String memberEmail = "member-smoke-" + UUID.randomUUID() + "@example.invalid";
+        var member = provisioning.create(new RegisterRequest("Member user", memberEmail,
             UUID.randomUUID().toString(), UserRole.PRODUCER));
         em.flush();
         em.clear();
-        assertTrue(workspaces.findMine(invitee.id()).isEmpty());
-        assertEquals(MemberStatus.ACTIVE, workspaces.acceptInvitation(invitation.token(), invitee.id()).status());
+        assertTrue(workspaces.findMine(member.id()).isEmpty());
+        var assigned = workspaces.addMember(workspace.id(), new AddMemberRequest(member.id(), UserRole.PRODUCER, false));
+        assertEquals(MemberStatus.ACTIVE, assigned.status());
         em.flush();
         em.clear();
-        assertEquals(1, workspaces.findMine(invitee.id()).size());
+        assertEquals(1, workspaces.findMine(member.id()).size());
         assertThrows(com.stemotion.core.exception.ApiException.class,
-            () -> workspaces.acceptInvitation(invitation.token(), invitee.id()));
+            () -> workspaces.addMember(workspace.id(), new AddMemberRequest(member.id(), UserRole.PRODUCER, false)));
     }
 
     @Test void scriptSceneAndBothFeedbackTargetsRoundTrip() {
         email = "schema-smoke-" + UUID.randomUUID() + "@example.invalid";
         var user = provisioning.create(new RegisterRequest("Schema smoke", email,
             UUID.randomUUID().toString(), UserRole.WRITER));
-        var workspace = workspaces.create(new WorkspaceRequest("Schema smoke", "CS"), user.id());
+        var workspace = workspaces.create(new WorkspaceRequest("Schema smoke", "CS", user.id(), UserRole.WRITER), user.id());
         var scene = new SceneRequest();
         scene.setType(SceneType.TITLE_HERO);
         scene.setTitle("Schema smoke");

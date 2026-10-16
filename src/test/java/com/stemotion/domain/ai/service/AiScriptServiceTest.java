@@ -29,7 +29,7 @@ class AiScriptServiceTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
     private GenerateScriptRequest request(Integer duration, String brief) {
-        return new GenerateScriptRequest("Định luật Ôm", StemSubject.Physics, "10", duration, brief);
+        return new GenerateScriptRequest("Định luật Ôm", StemSubject.Physics, "10", duration, brief, null);
     }
 
     private String generatedPrompt(Integer duration, String brief) throws Exception {
@@ -47,14 +47,14 @@ class AiScriptServiceTest {
         String prompt = generatedPrompt(90, brief);
         assertThat(prompt).contains("Ý tưởng dẫn dắt của Writer: [" + brief + "]",
             "BẮT BUỘC dựng toàn bộ mạch", "GỢI Ý THAM KHẢO",
-            "Cảnh 1 LUÔN dùng template TITLE_HERO", "Cảnh cuối LUÔN dùng template OUTRO",
-            "KHÔNG dùng STEM_QUIZ, DIAGRAM_EXPLAINER hay GEOMETRY_SPACE",
+            "Cảnh 1 dùng TITLE_HERO", "Cảnh cuối LUÔN dùng template OUTRO",
+            "COMPOSED", "STEM_QUIZ", "DIAGRAM_EXPLAINER",
             "Nội dung khoa học, công thức phải CHÍNH XÁC TUYỆT ĐỐI");
         assertThat(prompt.indexOf("BƯỚC 1:")).isLessThan(prompt.indexOf("BƯỚC 1.5:"));
         assertThat(prompt.indexOf("BƯỚC 1.5:")).isLessThan(prompt.indexOf("BƯỚC 2:"));
         assertThat(mapper.valueToTree(AiSchemas.generatedScript())
             .at("/properties/scenes/items/properties/type/enum").toString())
-            .doesNotContain("STEM_QUIZ", "DIAGRAM_EXPLAINER", "GEOMETRY_SPACE");
+            .contains("STEM_QUIZ", "DIAGRAM_EXPLAINER", "COMPOSED");
     }
 
     @ParameterizedTest
@@ -160,21 +160,23 @@ class AiScriptServiceTest {
     }
 
     @Test
-    void rejectsUnknownGeneratedIconBeforeReturningToFrontend() throws Exception {
+    void replacesUnknownGeneratedIconBeforeReturningToFrontend() throws Exception {
         when(client.generateJson(any(), anyString(), anyString(), anyMap())).thenReturn(new AiGateway.Generation(mapper.readTree(
-            "{\"isValidStemTopic\":true,\"scenes\":[{\"icons\":[{\"name\":\"imaginary-icon\"}]}]}"), "test-gemini"));
-        assertThatThrownBy(() -> service.generateScript(request(90, null))).isInstanceOfSatisfying(
-            ApiException.class, ex -> assertThat(ex.getCode()).isEqualTo("AI_INVALID_RESPONSE"));
+            "{\"isValidStemTopic\":true,\"scenes\":[{\"icons\":[{\"name\":\"imaginary-icon\",\"label\":\"X\"},{\"name\":\"atom\"}]}]}"), "test-gemini"));
+        var icons = service.generateScript(request(90, null)).result().at("/scenes/0/icons");
+        assertThat(icons.get(0).path("name").asText()).isEqualTo("sparkle");
+        assertThat(icons.get(0).path("label").asText()).isEqualTo("X");
+        assertThat(icons.get(1).path("name").asText()).isEqualTo("atom");
     }
 
     @Test
-    void validatesResegmentedIconSuggestionsToo() throws Exception {
+    void replacesUnknownResegmentedIconSuggestionsToo() throws Exception {
         when(client.generateJson(any(), anyString(), anyString(), anyMap())).thenReturn(new AiGateway.Generation(mapper.readTree(
-            "{\"scenes\":[{\"suggestedIcons\":[\"imaginary-icon\"]}]}"), "test-gemini"));
-        assertThatThrownBy(() -> service.runAction(new ScriptActionRequest(
-            AiAction.resegment, "Atoms", StemSubject.Physics, "10")))
-            .isInstanceOfSatisfying(ApiException.class,
-                ex -> assertThat(ex.getCode()).isEqualTo("AI_INVALID_RESPONSE"));
+            "{\"scenes\":[{\"suggestedIcons\":[\"imaginary-icon\",\"leaf\"]}]}"), "test-gemini"));
+        var suggested = service.runAction(new ScriptActionRequest(
+            AiAction.resegment, "Atoms", StemSubject.Physics, "10")).result().at("/scenes/0/suggestedIcons");
+        assertThat(suggested.get(0).asText()).isEqualTo("sparkle");
+        assertThat(suggested.get(1).asText()).isEqualTo("leaf");
     }
 
     @Test
@@ -183,5 +185,26 @@ class AiScriptServiceTest {
             "{\"isValidStemTopic\":false,\"fallbackMessage\":\"Invalid topic\",\"scenes\":[]}"), "test-gemini"));
         assertThatThrownBy(() -> service.generateScript(request(90, null)))
             .isInstanceOf(ApiException.class).hasMessage("Invalid topic");
+    }
+
+    @Test void keepsBothWriterInputsAndApproachMetadata() throws Exception {
+        var input = mapper.readValue("{\"topic\":\"Ohm\",\"subject\":\"Physics\",\"gradeLevel\":\"10\",\"narrativeBrief\":\"gameshow\",\"approach\":\"electron interview\"}", GenerateScriptRequest.class);
+        when(client.generateJson(any(), anyString(), anyString(), anyMap())).thenReturn(generation(mapper.readTree("{\"isValidStemTopic\":true,\"scenes\":[],\"approachName\":\"interview\",\"flow\":[\"hook\"]}")));
+        assertThat(service.generateScript(input).result().path("approachName").asText()).isEqualTo("interview");
+        var prompt = ArgumentCaptor.forClass(String.class);
+        verify(client).generateJson(any(), anyString(), prompt.capture(), anyMap());
+        assertThat(prompt.getValue()).contains("gameshow", "electron interview");
+    }
+    @Test void remoteMetaphorUsesGenericGatewayInsteadOfUnsupportedActionEndpoint() throws Exception {
+        when(client.isRemote()).thenReturn(true);
+        when(client.generateJson(any(), anyString(), anyString(), anyMap())).thenReturn(generation(mapper.readTree("{\"options\":[]}")));
+        service.runAction(new ScriptActionRequest(AiAction.metaphor,"Ohm",StemSubject.Physics,"10"));
+        verify(client, never()).runAction(any());
+        verify(client).generateJson(any(), anyString(), anyString(), anyMap());
+    }
+    @Test void approachesRemainAvailableAlongsideNarrativeDrafting() throws Exception {
+        when(client.generateJson(any(), anyString(), anyString(), anyMap())).thenReturn(generation(mapper.readTree("{\"isValidStemTopic\":true,\"options\":[]}")));
+        service.suggestApproaches(new ApproachRequest("Ohm",StemSubject.Physics,"10"));
+        verify(client).generateJson(eq(com.stemotion.domain.ai.entity.AiRequest.RequestType.ANALYSIS), anyString(), anyString(), anyMap());
     }
 }

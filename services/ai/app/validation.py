@@ -20,7 +20,7 @@ def validate_result(operation, result):
                 invalid()
             return
         scenes = result.get("scenes", [])
-        if not 4 <= len(scenes) <= 10 or scenes[0].get("type") != "TITLE_HERO" or scenes[-1].get("type") != "OUTRO":
+        if not 4 <= len(scenes) <= 10 or scenes[-1].get("type") != "OUTRO":
             invalid()
         for scene in scenes:
             if not all(nonempty(scene.get(k)) for k in ("title", "narration")):
@@ -32,6 +32,8 @@ def validate_result(operation, result):
             required = {"MATH_FORMULA": ["latex"], "CHEMICAL_REACTION": ["equation"],
                 "ILLUSTRATED_EXPLAINER": ["headline"], "PROCESS_TIMELINE": ["processTitle"]}.get(kind, [])
             if not all(nonempty(scene.get(k)) for k in required):
+                invalid()
+            if kind == "COMPOSED" and (not scene.get("frame") or not 2 <= len(scene.get("blocks", [])) <= 6):
                 invalid()
             if kind == "MATH_FORMULA" and not scene.get("steps"):
                 invalid()
@@ -48,6 +50,11 @@ def validate_result(operation, result):
         invalid()
     if operation in {"generate", "resegment"}:
         for scene in result.get("scenes", []):
+            for block in scene.get("blocks", []):
+                if block.get("kind") == "icon" and block.get("icon", {}).get("name") not in ICONS:
+                    invalid()
+                if any(i.get("name") not in ICONS for i in block.get("icons", [])):
+                    invalid()
             if any(i.get("name") not in ICONS for i in scene.get("icons", [])):
                 invalid()
             if any(i not in ICONS for i in scene.get("suggestedIcons", [])):

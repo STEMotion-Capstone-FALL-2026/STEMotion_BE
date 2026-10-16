@@ -17,17 +17,22 @@ class AdminMetricsServiceTest {
     final ClipProjectRepository projects = mock(ClipProjectRepository.class);
     final ScriptVersionRepository versions = mock(ScriptVersionRepository.class);
     final SceneRepository scenes = mock(SceneRepository.class);
-    final AdminMetricsService service = new AdminMetricsService(jobs, projects, versions, scenes);
+    final com.stemotion.domain.ai.repository.AiRequestRepository requests = mock(com.stemotion.domain.ai.repository.AiRequestRepository.class);
+    final AdminMetricsService service = new AdminMetricsService(jobs, projects, versions, scenes, requests, new com.stemotion.integration.config.IntegrationProperties());
 
     @Test void contentCountsDoNotInventProviderUsageOrCost() {
+        var totals = mock(com.stemotion.domain.ai.repository.AiRequestRepository.UsageTotals.class);
+        when(requests.usageTotals()).thenReturn(totals);
+        when(totals.getCalls()).thenReturn(3L);
+        when(totals.getTokens()).thenReturn(42L);
         when(versions.count()).thenReturn(100L);
         when(scenes.count()).thenReturn(500L);
         var usage = service.collectOverview().aiUsage();
         assertThat(usage.totalScriptVersions()).isEqualTo(100);
         assertThat(usage.totalScenesGenerated()).isEqualTo(500);
-        assertThat(usage.estimatedAiCalls()).isNull();
-        assertThat(usage.avgLatencyMs()).isNull();
-        assertThat(usage.estimatedTokensUsed()).isNull();
+        assertThat(usage.estimatedAiCalls()).isEqualTo(3);
+        assertThat(usage.avgLatencyMs()).isZero();
+        assertThat(usage.estimatedTokensUsed()).isEqualTo(42);
         assertThat(usage.estimatedCostUsd()).isNull();
         assertThat(usage.monthlyBudgetUsd()).isNull();
         assertThat(usage.ttsProvider()).isNull();

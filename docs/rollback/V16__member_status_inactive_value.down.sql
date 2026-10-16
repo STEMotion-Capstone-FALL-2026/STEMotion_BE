@@ -1,0 +1,3 @@
+-- Rollback for V16__member_status_inactive_value.sql
+-- Intentionally empty: PostgreSQL cannot drop a value from an enum type, and an
+-- unused INACTIVE value is harmless. Roll back V17 first if needed.

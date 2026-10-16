@@ -1,5 +1,6 @@
 package com.stemotion.core.security;
 
+import com.stemotion.domain.auth.repository.UserRepository;
 import com.stemotion.domain.production.entity.RenderJob;
 import com.stemotion.domain.production.repository.RenderJobRepository;
 import com.stemotion.domain.project.entity.ClipProject;
@@ -18,8 +19,9 @@ import static org.mockito.Mockito.*;
 
 class ResourceAccessInterceptorTest {
     final WorkspaceAccess access = mock(WorkspaceAccess.class);
+    final UserRepository users = mock(UserRepository.class);
     final RenderJobRepository jobs = mock(RenderJobRepository.class);
-    final ResourceAccessInterceptor interceptor = new ResourceAccessInterceptor(access, jobs,
+    final ResourceAccessInterceptor interceptor = new ResourceAccessInterceptor(access, users, jobs,
         mock(SceneRepository.class), mock(FeedbackCommentRepository.class));
     @AfterEach void clear() { SecurityContextHolder.clearContext(); }
     void check(String method, String uri, Map<String, String> variables) {
@@ -50,5 +52,16 @@ class ResourceAccessInterceptorTest {
         when(jobs.findById("job")).thenReturn(Optional.of(RenderJob.builder().project(project).build()));
         check("GET", "/api/v1/render/status/job", Map.of("jobId", "job"));
         verify(access).requireProject("one", "writer-id", false);
+    }
+
+    @Test void draftingAndApproachesRequireActiveWriterMembership() {
+        check("POST", "/api/v1/ai/script/generate", Map.of());
+        check("POST", "/api/v1/ai/script/approaches", Map.of());
+        verify(access, times(2)).requireAiAccess("writer-id");
+    }
+    @Test void alignmentRetainsItsOwnControllerGuards() {
+        check("POST", "/api/v1/ai/transcribe/align", Map.of());
+        check("POST", "/api/v1/ai/internal/transcribe/align", Map.of());
+        verifyNoInteractions(access);
     }
 }

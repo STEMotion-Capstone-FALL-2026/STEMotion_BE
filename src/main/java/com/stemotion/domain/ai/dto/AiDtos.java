@@ -12,7 +12,7 @@ public final class AiDtos {
 
     private AiDtos() {}
 
-    /** The four on-demand analyses offered in the Writer studio. */
+    /** The on-demand analyses offered in the Writer studio. */
     public enum AiAction {
         /** Re-cut the script into scenes with suggested durations and templates. */
         resegment,
@@ -21,7 +21,12 @@ public final class AiDtos {
         /** Pull out the STEM concepts covered. */
         extract,
         /** Flag inconsistent or wrong scientific terminology. */
-        terms
+        terms,
+        /**
+         * Propose three visual metaphors for one scene, each already staged as an
+         * ILLUSTRATED_EXPLAINER scene. The writer picks one or none.
+         */
+        metaphor
     }
 
     public record GenerateScriptRequest(
@@ -37,12 +42,31 @@ public final class AiDtos {
         Integer targetDurationSec,
 
         @Size(max = 500, message = "narrativeBrief must be at most 500 characters")
-        String narrativeBrief
+        String narrativeBrief,
+        /**
+         * How the video should lead the viewer through the lesson, in the
+         * writer's own words or copied from a suggested approach. Empty lets
+         * the AI choose.
+         */
+        @Size(max = 800, message = "approach must be at most 800 characters")
+        String approach
     ) {
         public GenerateScriptRequest(String topic, StemSubject subject, String gradeLevel, Integer targetDurationSec) {
-            this(topic, subject, gradeLevel, targetDurationSec, null);
+            this(topic, subject, gradeLevel, targetDurationSec, null, null);
         }
     }
+
+    /** Asks for several different ways to lead a video through one lesson. */
+    public record ApproachRequest(
+        @NotBlank(message = "topic is required")
+        String topic,
+
+        @NotNull(message = "subject is required")
+        StemSubject subject,
+
+        @NotBlank(message = "gradeLevel is required")
+        String gradeLevel
+    ) {}
 
     public record ScriptActionRequest(
         @NotNull(message = "action is required")

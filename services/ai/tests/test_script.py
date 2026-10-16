@@ -64,7 +64,8 @@ def test_ported_narrative_guardrail_and_pacing(duration, expected):
     assert expected in request.prompt
     assert "gameshow" in request.prompt
     assert request.prompt.index("BƯỚC 1:") < request.prompt.index("BƯỚC 1.5:") < request.prompt.index("BƯỚC 2:")
-    assert "KHÔNG dùng STEM_QUIZ" in request.prompt
+    assert "COMPOSED" in request.prompt
+    assert "STEM_QUIZ" in request.prompt
 
 @pytest.mark.parametrize("action,result", [
     ("grade", {"readabilityScore":80,"estimatedGrade":"10","verdict":"OK"}),
@@ -77,3 +78,25 @@ def test_four_explicit_actions_and_legacy_action_contract(client, action, result
         response = client.post(path, json=data, headers=HEADERS)
         assert response.status_code == 200, response.text
         assert response.json()["result"] == result
+
+
+def test_merged_approach_and_composed_scene_contract(client):
+    result = copy.deepcopy(VALID)
+    result["approachName"] = "interview"
+    result["flow"] = ["hook", "explain"]
+    result["scenes"][2] = {"type":"COMPOSED", "title":"Ohm", "narration":"Ohm", "durationInFrames":120,
+        "frame":"split", "blocks":[{"id":"a","kind":"text","slot":"left","text":"Ohm"},
+            {"id":"b","kind":"icon","slot":"right","icon":{"name":"atom"}}]}
+    stub(result)
+    body = {**BODY, "approach":"electron interview"}
+    response = client.post("/script/generate", json=body, headers=HEADERS)
+    assert response.status_code == 200, response.text
+    assert response.json()["result"] == result
+    prompt = build_request("generate", ScriptInput(**body)).prompt
+    assert "gameshow" in prompt and "electron interview" in prompt
+    result["scenes"][2]["blocks"][1]["icon"]["name"] = "unknown"
+    assert client.post("/script/generate", json=body, headers=HEADERS).status_code == 502
+
+
+def test_approach_limit_before_provider(client):
+    assert client.post("/script/generate", json={**BODY,"approach":"a"*801}, headers=HEADERS).status_code == 422

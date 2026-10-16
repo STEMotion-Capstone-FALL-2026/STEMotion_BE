@@ -35,6 +35,20 @@ public final class AuthDtos {
         String password
     ) {}
 
+    public record GoogleLoginRequest(
+        @NotBlank(message = "credential is required")
+        String credential
+    ) {}
+
+    public record ChangePasswordRequest(
+        @NotBlank(message = "currentPassword is required")
+        String currentPassword,
+
+        @NotBlank(message = "newPassword is required")
+        @Size(min = 8, message = "newPassword must be at least 8 characters")
+        String newPassword
+    ) {}
+
     public record AuthResponse(
         String accessToken,
         String tokenType,
@@ -48,6 +62,7 @@ public final class AuthDtos {
         String email,
         User.UserRole role,
         User.UserStatus status,
+        boolean mustChangePassword,
         LocalDateTime createdAt
     ) {
         public static UserResponse from(User user) {
@@ -57,6 +72,7 @@ public final class AuthDtos {
                 user.getEmail(),
                 user.getRole(),
                 user.getStatus(),
+                user.isMustChangePassword(),
                 user.getCreatedAt()
             );
         }
@@ -65,6 +81,10 @@ public final class AuthDtos {
     public record UpdateUserRequest(
         String fullName,
         User.UserRole role,
-        User.UserStatus status
+        User.UserStatus status,
+
+        /** A new temporary password; the user must change it at the next sign-in. */
+        @Size(min = 8, message = "password must be at least 8 characters")
+        String password
     ) {}
 }

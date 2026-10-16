@@ -93,9 +93,10 @@ class AiGatewayTest {
             properties.getAi().setBaseUrl("http://127.0.0.1:" + server.getAddress().getPort());
             var result = new AiGateway(embedded, properties, audit).generateScript(
                 new com.stemotion.domain.ai.dto.AiDtos.GenerateScriptRequest("Ohm",
-                    com.stemotion.core.enums.StemEnums.StemSubject.Physics, "10", 0, "gameshow"));
+                    com.stemotion.core.enums.StemEnums.StemSubject.Physics, "10", 0, "gameshow", "interview"));
             var body = new ObjectMapper().readTree(submitted.get());
             assertThat(body.path("narrativeBrief").asText()).isEqualTo("gameshow");
+            assertThat(body.path("approach").asText()).isEqualTo("interview");
             assertThat(body.has("prompt")).isFalse();
             assertThat(result.requestId()).isEqualTo("audit-id");
             assertThat(result.model()).isEqualTo("actual-model");

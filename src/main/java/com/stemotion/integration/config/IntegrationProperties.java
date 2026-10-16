@@ -20,6 +20,14 @@ public class IntegrationProperties {
     private final Render render = new Render();
     private final Gemini gemini = new Gemini();
     private final Ai ai = new Ai();
+    private final Google google = new Google();
+
+    @Getter
+    @Setter
+    public static class Google {
+        /** OAuth 2.0 web client id of the Google Cloud project; empty turns Google sign-in off. */
+        private String clientId = "";
+    }
 
     @Getter
     @Setter

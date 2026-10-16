@@ -62,19 +62,27 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackService.findByScene(sceneId));
     }
 
+    /** The producer marks a note fixed; the reviewer may also close it. */
     @PutMapping("/qa-comments/{commentId}/resolve")
+    @PreAuthorize("@workspaceAccess.hasCommentRole(#commentId, authentication.name, 'PRODUCER', 'REVIEWER')")
     public ResponseEntity<FeedbackResponse> resolve(@PathVariable String commentId) {
         return ResponseEntity.ok(feedbackService.resolve(commentId));
     }
 
+    /** Only the reviewer decides that a fix was not good enough. */
     @PutMapping("/qa-comments/{commentId}/reopen")
+    @PreAuthorize("@workspaceAccess.hasCommentRole(#commentId, authentication.name, 'REVIEWER')")
     public ResponseEntity<FeedbackResponse> reopen(@PathVariable String commentId) {
         return ResponseEntity.ok(feedbackService.reopen(commentId));
     }
 
+    /**
+     * Only the author (or an admin) removes a note. Open notes block video
+     * approval, so letting others delete them would let a clip skip QA.
+     */
     @DeleteMapping("/qa-comments/{commentId}")
-    public ResponseEntity<Void> delete(@PathVariable String commentId) {
-        feedbackService.delete(commentId);
+    public ResponseEntity<Void> delete(@PathVariable String commentId, @AuthenticationPrincipal UserDetails principal) {
+        feedbackService.delete(commentId, principal.getUsername());
         return ResponseEntity.noContent().build();
     }
 
@@ -86,7 +94,7 @@ public class FeedbackController {
 
     @PostMapping("/scripts/{projectId}/approve-video")
     @Operation(summary = "Sign off the rendered clip once every note is resolved")
-    @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasProjectRole(#projectId, authentication.name, 'REVIEWER')")
     public ResponseEntity<Void> approveVideo(@PathVariable String projectId,
             @AuthenticationPrincipal UserDetails principal,
             @RequestBody(required = false) com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest request) {
@@ -96,7 +104,7 @@ public class FeedbackController {
 
     @PostMapping("/scripts/{projectId}/send-back")
     @Operation(summary = "Return the clip to the producer for a re-render")
-    @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasProjectRole(#projectId, authentication.name, 'REVIEWER')")
     public ResponseEntity<Void> sendBack(@PathVariable String projectId,
             @AuthenticationPrincipal UserDetails principal,
             @RequestBody(required = false) com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest request) {

@@ -45,7 +45,7 @@ public class ScriptController {
 
     @PostMapping("/workspaces/{workspaceId}/scripts")
     @Operation(summary = "Create a clip project and its first script version")
-    @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasWorkspaceRole(#workspaceId, authentication.name, 'WRITER')")
     public ResponseEntity<ScriptResponse> create(
         @PathVariable String workspaceId,
         @Valid @RequestBody CreateScriptRequest request,
@@ -65,7 +65,7 @@ public class ScriptController {
 
     @GetMapping("/scripts/review-queue")
     @Operation(summary = "Scripts waiting for an editorial decision")
-    @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.isReviewerAnywhere(authentication.name)")
     public ResponseEntity<List<ScriptSummaryResponse>> reviewQueue(@AuthenticationPrincipal UserDetails principal) {
         return ResponseEntity.ok(scriptService.findReviewQueue(principal.getUsername()));
     }
@@ -78,7 +78,7 @@ public class ScriptController {
 
     @PutMapping("/scripts/{id}")
     @Operation(summary = "Save the working draft, replacing the scene list")
-    @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasProjectRole(#id, authentication.name, 'WRITER')")
     public ResponseEntity<ScriptResponse> update(
         @PathVariable String id,
         @Valid @RequestBody UpdateScriptRequest request
@@ -88,7 +88,7 @@ public class ScriptController {
 
     @PostMapping("/scripts/{id}/submit-review")
     @Operation(summary = "Writer submits the draft for review")
-    @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasProjectRole(#id, authentication.name, 'WRITER')")
     public ResponseEntity<ScriptResponse> submitForReview(
         @PathVariable String id,
         @AuthenticationPrincipal UserDetails principal
@@ -98,7 +98,7 @@ public class ScriptController {
 
     @PostMapping("/scripts/{id}/approve")
     @Operation(summary = "Reviewer approves the script")
-    @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasProjectRole(#id, authentication.name, 'REVIEWER')")
     public ResponseEntity<ScriptResponse> approve(
         @PathVariable String id,
         @RequestBody(required = false) ReviewDecisionRequest request,
@@ -109,7 +109,7 @@ public class ScriptController {
 
     @PostMapping("/scripts/{id}/request-changes")
     @Operation(summary = "Reviewer returns the script and opens a new version")
-    @PreAuthorize("hasAnyRole('REVIEWER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.hasProjectRole(#id, authentication.name, 'REVIEWER')")
     public ResponseEntity<ScriptResponse> requestChanges(
         @PathVariable String id,
         @RequestBody(required = false) ReviewDecisionRequest request,
@@ -135,7 +135,7 @@ public class ScriptController {
     }
 
     @DeleteMapping("/scripts/{id}")
-    @PreAuthorize("hasAnyRole('WRITER', 'ADMIN')")
+    @PreAuthorize("@workspaceAccess.canArchiveProject(#id, authentication.name)")
     public ResponseEntity<Void> delete(@PathVariable String id, @AuthenticationPrincipal UserDetails principal) {
         scriptService.delete(id, principal.getUsername());
         return ResponseEntity.noContent().build();

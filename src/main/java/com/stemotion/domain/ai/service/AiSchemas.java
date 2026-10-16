@@ -11,6 +11,53 @@ final class AiSchemas {
 
     private AiSchemas() {}
 
+    static final List<String> FLAT_AMBIENCES = List.of("space", "cell", "lab", "ocean", "lilac", "sky");
+    static final List<String> FLAT_LAYOUTS = List.of("focus", "row", "cluster", "swarm", "exchange", "zoom");
+    static final List<String> COMPOSED_FRAMES = List.of("center", "split", "thirds", "grid", "sidebar");
+    static final List<String> COMPOSED_SLOTS =
+        List.of("top", "main", "bottom", "left", "right", "middle", "tl", "tr", "bl", "br", "side");
+    static final List<String> COMPOSED_KINDS = List.of(
+        "title", "text", "list", "formula", "icon", "icons", "number", "chart", "choice", "arrow", "highlight", "guide");
+
+    private static Map<String, Object> enumOf(List<String> values) {
+        return Map.of("type", "STRING", "enum", values);
+    }
+
+    /** One block of a COMPOSED scene; which fields matter depends on its kind. */
+    private static Map<String, Object> composedBlock() {
+        Map<String, Object> icon = object(Map.of("name", str(), "label", str()), List.of("name"));
+        Map<String, Object> point = object(Map.of("label", str(), "value", num()), List.of("label", "value"));
+        return object(
+            Map.ofEntries(
+                Map.entry("id", str()),
+                Map.entry("kind", enumOf(COMPOSED_KINDS)),
+                Map.entry("slot", enumOf(COMPOSED_SLOTS)),
+                Map.entry("text", str()),
+                Map.entry("items", arrayOf(str())),
+                Map.entry("latex", str()),
+                Map.entry("icon", icon),
+                Map.entry("icons", arrayOf(icon)),
+                Map.entry("value", num()),
+                Map.entry("unit", str()),
+                Map.entry("points", arrayOf(point)),
+                Map.entry("question", str()),
+                Map.entry("options", arrayOf(str())),
+                Map.entry("answer", num()),
+                Map.entry("from", str()),
+                Map.entry("to", str()),
+                Map.entry("pose", enumOf(List.of("idle", "point"))),
+                Map.entry("at", str()),
+                Map.entry("until", str()),
+                Map.entry("revealAt", str()),
+                Map.entry("strikeAt", str()),
+                Map.entry("motion", enumOf(List.of("pop", "rise", "slide", "draw", "type", "count"))),
+                Map.entry("emphasis", enumOf(List.of("none", "pulse", "float", "shake"))),
+                Map.entry("tone", enumOf(List.of("default", "accent", "good", "bad")))
+            ),
+            List.of("id", "kind")
+        );
+    }
+
     private static Map<String, Object> str() {
         return Map.of("type", "STRING");
     }
@@ -91,8 +138,10 @@ final class AiSchemas {
             Map.entry("type", Map.of(
                 "type", "STRING",
                 "enum", List.of(
-                    "TITLE_HERO", "ILLUSTRATED_EXPLAINER", "PROCESS_TIMELINE", "COMPARISON_SPLIT",
-                    "MATH_FORMULA", "CHEMICAL_REACTION", "DATA_CHART", "ALGORITHM_WALKTHROUGH", "OUTRO"
+                    // The registered template set first (proposal 3.2.c), the flat-explainer scenes last.
+                    "TITLE_HERO", "MATH_FORMULA", "DIAGRAM_EXPLAINER", "DATA_CHART", "ALGORITHM_WALKTHROUGH",
+                    "STEM_QUIZ", "OUTRO", "CHEMICAL_REACTION", "PROCESS_TIMELINE", "COMPARISON_SPLIT",
+                    "ILLUSTRATED_EXPLAINER", "COMPOSED"
                 )
             )),
             Map.entry("title", str()),
@@ -118,10 +167,23 @@ final class AiSchemas {
             Map.entry("nextLessonSuggestion", str()),
             Map.entry("headline", str()),
             Map.entry("caption", str()),
-            Map.entry("ambience", Map.of("type", "STRING", "enum",
-                List.of("space", "cell", "lab", "ocean", "lilac", "sky"))),
-            Map.entry("layout", Map.of("type", "STRING", "enum", List.of("focus", "row", "cluster", "swarm"))),
-            Map.entry("icons", arrayOf(flatIcon))
+            Map.entry("ambience", Map.of("type", "STRING", "enum", FLAT_AMBIENCES)),
+            Map.entry("layout", Map.of("type", "STRING", "enum", FLAT_LAYOUTS)),
+            Map.entry("icons", arrayOf(flatIcon)),
+            Map.entry("frame", enumOf(COMPOSED_FRAMES)),
+            Map.entry("question", str()),
+            Map.entry("options", arrayOf(str())),
+            Map.entry("correctIndex", num()),
+            Map.entry("hint", str()),
+            Map.entry("explanation", str()),
+            Map.entry("diagramTitle", str()),
+            Map.entry("labels", arrayOf(object(
+                Map.of("name", str(), "description", str(), "xPercent", num(), "yPercent", num()),
+                List.of("name", "description")))),
+            Map.entry("svgType", enumOf(List.of("pendulum", "atom", "circuit", "cell"))),
+            Map.entry("language", str()),
+            Map.entry("codeSnippet", str()),
+            Map.entry("blocks", arrayOf(composedBlock()))
         );
 
         Map<String, Object> scene = object(
@@ -137,6 +199,8 @@ final class AiSchemas {
                 "gradeLevel", str(),
                 "totalDurationSeconds", num(),
                 "narrativeArc", narrativeArc,
+                "approachName", str(),
+                "flow", arrayOf(str()),
                 "scenes", arrayOf(scene)
             ),
             List.of("isValidStemTopic", "scenes")
@@ -157,6 +221,52 @@ final class AiSchemas {
             List.of("type", "title", "narration", "suggestedDurationSec")
         );
         return object(Map.of("scenes", arrayOf(segment)), List.of("scenes"));
+    }
+
+    /**
+     * metaphor: three alternative visual metaphors for one scene. Each carries a
+     * ready ILLUSTRATED_EXPLAINER staging and a narration rewritten around it,
+     * plus where the comparison stops being accurate.
+     */
+    static Map<String, Object> metaphor() {
+        Map<String, Object> icon = object(Map.of("name", str(), "label", str()), List.of("name", "label"));
+        Map<String, Object> option = object(
+            Map.ofEntries(
+                Map.entry("name", str()),
+                Map.entry("idea", str()),
+                Map.entry("whyItHelps", str()),
+                Map.entry("limitation", str()),
+                Map.entry("layout", Map.of("type", "STRING", "enum", FLAT_LAYOUTS)),
+                Map.entry("ambience", Map.of("type", "STRING", "enum", FLAT_AMBIENCES)),
+                Map.entry("headline", str()),
+                Map.entry("caption", str()),
+                Map.entry("icons", arrayOf(icon)),
+                Map.entry("narration", str())
+            ),
+            List.of("name", "idea", "limitation", "layout", "ambience", "headline", "icons", "narration")
+        );
+        return object(Map.of("options", arrayOf(option)), List.of("options"));
+    }
+
+    /** Several distinct ways to lead one lesson, for the writer to choose from. */
+    static Map<String, Object> approaches() {
+        Map<String, Object> option = object(
+            Map.of(
+                "name", str(),
+                "hook", str(),
+                "flow", arrayOf(str()),
+                "whyItFits", str()
+            ),
+            List.of("name", "hook", "flow", "whyItFits")
+        );
+        return object(
+            Map.of(
+                "isValidStemTopic", Map.of("type", "BOOLEAN"),
+                "fallbackMessage", str(),
+                "options", arrayOf(option)
+            ),
+            List.of("isValidStemTopic", "options")
+        );
     }
 
     /** grade: a readability verdict against the target grade. */

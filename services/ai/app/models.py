@@ -25,6 +25,7 @@ class ScriptInput(BaseModel):
     gradeLevel: str = Field(min_length=1, max_length=64)
     targetDurationSec: int | None = Field(default=None, ge=0, le=300)
     narrativeBrief: str | None = Field(default=None, max_length=500)
+    approach: str | None = Field(default=None, max_length=800)
 
 class AnalysisInput(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
