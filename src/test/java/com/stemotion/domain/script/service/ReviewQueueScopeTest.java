@@ -57,4 +57,16 @@ class ReviewQueueScopeTest {
 
         assertThat(service.findReviewQueue("teacher")).extracting("id").containsExactly("physics-script");
     }
+
+    @Test
+    @DisplayName("after leaving a workspace, the writer no longer sees their own scripts from it")
+    void leavingAWorkspaceHidesOwnScripts() {
+        List<ClipProject> owned = List.of(
+            inWorkspace("physics-script", "physics"), inWorkspace("chemistry-script", "chemistry"));
+        when(projects.findByOwnerIdOrderByCreatedAtDesc("teacher")).thenReturn(owned);
+        when(access.canRead("physics", "teacher")).thenReturn(true);
+        when(access.canRead("chemistry", "teacher")).thenReturn(false);
+
+        assertThat(service.findByOwner("teacher")).extracting("id").containsExactly("physics-script");
+    }
 }

@@ -65,6 +65,8 @@ public class ScriptService {
         return projectRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId)
             .stream()
             .filter(project -> !Boolean.TRUE.equals(project.getArchived()))
+            // Leaving a workspace removes access to all of its projects, own ones included.
+            .filter(project -> workspaceAccess.canRead(project.getWorkspace().getId(), ownerId))
             .map(this::toSummary)
             .toList();
     }
