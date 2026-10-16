@@ -2,6 +2,7 @@ package com.stemotion.domain.production.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stemotion.core.enums.StemEnums.SceneType;
 import com.stemotion.core.enums.StemEnums.ScriptStatus;
 import com.stemotion.core.exception.ApiException;
 import com.stemotion.domain.auth.service.AuthService;
@@ -100,6 +101,37 @@ public class CompositionService {
             .orElseGet(() -> new RenderInput(null, null, scriptScenes(version)));
     }
 
+    /**
+     * The scenes a render draws, as Scene objects that are never saved: the
+     * composition's when the producer has saved one, the approved script's
+     * otherwise. Pre-publish QA checks these, i.e. the clip as rendered.
+     */
+    @Transactional(readOnly = true)
+    public List<Scene> renderScenes(ScriptVersion version) {
+        Composition saved = compositions.findByScriptVersionId(version.getId()).orElse(null);
+        if (saved == null) {
+            return scriptService.scenesOf(version);
+        }
+        List<Scene> scenes = new ArrayList<>();
+        int order = 1;
+        for (Map<String, Object> map : read(saved.getScenes())) {
+            Map<String, Object> props = new LinkedHashMap<>(map);
+            List.of("id", "type", "title", "narration", "durationInFrames").forEach(props::remove);
+            Scene scene = Scene.builder()
+                .orderNo(order++)
+                .sceneType(SceneType.valueOf(String.valueOf(map.get("type"))))
+                .title((String) map.get("title"))
+                .narration((String) map.get("narration"))
+                .durationInFrames(((Number) map.get("durationInFrames")).intValue())
+                .props(writeProps(props))
+                .scriptVersion(version)
+                .build();
+            scene.setId(String.valueOf(map.get("id")));
+            scenes.add(scene);
+        }
+        return scenes;
+    }
+
     /** The approved script's scenes in the SceneData shape. */
     public List<Map<String, Object>> scriptScenes(ScriptVersion version) {
         List<Map<String, Object>> scenes = new ArrayList<>();
@@ -191,6 +223,14 @@ public class CompositionService {
             return objectMapper.readValue(json, SCENES_TYPE);
         } catch (Exception ex) {
             throw new IllegalStateException("Stored composition is not a scene list", ex);
+        }
+    }
+
+    private String writeProps(Map<String, Object> props) {
+        try {
+            return objectMapper.writeValueAsString(props);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Composition scene props could not be serialised", ex);
         }
     }
 

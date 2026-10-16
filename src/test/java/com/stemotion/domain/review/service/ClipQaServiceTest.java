@@ -11,6 +11,7 @@ import com.stemotion.domain.script.entity.Scene;
 import com.stemotion.domain.script.entity.ScriptVersion;
 import com.stemotion.domain.script.mapper.SceneMapper;
 import com.stemotion.domain.script.mapper.ScenePropsValidator;
+import com.stemotion.domain.production.service.CompositionService;
 import com.stemotion.domain.script.service.ScriptService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,15 +32,20 @@ import static org.mockito.Mockito.when;
 class ClipQaServiceTest {
 
     private ScriptService scriptService;
+    private CompositionService compositionService;
     private ClipQaService qaService;
     private ClipProject project;
 
     @BeforeEach
     void setUp() {
         scriptService = mock(ScriptService.class);
+        compositionService = mock(CompositionService.class);
+        // No composition saved: QA checks the approved script's scenes.
+        when(compositionService.renderScenes(any())).thenAnswer(i -> scriptService.scenesOf(i.getArgument(0)));
         qaService = new ClipQaService(
             scriptService,
-            new SceneMapper(new ObjectMapper(), new ScenePropsValidator())
+            new SceneMapper(new ObjectMapper(), new ScenePropsValidator()),
+            compositionService
         );
 
         project = ClipProject.builder()
@@ -78,6 +84,19 @@ class ClipQaServiceTest {
     private QaReport runWith(List<Scene> scenes) {
         when(scriptService.scenesOf(any())).thenReturn(scenes);
         return qaService.run("project-1");
+    }
+
+    @Test
+    @DisplayName("QA checks the producer's composition, the clip as rendered, not the approved script")
+    void checksTheRenderedComposition() {
+        // The approved script is too short (6 s); the producer lengthened it to 30 s.
+        when(scriptService.scenesOf(any())).thenReturn(List.of(
+            scene(SceneType.TITLE_HERO, "Mo dau", "Hom nay", 60, "{}"),
+            scene(SceneType.MATH_FORMULA, "Cong thuc", "a mu hai", 60, "{}"),
+            scene(SceneType.OUTRO, "Tong ket", "Het", 60, "{}")));
+        when(compositionService.renderScenes(any())).thenReturn(healthyScenes());
+
+        assertThat(qaService.run("project-1").passed()).isTrue();
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.stemotion.domain.review.service;
 
 import com.stemotion.core.enums.StemEnums.SceneType;
+import com.stemotion.domain.production.service.CompositionService;
 import com.stemotion.domain.project.entity.ClipProject;
 import com.stemotion.domain.review.dto.QaDtos.QaCheck;
 import com.stemotion.domain.review.dto.QaDtos.QaFinding;
@@ -49,11 +50,13 @@ public class ClipQaService {
 
     private final ScriptService scriptService;
     private final SceneMapper sceneMapper;
+    private final CompositionService compositionService;
 
     @Transactional(readOnly = true)
     public QaReport run(String projectId) {
         ClipProject project = scriptService.getOrThrow(projectId);
-        List<Scene> scenes = scriptService.scenesOf(scriptService.currentVersion(project));
+        // The clip as rendered: the producer's composition when there is one.
+        List<Scene> scenes = compositionService.renderScenes(scriptService.currentVersion(project));
 
         List<QaFinding> findings = new ArrayList<>();
         int fps = project.getFps() == null || project.getFps() <= 0 ? 30 : project.getFps();

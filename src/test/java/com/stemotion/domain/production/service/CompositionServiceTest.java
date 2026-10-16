@@ -184,6 +184,21 @@ class CompositionServiceTest {
     }
 
     @Test
+    @DisplayName("QA sees the composition's scenes, with the approved scene ids")
+    void renderScenesForQa() throws Exception {
+        Composition current = Composition.builder().project(project).scriptVersion(version).revision(3)
+            .scenes(json.writeValueAsString(List.of(Map.of("id", "s1", "type", "STEM_QUIZ", "title", "Edited",
+                "narration", "Đọc", "durationInFrames", 240, "question", "U = ?")))).build();
+        when(compositions.findByScriptVersionId("version")).thenReturn(Optional.of(current));
+        List<Scene> scenes = service.renderScenes(version);
+        assertThat(scenes).hasSize(1);
+        assertThat(scenes.get(0).getId()).isEqualTo("s1");
+        assertThat(scenes.get(0).getDurationInFrames()).isEqualTo(240);
+        assertThat(scenes.get(0).getSceneType()).isEqualTo(SceneType.STEM_QUIZ);
+        assertThat(scenes.get(0).getProps()).contains("\"question\":\"U = ?\"").doesNotContain("durationInFrames");
+    }
+
+    @Test
     @DisplayName("a render takes the saved composition and its revision")
     void renderUsesTheComposition() throws Exception {
         Composition current = Composition.builder().project(project).scriptVersion(version).revision(2)
