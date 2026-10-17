@@ -39,7 +39,6 @@ def test_script_generation_preserves_metadata_and_does_not_mutate_input(client):
 @pytest.mark.parametrize("mutate", [
     lambda r: r["scenes"][1].pop("latex"),
     lambda r: r["scenes"][1].update(latex=""),
-    lambda r: r["scenes"][2]["icons"][0].update(name="unicorn"),
     lambda r: r["scenes"][1].update(type="DATA_CHART", dataPoints=[{"label":"bad", "value":"made up"}]),
     lambda r: r.update(scenes=[]),
     lambda r: r.pop("isValidStemTopic"),
@@ -94,9 +93,54 @@ def test_merged_approach_and_composed_scene_contract(client):
     assert response.json()["result"] == result
     prompt = build_request("generate", ScriptInput(**body)).prompt
     assert "gameshow" in prompt and "electron interview" in prompt
+    # An icon outside the catalog becomes "sparkle" (as the API does for Gemini drafts); saving
+    # a scene still rejects unknown icons, so nothing unknown reaches a render.
     result["scenes"][2]["blocks"][1]["icon"]["name"] = "unknown"
-    assert client.post("/script/generate", json=body, headers=HEADERS).status_code == 502
+    replaced = client.post("/script/generate", json=body, headers=HEADERS)
+    assert replaced.status_code == 200
+    assert replaced.json()["result"]["scenes"][2]["blocks"][1]["icon"]["name"] == "sparkle"
 
 
 def test_approach_limit_before_provider(client):
     assert client.post("/script/generate", json={**BODY,"approach":"a"*801}, headers=HEADERS).status_code == 422
+
+
+def test_a_missing_scene_title_is_taken_from_the_scene_itself():
+    from app.validation import fill_scene_titles
+    result = {"scenes": [
+        {"type": "TITLE_HERO", "title": "Định luật Ôm"},
+        {"type": "DIAGRAM_EXPLAINER", "diagramTitle": "Mạch điện nối tiếp"},
+        {"type": "STEM_QUIZ", "question": "R tăng thì I thế nào?"},
+        {"type": "OUTRO", "title": "  "},
+    ]}
+    fill_scene_titles("generate", result)
+    assert [s["title"] for s in result["scenes"]] == [
+        "Định luật Ôm", "Mạch điện nối tiếp", "Câu hỏi", "Tổng kết"]
+    untouched = {"scenes": [{"type": "OUTRO"}]}
+    assert fill_scene_titles("grade", untouched) == {"scenes": [{"type": "OUTRO"}]}
+
+
+def test_drafts_are_made_speakable_and_paced_without_new_content():
+    from app.validation import normalize_scenes
+    result = {"title": "Định luật Ôm", "scenes": [
+        {"type": "TITLE_HERO", "title": "TITLE_HERO", "narration": "Xin chào", "durationInFrames": 30},
+        {"type": "MATH_FORMULA", "title": "Ví dụ", "durationInFrames": 30,
+         "narration": "Nếu $U = 12\\ \\text{V}$ và $I = 2\\ \\text{A}$ thì $R = \\dfrac{U}{I} = 6\\ \\Omega$.",
+         "icons": [{"name": "not-an-icon"}]},
+        {"type": "OUTRO", "title": "OUTRO", "narration": "Hết", "durationInFrames": 90},
+    ]}
+    normalize_scenes("generate", result)
+    opening, example, outro = result["scenes"]
+    assert opening["title"] == "Định luật Ôm" and outro["title"] == "Tổng kết"
+    assert example["narration"] == "Nếu U = 12 V và I = 2 A thì R = U chia I = 6 ôm."
+    assert example["durationInFrames"] == 278  # 19 words / 2.2 + 0.6 s at 30 fps
+    assert outro["durationInFrames"] == 90     # already long enough, unchanged
+    assert example["icons"] == [{"name": "sparkle"}]
+
+
+def test_an_unknown_icon_becomes_sparkle_instead_of_refusing_the_draft(client):
+    result = copy.deepcopy(VALID); result["scenes"][2]["icons"][0].update(name="unicorn"); stub(result)
+    response = client.post("/script/generate", json=BODY, headers=HEADERS)
+    assert response.status_code == 200
+    assert response.json()["result"]["scenes"][2]["icons"][0]["name"] == "sparkle"
+

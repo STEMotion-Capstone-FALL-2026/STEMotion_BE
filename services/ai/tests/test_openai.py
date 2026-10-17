@@ -18,7 +18,7 @@ def test_routes_by_task_and_preserves_actual_model_usage(monkeypatch, task, expe
             assert kwargs["api_key"] == "test-only-key"
             assert kwargs["max_retries"] == 2
         def with_structured_output(self, schema, **kwargs):
-            assert kwargs == {"method":"json_schema","strict":False,"include_raw":True}
+            assert kwargs == {"method":"json_schema","strict":True,"include_raw":True}
             return self
         async def ainvoke(self, messages):
             return {"parsed":{"score":80}, "raw":SimpleNamespace(
@@ -46,3 +46,20 @@ def test_refusal_is_not_fabricated_as_a_lesson(monkeypatch):
     monkeypatch.setitem(sys.modules,"langchain_openai",SimpleNamespace(ChatOpenAI=Refusal))
     with pytest.raises(ValueError):
         asyncio.run(OpenAIProvider().generate(GenerationRequest(systemInstruction="s",prompt="p",responseSchema={})))
+
+
+def test_strict_schema_requires_every_property_and_nulls_only_optional_ones():
+    from app.schemas import drop_optional_nulls, strict_schema
+    original = {"type": "object", "required": ["scenes"], "properties": {
+        "fallbackMessage": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "scenes": {"type": "array", "items": {"type": "object", "required": ["title"],
+            "properties": {"title": {"type": "string"}, "hint": {"type": "string"}}}}}}
+    strict = strict_schema(original)
+    assert strict["required"] == ["fallbackMessage", "scenes"] and strict["additionalProperties"] is False
+    scene = strict["properties"]["scenes"]["items"]
+    assert scene["required"] == ["title", "hint"] and scene["additionalProperties"] is False
+    assert {"type": "null"} in scene["properties"]["hint"]["anyOf"]
+    assert scene["properties"]["title"] == {"type": "string"}
+    parsed = {"fallbackMessage": None, "scenes": [{"title": "Mở đầu", "hint": None}]}
+    assert drop_optional_nulls(parsed, original) == {"scenes": [{"title": "Mở đầu"}]}
+

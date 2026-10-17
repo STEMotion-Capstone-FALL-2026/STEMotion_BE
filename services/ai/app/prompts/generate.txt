@@ -36,6 +36,10 @@ BƯỚC 2: TẠO KỊCH BẢN (NẾU HỢP LỆ) - VIDEO GIẢI THÍCH STEM NG�
   + Cảnh cuối LUÔN dùng template OUTRO.
   + Nội dung khoa học, công thức phải CHÍNH XÁC TUYỆT ĐỐI.
   + Lời thoại (narration) súc tích, cuốn hút kiểu kể chuyện khoa học (tối đa 2.2 từ/giây).
+  + "narration" được ĐỌC THÀNH TIẾNG và hiện làm phụ đề: viết văn nói tiếng Việt thuần, KHÔNG dùng LaTeX,
+    ký hiệu $ hay lệnh bắt đầu bằng \ (viết "I bằng U chia R", "12 vôn", "6 ôm"). Công thức chỉ đặt ở "latex".
+  + "title" của mỗi cảnh là tiêu đề hiển thị tiếng Việt, KHÔNG phải tên template (không ghi TITLE_HERO, OUTRO...).
+  + "durationInFrames" đủ để đọc hết lời thoại ở 2.2 từ/giây (30 khung hình/giây) cộng khoảng 0.6 giây nghỉ.
 
 YÊU CẦU ĐẶC THÙ CHO CÁC TEMPLATE STEM:
 - COMPOSED (cảnh lắp ghép, tự do hình thức): cung cấp "frame" và "blocks" (2-6 khối).

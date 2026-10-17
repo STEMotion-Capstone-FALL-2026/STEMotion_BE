@@ -12,7 +12,7 @@ from .models import GenerationRequest, GenerationResponse, ScriptInput, Analysis
 from .providers import GeminiProvider, OpenAIProvider
 from .schemas import json_schema
 from .prompting import build_request
-from .validation import validate_result
+from .validation import normalize_scenes, validate_result
 
 def require_service_key(x_ai_api_key: str = Header(default="")) -> None:
     expected = shared_key()
@@ -48,6 +48,7 @@ async def execute(request, client, validate_operation=None):
     try:
         result, model, usage = await client.generate(request)
         if validate_operation:
+            result = normalize_scenes(validate_operation, result)
             validate_result(validate_operation, result)
         def count(key):
             value = usage.get(key)

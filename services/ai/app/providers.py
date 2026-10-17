@@ -3,7 +3,7 @@ import os
 import asyncio
 from fastapi import HTTPException
 from .models import GenerationRequest
-from .schemas import json_schema
+from .schemas import drop_optional_nulls, json_schema, strict_schema
 
 class GeminiProvider:
     async def generate(self, request: GenerationRequest) -> tuple[dict[str, Any], str, dict[str, Any]]:
@@ -42,16 +42,20 @@ class OpenAIProvider:
         from langchain_openai import ChatOpenAI
         from langchain_core.messages import HumanMessage, SystemMessage
         llm = ChatOpenAI(model=model, api_key=key, temperature=0.4, max_retries=2, timeout=55)
-        schema = json_schema(request.responseSchema)
+        original = json_schema(request.responseSchema)
+        # Non-strict outputs dropped required fields (narration, durationInFrames, title), so
+        # whole drafts were refused. Strict mode makes the model return every required field.
+        schema = strict_schema(original)
         schema.setdefault("title", "STEMotionAIResult")
         schema.setdefault("description", "Structured STEM result; scientific content must not be fabricated")
-        chain = llm.with_structured_output(schema, method="json_schema", strict=False, include_raw=True)
+        chain = llm.with_structured_output(schema, method="json_schema", strict=True, include_raw=True)
         response = await asyncio.wait_for(chain.ainvoke([
             SystemMessage(content=request.systemInstruction), HumanMessage(content=request.prompt)
         ]), timeout=60)
         parsed = response.get("parsed")
         if response.get("parsing_error") or not isinstance(parsed, dict):
             raise ValueError("Missing structured output or model refusal")
+        parsed = drop_optional_nulls(parsed, original)
         raw = response.get("raw")
         usage = getattr(raw, "usage_metadata", None) or {}
         metadata = getattr(raw, "response_metadata", None) or {}
