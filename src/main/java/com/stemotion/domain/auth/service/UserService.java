@@ -24,10 +24,10 @@ public class UserService {
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public UserResponse create(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
+        if (userRepository.existsByEmailIgnoreCase(request.email().trim())) {
             throw ApiException.conflict("Email is already registered");
         }
-        User user = User.builder().fullName(request.fullName()).email(request.email())
+        User user = User.builder().fullName(request.fullName()).email(request.email().trim())
             .passwordHash(passwordEncoder.encode(request.password()))
             .role(request.role() == null ? User.UserRole.WRITER : request.role())
             .status(User.UserStatus.ACTIVE)

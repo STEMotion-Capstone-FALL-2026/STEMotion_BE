@@ -25,7 +25,7 @@ class UserProvisioningTest {
     }
     @Test void duplicateEmailDoesNotOverwriteExistingAccount() {
         var repository = mock(UserRepository.class);
-        when(repository.existsByEmail("existing@example.invalid")).thenReturn(true);
+        when(repository.existsByEmailIgnoreCase("existing@example.invalid")).thenReturn(true);
         var service = new UserService(repository, new BCryptPasswordEncoder());
         assertThatThrownBy(() -> service.create(new RegisterRequest("Teacher", "existing@example.invalid", "test-password-only", User.UserRole.WRITER)))
             .isInstanceOf(com.stemotion.core.exception.ApiException.class);

@@ -27,9 +27,22 @@ public class AuthService {
         throw ApiException.forbidden("Public registration is disabled. Contact an administrator for an account");
     }
 
+    /**
+     * Email addresses are case-insensitive, so "A@gmail.com" signs in to "a@gmail.com". An exact
+     * match wins; otherwise only a single case-insensitive match is used, never a guess between two.
+     */
+    private java.util.Optional<User> findAccount(String rawEmail) {
+        if (rawEmail == null) return java.util.Optional.empty();
+        String email = rawEmail.trim();
+        return userRepository.findByEmail(email).or(() -> {
+            var matches = userRepository.findAllByEmailIgnoreCase(email);
+            return matches.size() == 1 ? java.util.Optional.of(matches.get(0)) : java.util.Optional.empty();
+        });
+    }
+
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.email())
+        User user = findAccount(request.email())
             .orElseThrow(AuthService::invalidCredentials);
 
         if (user.getPasswordHash() == null
@@ -53,7 +66,7 @@ public class AuthService {
     @Transactional
     public AuthResponse loginWithGoogle(String idToken) {
         var identity = googleTokenVerifier.verify(idToken);
-        User user = userRepository.findByEmail(identity.email())
+        User user = findAccount(identity.email())
             .orElseThrow(() -> ApiException.forbidden(
                 "Email này chưa được quản trị viên cấp tài khoản STEMotion."));
         if (user.getStatus() != User.UserStatus.ACTIVE) {

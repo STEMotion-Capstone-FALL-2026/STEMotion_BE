@@ -18,6 +18,11 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     boolean existsByEmail(String email);
 
+    /** Accounts whose email differs only in letter case (older data has a@ and A@). */
+    List<User> findAllByEmailIgnoreCase(String email);
+
+    boolean existsByEmailIgnoreCase(String email);
+
     /**
      * Active accounts that are not yet members of the workspace. The status is
      * a parameter: Hibernate 6 cannot resolve a nested enum constant written
