@@ -7,7 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import java.time.Duration;
 import java.util.Map;
 
@@ -106,9 +108,38 @@ public class AiGateway {
                 token(body,"inputTokens"), token(body,"outputTokens"), token(body,"totalTokens"));
         } catch (ApiException ex) {
             throw ex;
+        } catch (RestClientResponseException ex) {
+            throw remoteFailure(ex.getStatusCode().value(), ex.getResponseBodyAsString());
+        } catch (ResourceAccessException ex) {
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "AI_SERVICE_UNAVAILABLE",
+                "Không kết nối được dịch vụ AI (máy chạy AI đang tắt hoặc mất mạng), thử lại sau");
         } catch (Exception ex) {
             throw new ApiException(HttpStatus.BAD_GATEWAY, "AI_SERVICE_UNAVAILABLE", "AI service is unavailable; please try again later");
         }
+    }
+
+    /** The AI service answered with an error: say which one instead of "unavailable". */
+    static ApiException remoteFailure(int status, String body) {
+        String detail = body == null ? "" : body;
+        return switch (status) {
+            case 401, 403 -> new ApiException(HttpStatus.BAD_GATEWAY, "AI_SERVICE_KEY_MISMATCH",
+                "Khoá AI_SERVICE_KEY của backend không khớp với dịch vụ AI");
+            case 422 -> new ApiException(HttpStatus.BAD_REQUEST, "AI_INVALID_INPUT",
+                "Dữ liệu gửi cho AI không hợp lệ, kiểm tra lại nội dung");
+            case 429 -> new ApiException(HttpStatus.TOO_MANY_REQUESTS, "AI_BUSY",
+                "Mô hình AI đang quá tải hoặc đã hết hạn mức, thử lại sau ít phút");
+            case 504 -> new ApiException(HttpStatus.GATEWAY_TIMEOUT, "AI_TIMEOUT",
+                "AI phản hồi quá lâu, thử lại");
+            case 502 -> detail.contains("incomplete or invalid")
+                ? new ApiException(HttpStatus.BAD_GATEWAY, "AI_INVALID_OUTPUT",
+                    "AI trả kết quả chưa đầy đủ, hãy thử tạo lại")
+                : new ApiException(HttpStatus.BAD_GATEWAY, "AI_PROVIDER_FAILED",
+                    "Nhà cung cấp AI (OpenAI) báo lỗi, thử lại sau");
+            case 503 -> new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "AI_NOT_CONFIGURED",
+                "Dịch vụ AI chưa được cấu hình đầy đủ");
+            default -> new ApiException(HttpStatus.BAD_GATEWAY, "AI_SERVICE_UNAVAILABLE",
+                "AI service is unavailable; please try again later");
+        };
     }
 
     public boolean isRemote() { return "remote".equals(properties.getAi().getMode()); }

@@ -104,4 +104,37 @@ class AiGatewayTest {
             verifyNoInteractions(embedded);
         } finally { server.stop(0); }
     }
+
+    @Test void remoteErrorsKeepTheirMeaningInsteadOfAllBecomingUnavailable() throws Exception {
+        assertThat(AiGateway.remoteFailure(401, "{\"detail\":\"Invalid service key\"}").getCode()).isEqualTo("AI_SERVICE_KEY_MISMATCH");
+        assertThat(AiGateway.remoteFailure(502, "{\"detail\":\"AI returned incomplete or invalid scientific content\"}").getCode()).isEqualTo("AI_INVALID_OUTPUT");
+        assertThat(AiGateway.remoteFailure(502, "{\"detail\":\"AI provider request failed\"}").getCode()).isEqualTo("AI_PROVIDER_FAILED");
+        assertThat(AiGateway.remoteFailure(504, null).getCode()).isEqualTo("AI_TIMEOUT");
+
+        var properties = new IntegrationProperties();
+        properties.getAi().setMode("remote"); properties.getAi().setApiKey("test-key");
+        var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/script/generate", exchange -> {
+            byte[] response = "{\"detail\":\"AI returned incomplete or invalid scientific content\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(502, response.length);
+            try (var output = exchange.getResponseBody()) { output.write(response); }
+        });
+        server.start();
+        int port = server.getAddress().getPort();
+        var audit = mock(com.stemotion.domain.ai.service.AiRequestLogService.class);
+        when(audit.start(any(), anyString(), anyString())).thenReturn("request-id");
+        var request = new com.stemotion.domain.ai.dto.AiDtos.GenerateScriptRequest("Ohm",
+            com.stemotion.core.enums.StemEnums.StemSubject.Physics, "10", 0, null, null);
+        try {
+            properties.getAi().setBaseUrl("http://127.0.0.1:" + port);
+            var gateway = new AiGateway(mock(GeminiClient.class), properties, audit);
+            assertThatThrownBy(() -> gateway.generateScript(request))
+                .isInstanceOfSatisfying(ApiException.class, ex -> assertThat(ex.getCode()).isEqualTo("AI_INVALID_OUTPUT"));
+        } finally { server.stop(0); }
+        // Nothing listening: the laptop running the AI service is off.
+        var gateway = new AiGateway(mock(GeminiClient.class), properties, audit);
+        assertThatThrownBy(() -> gateway.generateScript(request))
+            .isInstanceOfSatisfying(ApiException.class, ex -> assertThat(ex.getCode()).isEqualTo("AI_SERVICE_UNAVAILABLE"));
+    }
 }
