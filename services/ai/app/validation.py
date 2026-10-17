@@ -10,10 +10,21 @@ from .schemas import schema_for
 log = logging.getLogger("ai.validation")
 
 
+class InvalidResult(HTTPException):
+    """A model result that breaks the contract. The reason goes to the log and, on a retry,
+    back to the model; the client keeps the generic message."""
+    def __init__(self, reason):
+        super().__init__(502, "AI returned incomplete or invalid scientific content")
+        self.reason = reason
+
+
 def invalid(reason="unspecified"):
-    # The reason is logged for operators; the client keeps the generic message.
     log.warning("AI result refused: %s", reason)
-    raise HTTPException(502, "AI returned incomplete or invalid scientific content")
+    raise InvalidResult(reason)
+
+
+def _nonempty_list(value):
+    return isinstance(value, list) and len(value) > 0
 
 def nonempty(value):
     return isinstance(value, str) and bool(value.strip())
@@ -39,7 +50,7 @@ _LATEX_WORDS = {r"\\Omega": " ôm", r"\\omega": " omega", r"\\Delta": " đen-ta 
 
 
 def speakable(text):
-    """Narration is read aloud and shown as captions, so LaTeX the model slipped in
+    r"""Narration is read aloud and shown as captions, so LaTeX the model slipped in
     ($I = \dfrac{U}{R}$, $12\ \text{V}$) becomes words. Only notation changes."""
     if not isinstance(text, str) or ("$" not in text and "\\" not in text):
         return text
@@ -85,6 +96,8 @@ def normalize_scenes(operation, result):
             frames = scene.get("durationInFrames")
             if isinstance(frames, int) and not isinstance(frames, bool) and frames < needed:
                 scene["durationInFrames"] = min(needed, 18000)
+        if kind == "DIAGRAM_EXPLAINER" and not nonempty(scene.get("diagramTitle")) and nonempty(scene.get("title")):
+            scene["diagramTitle"] = scene["title"]
         for icon in scene.get("icons") or []:
             if isinstance(icon, dict) and icon.get("name") not in ICONS:
                 icon["name"] = "sparkle"
@@ -132,18 +145,30 @@ def validate_result(operation, result):
             if not all(nonempty(scene.get(k)) for k in required):
                 invalid(f"{kind} scene without {required}")
             if kind == "COMPOSED" and (not scene.get("frame") or not 2 <= len(scene.get("blocks", [])) <= 6):
-                invalid()
+                invalid("COMPOSED scene without frame or 2-6 blocks")
             if kind == "MATH_FORMULA" and not scene.get("steps"):
-                invalid()
+                invalid("MATH_FORMULA scene without steps")
+            if kind == "DIAGRAM_EXPLAINER" and not (nonempty(scene.get("diagramTitle"))
+                    and _nonempty_list(scene.get("labels"))
+                    and all(isinstance(l, dict) and nonempty(l.get("name")) for l in scene["labels"])):
+                invalid("DIAGRAM_EXPLAINER scene without diagramTitle or labels")
+            if kind == "ALGORITHM_WALKTHROUGH" and not (nonempty(scene.get("language"))
+                    and nonempty(scene.get("codeSnippet")) and _nonempty_list(scene.get("steps"))):
+                invalid("ALGORITHM_WALKTHROUGH scene without language, codeSnippet or steps")
+            if kind == "STEM_QUIZ":
+                options, answer = scene.get("options"), scene.get("correctIndex")
+                if (not nonempty(scene.get("question")) or not isinstance(options, list) or len(options) < 2
+                        or isinstance(answer, bool) or not isinstance(answer, int) or not 0 <= answer < len(options)):
+                    invalid("STEM_QUIZ scene without question, two options or a valid correctIndex")
             if kind == "ILLUSTRATED_EXPLAINER" and not scene.get("icons"):
-                invalid()
+                invalid("ILLUSTRATED_EXPLAINER scene without icons")
             if kind == "DATA_CHART":
                 points = scene.get("dataPoints")
                 if not points or any(not nonempty(p.get("label")) or isinstance(p.get("value"), bool)
                     or not isinstance(p.get("value"), (int, float)) or not math.isfinite(p["value"]) for p in points):
-                    invalid()
+                    invalid("DATA_CHART scene without valid dataPoints")
             if kind == "OUTRO" and (not scene.get("summaryPoints") or not nonempty(scene.get("nextLessonSuggestion"))):
-                invalid()
+                invalid("OUTRO scene without summaryPoints or nextLessonSuggestion")
     if operation == "resegment" and not result.get("scenes"):
         invalid()
     if operation in {"generate", "resegment"}:

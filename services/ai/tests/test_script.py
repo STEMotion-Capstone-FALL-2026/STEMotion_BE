@@ -144,3 +144,30 @@ def test_an_unknown_icon_becomes_sparkle_instead_of_refusing_the_draft(client):
     assert response.status_code == 200
     assert response.json()["result"]["scenes"][2]["icons"][0]["name"] == "sparkle"
 
+
+def test_a_refused_draft_is_retried_once_with_the_reason(client, monkeypatch):
+    import app.main as main
+    first = copy.deepcopy(VALID); first["scenes"][1].pop("latex")
+    calls = []
+    class Twice:
+        async def generate(self, request):
+            calls.append(request.prompt)
+            return (first if len(calls) == 1 else copy.deepcopy(VALID)), "test-model", {"input_tokens": 10, "output_tokens": 5, "total_tokens": 15}
+    main.app.dependency_overrides[main.provider] = lambda: Twice()
+    try:
+        response = client.post("/script/generate", json=BODY, headers=HEADERS)
+    finally:
+        main.app.dependency_overrides.pop(main.provider, None)
+    assert response.status_code == 200
+    assert len(calls) == 2 and "BỊ TỪ CHỐI" in calls[1] and "BỊ TỪ CHỐI" not in calls[0]
+    assert response.json()["totalTokens"] == 30
+
+
+def test_a_diagram_without_labels_is_refused():
+    from app.validation import validate_result
+    import pytest as _pytest
+    from fastapi import HTTPException as _H
+    result = copy.deepcopy(VALID)
+    result["scenes"][1] = {"type": "DIAGRAM_EXPLAINER", "title": "Sơ đồ", "narration": "Mạch điện", "durationInFrames": 90}
+    with _pytest.raises(_H):
+        validate_result("generate", result)

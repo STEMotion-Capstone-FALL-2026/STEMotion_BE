@@ -12,7 +12,7 @@ from .models import GenerationRequest, GenerationResponse, ScriptInput, Analysis
 from .providers import GeminiProvider, OpenAIProvider
 from .schemas import json_schema
 from .prompting import build_request
-from .validation import normalize_scenes, validate_result
+from .validation import InvalidResult, normalize_scenes, validate_result
 
 def require_service_key(x_ai_api_key: str = Header(default="")) -> None:
     expected = shared_key()
@@ -43,13 +43,29 @@ def ready():
     state = readiness()
     return JSONResponse(state, status_code=200 if state["status"] == "READY" else 503)
 
+RETRYABLE = {"generate", "resegment"}
+RETRY_NOTE = ("\n\nLẦN TRƯỚC KẾT QUẢ BỊ TỪ CHỐI VÌ: {reason}. Trả lại toàn bộ kết quả, điền ĐỦ mọi trường "
+              "bắt buộc của từng template (ví dụ DIAGRAM_EXPLAINER cần diagramTitle và labels).")
+
+
 async def execute(request, client, validate_operation=None):
     started = time.monotonic()
     try:
         result, model, usage = await client.generate(request)
         if validate_operation:
             result = normalize_scenes(validate_operation, result)
-            validate_result(validate_operation, result)
+            try:
+                validate_result(validate_operation, result)
+            except InvalidResult as refused:
+                if validate_operation not in RETRYABLE:
+                    raise
+                # One more try, telling the model what was wrong. Both attempts' tokens count.
+                retry = request.model_copy(update={"prompt": request.prompt + RETRY_NOTE.format(reason=refused.reason)})
+                result, model, second = await client.generate(retry)
+                usage = {key: (usage.get(key) or 0) + (second.get(key) or 0)
+                         for key in ("input_tokens", "output_tokens", "total_tokens")}
+                result = normalize_scenes(validate_operation, result)
+                validate_result(validate_operation, result)
         def count(key):
             value = usage.get(key)
             return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
