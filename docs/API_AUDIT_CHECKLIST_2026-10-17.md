@@ -2,6 +2,50 @@
 
 Ngày audit: 17/10/2026 (Asia/Saigon). Phạm vi: đọc source, đặc tả, test có sẵn; không triển khai tính năng, không chạy migration, không commit/push.
 
+## 0. Cập nhật sau audit (17/10/2026, BE)
+
+Audit đọc BE `c7fbc49` và worker `16c984e`. Mục này ghi những gì đã đổi sau đó, để đọc phần còn lại cho đúng. Các mục bên dưới **không sửa lại**; khi mâu thuẫn thì mục 0 này là trạng thái hiện tại.
+
+### 0.1. BE đã sửa
+
+| # | Vấn đề trong audit | Đã sửa | Ảnh hưởng FE |
+|---|---|---|---|
+| 1 | `GET /workspaces`: mục 2.2 ghi "ADMIN thấy tất cả", thực tế admin chỉ thấy tổ mình là thành viên | ADMIN nhận **tất cả** workspace; tổ admin không ngồi thì `myRole`/`isLeader` = `null`. `/workspaces/mine` giữ nguyên (chỉ membership) | Xem FE-2 |
+| 2 | Mục 2.4/3.4: `send-back` không bắt buộc lý do, FE gửi `{}` | `POST /scripts/{projectId}/send-back` **bắt buộc** `{"note": "..."}` không rỗng, thiếu → **400 `REVIEW_REASON_REQUIRED`**. Lý do lưu vào status history (target CLIP) | **Bắt buộc sửa FE-1**, nếu không nút trả clip sẽ lỗi 400 |
+| 3 | Mục 2.4: `request-changes` không bắt buộc ghi chú | `POST /scripts/{id}/request-changes` **bắt buộc** `{"note": "..."}`, cùng mã lỗi 400. Note lưu vào `reviewNote` của version bị trả + version mới + status history | FE-1 |
+| 4 | Mục 2.6: dispatch trước commit, callback đầu có thể 404 | Job chỉ gửi cho worker **sau khi transaction commit**. Worker không gọi được → job `FAILED` (`errorMessage` = "Render worker unreachable…"), project về `NOT_RENDERED`; request start vẫn trả 202 | FE-3 |
+| 5 | Mục 2.6: hai lần lưu composition đầu cùng lúc → 500 | Lần thua nhận **409** ("just saved elsewhere; reload") như stale revision | FE-4 |
+| 6 | Mục 2.3: archive bị interceptor đòi WRITER | `DELETE /scripts/{id}` chỉ cần là thành viên ở interceptor; `canArchiveProject` cho owner, leader (mọi role) và ADMIN | FE-5 |
+| 7 | Mục 2.5/6: mọi lỗi AI thành `AI_SERVICE_UNAVAILABLE` | Mã riêng: `AI_INVALID_OUTPUT` (502), `AI_PROVIDER_FAILED` (502), `AI_SERVICE_KEY_MISMATCH` (502), `AI_TIMEOUT` (504), `AI_BUSY` (429), `AI_INVALID_INPUT` (400), `AI_NOT_CONFIGURED` (503); `AI_SERVICE_UNAVAILABLE` (503) chỉ khi không kết nối được ai-service | FE-6 |
+| 8 | ai-service trả 502 khi AI thiếu props template (vd DIAGRAM_EXPLAINER thiếu `labels`) | ai-service kiểm tra props bắt buộc như `ScenePropsValidator` và **tự gọi lại 1 lần** kèm lý do | Không |
+| 9 | Đăng nhập phân biệt hoa/thường email | `A@gmail.com` đăng nhập được tài khoản `a@gmail.com` nếu chỉ có đúng 1 tài khoản khớp; tạo tài khoản trùng email khác hoa/thường bị 409 | Không |
+
+### 0.2. Đính chính audit (đã lỗi thời)
+
+- **UC-28 / mục 2.4, 4.1 "không đo caption/audio sync thật":** đã có check `CAPTION_SYNC` trong `GET /scripts/{projectId}/qa-report` (commit `ea6612b`), đọc `captionSync` từ callback COMPLETED (Whisper forced alignment): FAIL nếu lời đọc vượt độ dài cảnh, WARN nếu thiếu/coverage < 90%/có từ độ tin cậy thấp.
+- **UC-20 / mục 2.5 "worker không có hook gọi align/caption":** worker `3d3e163` gọi `/transcribe/align` sau TTS, render phụ đề theo từng từ và gửi `captionSync` trong callback. Phần còn thiếu đúng như audit: TTS-preview/sync-durations qua BE.
+- **Mục 2.6 "callback không gửi caption artifact":** callback có `captionSync` (số liệu đồng bộ), chưa có file caption riêng.
+
+### 0.3. Việc cho team FE
+
+- [ ] **FE-1 (bắt buộc, trước khi deploy BE này lên demo):** `reviewService.ts` đang gửi `apiClient.post('/scripts/${projectId}/send-back', {})`. Đổi thành gửi `{ note }`; UI trả clip và trả kịch bản phải bắt nhập lý do. Hiển thị lỗi `REVIEW_REASON_REQUIRED` nếu BE trả 400.
+- [ ] **FE-2:** `GET /workspaces` giờ trả mọi tổ cho ADMIN. `workspaceService.getMyWorkspaces()` fallback sang `/workspaces` khi `/mine` rỗng, nên admin không ngồi tổ nào sẽ thấy tất cả tổ ở các màn "của tôi" — kiểm tra có đúng ý không; màn quản trị nên dùng `getAllWorkspaces()`. `myRole`/`isLeader` có thể `null`.
+- [ ] **FE-3:** `POST /render/projects/{id}/start` có thể trả `estimatedSeconds: null`. Lỗi worker không còn báo ngay ở request start: poll `GET /render/status/{jobId}` và hiển thị `errorMessage` khi `FAILED`.
+- [ ] **FE-4:** `PUT /scripts/{projectId}/composition` trả 409 thì tải lại composition và báo người dùng (đã đúng nếu FE xử lý 409 chung cho stale revision).
+- [ ] **FE-5:** Leader là REVIEWER/PRODUCER giờ archive được: hiện nút archive theo owner/leader/admin, không theo role WRITER.
+- [ ] **FE-6:** `App.tsx` (chỗ bắt lỗi AI action, khoảng dòng 810) map `AI_NOT_CONFIGURED` thành "Chưa cấu hình GEMINI_API_KEY", nhưng provider hiện là OpenAI chạy ở ai-service. Sửa câu này và dùng `err.message` từ BE (đã là tiếng Việt) cho các mã ở 0.1 #7; áp dụng cho cả luồng "Tạo bằng AI".
+- [ ] **FE-7 (lỗi FE đã thấy khi test web deploy):**
+  - Admin dashboard hiện tỉ lệ render thành công "-1%" (BE trả `-1` = không có dữ liệu; FE nên hiện "—").
+  - Lỗi API bị nuốt rồi hiện "chưa được phân vào tổ chuyên môn" (các `catch {}` trong `workspaceService.ts`); cần hiện lỗi thật.
+  - Thư viện hiển thị project chưa publish như đã publish.
+  - Reviewer: nút duyệt vẫn còn sau khi đã duyệt (chưa refresh trạng thái).
+  - Test `workspaceService.test.ts` ("resolveActiveWorkspaceId returns null…") đang fail trên main từ commit `23cfe79`.
+- [ ] **FE-8:** API BE đã có nhưng FE chưa nối (mục 3.3): `/scripts/review-queue`, `/scripts/mine`, `/qa-comments/{id}/reopen`, `/scripts/{id}/qa-report` (giờ có `CAPTION_SYNC`), `/render/jobs/{id}/retry`, `/library/*`, `/admin/ai-usage`.
+
+### 0.4. BE còn lại (chưa làm)
+
+Comment/OPEN gate gắn theo clip (note render cũ có thể chặn approve clip mới); `GET /scripts/{id}/review-history`; Writer được resolve comment hay không (cần team chốt); TTS-preview/sync-durations qua BE; thư viện chung hay theo workspace (cần team chốt); YouTube, asset upload, reply thread (P1/P2 như mục 5).
+
 ## 1. Tổng quan
 
 - **Tổng số API theo đặc tả: chưa có con số HTTP chính thức.** PDF mô tả chức năng, không định nghĩa method/path. Diagram use case chính có **34 use case**, không được quy đổi 1:1 thành endpoint. Mã UC-01…UC-34 trong báo cáo này là mã truy vết do audit gán, không phải mã đã ban hành trong SRS.
