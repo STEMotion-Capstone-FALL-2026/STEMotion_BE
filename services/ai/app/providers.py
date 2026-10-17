@@ -36,7 +36,7 @@ class OpenAIProvider:
     """Task routing is explicit; no provider calls happen at import/health time."""
     async def generate(self, request: GenerationRequest) -> tuple[dict[str, Any], str, dict[str, Any]]:
         key = os.getenv("OPENAI_API_KEY", "").strip()
-        model = os.getenv("OPENAI_MODEL_DRAFT", "gpt-4o") if request.task == "generate" else os.getenv("OPENAI_MODEL_LIGHT", "gpt-4o-mini")
+        model = os.getenv("OPENAI_MODEL_DRAFT", "gpt-4.1") if request.task == "generate" else os.getenv("OPENAI_MODEL_LIGHT", "gpt-4o-mini")
         if not key or not model.strip():
             raise HTTPException(503, "OpenAI provider is not configured")
         from langchain_openai import ChatOpenAI

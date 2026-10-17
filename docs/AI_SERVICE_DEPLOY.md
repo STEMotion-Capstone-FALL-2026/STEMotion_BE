@@ -29,7 +29,7 @@ Required means required for readiness/full operation, not for the intentionally 
 | AI_SERVICE_KEY | BE + AI, legacy only | empty | Compatibility alias; use the new name. Do not configure conflicting aliases. |
 | OPENAI_API_KEY | AI, yes with openai | empty | Owner-provided secret; never created or used by this task. |
 | AI_PROVIDER | AI, optional | openai | openai; gemini only for explicit rollback. |
-| OPENAI_MODEL_DRAFT | AI, optional | gpt-4o | Draft generation model. |
+| OPENAI_MODEL_DRAFT | AI, optional | gpt-4.1 | Draft generation model. |
 | OPENAI_MODEL_LIGHT | AI, optional | gpt-4o-mini | resegment/grade/extract/terms. |
 | GEMINI_API_KEY | AI, only Gemini rollback | empty | Private provider key. BE may separately need it only in embedded rollback. |
 | GEMINI_MODEL | AI, Gemini rollback | gemini-3.5-flash-lite | Explicit fallback model; no silent failover. |
@@ -49,7 +49,7 @@ Required means required for readiness/full operation, not for the intentionally 
 | AI_SERVICE_URL | BE, yes | http://localhost:8000 | Compose: http://ai-service:8000; Render: assigned HTTPS service origin. |
 | AI_PRICING_JSON | **BE**, needed for cost estimates | {} | Exact response model -> inputPerMillion/outputPerMillion/version. See AI_USAGE_CONTRACT.md. Not read/enforced by Python. |
 | AI_USAGE_ZONE | BE, optional | Asia/Ho_Chi_Minh | Usage aggregation day boundaries. |
-| AI_MONTHLY_BUDGET_USD | **Reserved operator target only** | unset | Example 20. No code currently reads/enforces this budget, blocks requests or sends alerts. Setting it does not create a spend cap. Use provider-side controls and manual monitoring. |
+| AI_MONTHLY_BUDGET_USD | **Reserved operator target only** | unset | Example 20. BE admin overview reads this target; it does not enforce it, block requests or send alerts. Setting it does not create a spend cap. Use provider-side controls and manual monitoring. |
 | AI_ALIGNMENT_WORKER_KEY | BE, only worker proxy | empty | Separate worker-to-BE auth; not the AI service shared key. |
 | AI_SERVICE_ENV_FILE | Compose, optional | ./services/ai/.env | Service-only env file; example file has empty secrets. |
 | AI_LOCAL_PORT | Compose, optional | 8000 | Binds loopback only; choose another port for an isolated smoke project. |
@@ -124,3 +124,6 @@ Automated smoke (PowerShell 7, after image build): pwsh -File services/ai/script
 - Real weights/model inference, real OpenAI key/quota, real Vietnamese alignment quality and paid Render peak-memory acceptance remain untested. No production schema, staging/main branch, FE or RENDER files were changed. No push/deploy was performed.
 
 The host Docker engine initially failed on stale inference/secrets-engine sockets. Socket-only runtime locations were preserved by renaming (no factory reset, image/volume deletion or secret-content changes); engine recovered. Existing four containers remained present; cleanup removed only this task's smoke resources.
+
+
+Current model/pricing and Render env audit (2026-10-17): see [AI_RENDER_ENV_2026-10-17.md](AI_RENDER_ENV_2026-10-17.md). Historical acceptance runs retain their original model/pricing fixtures.

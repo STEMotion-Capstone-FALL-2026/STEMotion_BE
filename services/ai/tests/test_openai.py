@@ -46,3 +46,22 @@ def test_refusal_is_not_fabricated_as_a_lesson(monkeypatch):
     monkeypatch.setitem(sys.modules,"langchain_openai",SimpleNamespace(ChatOpenAI=Refusal))
     with pytest.raises(ValueError):
         asyncio.run(OpenAIProvider().generate(GenerationRequest(systemInstruction="s",prompt="p",responseSchema={})))
+
+
+@pytest.mark.parametrize("task,expected", [("generate", "gpt-4.1"), ("resegment", "gpt-4o-mini"),
+    ("grade", "gpt-4o-mini"), ("extract", "gpt-4o-mini"), ("terms", "gpt-4o-mini")])
+def test_default_models_match_current_config_without_api_calls(monkeypatch, task, expected):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-only-key")
+    monkeypatch.delenv("OPENAI_MODEL_DRAFT", raising=False)
+    monkeypatch.delenv("OPENAI_MODEL_LIGHT", raising=False)
+    class Model:
+        def __init__(self, **kwargs):
+            assert kwargs["model"] == expected
+        def with_structured_output(self, *args, **kwargs):
+            return self
+        async def ainvoke(self, messages):
+            return {"parsed": {"score": 80}, "raw": None, "parsing_error": None}
+    monkeypatch.setitem(sys.modules, "langchain_openai", SimpleNamespace(ChatOpenAI=Model))
+    result, model, usage = asyncio.run(OpenAIProvider().generate(GenerationRequest(
+        systemInstruction="STEM", prompt="Ohm", responseSchema={"type":"object"}, task=task)))
+    assert model == expected
