@@ -143,7 +143,8 @@ public class FeedbackService {
 
     /** Sends the clip back to the producer for a re-render. */
     @Transactional
-    public void sendBackToProduction(String projectId, String reviewerId, String reason) {
+    public void sendBackToProduction(String projectId, String reviewerId, String note) {
+        String reason = com.stemotion.domain.script.service.ScriptService.requireReason(note);
         ClipProject project = scriptService.getOrThrow(projectId);
         scriptService.requireActive(project);
         if (project.getVideoStatus() != VideoStatus.IN_QA) {

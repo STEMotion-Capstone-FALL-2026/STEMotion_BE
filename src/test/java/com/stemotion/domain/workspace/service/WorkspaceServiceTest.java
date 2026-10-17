@@ -156,4 +156,18 @@ class WorkspaceServiceTest {
         assertThat(candidates.get(0).id()).isEqualTo("teacher-id");
         assertThat(candidates.get(0).email()).isEqualTo("teacher@test.invalid");
     }
+
+    @Test
+    void anAdministratorListsEveryWorkspaceAndOthersOnlyTheirOwn() {
+        Workspace other = Workspace.builder().name("Physics Department").department("Physics").createdBy(admin).build();
+        other.setId("ws-2");
+        when(workspaces.findAllByOrderByNameAsc()).thenReturn(List.of(workspace, other));
+        WorkspaceMember seat = WorkspaceMember.builder().workspace(workspace).user(teacher)
+            .role(User.UserRole.WRITER).status(MemberStatus.ACTIVE).build();
+        when(members.findByUserId("teacher-id")).thenReturn(List.of(seat));
+        when(members.findByUserId("admin-id")).thenReturn(List.of());
+
+        assertThat(service.findVisible("admin-id")).extracting(WorkspaceResponse::id).containsExactly("ws-1", "ws-2");
+        assertThat(service.findVisible("teacher-id")).extracting(WorkspaceResponse::id).containsExactly("ws-1");
+    }
 }

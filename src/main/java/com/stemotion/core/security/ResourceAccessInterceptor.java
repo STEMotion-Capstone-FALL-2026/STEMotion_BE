@@ -78,9 +78,10 @@ public class ResourceAccessInterceptor implements HandlerInterceptor {
         }
         String project = variables.get("projectId");
         if (project == null && path.startsWith("/api/v1/scripts/")) project = variables.get("id");
+        // Editing the draft needs the WRITER role. Archiving (DELETE) only needs membership here:
+        // canArchiveProject lets the owner, the leader (whatever their role) and admins do it.
         if (project != null) access.requireProject(project, userId,
-            write && ("PUT".equals(request.getMethod()) || "DELETE".equals(request.getMethod()))
-            && path.matches("/api/v1/scripts/[^/]+"));
+            "PUT".equals(request.getMethod()) && path.matches("/api/v1/scripts/[^/]+"));
         String job = variables.get("jobId");
         if (job != null) access.requireProject(jobs.findById(job)
             .orElseThrow(() -> ApiException.notFound("RenderJob", job)).getProject().getId(), userId, false);

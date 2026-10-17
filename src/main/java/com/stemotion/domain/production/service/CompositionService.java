@@ -90,7 +90,18 @@ public class CompositionService {
         composition.setRevision(currentRevision + 1);
         composition.setScenes(write(scenes));
         composition.setProducer(authService.findUserOrThrow(userId));
-        Composition saved = compositions.save(composition);
+        Composition saved;
+        if (current != null) {
+            saved = compositions.save(composition);
+        } else {
+            // No row to lock yet: two first saves both see revision 0, and the second insert breaks
+            // UNIQUE(script_version_id). Flush now so that is a stale-revision 409, not a 500.
+            try {
+                saved = compositions.saveAndFlush(composition);
+            } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+                throw ApiException.conflict("The composition was just saved elsewhere; reload it before saving");
+            }
+        }
         return response(project, version, saved, scenes);
     }
 

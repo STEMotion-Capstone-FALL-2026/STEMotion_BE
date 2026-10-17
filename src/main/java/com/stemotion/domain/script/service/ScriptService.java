@@ -251,7 +251,20 @@ public class ScriptService {
      * reviewed one stays intact for the diff view.
      */
     @Transactional
+    /**
+     * A return without a reason leaves the writer or producer guessing, so returning a script or a
+     * clip needs one; it is stored with the decision and shown in the history.
+     */
+    public static String requireReason(String note) {
+        if (note == null || note.isBlank()) {
+            throw new ApiException(org.springframework.http.HttpStatus.BAD_REQUEST, "REVIEW_REASON_REQUIRED",
+                "Cần ghi lý do khi trả về (gửi {\"note\": \"...\"})");
+        }
+        return note.trim();
+    }
+
     public ScriptResponse requestChanges(String projectId, ReviewDecisionRequest request, String reviewerId) {
+        String reason = requireReason(request == null ? null : request.note());
         ClipProject project = getOrThrow(projectId);
         requireStatus(project, ScriptStatus.IN_REVIEW);
 
@@ -260,7 +273,7 @@ public class ScriptService {
 
         ScriptVersion reviewed = currentVersion(project);
         reviewed.setStatus(ScriptStatus.CHANGE_REQUESTED);
-        reviewed.setReviewNote(request == null ? null : request.note());
+        reviewed.setReviewNote(reason);
         reviewed.setIsCurrent(false);
         versionRepository.save(reviewed);
 
@@ -269,7 +282,7 @@ public class ScriptService {
             .title(reviewed.getTitle())
             .summary(reviewed.getSummary())
             .status(ScriptStatus.CHANGE_REQUESTED)
-            .reviewNote(request == null ? null : request.note())
+            .reviewNote(reason)
             .isCurrent(true)
             .project(project)
             .createdBy(authService.findUserOrThrow(reviewerId))
@@ -282,7 +295,7 @@ public class ScriptService {
             project, from, authService.findUserOrThrow(reviewerId),
             com.stemotion.domain.project.entity.StatusHistory.TargetType.SCRIPT, reviewed.getId(),
             com.stemotion.domain.project.entity.StatusHistory.Decision.REJECTED,
-            request == null ? null : request.note());
+            reason);
 
         return toResponse(project, next, copied);
     }

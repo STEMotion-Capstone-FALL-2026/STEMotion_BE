@@ -35,6 +35,10 @@ class ResourceAccessInterceptorTest {
         check("PUT", "/api/v1/scripts/one", Map.of("id", "one"));
         verify(access).requireProject("one", "writer-id", true);
     }
+    @Test void archivingNeedsMembershipOnlySoALeaderOfAnyRoleReachesTheArchiveCheck() {
+        check("DELETE", "/api/v1/scripts/one", Map.of("id", "one"));
+        verify(access).requireProject("one", "writer-id", false);
+    }
     @Test void guardsNestedVideoActionsAsProjectAccess() {
         check("POST", "/api/v1/scripts/one/approve-video", Map.of("projectId", "one"));
         verify(access).requireProject("one", "writer-id", false);

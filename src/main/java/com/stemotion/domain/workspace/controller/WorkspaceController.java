@@ -37,8 +37,9 @@ public class WorkspaceController {
     private final WorkspaceService workspaceService;
 
     @GetMapping
+    @Operation(summary = "Workspaces the user can open: all of them for an administrator, memberships otherwise")
     public ResponseEntity<List<WorkspaceResponse>> findAll(@AuthenticationPrincipal UserDetails principal) {
-        return ResponseEntity.ok(workspaceService.findMine(principal.getUsername()));
+        return ResponseEntity.ok(workspaceService.findVisible(principal.getUsername()));
     }
 
     @GetMapping("/mine")

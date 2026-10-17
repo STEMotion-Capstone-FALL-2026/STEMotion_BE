@@ -55,6 +55,22 @@ public class WorkspaceService {
             .toList();
     }
 
+    /**
+     * Workspaces a user can open: an administrator manages every department, so sees all of them
+     * (with their own seat where they have one); anyone else sees their active memberships.
+     */
+    @Transactional(readOnly = true)
+    public List<WorkspaceResponse> findVisible(String userId) {
+        boolean admin = userRepository.findById(userId)
+            .map(user -> user.getRole() == User.UserRole.ADMIN).orElse(false);
+        if (!admin) return findMine(userId);
+        var seats = findMine(userId).stream()
+            .collect(java.util.stream.Collectors.toMap(WorkspaceResponse::id, seat -> seat, (a, b) -> a));
+        return workspaceRepository.findAllByOrderByNameAsc().stream()
+            .map(workspace -> seats.getOrDefault(workspace.getId(), toResponse(workspace)))
+            .toList();
+    }
+
     @Transactional(readOnly = true)
     public WorkspaceResponse findById(String id) {
         return toResponse(getOrThrow(id));

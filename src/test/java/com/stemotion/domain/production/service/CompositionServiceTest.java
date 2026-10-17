@@ -91,6 +91,7 @@ class CompositionServiceTest {
         when(compositions.findByScriptVersionId("version")).thenReturn(Optional.empty());
         when(compositions.lockByScriptVersionId("version")).thenReturn(Optional.empty());
         when(compositions.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(compositions.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
         when(auth.findUserOrThrow("producer")).thenReturn(User.builder().fullName("Producer").build());
     }
 
@@ -124,7 +125,7 @@ class CompositionServiceTest {
             .containsEntry("narration", "Lời đọc đã chỉnh").containsEntry("durationInFrames", 240)
             .containsEntry("correctIndex", 1);
         ArgumentCaptor<Composition> stored = ArgumentCaptor.forClass(Composition.class);
-        verify(compositions).save(stored.capture());
+        verify(compositions).saveAndFlush(stored.capture());
         assertThat(stored.getValue().getScriptVersion()).isSameAs(version);
         verify(scripts, never()).updateDraft(any(), any());
     }
@@ -154,6 +155,16 @@ class CompositionServiceTest {
         assertThatThrownBy(() -> service.update("project", new UpdateCompositionRequest(0,
             List.of(edit("s1", SceneType.STEM_QUIZ, 0, quiz(0)))), "producer"))
             .isInstanceOf(ApiException.class).hasMessageContaining("duration");
+    }
+
+    @Test
+    @DisplayName("two first saves at once: the one that loses the insert gets a 409, not a 500")
+    void concurrentFirstSaveIsAConflict() {
+        when(compositions.saveAndFlush(any())).thenThrow(
+            new org.springframework.dao.DataIntegrityViolationException("compositions_script_version_id_key"));
+        assertThatThrownBy(() -> service.update("project",
+            new UpdateCompositionRequest(0, List.of(edit("s1", SceneType.STEM_QUIZ, 240, quiz(0)))), "producer"))
+            .isInstanceOfSatisfying(ApiException.class, ex -> assertThat(ex.getStatus().value()).isEqualTo(409));
     }
 
     @Test

@@ -24,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -109,23 +111,49 @@ public class RenderService {
             .inputProps(writeProps(scriptProps))
             .build());
 
-        RenderServiceClient.EnqueueResult result = renderClient.enqueue(
-            job.getId(),
-            COMPOSITION_ID,
-            scriptProps,
-            resolution.getWidth(),
-            resolution.getHeight(),
-            fps,
-            ttsVoice
-        );
-
-        job.setExternalJobId(result.externalJobId());
-        renderJobRepository.save(job);
-
         project.setVideoStatus(VideoStatus.RENDERING);
         projectRepository.save(project);
 
+        String jobId = job.getId();
+        String projectId = project.getId();
+        Runnable dispatch = () -> dispatch(jobId, projectId, scriptProps, resolution, fps, ttsVoice);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            // The worker reports progress against this job id at once, so it must not hear about
+            // the job before the row is committed (the first callback used to get a 404).
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override public void afterCommit() { dispatch.run(); }
+            });
+            return RenderJobResponse.from(job, null);
+        }
+        RenderServiceClient.EnqueueResult result = renderClient.enqueue(
+            jobId, COMPOSITION_ID, scriptProps, resolution.getWidth(), resolution.getHeight(), fps, ttsVoice);
+        job.setExternalJobId(result.externalJobId());
+        renderJobRepository.save(job);
         return RenderJobResponse.from(job, result.estimatedSeconds());
+    }
+
+    /**
+     * Hands a committed job to the worker. Runs after the request's transaction, so a worker that
+     * cannot be reached marks the job failed and frees the project instead of failing the request.
+     */
+    private void dispatch(String jobId, String projectId, Map<String, Object> scriptProps,
+                          RenderResolution resolution, int fps, String ttsVoice) {
+        try {
+            RenderServiceClient.EnqueueResult result = renderClient.enqueue(
+                jobId, COMPOSITION_ID, scriptProps, resolution.getWidth(), resolution.getHeight(), fps, ttsVoice);
+            renderJobRepository.setExternalJobId(jobId, result.externalJobId());
+        } catch (RuntimeException ex) {
+            log.error("Render job {} could not be handed to the worker: {}", jobId, ex.getMessage());
+            if (renderJobRepository.failQueued(jobId, "Render worker unreachable: " + ex.getMessage(),
+                    RenderStatus.QUEUED, RenderStatus.FAILED) > 0) {
+                projectRepository.findById(projectId).ifPresent(project -> {
+                    if (project.getVideoStatus() == VideoStatus.RENDERING) {
+                        project.setVideoStatus(VideoStatus.NOT_RENDERED);
+                        projectRepository.save(project);
+                    }
+                });
+            }
+        }
     }
 
     @Transactional(readOnly = true)
