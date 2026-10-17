@@ -31,6 +31,15 @@ class ClipArtifactServiceTest {
         assertThat(clip.getVideoUrl()).isEqualTo("https://storage.example/video.mp4");
     }
 
+    @Test void keepsTheWorkersCaptionSyncForQa() throws Exception {
+        when(repository.findByRenderJobId("job-1")).thenReturn(Optional.empty());
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        var sync = mapper.readTree("{\"status\":\"ALIGNED\",\"scenes\":[]}");
+        Clip clip = service.recordCompleted(completed(), sync);
+        assertThat(mapper.readTree(clip.getQaReport()).path("captionSync").path("status").asText()).isEqualTo("ALIGNED");
+    }
+
     @Test void replayPreservesOriginalArtifactAndQa() {
         Clip existing = Clip.builder().videoUrl(completed().getVideoUrl())
             .qaStatus(Clip.QaStatus.PASS).durationSec(42).build();

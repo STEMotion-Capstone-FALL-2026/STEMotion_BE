@@ -190,7 +190,7 @@ public class RenderService {
         ClipProject project = job.getProject();
         if (job.getStatus() == RenderStatus.COMPLETED) {
             job.setProgress(100);
-            clipArtifactService.recordCompleted(job);
+            clipArtifactService.recordCompleted(job, callback.captionSync());
             project.setVideoUrl(job.getVideoUrl());
             project.setVideoStatus(VideoStatus.IN_QA);
             projectRepository.save(project);

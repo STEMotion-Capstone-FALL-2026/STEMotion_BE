@@ -58,7 +58,13 @@ def format_alignment(alignment, text, duration, model):
     raw_text = "".join(word["word"] for word in alignment)
     if "".join(raw_text.split()) != "".join(text.split()):
         raise HTTPException(422, "Aligned text does not match the supplied narration")
+    # The text is known, so probability is how unexpected a token is to the model (spelling
+    # variants such as "tỉ"/"tỷ" score low), not whether its timing is right. A few such
+    # words are kept and flagged; an alignment mostly made of them is refused.
+    min_probability = float(os.getenv("WHISPER_MIN_WORD_PROBABILITY", "0.05"))
+    max_low_share = float(os.getenv("WHISPER_MAX_LOW_CONFIDENCE_SHARE", "0.2"))
     words = []
+    low_confidence = 0
     previous_end = 0.0
     for word in alignment:
         label = word["word"].strip()
@@ -66,19 +72,25 @@ def format_alignment(alignment, text, duration, model):
             continue
         start, end = float(word["start"]), float(word["end"])
         if (not math.isfinite(start) or not math.isfinite(end) or start < previous_end - 0.02
-                or start < 0 or end <= start or end > duration + 0.05
-                or float(word.get("probability", 0)) < float(os.getenv("WHISPER_MIN_WORD_PROBABILITY", "0.05"))):
-            raise HTTPException(422, "Low confidence or invalid word timestamps; review the narration/audio")
+                or start < 0 or end <= start or end > duration + 0.05):
+            raise HTTPException(422, "Invalid word timestamps; review the narration/audio")
         start, end = max(previous_end, start), min(end, duration)
         if end <= start:
             raise HTTPException(422, "Invalid word duration")
-        words.append({"text": label, "start": round(start, 3), "end": round(end, 3)})
+        probability = float(word.get("probability", 0))
+        entry = {"text": label, "start": round(start, 3), "end": round(end, 3), "probability": round(probability, 3)}
+        if not math.isfinite(probability) or probability < min_probability:
+            entry["lowConfidence"] = True
+            low_confidence += 1
+        words.append(entry)
         previous_end = end
     if not words:
         raise HTTPException(422, "No words were aligned")
+    if low_confidence / len(words) > max_low_share:
+        raise HTTPException(422, f"Low confidence alignment: {low_confidence} of {len(words)} words; review the narration/audio")
     return {"words": words, "segments": [{"text": text, "start": words[0]["start"],
         "end": words[-1]["end"], "words": words}], "model": model, "durationSec": duration,
-        "method": "forced-alignment", "tokensIn": None, "tokensOut": None}
+        "method": "forced-alignment", "lowConfidenceWords": low_confidence, "tokensIn": None, "tokensOut": None}
 
 def aligner():
     return WhisperAligner()

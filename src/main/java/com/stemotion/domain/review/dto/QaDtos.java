@@ -20,7 +20,8 @@ public final class QaDtos {
         ON_SCREEN_TEXT_OVERFLOW,
         CONTRAST_READABILITY,
         SCENE_STRUCTURE,
-        RENDER_FRESHNESS
+        RENDER_FRESHNESS,
+        CAPTION_SYNC
     }
 
     public record QaFinding(

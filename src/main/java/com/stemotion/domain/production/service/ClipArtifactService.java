@@ -17,6 +17,15 @@ public class ClipArtifactService {
 
     @Transactional
     public Clip recordCompleted(RenderJob job) {
+        return recordCompleted(job, null);
+    }
+
+    /**
+     * Records the clip of a completed render. The worker's caption/audio sync
+     * summary (Whisper alignment) is kept in qa_report for pre-publish QA.
+     */
+    @Transactional
+    public Clip recordCompleted(RenderJob job, com.fasterxml.jackson.databind.JsonNode captionSync) {
         if (job.getStatus() != RenderStatus.COMPLETED
                 || job.getVideoUrl() == null || job.getVideoUrl().isBlank()) {
             throw ApiException.badRequest("Only a completed render with a video URL creates a Clip");
@@ -27,7 +36,11 @@ public class ClipArtifactService {
             }
             return existing;
         }).orElseGet(() -> clipRepository.save(Clip.builder()
-            .renderJob(job).videoUrl(job.getVideoUrl()).build()));
+            .renderJob(job).videoUrl(job.getVideoUrl())
+            .qaReport(captionSync == null || captionSync.isNull() ? null
+                : com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode()
+                    .set("captionSync", captionSync).toString())
+            .build()));
     }
 
     @Transactional(readOnly = true)

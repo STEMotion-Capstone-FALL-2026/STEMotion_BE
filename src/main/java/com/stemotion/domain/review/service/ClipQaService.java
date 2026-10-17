@@ -1,6 +1,9 @@
 package com.stemotion.domain.review.service;
 
 import com.stemotion.core.enums.StemEnums.SceneType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stemotion.domain.production.repository.ClipRepository;
 import com.stemotion.domain.production.service.CompositionService;
 import com.stemotion.domain.project.entity.ClipProject;
 import com.stemotion.domain.review.dto.QaDtos.QaCheck;
@@ -51,6 +54,8 @@ public class ClipQaService {
     private final ScriptService scriptService;
     private final SceneMapper sceneMapper;
     private final CompositionService compositionService;
+    private final ClipRepository clipRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public QaReport run(String projectId) {
@@ -75,6 +80,7 @@ public class ClipQaService {
         }
 
         checkRenderFreshness(project, findings);
+        checkCaptionSync(project, findings);
 
         long fails = findings.stream().filter(f -> f.severity() == QaSeverity.FAIL).count();
         long warns = findings.stream().filter(f -> f.severity() == QaSeverity.WARN).count();
@@ -90,6 +96,65 @@ public class ClipQaService {
     }
 
     // ------------------------------------------------------------------ checks
+
+    /** Captions may run past their scene by this much before it shows. */
+    private static final double CAPTION_TOLERANCE_SEC = 0.05;
+
+    /**
+     * Caption/audio sync from the worker's Whisper alignment of the rendered
+     * clip. Captions running past their scene fail; missing or partial
+     * captions only warn, so clips rendered without Whisper can still ship.
+     */
+    private void checkCaptionSync(ClipProject project, List<QaFinding> findings) {
+        if (project.getVideoUrl() == null) return;
+        var clips = clipRepository.findCurrentArtifacts(
+            project.getId(), scriptService.currentVersion(project).getId(), project.getVideoUrl());
+        if (clips.size() != 1) return;
+        JsonNode sync = null;
+        try {
+            String report = clips.get(0).getQaReport();
+            if (report != null && !report.isBlank()) sync = objectMapper.readTree(report).path("captionSync");
+        } catch (Exception ignored) {
+            sync = null;
+        }
+        if (sync == null || sync.isMissingNode() || sync.isNull() || "UNAVAILABLE".equals(sync.path("status").asText())) {
+            findings.add(new QaFinding(QaCheck.CAPTION_SYNC, QaSeverity.WARN, null,
+                "Clip chưa có phụ đề căn theo giọng đọc (Whisper).",
+                "Bật căn phụ đề Whisper ở render worker rồi kết xuất lại."));
+            return;
+        }
+        for (JsonNode scene : sync.path("scenes")) {
+            String sceneId = scene.path("sceneId").asText(null);
+            String status = scene.path("status").asText();
+            if ("FAILED".equals(status)) {
+                findings.add(new QaFinding(QaCheck.CAPTION_SYNC, QaSeverity.WARN, sceneId,
+                    "Phân cảnh chưa căn được phụ đề: " + scene.path("error").asText("không rõ lý do"),
+                    "Kiểm tra lời thoại có khớp với giọng đọc không, rồi kết xuất lại."));
+                continue;
+            }
+            if (!"ALIGNED".equals(status)) continue;
+            double sceneSec = scene.path("sceneSec").asDouble();
+            double lastWordEnd = scene.path("lastWordEnd").asDouble();
+            if (lastWordEnd > sceneSec + CAPTION_TOLERANCE_SEC) {
+                findings.add(new QaFinding(QaCheck.CAPTION_SYNC, QaSeverity.FAIL, sceneId,
+                    String.format("Phụ đề kéo dài %.1fs, quá thời lượng phân cảnh %.1fs.", lastWordEnd, sceneSec),
+                    "Tăng thời lượng phân cảnh hoặc rút gọn lời thoại rồi kết xuất lại."));
+            }
+            int narrationWords = scene.path("narrationWords").asInt();
+            int alignedWords = scene.path("alignedWords").asInt();
+            if (narrationWords > 0 && alignedWords < narrationWords * 0.9) {
+                findings.add(new QaFinding(QaCheck.CAPTION_SYNC, QaSeverity.WARN, sceneId,
+                    "Phụ đề chỉ khớp " + alignedWords + "/" + narrationWords + " từ của lời thoại.",
+                    "Kiểm tra lời thoại có khớp với giọng đọc không."));
+            }
+            int lowConfidence = scene.path("lowConfidenceWords").asInt();
+            if (lowConfidence > 0) {
+                findings.add(new QaFinding(QaCheck.CAPTION_SYNC, QaSeverity.WARN, sceneId,
+                    lowConfidence + " từ được Whisper nhận ra kém (thường do cách viết khác, như tỉ/tỷ).",
+                    "Xem lại phụ đề của phân cảnh này trước khi xuất bản."));
+            }
+        }
+    }
 
     private void checkStructure(List<Scene> scenes, List<QaFinding> findings) {
         if (scenes.isEmpty()) {

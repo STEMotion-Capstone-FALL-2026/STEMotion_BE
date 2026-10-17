@@ -11,6 +11,8 @@ import com.stemotion.domain.script.entity.Scene;
 import com.stemotion.domain.script.entity.ScriptVersion;
 import com.stemotion.domain.script.mapper.SceneMapper;
 import com.stemotion.domain.script.mapper.ScenePropsValidator;
+import com.stemotion.domain.production.entity.Clip;
+import com.stemotion.domain.production.repository.ClipRepository;
 import com.stemotion.domain.production.service.CompositionService;
 import com.stemotion.domain.script.service.ScriptService;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +35,7 @@ class ClipQaServiceTest {
 
     private ScriptService scriptService;
     private CompositionService compositionService;
+    private ClipRepository clipRepository;
     private ClipQaService qaService;
     private ClipProject project;
 
@@ -42,10 +45,13 @@ class ClipQaServiceTest {
         compositionService = mock(CompositionService.class);
         // No composition saved: QA checks the approved script's scenes.
         when(compositionService.renderScenes(any())).thenAnswer(i -> scriptService.scenesOf(i.getArgument(0)));
+        clipRepository = mock(ClipRepository.class);
         qaService = new ClipQaService(
             scriptService,
             new SceneMapper(new ObjectMapper(), new ScenePropsValidator()),
-            compositionService
+            compositionService,
+            clipRepository,
+            new ObjectMapper()
         );
 
         project = ClipProject.builder()
@@ -226,5 +232,42 @@ class ClipQaServiceTest {
         assertThat(report.passed()).isFalse();
         assertThat(report.findings())
             .anyMatch(f -> f.check() == QaCheck.SCENE_STRUCTURE && f.severity() == QaSeverity.FAIL);
+    }
+
+    private void renderedWithCaptions(String captionSyncJson) {
+        Clip clip = Clip.builder().videoUrl("http://minio/clip.mp4")
+            .qaReport(captionSyncJson == null ? null : "{\"captionSync\":" + captionSyncJson + "}").build();
+        when(clipRepository.findCurrentArtifacts(any(), any(), any())).thenReturn(List.of(clip));
+    }
+
+    @Test
+    @DisplayName("a clip rendered without Whisper captions is warned about, not blocked")
+    void missingCaptionsOnlyWarn() {
+        renderedWithCaptions(null);
+        QaReport report = runWith(healthyScenes());
+        assertThat(report.passed()).isTrue();
+        assertThat(report.findings()).anyMatch(f -> f.check() == QaCheck.CAPTION_SYNC && f.severity() == QaSeverity.WARN);
+    }
+
+    @Test
+    @DisplayName("captions running past their scene fail the caption/audio sync check")
+    void captionsPastTheSceneFail() {
+        renderedWithCaptions("{\"status\":\"ALIGNED\",\"scenes\":[{\"sceneId\":\"s1\",\"status\":\"ALIGNED\","
+            + "\"narrationWords\":10,\"alignedWords\":10,\"sceneSec\":4.0,\"lastWordEnd\":4.6}]}");
+        QaReport report = runWith(healthyScenes());
+        assertThat(report.passed()).isFalse();
+        assertThat(report.findings()).anyMatch(f -> f.check() == QaCheck.CAPTION_SYNC
+            && f.severity() == QaSeverity.FAIL && "s1".equals(f.sceneId()));
+    }
+
+    @Test
+    @DisplayName("aligned captions within their scenes pass; flagged words only warn")
+    void alignedCaptionsPass() {
+        renderedWithCaptions("{\"status\":\"ALIGNED\",\"scenes\":[{\"sceneId\":\"s1\",\"status\":\"ALIGNED\","
+            + "\"narrationWords\":10,\"alignedWords\":10,\"sceneSec\":10.0,\"lastWordEnd\":7.2,\"lowConfidenceWords\":1}]}");
+        QaReport report = runWith(healthyScenes());
+        assertThat(report.passed()).isTrue();
+        assertThat(report.failCount()).isZero();
+        assertThat(report.findings()).anyMatch(f -> f.check() == QaCheck.CAPTION_SYNC && f.severity() == QaSeverity.WARN);
     }
 }

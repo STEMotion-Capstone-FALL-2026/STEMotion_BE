@@ -100,8 +100,15 @@ public final class ProductionDtos {
         Integer progress,
         String stage,
         String videoUrl,
-        String errorMessage
-    ) {}
+        String errorMessage,
+        /** Caption/audio sync summary from Whisper alignment, sent with COMPLETED. */
+        com.fasterxml.jackson.databind.JsonNode captionSync
+    ) {
+        public RenderCallbackRequest(String jobId, RenderStatus status, Integer progress, String stage,
+                                     String videoUrl, String errorMessage) {
+            this(jobId, status, progress, stage, videoUrl, errorMessage, null);
+        }
+    }
 
     // ---------------------------------------------------------------- publish
 

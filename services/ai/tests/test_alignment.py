@@ -70,3 +70,20 @@ def test_actual_adapter_forces_supplied_tokens_without_asr(monkeypatch):
 ])
 def test_unreliable_alignment_fails_closed(word):
     with pytest.raises(HTTPException):format_alignment([word],"Ohm",1,"test")
+
+
+def _words(probabilities):
+    return [{"word": f" w{i}", "start": i * 0.3, "end": i * 0.3 + 0.25, "probability": p}
+            for i, p in enumerate(probabilities)]
+
+def test_a_few_unexpected_words_are_kept_and_flagged():
+    # One spelling variant ("tỉ") among ten words must not drop the scene's captions.
+    result = format_alignment(_words([0.9] * 9 + [0.02]), " ".join(f"w{i}" for i in range(10)), 4, "test")
+    assert len(result["words"]) == 10
+    assert result["lowConfidenceWords"] == 1
+    assert result["words"][9]["lowConfidence"] is True and "lowConfidence" not in result["words"][0]
+
+def test_an_alignment_mostly_of_unexpected_words_is_refused():
+    with pytest.raises(HTTPException):
+        format_alignment(_words([0.9] * 6 + [0.01] * 4), " ".join(f"w{i}" for i in range(10)), 4, "test")
+
