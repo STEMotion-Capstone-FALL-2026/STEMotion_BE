@@ -270,4 +270,29 @@ class ClipQaServiceTest {
         assertThat(report.failCount()).isZero();
         assertThat(report.findings()).anyMatch(f -> f.check() == QaCheck.CAPTION_SYNC && f.severity() == QaSeverity.WARN);
     }
+
+    @Test
+    @DisplayName("narration timed from its real TTS audio is judged by that timing, not the word-rate estimate")
+    void measuredNarrationOverridesTheEstimate() {
+        String narration = "tu ".repeat(20).trim(); // the estimate wants ~9.1 s
+        String fits = "{\"captionWords\":[{\"text\":\"tu\",\"start\":0.1,\"end\":3.8}]}";
+        String overruns = "{\"captionWords\":[{\"text\":\"tu\",\"start\":0.1,\"end\":5.2}]}";
+
+        QaReport timed = runWith(List.of(scene(SceneType.TITLE_HERO, "Mo dau", narration, 126, fits)));
+        assertThat(timed.findings()).noneMatch(f -> f.check() == QaCheck.NARRATION_PACING);
+
+        QaReport late = runWith(List.of(scene(SceneType.TITLE_HERO, "Mo dau", narration, 126, overruns)));
+        assertThat(late.findings())
+            .anyMatch(f -> f.check() == QaCheck.NARRATION_PACING && f.severity() == QaSeverity.FAIL);
+    }
+
+    @Test
+    @DisplayName("a scene the rendered clip aligned is paced by CAPTION_SYNC alone")
+    void renderedAlignmentReplacesTheEstimate() {
+        renderedWithCaptions("{\"status\":\"ALIGNED\",\"scenes\":[{\"sceneId\":\"scene-TITLE_HERO\",\"status\":\"ALIGNED\","
+            + "\"sceneSec\":4.2,\"lastWordEnd\":3.9,\"narrationWords\":20,\"alignedWords\":20}]}");
+        QaReport report = runWith(List.of(scene(SceneType.TITLE_HERO, "Mo dau", "tu ".repeat(20).trim(), 126, "{}")));
+        assertThat(report.findings()).noneMatch(f -> f.check() == QaCheck.NARRATION_PACING);
+        assertThat(report.findings()).noneMatch(f -> f.check() == QaCheck.CAPTION_SYNC && f.severity() == QaSeverity.FAIL);
+    }
 }

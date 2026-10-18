@@ -68,13 +68,14 @@ public class ClipQaService {
 
         checkStructure(scenes, findings);
         checkClipDuration(scenes, fps, findings);
+        Map<String, Double> renderedSpeech = renderedSpeechEnd(project);
 
         for (Scene scene : scenes) {
             SceneResponse dto = sceneMapper.toResponse(scene);
             double seconds = (double) scene.getDurationInFrames() / fps;
 
             checkSceneDuration(scene, findings);
-            checkNarrationPacing(scene, seconds, findings);
+            checkNarrationPacing(scene, dto, seconds, renderedSpeech, findings);
             checkTextOverflow(scene, dto, findings);
             checkContrast(scene, dto, findings);
         }
@@ -227,7 +228,14 @@ public class ClipQaService {
      * Stands in for the caption/audio sync check until TTS is wired: narration
      * that cannot be read inside the scene would desync any generated audio.
      */
-    private void checkNarrationPacing(Scene scene, double seconds, List<QaFinding> findings) {
+    /**
+     * Narration pacing. When the speech has been measured, that is the truth: the rendered clip's
+     * Whisper timings (CAPTION_SYNC then reports any overrun) or the word timings a duration sync
+     * saved on the composition. Only unmeasured narration is estimated at WORDS_PER_SECOND, so a
+     * scene timed from its real TTS audio is not failed by the estimate.
+     */
+    private void checkNarrationPacing(Scene scene, SceneResponse dto, double seconds,
+                                      Map<String, Double> renderedSpeech, List<QaFinding> findings) {
         String narration = scene.getNarration();
         if (narration == null || narration.isBlank()) {
             findings.add(new QaFinding(
@@ -235,6 +243,22 @@ public class ClipQaService {
                 "Phân cảnh \"%s\" chưa có lời thoại.".formatted(scene.getTitle()),
                 "Thêm lời thoại để giọng đọc AI có nội dung."
             ));
+            return;
+        }
+
+        if (renderedSpeech.containsKey(scene.getId())) {
+            return;
+        }
+        Double syncedEnd = lastWordEnd(dto.getFlattenedProps().get("captionWords"));
+        if (syncedEnd != null) {
+            if (syncedEnd > seconds + CAPTION_TOLERANCE_SEC) {
+                findings.add(new QaFinding(
+                    QaCheck.NARRATION_PACING, QaSeverity.FAIL, scene.getId(),
+                    "Giọng đọc phân cảnh \"%s\" dài %.1fs nhưng phân cảnh chỉ có %.1fs."
+                        .formatted(scene.getTitle(), syncedEnd, seconds),
+                    "Đồng bộ thời lượng theo giọng đọc lại, hoặc rút gọn lời thoại."
+                ));
+            }
             return;
         }
 
@@ -255,6 +279,47 @@ public class ClipQaService {
                 "Phân cảnh \"%s\" có nhiều khoảng lặng.".formatted(scene.getTitle()),
                 "Giảm thời lượng hoặc bổ sung lời thoại."
             ));
+        }
+    }
+
+    /** End of the last caption word, from a list of {text, start, end}; null when there is none. */
+    private static Double lastWordEnd(Object captionWords) {
+        if (!(captionWords instanceof List<?> words) || words.isEmpty()) return null;
+        Double end = null;
+        for (Object word : words) {
+            if (word instanceof Map<?, ?> map && map.get("end") instanceof Number number) {
+                end = end == null ? number.doubleValue() : Math.max(end, number.doubleValue());
+            }
+        }
+        return end;
+    }
+
+    /** Scenes whose speech the rendered clip measured (Whisper aligned them). */
+    private Map<String, Double> renderedSpeechEnd(ClipProject project) {
+        Map<String, Double> ends = new java.util.HashMap<>();
+        JsonNode sync = currentCaptionSync(project);
+        if (sync == null) return ends;
+        for (JsonNode scene : sync.path("scenes")) {
+            if ("ALIGNED".equals(scene.path("status").asText()) && scene.path("lastWordEnd").isNumber()) {
+                ends.put(scene.path("sceneId").asText(), scene.path("lastWordEnd").asDouble());
+            }
+        }
+        return ends;
+    }
+
+    /** The captionSync summary of the project's current Clip, or null. */
+    private JsonNode currentCaptionSync(ClipProject project) {
+        if (project.getVideoUrl() == null) return null;
+        var clips = clipRepository.findCurrentArtifacts(
+            project.getId(), scriptService.currentVersion(project).getId(), project.getVideoUrl());
+        if (clips.size() != 1) return null;
+        try {
+            String report = clips.get(0).getQaReport();
+            if (report == null || report.isBlank()) return null;
+            JsonNode sync = objectMapper.readTree(report).path("captionSync");
+            return sync.isMissingNode() || sync.isNull() ? null : sync;
+        } catch (Exception ignored) {
+            return null;
         }
     }
 
