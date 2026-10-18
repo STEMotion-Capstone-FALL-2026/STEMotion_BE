@@ -27,7 +27,8 @@ import lombok.Setter;
 public class StatusHistory extends BaseEntity {
 
     public enum EventType { PIPELINE_TRANSITION, REVIEW_DECISION }
-    public enum TargetType { PROJECT, SCRIPT, CLIP }
+    /** COMPOSITION: a composition revision reviewed in the web player before any MP4 exists. */
+    public enum TargetType { PROJECT, SCRIPT, CLIP, COMPOSITION }
     public enum Decision { APPROVED, REJECTED }
 
     @Enumerated(EnumType.STRING)

@@ -60,7 +60,9 @@ public final class ScriptDtos {
         String ownerName,
         Integer currentVersionNo,
         String videoUrl,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        /** The production composition's visual theme; "default" before the producer picks one. */
+        String visualTheme
     ) {}
 
     /** Lightweight row for dashboards and the pipeline board. */

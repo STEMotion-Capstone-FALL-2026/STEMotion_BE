@@ -89,6 +89,7 @@ public class CompositionService {
             : Composition.builder().project(project).scriptVersion(version).build();
         composition.setRevision(currentRevision + 1);
         composition.setScenes(write(scenes));
+        if (request.visualTheme() != null) composition.setVisualTheme(VisualThemes.require(request.visualTheme()));
         composition.setProducer(authService.findUserOrThrow(userId));
         Composition saved;
         if (current != null) {
@@ -101,6 +102,68 @@ public class CompositionService {
             } catch (org.springframework.dao.DataIntegrityViolationException ex) {
                 throw ApiException.conflict("The composition was just saved elsewhere; reload it before saving");
             }
+        }
+        return response(project, version, saved, scenes);
+    }
+
+    /**
+     * The composition a web-player review looks at (FE checklist BE-P0-5). A producer who never
+     * edited gets revision 1 copied from the approved script, so the reviewer's decision names an
+     * exact, frozen composition and the MP4 rendered after approval draws the same thing.
+     */
+    @Transactional
+    public Composition ensure(ClipProject project, ScriptVersion version, String userId) {
+        return compositions.lockByScriptVersionId(version.getId()).orElseGet(() -> {
+            try {
+                return compositions.saveAndFlush(Composition.builder().project(project).scriptVersion(version)
+                    .revision(1).scenes(write(scriptScenes(version)))
+                    .producer(authService.findUserOrThrow(userId)).build());
+            } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+                throw ApiException.conflict("The composition was just saved elsewhere; try again");
+            }
+        });
+    }
+
+    /**
+     * Scene durations measured from TTS audio and Whisper word timings, saved as the next
+     * revision (BE-P0-2). Same lock and stale-revision rules as a save by the producer; nothing
+     * but durationInFrames and captionWords changes.
+     */
+    @Transactional
+    public CompositionResponse applyMeasured(String projectId, int baseRevision, Map<String, Integer> framesBySceneId,
+                                             Map<String, Object> captionWordsBySceneId, String userId) {
+        ClipProject project = scriptService.getOrThrow(projectId);
+        scriptService.requireActive(project);
+        requireApproved(project);
+        String locked = lockedReason(project);
+        if (locked != null) {
+            throw ApiException.conflict(locked);
+        }
+        ScriptVersion version = scriptService.currentVersion(project);
+        Composition current = compositions.lockByScriptVersionId(version.getId()).orElse(null);
+        int currentRevision = current == null ? 0 : current.getRevision();
+        if (baseRevision != currentRevision) {
+            throw ApiException.conflict("The composition is now at revision " + currentRevision
+                + " (edited elsewhere); reload it before syncing");
+        }
+        List<Map<String, Object>> scenes = current == null ? scriptScenes(version) : read(current.getScenes());
+        for (Map<String, Object> scene : scenes) {
+            String id = String.valueOf(scene.get("id"));
+            Integer frames = framesBySceneId.get(id);
+            if (frames != null && frames >= 1 && frames <= MAX_SCENE_FRAMES) scene.put("durationInFrames", frames);
+            Object words = captionWordsBySceneId.get(id);
+            if (words != null) scene.put("captionWords", words);
+        }
+        Composition composition = current != null ? current
+            : Composition.builder().project(project).scriptVersion(version).build();
+        composition.setRevision(currentRevision + 1);
+        composition.setScenes(write(scenes));
+        composition.setProducer(authService.findUserOrThrow(userId));
+        Composition saved;
+        try {
+            saved = current != null ? compositions.save(composition) : compositions.saveAndFlush(composition);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            throw ApiException.conflict("The composition was just saved elsewhere; reload it before syncing");
         }
         return response(project, version, saved, scenes);
     }
@@ -144,6 +207,7 @@ public class CompositionService {
     }
 
     /** The approved script's scenes in the SceneData shape. */
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> scriptScenes(ScriptVersion version) {
         List<Map<String, Object>> scenes = new ArrayList<>();
         for (Scene scene : scriptService.scenesOf(version)) {
@@ -225,7 +289,8 @@ public class CompositionService {
             lockedReason(project),
             scenes,
             saved == null ? null : saved.getUpdatedAt(),
-            saved == null || saved.getProducer() == null ? null : saved.getProducer().getFullName()
+            saved == null || saved.getProducer() == null ? null : saved.getProducer().getFullName(),
+            saved == null ? VisualThemes.DEFAULT : saved.getVisualTheme()
         );
     }
 

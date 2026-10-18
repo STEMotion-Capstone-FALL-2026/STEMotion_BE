@@ -24,6 +24,30 @@ public final class FeedbackDtos {
         String tag
     ) {}
 
+    /** A reply under a review note (BE-P1-2). */
+    public record ReplyRequest(
+        @NotBlank(message = "content is required")
+        String content
+    ) {}
+
+    /**
+     * One reviewer decision from the status history (BE-P0-4). action is APPROVE or REJECT;
+     * targetType SCRIPT (a script version), CLIP (a rendered MP4) or COMPOSITION (a composition
+     * revision reviewed in the web player).
+     */
+    public record ReviewHistoryEntry(
+        String id,
+        String actorName,
+        String actorRole,
+        String action,
+        String targetType,
+        Integer scriptVersionNo,
+        String clipId,
+        Integer compositionRevision,
+        String note,
+        LocalDateTime createdAt
+    ) {}
+
     /** Mirrors the front end's FeedbackComment interface. */
     public record FeedbackResponse(
         String id,
@@ -35,7 +59,13 @@ public final class FeedbackDtos {
         String content,
         String tag,
         FeedbackStatus status,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        /** The rendered Clip the note was written on; null for script and web-player notes. */
+        String clipId,
+        /** Set on a reply: the note it answers. */
+        String parentId,
+        String resolvedByName,
+        LocalDateTime resolvedAt
     ) {
         public static FeedbackResponse from(FeedbackComment comment) {
             User author = comment.getAuthor();
@@ -49,7 +79,11 @@ public final class FeedbackDtos {
                 comment.getContent(),
                 comment.getTag(),
                 comment.getStatus(),
-                comment.getCreatedAt()
+                comment.getCreatedAt(),
+                comment.getClipId(),
+                comment.getParent() == null ? null : comment.getParent().getId(),
+                comment.getResolvedBy() == null ? null : comment.getResolvedBy().getFullName(),
+                comment.getResolvedAt()
             );
         }
 

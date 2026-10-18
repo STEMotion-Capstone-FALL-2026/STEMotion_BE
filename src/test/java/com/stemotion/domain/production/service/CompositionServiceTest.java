@@ -220,4 +220,27 @@ class CompositionServiceTest {
         assertThat(input.revision()).isEqualTo(2);
         assertThat(input.scenes().get(0)).containsEntry("title", "Edited");
     }
+
+    @Test
+    @DisplayName("the producer's visual theme is saved with the composition and an unknown one is refused")
+    void savesTheVisualTheme() {
+        CompositionResponse saved = service.update("project", new UpdateCompositionRequest(0,
+            List.of(edit("s1", SceneType.STEM_QUIZ, 240, quiz(0))), "sunset"), "producer");
+        assertThat(saved.visualTheme()).isEqualTo("sunset");
+        assertThatThrownBy(() -> service.update("project", new UpdateCompositionRequest(0,
+            List.of(edit("s1", SceneType.STEM_QUIZ, 240, quiz(0))), "neon"), "producer"))
+            .isInstanceOf(ApiException.class).hasMessageContaining("visualTheme");
+    }
+
+    @Test
+    @DisplayName("measured durations and caption words become the next revision, nothing else changes")
+    void appliesMeasuredDurations() {
+        CompositionResponse saved = service.applyMeasured("project", 0, Map.of("s1", 210),
+            Map.of("s1", List.of(Map.of("text", "U", "start", 0.1, "end", 0.4))), "producer");
+        assertThat(saved.revision()).isEqualTo(1);
+        assertThat(saved.scenes().get(0)).containsEntry("durationInFrames", 210).containsKey("captionWords")
+            .containsEntry("question", "U = ?");
+        assertThatThrownBy(() -> service.applyMeasured("project", 5, Map.of("s1", 210), Map.of(), "producer"))
+            .isInstanceOf(ApiException.class).hasMessageContaining("revision 0");
+    }
 }

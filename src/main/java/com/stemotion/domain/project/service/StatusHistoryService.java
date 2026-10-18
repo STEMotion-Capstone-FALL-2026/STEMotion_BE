@@ -78,13 +78,21 @@ public class StatusHistoryService {
     public void recordReview(ClipProject project, ProjectStatus from, User reviewer,
             StatusHistory.TargetType targetType, String targetId,
             StatusHistory.Decision decision, String reason) {
+        recordReview(project, from, reviewer, targetType, targetId, decision, reason, null);
+    }
+
+    /** As above, with a note about the target (e.g. the composition revision that was reviewed). */
+    @Transactional
+    public void recordReview(ClipProject project, ProjectStatus from, User reviewer,
+            StatusHistory.TargetType targetType, String targetId,
+            StatusHistory.Decision decision, String reason, String note) {
         if (targetType == StatusHistory.TargetType.PROJECT || targetId == null || decision == null) {
             throw ApiException.badRequest("Review requires a script version or Clip target and decision");
         }
         statusHistoryRepository.save(StatusHistory.builder()
             .project(project).fromStatus(from).toStatus(project.getPipelineStatus())
             .changedBy(reviewer).eventType(StatusHistory.EventType.REVIEW_DECISION)
-            .targetType(targetType).targetId(targetId).decision(decision).reason(reason)
+            .targetType(targetType).targetId(targetId).decision(decision).reason(reason).note(note)
             .build());
     }
 }

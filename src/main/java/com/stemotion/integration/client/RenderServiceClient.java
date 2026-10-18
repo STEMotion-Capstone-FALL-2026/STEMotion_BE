@@ -26,6 +26,8 @@ import java.time.Duration;
 public class RenderServiceClient {
 
     private final RestClient restClient;
+    /** TTS and Whisper per scene take longer than an enqueue. */
+    private final RestClient computeClient;
     private final IntegrationProperties properties;
 
     public RenderServiceClient(IntegrationProperties properties) {
@@ -37,6 +39,81 @@ public class RenderServiceClient {
             .baseUrl(properties.getRender().getBaseUrl())
             .requestFactory(requestFactory)
             .build();
+        SimpleClientHttpRequestFactory computeFactory = new SimpleClientHttpRequestFactory();
+        computeFactory.setConnectTimeout(Duration.ofSeconds(5));
+        computeFactory.setReadTimeout(Duration.ofSeconds(180));
+        this.computeClient = RestClient.builder()
+            .baseUrl(properties.getRender().getBaseUrl())
+            .requestFactory(computeFactory)
+            .build();
+    }
+
+    /**
+     * Narration audio for the studio's preview (BE-P0-3), synthesised by the worker with the same
+     * TTS as a render. The shared worker key stays on the server.
+     */
+    public byte[] ttsPreview(String text) {
+        requireCompute();
+        try {
+            byte[] audio = computeClient.get()
+                .uri(builder -> builder.path("/tts-preview").queryParam("text", text).build())
+                .header("X-Api-Key", properties.getRender().getApiKey())
+                .retrieve()
+                .body(byte[].class);
+            if (audio == null || audio.length == 0) {
+                throw new ApiException(HttpStatus.BAD_GATEWAY, "TTS_EMPTY", "The render worker returned no audio");
+            }
+            return audio;
+        } catch (ApiException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw computeFailure("TTS preview", ex);
+        }
+    }
+
+    /**
+     * Scene durations measured from real TTS audio, with Whisper word timings when the worker has
+     * alignment configured (BE-P0-2). Returns the worker's {script, captionSync}.
+     */
+    public JsonNode syncDurations(Map<String, Object> script, int fps) {
+        requireCompute();
+        try {
+            JsonNode response = computeClient.post()
+                .uri("/sync-durations")
+                .header("X-Api-Key", properties.getRender().getApiKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("script", script, "fps", fps))
+                .retrieve()
+                .body(JsonNode.class);
+            if (response == null || !response.path("script").path("scenes").isArray()) {
+                throw new ApiException(HttpStatus.BAD_GATEWAY, "SYNC_INVALID_RESPONSE",
+                    "The render worker returned no scene durations");
+            }
+            return response;
+        } catch (ApiException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw computeFailure("Duration sync", ex);
+        }
+    }
+
+    private void requireCompute() {
+        String baseUrl = properties.getRender().getBaseUrl();
+        String apiKey = properties.getRender().getApiKey();
+        if (baseUrl == null || baseUrl.isBlank() || apiKey == null || apiKey.isBlank()) {
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "RENDER_NOT_CONFIGURED",
+                "Render service URL and shared key must be configured");
+        }
+    }
+
+    private ApiException computeFailure(String what, Exception ex) {
+        log.warn("{} on the render worker failed: {}", what, ex.getMessage());
+        if (ex instanceof org.springframework.web.client.ResourceAccessException) {
+            return new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "RENDER_UNAVAILABLE",
+                "Không kết nối được máy render (máy đang tắt hoặc mất mạng), thử lại sau");
+        }
+        return new ApiException(HttpStatus.BAD_GATEWAY, "RENDER_COMPUTE_FAILED",
+            what + " failed on the render worker; try again");
     }
 
     public boolean isConfigured() {

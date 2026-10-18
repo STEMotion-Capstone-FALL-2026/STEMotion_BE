@@ -48,6 +48,10 @@ public class ScriptService {
     private final StatusHistoryService statusHistoryService;
     private final com.stemotion.core.security.WorkspaceAccess workspaceAccess;
 
+    /** Read-only lookup of the production theme; optional so unit tests can build the service bare. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.stemotion.domain.production.repository.CompositionRepository compositionRepository;
+
     // ---------------------------------------------------------------- queries
 
     @Transactional(readOnly = true)
@@ -195,6 +199,26 @@ public class ScriptService {
     }
 
     /** Writer hands the draft to the reviewer queue. */
+    /** Scene durations measured from TTS audio, written to an editable draft (BE-P0-2). */
+    @Transactional
+    public ScriptResponse applyMeasuredDurations(String projectId, java.util.Map<String, Integer> framesBySceneId) {
+        ClipProject project = getOrThrow(projectId);
+        requireActive(project);
+        if (project.getScriptStatus() != ScriptStatus.DRAFT
+            && project.getScriptStatus() != ScriptStatus.CHANGE_REQUESTED) {
+            throw ApiException.badRequest("Only a draft or returned script can be edited; submitted versions are immutable");
+        }
+        ScriptVersion current = currentVersion(project);
+        List<Scene> scenes = sceneRepository.findForUpdateByScriptVersionId(current.getId());
+        for (Scene scene : scenes) {
+            Integer frames = framesBySceneId.get(scene.getId());
+            if (frames != null && frames >= 1 && frames <= 18_000) scene.setDurationInFrames(frames);
+        }
+        sceneRepository.saveAll(scenes);
+        applyTotalDuration(project, scenes);
+        return toResponse(project, current, scenes);
+    }
+
     @Transactional
     public ScriptResponse submitForReview(String projectId, String currentUserId) {
         ClipProject project = getOrThrow(projectId);
@@ -349,8 +373,15 @@ public class ScriptService {
             project.getOwner().getFullName(),
             version.getVersionNo(),
             project.getVideoUrl(),
-            project.getCreatedAt()
+            project.getCreatedAt(),
+            visualThemeOf(version)
         );
+    }
+
+    private String visualThemeOf(ScriptVersion version) {
+        if (compositionRepository == null || version.getId() == null) return "default";
+        return compositionRepository.findByScriptVersionId(version.getId())
+            .map(com.stemotion.domain.production.entity.Composition::getVisualTheme).orElse("default");
     }
 
     // --------------------------------------------------------------- internals

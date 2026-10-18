@@ -37,6 +37,11 @@ public class Composition extends BaseEntity {
     @Column(name = "scenes", nullable = false, columnDefinition = "jsonb")
     private String scenes;
 
+    /** Visual theme the Remotion compositions draw with: default, cyber, emerald, sunset, academic. */
+    @Column(name = "visual_theme", nullable = false, length = 32)
+    @Builder.Default
+    private String visualTheme = "default";
+
     /** The producer who saved the latest revision (ERD: Producer edits Composition). */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producer_id")

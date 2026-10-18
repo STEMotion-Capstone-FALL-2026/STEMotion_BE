@@ -79,7 +79,8 @@ public final class ProductionDtos {
         String lockedReason,
         List<Map<String, Object>> scenes,
         LocalDateTime updatedAt,
-        String updatedByName
+        String updatedByName,
+        String visualTheme
     ) {}
 
     public record UpdateCompositionRequest(
@@ -89,7 +90,32 @@ public final class ProductionDtos {
         Integer baseRevision,
 
         @NotEmpty(message = "scenes are required")
-        List<@Valid SceneRequest> scenes
+        List<@Valid SceneRequest> scenes,
+
+        /** default, cyber, emerald, sunset or academic; null keeps the current theme. */
+        String visualTheme
+    ) {
+        public UpdateCompositionRequest(Integer baseRevision, List<SceneRequest> scenes) {
+            this(baseRevision, scenes, null);
+        }
+    }
+
+    /**
+     * Measure scene durations from real TTS audio (BE-P0-2). For a production composition the
+     * revision the studio shows is required, as for a save.
+     */
+    public record SyncDurationsRequest(Integer baseRevision) {}
+
+    /**
+     * target SCRIPT (a draft's scene rows were updated) or COMPOSITION (a new revision was saved);
+     * scenes carry id, durationInFrames and, when Whisper ran, captionWords.
+     */
+    public record SyncDurationsResponse(
+        String target,
+        Integer revision,
+        Integer totalDurationSeconds,
+        List<Map<String, Object>> scenes,
+        com.fasterxml.jackson.databind.JsonNode captionSync
     ) {}
 
     /** Progress pushed back by the Node render worker. */
@@ -151,8 +177,17 @@ public final class ProductionDtos {
         Boolean isActive,
         String subject,
         String assetPack,
-        String slots
-    ) {}
+        String slots,
+        /** StemSubject names (Math, Physics, Chemistry, Biology, ComputerScience); null keeps the current list. */
+        List<String> recommendedSubjects,
+        /** One of the visual themes; null keeps the current one, "" clears it. */
+        String defaultVisualTheme
+    ) {
+        public TemplateRequest(String name, String category, String propsSchema, String previewUrl, Boolean isActive,
+                               String subject, String assetPack, String slots) {
+            this(name, category, propsSchema, previewUrl, isActive, subject, assetPack, slots, null, null);
+        }
+    }
 
     public record TemplateResponse(
         String id,
@@ -163,8 +198,20 @@ public final class ProductionDtos {
         Boolean isActive,
         String subject,
         String assetPack,
-        String slots
+        String slots,
+        List<String> recommendedSubjects,
+        String defaultVisualTheme
     ) {
+        private static final com.fasterxml.jackson.databind.ObjectMapper JSON = new com.fasterxml.jackson.databind.ObjectMapper();
+
+        private static List<String> subjects(String json) {
+            try {
+                return json == null ? List.of() : JSON.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+            } catch (Exception ex) {
+                return List.of();
+            }
+        }
+
         public static TemplateResponse from(RemotionTemplate template) {
             return new TemplateResponse(
                 template.getId(),
@@ -175,7 +222,9 @@ public final class ProductionDtos {
                 template.getIsActive(),
                 template.getSubject(),
                 template.getAssetPack(),
-                template.getSlots()
+                template.getSlots(),
+                subjects(template.getRecommendedSubjects()),
+                template.getDefaultVisualTheme()
             );
         }
     }

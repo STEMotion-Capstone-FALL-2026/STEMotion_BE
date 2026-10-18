@@ -152,6 +152,8 @@ public class TemplateService {
             .propsSchema(request.propsSchema())
             .previewUrl(request.previewUrl())
             .isActive(request.isActive() == null || request.isActive())
+            .recommendedSubjects(request.recommendedSubjects() == null ? "[]" : subjectsJson(request.recommendedSubjects()))
+            .defaultVisualTheme(blankToNull(request.defaultVisualTheme()))
             .build();
 
         return TemplateResponse.from(templateRepository.save(template));
@@ -171,6 +173,8 @@ public class TemplateService {
         if (request.isActive() != null) {
             template.setIsActive(request.isActive());
         }
+        if (request.recommendedSubjects() != null) template.setRecommendedSubjects(subjectsJson(request.recommendedSubjects()));
+        if (request.defaultVisualTheme() != null) template.setDefaultVisualTheme(blankToNull(request.defaultVisualTheme()));
         return TemplateResponse.from(templateRepository.save(template));
     }
 
@@ -187,7 +191,31 @@ public class TemplateService {
             .orElseThrow(() -> ApiException.notFound("RemotionTemplate", id));
     }
 
+    private static String subjectsJson(List<String> subjects) {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(subjects.stream().distinct().toList());
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
+    }
+
     private void validateMetadata(TemplateRequest request) {
+        if (request.recommendedSubjects() != null) {
+            for (String subject : request.recommendedSubjects()) {
+                try {
+                    com.stemotion.core.enums.StemEnums.StemSubject.valueOf(subject);
+                } catch (IllegalArgumentException | NullPointerException ex) {
+                    throw ApiException.badRequest("recommendedSubjects must be StemSubject names, e.g. Math, Physics");
+                }
+            }
+        }
+        if (request.defaultVisualTheme() != null && !request.defaultVisualTheme().isBlank()) {
+            VisualThemes.require(request.defaultVisualTheme());
+        }
         if (request.subject() != null && !List.of("general", "physics", "chemistry", "biology", "math", "informatics").contains(request.subject())) {
             throw ApiException.badRequest("Unknown template subject");
         }

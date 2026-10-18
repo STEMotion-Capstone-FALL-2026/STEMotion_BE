@@ -41,6 +41,16 @@ public class RemotionTemplate extends BaseEntity {
     @Column(name = "preview_url")
     private String previewUrl;
 
+    /** StemSubject names the template is recommended for, as a JSON array. */
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(name = "recommended_subjects", nullable = false, columnDefinition = "jsonb")
+    @Builder.Default
+    private String recommendedSubjects = "[]";
+
+    /** Visual theme suggested when a producer starts from this template; null for none. */
+    @Column(name = "default_visual_theme", length = 32)
+    private String defaultVisualTheme;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;

@@ -69,7 +69,8 @@ public class RenderService {
         if (input.scenes().isEmpty()) {
             throw ApiException.badRequest("The approved script has no scenes to render");
         }
-        return enqueueNew(project, version, toScriptProps(project, input.scenes()), input.composition(),
+        String theme = input.composition() == null ? VisualThemes.DEFAULT : input.composition().getVisualTheme();
+        return enqueueNew(project, version, toScriptProps(project, input.scenes(), theme), input.composition(),
             input.revision(), request.ttsVoice(), currentUserId);
     }
 
@@ -82,10 +83,27 @@ public class RenderService {
                 "Script is " + project.getScriptStatus() + "; only an approved script can be rendered"
             );
         }
-        if (project.getVideoStatus() == VideoStatus.RENDERING) {
+        if (project.getVideoStatus() == VideoStatus.PUBLISHED) {
+            throw ApiException.conflict("The clip is already published");
+        }
+        if (project.getVideoStatus() == VideoStatus.RENDERING || renderJobRepository.existsByProjectIdAndStatusIn(
+                project.getId(), List.of(RenderStatus.QUEUED, RenderStatus.PROCESSING))) {
             throw ApiException.conflict("A render is already running for this project");
         }
         return project;
+    }
+
+    /**
+     * Render progress moves a project between NOT_RENDERED and RENDERING (and to IN_QA when it
+     * completes). A clip already in review or approved keeps that state: its composition is frozen
+     * there, so the render draws exactly what was reviewed (web-first review, BE-P0-5).
+     */
+    private void moveProduction(ClipProject project, VideoStatus status) {
+        VideoStatus current = project.getVideoStatus();
+        if (current == VideoStatus.NOT_RENDERED || current == VideoStatus.RENDERING) {
+            project.setVideoStatus(status);
+        }
+        projectRepository.save(project);
     }
 
     private RenderJobResponse enqueueNew(ClipProject project, ScriptVersion version, Map<String, Object> scriptProps,
@@ -111,8 +129,7 @@ public class RenderService {
             .inputProps(writeProps(scriptProps))
             .build());
 
-        project.setVideoStatus(VideoStatus.RENDERING);
-        projectRepository.save(project);
+        moveProduction(project, VideoStatus.RENDERING);
 
         String jobId = job.getId();
         String projectId = project.getId();
@@ -220,8 +237,7 @@ public class RenderService {
             job.setProgress(100);
             clipArtifactService.recordCompleted(job, callback.captionSync());
             project.setVideoUrl(job.getVideoUrl());
-            project.setVideoStatus(VideoStatus.IN_QA);
-            projectRepository.save(project);
+            moveProduction(project, VideoStatus.IN_QA);
         } else if (job.getStatus() == RenderStatus.FAILED) {
             return RenderJobResponse.from(handleFailure(job), null);
         }
@@ -245,8 +261,7 @@ public class RenderService {
         if (job.getAttemptCount() >= maxAttempts) {
             log.error("Render job {} gave up after {} attempts: {}",
                 job.getId(), job.getAttemptCount(), job.getErrorMessage());
-            project.setVideoStatus(VideoStatus.NOT_RENDERED);
-            projectRepository.save(project);
+            moveProduction(project, VideoStatus.NOT_RENDERED);
             return renderJobRepository.save(job);
         }
 
@@ -273,18 +288,29 @@ public class RenderService {
             job.setStage("Thử lại lần " + nextAttempt + "/" + maxAttempts);
             job.setAttemptCount(nextAttempt);
             // The clip is on its way again, so the project stays in production.
-            project.setVideoStatus(VideoStatus.RENDERING);
-            projectRepository.save(project);
+            moveProduction(project, VideoStatus.RENDERING);
         } catch (Exception ex) {
             // The render service is unreachable; stop here rather than spinning.
             log.error("Render job {} could not be requeued: {}", job.getId(), ex.getMessage());
             job.setAttemptCount(nextAttempt);
             job.setErrorMessage(job.getErrorMessage() + " | retry failed: " + ex.getMessage());
-            project.setVideoStatus(VideoStatus.NOT_RENDERED);
-            projectRepository.save(project);
+            moveProduction(project, VideoStatus.NOT_RENDERED);
         }
 
         return renderJobRepository.save(job);
+    }
+
+    /**
+     * Renders the MP4 of a composition the reviewer approved in the web player (BE-P0-5). The
+     * project stays APPROVED while it renders; a render already under way brings the clip instead.
+     */
+    @Transactional
+    public void renderApproved(String projectId, String userId) {
+        if (renderJobRepository.existsByProjectIdAndStatusIn(projectId,
+                List.of(RenderStatus.QUEUED, RenderStatus.PROCESSING))) {
+            return;
+        }
+        start(projectId, new StartRenderRequest(null, null, null), userId);
     }
 
     /** Re-queues a failed job manually, outside the automatic budget. */
@@ -325,9 +351,7 @@ public class RenderService {
         job.setErrorMessage("Cancelled by user");
         renderJobRepository.save(job);
 
-        ClipProject project = job.getProject();
-        project.setVideoStatus(VideoStatus.NOT_RENDERED);
-        projectRepository.save(project);
+        moveProduction(job.getProject(), VideoStatus.NOT_RENDERED);
     }
 
     private RenderJob getOrThrow(String jobId) {
@@ -364,6 +388,10 @@ public class RenderService {
      * front end, so preview and render stay identical.
      */
     private Map<String, Object> toScriptProps(ClipProject project, List<Map<String, Object>> scenes) {
+        return toScriptProps(project, scenes, VisualThemes.DEFAULT);
+    }
+
+    private Map<String, Object> toScriptProps(ClipProject project, List<Map<String, Object>> scenes, String theme) {
         List<Map<String, Object>> sceneProps = new ArrayList<>(scenes.size());
         int sourceFps = project.getFps() == null || project.getFps() <= 0 ? 30 : project.getFps();
         for (Map<String, Object> scene : scenes) {
@@ -381,7 +409,12 @@ public class RenderService {
         Map<String, Object> script = new LinkedHashMap<>();
         script.put("id", project.getId());
         // Seeds the shared look of every clip of the workspace (FE flat/variation.ts).
-        script.put("workspaceId", project.getWorkspace() == null ? null : project.getWorkspace().getId());
+        // The studio player shows a theme by suffixing the workspace seed ("<id>::cyber",
+        // ProducerStudio); the render does the same so the MP4 matches the preview.
+        String workspaceId = project.getWorkspace() == null ? null : project.getWorkspace().getId();
+        boolean themed = theme != null && !VisualThemes.DEFAULT.equals(theme);
+        script.put("workspaceId", workspaceId != null && themed ? workspaceId + "::" + theme : workspaceId);
+        script.put("visualTheme", theme == null ? VisualThemes.DEFAULT : theme);
         script.put("title", project.getTitle());
         script.put("subject", project.getSubject().name());
         script.put("gradeLevel", project.getGradeLevel());

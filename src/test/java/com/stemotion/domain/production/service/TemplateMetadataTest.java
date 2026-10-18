@@ -30,4 +30,20 @@ class TemplateMetadataTest {
         }
         verifyNoInteractions(repo);
     }
+
+    @Test void recommendedSubjectsAndDefaultThemeAreValidatedAndKept() {
+        var repo=mock(RemotionTemplateRepository.class);var service=new TemplateService(repo);
+        var template=RemotionTemplate.builder().name("t").build();
+        when(repo.findById("id")).thenReturn(Optional.of(template));
+        when(repo.save(template)).thenReturn(template);
+        var response=service.update("id",new TemplateRequest("t",null,null,null,false,null,null,null,
+            java.util.List.of("Physics","Math","Physics"),"emerald"));
+        assertThat(response.recommendedSubjects()).containsExactly("Physics","Math");
+        assertThat(response.defaultVisualTheme()).isEqualTo("emerald");
+        assertThat(response.isActive()).isFalse();
+        assertThatThrownBy(()->service.update("id",new TemplateRequest("t",null,null,null,null,null,null,null,
+            java.util.List.of("Geography"),null))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(()->service.update("id",new TemplateRequest("t",null,null,null,null,null,null,null,
+            null,"neon"))).isInstanceOf(ApiException.class);
+    }
 }

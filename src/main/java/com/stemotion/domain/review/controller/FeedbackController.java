@@ -35,14 +35,41 @@ public class FeedbackController {
 
     private final FeedbackService feedbackService;
     private final ClipQaService clipQaService;
+    private final com.stemotion.domain.review.service.ReviewHistoryService reviewHistoryService;
 
     @GetMapping("/scripts/{projectId}/qa-comments")
-    @Operation(summary = "Review notes pinned to a clip")
+    @Operation(summary = "Review notes (with their replies); clipId keeps one render's notes plus unscoped ones")
     public ResponseEntity<List<FeedbackResponse>> findByProject(
         @PathVariable String projectId,
-        @RequestParam(required = false) FeedbackStatus status
+        @RequestParam(required = false) FeedbackStatus status,
+        @RequestParam(required = false) String clipId
     ) {
-        return ResponseEntity.ok(feedbackService.findByProject(projectId, status));
+        return ResponseEntity.ok(feedbackService.findByProject(projectId, status, clipId));
+    }
+
+    @GetMapping("/scripts/{projectId}/review-history")
+    @Operation(summary = "Reviewer decisions on scripts, clips and composition revisions, newest first")
+    public ResponseEntity<List<com.stemotion.domain.review.dto.FeedbackDtos.ReviewHistoryEntry>> reviewHistory(
+            @PathVariable String projectId) {
+        return ResponseEntity.ok(reviewHistoryService.findByProject(projectId));
+    }
+
+    @PostMapping("/scripts/{projectId}/submit-video-review")
+    @Operation(summary = "Send the composition to the reviewer for review in the web player, without rendering first")
+    @PreAuthorize("@workspaceAccess.hasProjectRole(#projectId, authentication.name, 'PRODUCER')")
+    public ResponseEntity<com.stemotion.domain.script.dto.ScriptDtos.ScriptResponse> submitVideoReview(
+            @PathVariable String projectId, @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(feedbackService.submitForVideoReview(projectId, principal.getUsername()));
+    }
+
+    @PostMapping("/qa-comments/{commentId}/replies")
+    @Operation(summary = "Reply under a review note")
+    @PreAuthorize("@workspaceAccess.hasCommentRole(#commentId, authentication.name, 'WRITER', 'PRODUCER', 'REVIEWER')")
+    public ResponseEntity<FeedbackResponse> reply(@PathVariable String commentId,
+            @Valid @RequestBody com.stemotion.domain.review.dto.FeedbackDtos.ReplyRequest request,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(feedbackService.reply(commentId, request.content(), principal.getUsername()));
     }
 
     @PostMapping("/scripts/{projectId}/qa-comments")
@@ -62,11 +89,15 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackService.findByScene(sceneId));
     }
 
-    /** The producer marks a note fixed; the reviewer may also close it. */
+    /**
+     * The writer (script notes, UC-26 Read & Resolve Feedback) or producer (clip notes) marks a
+     * note fixed; the reviewer may also close it. Who and when are recorded.
+     */
     @PutMapping("/qa-comments/{commentId}/resolve")
-    @PreAuthorize("@workspaceAccess.hasCommentRole(#commentId, authentication.name, 'PRODUCER', 'REVIEWER')")
-    public ResponseEntity<FeedbackResponse> resolve(@PathVariable String commentId) {
-        return ResponseEntity.ok(feedbackService.resolve(commentId));
+    @PreAuthorize("@workspaceAccess.hasCommentRole(#commentId, authentication.name, 'WRITER', 'PRODUCER', 'REVIEWER')")
+    public ResponseEntity<FeedbackResponse> resolve(@PathVariable String commentId,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(feedbackService.resolve(commentId, principal.getUsername()));
     }
 
     /** Only the reviewer decides that a fix was not good enough. */

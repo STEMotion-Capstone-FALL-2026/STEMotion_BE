@@ -17,4 +17,9 @@ public interface FeedbackCommentRepository extends JpaRepository<FeedbackComment
     List<FeedbackComment> findBySceneIdOrderByCreatedAtAsc(String sceneId);
 
     long countByProjectIdAndStatus(String projectId, FeedbackStatus status);
+
+    /** Open findings not tied to a rendered Clip: script notes and web-player notes. */
+    long countByProjectIdAndStatusAndParentIsNullAndClipIdIsNull(String projectId, FeedbackStatus status);
+
+    long countByProjectIdAndStatusAndParentIsNullAndClipId(String projectId, FeedbackStatus status, String clipId);
 }

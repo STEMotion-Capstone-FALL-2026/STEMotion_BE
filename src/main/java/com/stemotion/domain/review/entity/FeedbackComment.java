@@ -84,4 +84,24 @@ public class FeedbackComment extends BaseEntity {
     @Column(name = "status", nullable = false)
     @Builder.Default
     private FeedbackStatus status = FeedbackStatus.OPEN;
+
+    /**
+     * The rendered Clip a clip-level note was written on; null for script notes and for notes
+     * made in the web player before any MP4. The approval gate counts the current clip's notes
+     * and unscoped ones, so notes on an earlier render do not block a new one.
+     */
+    @Column(name = "clip_id", columnDefinition = "uuid")
+    private String clipId;
+
+    /** Set on a reply; replies are conversation, not findings, and never block approval. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private FeedbackComment parent;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resolved_by")
+    private User resolvedBy;
+
+    @Column(name = "resolved_at")
+    private java.time.LocalDateTime resolvedAt;
 }

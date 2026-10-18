@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node clip-migration-test.mjs && node review-migration-test.mjs && node ai-publication-migration-test.mjs && node director-migration-test.mjs && node membership-migration-test.mjs && node pricing-migration-test.mjs && node composition-migration-test.mjs"
+    "test": "node clip-migration-test.mjs && node review-migration-test.mjs && node ai-publication-migration-test.mjs && node director-migration-test.mjs && node membership-migration-test.mjs && node pricing-migration-test.mjs && node composition-migration-test.mjs && node review-loop-migration-test.mjs"
   },
   "devDependencies": { "@electric-sql/pglite": "0.5.8" }
 }

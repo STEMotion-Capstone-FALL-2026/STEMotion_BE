@@ -42,9 +42,11 @@ Audit đọc BE `c7fbc49` và worker `16c984e`. Mục này ghi những gì đã 
   - Test `workspaceService.test.ts` ("resolveActiveWorkspaceId returns null…") đang fail trên main từ commit `23cfe79`.
 - [ ] **FE-8:** API BE đã có nhưng FE chưa nối (mục 3.3): `/scripts/review-queue`, `/scripts/mine`, `/qa-comments/{id}/reopen`, `/scripts/{id}/qa-report` (giờ có `CAPTION_SYNC`), `/render/jobs/{id}/retry`, `/library/*`, `/admin/ai-usage`.
 
-### 0.4. BE còn lại (chưa làm)
+### 0.4. BE còn lại
 
-Comment/OPEN gate gắn theo clip (note render cũ có thể chặn approve clip mới); `GET /scripts/{id}/review-history`; Writer được resolve comment hay không (cần team chốt); TTS-preview/sync-durations qua BE; thư viện chung hay theo workspace (cần team chốt); YouTube, asset upload, reply thread (P1/P2 như mục 5).
+**Cập nhật 18/10/2026:** đã làm theo checklist BE trong `STEMotion_FE/docs/FE_ACCOMPLISHMENTS_TODO.md` mục 9 (migration V20): comment/OPEN gate theo clip, `GET /scripts/{id}/review-history`, Writer được resolve (UC-26) + `resolvedBy/resolvedAt`, reply thread, TTS-preview và sync-durations qua BE, duyệt composition trên web player (`submit-video-review`), visual theme, cấu hình template.
+
+Còn lại: thư viện chung hay theo workspace (cần team chốt); YouTube OAuth, asset upload/gợi ý asset, SCORM (P1/P2, lý do ghi ở checklist FE mục 9).
 
 ## 1. Tổng quan
 

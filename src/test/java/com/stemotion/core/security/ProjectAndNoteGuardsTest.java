@@ -104,7 +104,7 @@ class ProjectAndNoteGuardsTest {
     @DisplayName("only the author or an admin deletes a QA note")
     void notesAreDeletedByTheirAuthorOnly() {
         AuthService auth = mock(AuthService.class);
-        FeedbackService service = new FeedbackService(comments, null, projects, null, auth, null, null);
+        FeedbackService service = new FeedbackService(comments, null, projects, null, auth, null, null, null, null);
         FeedbackComment note = FeedbackComment.builder().project(project).author(user("reviewer", User.UserRole.WRITER)).build();
         when(comments.findById("note")).thenReturn(Optional.of(note));
         when(auth.findUserOrThrow("producer")).thenReturn(user("producer", User.UserRole.WRITER));

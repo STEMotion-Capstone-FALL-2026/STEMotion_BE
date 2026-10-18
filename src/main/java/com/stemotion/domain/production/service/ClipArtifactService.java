@@ -45,14 +45,22 @@ public class ClipArtifactService {
 
     @Transactional(readOnly = true)
     public Clip requireCurrent(ClipProject project, String scriptVersionId) {
+        return findCurrent(project, scriptVersionId).orElseThrow(() ->
+            ApiException.conflict("No completed Clip matches the current script version and video URL"));
+    }
+
+    /** The project's current Clip, or empty when nothing has been rendered for this version yet. */
+    @Transactional(readOnly = true)
+    public java.util.Optional<Clip> findCurrent(ClipProject project, String scriptVersionId) {
+        if (project.getVideoUrl() == null) return java.util.Optional.empty();
         var artifacts = clipRepository.findCurrentArtifacts(project.getId(), scriptVersionId, project.getVideoUrl());
         if (artifacts.isEmpty()) {
-            throw ApiException.conflict("No completed Clip matches the current script version and video URL");
+            return java.util.Optional.empty();
         }
         // Same URL from distinct jobs is ambiguous, not evidence of which artifact was reviewed.
         if (artifacts.size() != 1) {
             throw ApiException.conflict("Multiple Clip artifacts match this video; select an artifact explicitly");
         }
-        return artifacts.get(0);
+        return java.util.Optional.of(artifacts.get(0));
     }
 }

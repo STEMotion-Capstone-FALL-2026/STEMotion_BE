@@ -19,6 +19,8 @@ public interface RenderJobRepository extends JpaRepository<RenderJob, String> {
 
     Optional<RenderJob> findByExternalJobId(String externalJobId);
 
+    boolean existsByProjectIdAndStatusIn(String projectId, java.util.Collection<RenderStatus> statuses);
+
     /**
      * Column updates for a job the worker may already be reporting on: a merge of a loaded copy
      * could overwrite progress a callback wrote in between.
