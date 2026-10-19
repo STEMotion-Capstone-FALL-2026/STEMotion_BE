@@ -72,8 +72,8 @@ public class ResourceAccessInterceptor implements HandlerInterceptor {
         if (path.startsWith("/api/v1/workspaces/")) {
             String workspace = variables.getOrDefault("workspaceId", variables.get("id"));
             if (workspace != null) {
-                boolean isMemberOperation = path.contains("/members") || path.contains("/candidates");
-                access.requireWorkspace(workspace, userId, isMemberOperation || (write && !path.endsWith("/scripts")));
+                boolean isManageMembers = path.contains("/candidates") || (write && path.contains("/members"));
+                access.requireWorkspace(workspace, userId, isManageMembers || (write && !path.endsWith("/scripts")));
             }
         }
         String project = variables.get("projectId");

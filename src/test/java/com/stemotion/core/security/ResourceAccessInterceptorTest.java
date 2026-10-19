@@ -47,6 +47,10 @@ class ResourceAccessInterceptorTest {
         check("POST", "/api/v1/workspaces/one/members", Map.of("id", "one"));
         verify(access).requireWorkspace("one", "writer-id", true);
     }
+    @Test void listingWorkspaceMembersRequiresMembershipOnly() {
+        check("GET", "/api/v1/workspaces/one/members", Map.of("id", "one"));
+        verify(access).requireWorkspace("one", "writer-id", false);
+    }
     @Test void creationRequiresMembershipButNotWorkspaceAdmin() {
         check("POST", "/api/v1/workspaces/one/scripts", Map.of("workspaceId", "one"));
         verify(access).requireWorkspace("one", "writer-id", false);
