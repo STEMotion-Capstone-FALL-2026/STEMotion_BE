@@ -76,6 +76,8 @@ public class SecurityConfig {
         config.setAllowedOriginPatterns(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+        // Totals of a paged list (PagedResponse) must be readable by the browser.
+        config.setExposedHeaders(com.stemotion.core.web.PagedResponse.HEADERS);
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

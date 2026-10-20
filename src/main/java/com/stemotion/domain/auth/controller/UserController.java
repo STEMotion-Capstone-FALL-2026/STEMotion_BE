@@ -39,8 +39,11 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponse>> findAll() {
-        return ResponseEntity.ok(userService.findAll());
+    public ResponseEntity<List<UserResponse>> findAll(
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer size) {
+        return com.stemotion.core.web.PagedResponse.list(com.stemotion.core.web.PageParams.of(page, size),
+            userService::findAll, userService::findAll);
     }
 
     @GetMapping("/{id}")

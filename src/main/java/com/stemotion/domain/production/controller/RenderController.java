@@ -55,8 +55,11 @@ public class RenderController {
 
     @GetMapping("/projects/{projectId}/jobs")
     @Operation(summary = "Render history of a project")
-    public ResponseEntity<List<RenderJobResponse>> history(@PathVariable String projectId) {
-        return ResponseEntity.ok(renderService.findByProject(projectId));
+    public ResponseEntity<List<RenderJobResponse>> history(@PathVariable String projectId,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer size) {
+        return com.stemotion.core.web.PagedResponse.list(com.stemotion.core.web.PageParams.of(page, size),
+            () -> renderService.findByProject(projectId), p -> renderService.findByProject(projectId, p));
     }
 
     @PostMapping("/jobs/{jobId}/retry")

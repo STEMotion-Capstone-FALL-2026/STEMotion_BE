@@ -17,6 +17,10 @@ public interface ScriptVersionRepository extends JpaRepository<ScriptVersion, St
         + "where v.project.id = :projectId order by v.versionNo desc")
     List<ScriptVersion> findHistoryWithAuthor(@org.springframework.data.repository.query.Param("projectId") String projectId);
 
+    @org.springframework.data.jpa.repository.Query(value = "select v from ScriptVersion v left join fetch v.createdBy where v.project.id = :projectId order by v.versionNo desc",
+        countQuery = "select count(v) from ScriptVersion v where v.project.id = :projectId")
+    org.springframework.data.domain.Page<ScriptVersion> findHistoryWithAuthor(@org.springframework.data.repository.query.Param("projectId") String projectId, org.springframework.data.domain.Pageable page);
+
     Optional<ScriptVersion> findFirstByProjectIdAndIsCurrentTrue(String projectId);
 
     Optional<ScriptVersion> findFirstByProjectIdOrderByVersionNoDesc(String projectId);

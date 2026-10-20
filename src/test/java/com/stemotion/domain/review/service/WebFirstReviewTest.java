@@ -189,4 +189,25 @@ class WebFirstReviewTest {
             new com.stemotion.domain.review.dto.FeedbackDtos.FeedbackRequest(12.5, null, "Âm thanh lệch", null), "reviewer");
         assertThat(created.clipId()).isEqualTo("clip-3");
     }
+
+    @Test
+    @DisplayName("a page of notes brings each note's replies and counts notes only")
+    void pagedNotesKeepTheirThreads() {
+        java.util.List<FeedbackComment> all = new java.util.ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            FeedbackComment note = FeedbackComment.builder().project(project).author(reviewer).timestampSec((double) i)
+                .content("note " + i).status(FeedbackStatus.OPEN).build();
+            note.setId("note-" + i);
+            all.add(note);
+            FeedbackComment reply = FeedbackComment.builder().project(project).author(reviewer).parent(note)
+                .content("reply " + i).status(FeedbackStatus.OPEN).build();
+            reply.setId("reply-" + i);
+            all.add(reply);
+        }
+        when(comments.findForProjectWithPeople("project")).thenReturn(all);
+
+        var page = service.findByProject("project", null, null, com.stemotion.core.web.PageParams.of(0, 2).orElseThrow());
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getContent()).extracting(r -> r.id()).containsExactly("note-0", "note-1", "reply-0", "reply-1");
+    }
 }

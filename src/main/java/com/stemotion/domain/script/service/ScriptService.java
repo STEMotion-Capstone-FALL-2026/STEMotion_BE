@@ -61,6 +61,37 @@ public class ScriptService {
     }
 
     @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<ScriptSummaryResponse> findByWorkspace(String workspaceId,
+            com.stemotion.core.web.PageParams paging) {
+        workspaceService.getOrThrow(workspaceId);
+        return projectRepository.findSummariesByWorkspace(workspaceId, paging.pageable()).map(ScriptService::toSummary);
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<ScriptSummaryResponse> findByOwner(String ownerId,
+            com.stemotion.core.web.PageParams paging) {
+        return projectRepository.findSummariesByOwner(ownerId, workspaceAccess.isAdmin(ownerId),
+                com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE, paging.pageable())
+            .map(ScriptService::toSummary);
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<ScriptSummaryResponse> findReviewQueue(String userId,
+            com.stemotion.core.web.PageParams paging) {
+        return projectRepository.findReviewQueueSummaries(userId, workspaceAccess.isAdmin(userId), ScriptStatus.IN_REVIEW,
+                com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE, com.stemotion.domain.auth.entity.User.UserRole.REVIEWER,
+                paging.pageable())
+            .map(ScriptService::toSummary);
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<ScriptVersionResponse> findVersions(String projectId,
+            com.stemotion.core.web.PageParams paging) {
+        getOrThrow(projectId);
+        return versionRepository.findHistoryWithAuthor(projectId, paging.pageable()).map(ScriptService::toVersionResponse);
+    }
+
+    @Transactional(readOnly = true)
     public List<ScriptSummaryResponse> findByOwner(String ownerId) {
         // Leaving a workspace removes access to all of its projects, own ones included.
         return projectRepository.findSummariesByOwner(ownerId, workspaceAccess.isAdmin(ownerId),

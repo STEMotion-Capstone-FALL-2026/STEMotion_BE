@@ -57,6 +57,21 @@ public class LibraryService {
     }
 
     /**
+     * One page of the library. Unfiltered pages are cut in SQL; a subject or grade filter is still
+     * applied in memory (see the note above) and the filtered list is then paged.
+     */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<LibraryItem> findPublished(StemSubject subject, String gradeLevel,
+            com.stemotion.core.web.PageParams paging) {
+        boolean filtered = subject != null || (gradeLevel != null && !gradeLevel.isBlank());
+        if (filtered) return paging.slice(findPublished(subject, gradeLevel));
+        var page = publicationRepository.findLibrary(Publication.Platform.INTERNAL_LIBRARY, VideoStatus.PUBLISHED,
+            paging.pageable());
+        return new org.springframework.data.domain.PageImpl<>(toItems(page.getContent()), page.getPageable(),
+            page.getTotalElements());
+    }
+
+    /**
      * Published, non-archived projects with an artifact-backed library publication, with their
      * clip, owner and workspace, in one query (DB performance plan 2.6).
      */

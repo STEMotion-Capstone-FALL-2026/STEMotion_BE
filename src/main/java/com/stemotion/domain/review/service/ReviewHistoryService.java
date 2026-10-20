@@ -48,7 +48,21 @@ public class ReviewHistoryService {
     @Transactional(readOnly = true)
     public List<ReviewHistoryEntry> findByProject(String projectId) {
         var project = scriptService.getOrThrow(projectId);
-        List<StatusHistory> decisions = histories.findEventsWithActor(projectId, StatusHistory.EventType.REVIEW_DECISION);
+        return entries(project, histories.findEventsWithActor(projectId, StatusHistory.EventType.REVIEW_DECISION));
+    }
+
+    /** One page of decisions, newest first, paged in SQL. */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<ReviewHistoryEntry> findByProject(String projectId,
+            com.stemotion.core.web.PageParams paging) {
+        var project = scriptService.getOrThrow(projectId);
+        var page = histories.findEventsWithActor(projectId, StatusHistory.EventType.REVIEW_DECISION, paging.pageable());
+        return new org.springframework.data.domain.PageImpl<>(entries(project, page.getContent()), page.getPageable(),
+            page.getTotalElements());
+    }
+
+    private List<ReviewHistoryEntry> entries(com.stemotion.domain.project.entity.ClipProject project,
+                                             List<StatusHistory> decisions) {
         if (decisions.isEmpty()) return List.of();
 
         Map<String, String> roles = members.findWithUserByWorkspaceId(project.getWorkspace().getId()).stream()

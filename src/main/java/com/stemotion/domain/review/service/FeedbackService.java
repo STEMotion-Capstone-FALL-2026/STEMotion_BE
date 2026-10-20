@@ -81,6 +81,23 @@ public class FeedbackService {
         return result;
     }
 
+    /**
+     * One page of notes. Pages count notes, not replies: each note on the page comes with all its
+     * replies, so a thread is never split across pages.
+     */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<FeedbackResponse> findByProject(String projectId, FeedbackStatus status,
+            String clipId, com.stemotion.core.web.PageParams paging) {
+        List<FeedbackResponse> all = findByProject(projectId, status, clipId);
+        List<FeedbackResponse> notes = all.stream().filter(c -> c.parentId() == null).toList();
+        var page = paging.slice(notes);
+        java.util.Set<String> onPage = page.getContent().stream().map(FeedbackResponse::id)
+            .collect(java.util.stream.Collectors.toSet());
+        List<FeedbackResponse> content = new ArrayList<>(page.getContent());
+        all.stream().filter(c -> c.parentId() != null && onPage.contains(c.parentId())).forEach(content::add);
+        return new org.springframework.data.domain.PageImpl<>(content, page.getPageable(), page.getTotalElements());
+    }
+
     @Transactional(readOnly = true)
     public List<FeedbackResponse> findByProject(String projectId, FeedbackStatus status) {
         return findByProject(projectId, status, null);

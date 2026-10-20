@@ -33,6 +33,29 @@ public interface ClipProjectRepository extends JpaRepository<ClipProject, String
     List<ProjectSummaryRow> findSummariesByWorkspace(
         @org.springframework.data.repository.query.Param("workspaceId") String workspaceId);
 
+    String WORKSPACE_WHERE = "where p.workspace.id = :workspaceId and (p.archived is null or p.archived = false) ";
+    String OWNER_WHERE = "where o.id = :ownerId and (p.archived is null or p.archived = false) and (:admin = true or exists "
+        + "(select m from WorkspaceMember m where m.workspace = p.workspace and m.user.id = :ownerId and m.status = :active)) ";
+    String QUEUE_WHERE = "where p.scriptStatus = :inReview and (p.archived is null or p.archived = false) and (:admin = true or exists "
+        + "(select m from WorkspaceMember m where m.workspace = p.workspace and m.user.id = :userId "
+        + "and m.status = :active and m.role = :reviewer)) ";
+
+    @org.springframework.data.jpa.repository.Query(value = SUMMARY_SELECT + WORKSPACE_WHERE + "order by p.createdAt desc",
+        countQuery = "select count(p) from ClipProject p " + WORKSPACE_WHERE)
+    org.springframework.data.domain.Page<ProjectSummaryRow> findSummariesByWorkspace(@org.springframework.data.repository.query.Param("workspaceId") String workspaceId, org.springframework.data.domain.Pageable page);
+
+    @org.springframework.data.jpa.repository.Query(value = SUMMARY_SELECT + OWNER_WHERE + "order by p.createdAt desc",
+        countQuery = "select count(p) from ClipProject p join p.owner o " + OWNER_WHERE)
+    org.springframework.data.domain.Page<ProjectSummaryRow> findSummariesByOwner(@org.springframework.data.repository.query.Param("ownerId") String ownerId, @org.springframework.data.repository.query.Param("admin") boolean admin,
+        @org.springframework.data.repository.query.Param("active") com.stemotion.core.enums.StemEnums.MemberStatus active, org.springframework.data.domain.Pageable page);
+
+    @org.springframework.data.jpa.repository.Query(value = SUMMARY_SELECT + QUEUE_WHERE + "order by p.createdAt desc",
+        countQuery = "select count(p) from ClipProject p " + QUEUE_WHERE)
+    org.springframework.data.domain.Page<ProjectSummaryRow> findReviewQueueSummaries(@org.springframework.data.repository.query.Param("userId") String userId, @org.springframework.data.repository.query.Param("admin") boolean admin,
+        @org.springframework.data.repository.query.Param("inReview") ScriptStatus inReview,
+        @org.springframework.data.repository.query.Param("active") com.stemotion.core.enums.StemEnums.MemberStatus active,
+        @org.springframework.data.repository.query.Param("reviewer") com.stemotion.domain.auth.entity.User.UserRole reviewer, org.springframework.data.domain.Pageable page);
+
     /** The owner's projects in workspaces they can still read (an admin reads all). */
     @org.springframework.data.jpa.repository.Query(SUMMARY_SELECT
         + "where o.id = :ownerId and (p.archived is null or p.archived = false) and (:admin = true or exists "

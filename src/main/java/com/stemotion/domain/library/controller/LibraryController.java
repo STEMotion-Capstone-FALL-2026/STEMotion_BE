@@ -27,9 +27,12 @@ public class LibraryController {
     @Operation(summary = "List published clips, filtered by subject and grade")
     public ResponseEntity<List<LibraryItem>> findClips(
         @RequestParam(required = false) StemSubject subject,
-        @RequestParam(required = false) String gradeLevel
+        @RequestParam(required = false) String gradeLevel,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer size
     ) {
-        return ResponseEntity.ok(libraryService.findPublished(subject, gradeLevel));
+        return com.stemotion.core.web.PagedResponse.list(com.stemotion.core.web.PageParams.of(page, size),
+            () -> libraryService.findPublished(subject, gradeLevel), p -> libraryService.findPublished(subject, gradeLevel, p));
     }
 
     @GetMapping("/clips/{projectId}")

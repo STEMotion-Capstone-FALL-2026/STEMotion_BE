@@ -26,6 +26,12 @@ public interface RenderJobRepository extends JpaRepository<RenderJob, String> {
         + "from RenderJob j left join j.scriptVersion v where j.project.id = :projectId order by j.createdAt desc")
     List<RenderJobRow> findHistoryRows(@Param("projectId") String projectId);
 
+    @Query(value = "select new com.stemotion.domain.production.repository.RenderJobRow(j.id, j.project.id, j.status, "
+        + "j.progress, j.stage, j.videoUrl, j.errorMessage, j.createdAt, v.versionNo, j.compositionRevision) "
+        + "from RenderJob j left join j.scriptVersion v where j.project.id = :projectId order by j.createdAt desc",
+        countQuery = "select count(j) from RenderJob j where j.project.id = :projectId")
+    org.springframework.data.domain.Page<RenderJobRow> findHistoryRows(@Param("projectId") String projectId, org.springframework.data.domain.Pageable page);
+
     /** The most recent jobs with project and requester, for the admin queue (DB performance plan 2.10). */
     @Query("select j from RenderJob j join fetch j.project left join fetch j.requestedBy order by j.createdAt desc")
     List<RenderJob> findRecentWithProject(org.springframework.data.domain.Pageable page);

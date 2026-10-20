@@ -42,16 +42,23 @@ public class FeedbackController {
     public ResponseEntity<List<FeedbackResponse>> findByProject(
         @PathVariable String projectId,
         @RequestParam(required = false) FeedbackStatus status,
-        @RequestParam(required = false) String clipId
+        @RequestParam(required = false) String clipId,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer size
     ) {
-        return ResponseEntity.ok(feedbackService.findByProject(projectId, status, clipId));
+        return com.stemotion.core.web.PagedResponse.list(com.stemotion.core.web.PageParams.of(page, size),
+            () -> feedbackService.findByProject(projectId, status, clipId),
+            p -> feedbackService.findByProject(projectId, status, clipId, p));
     }
 
     @GetMapping("/scripts/{projectId}/review-history")
     @Operation(summary = "Reviewer decisions on scripts, clips and composition revisions, newest first")
     public ResponseEntity<List<com.stemotion.domain.review.dto.FeedbackDtos.ReviewHistoryEntry>> reviewHistory(
-            @PathVariable String projectId) {
-        return ResponseEntity.ok(reviewHistoryService.findByProject(projectId));
+            @PathVariable String projectId,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer size) {
+        return com.stemotion.core.web.PagedResponse.list(com.stemotion.core.web.PageParams.of(page, size),
+            () -> reviewHistoryService.findByProject(projectId), p -> reviewHistoryService.findByProject(projectId, p));
     }
 
     @PostMapping("/scripts/{projectId}/submit-video-review")

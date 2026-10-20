@@ -197,4 +197,31 @@ class QueryShapeJpaTest {
         assertThat(statements(() -> jobs.countByStatus())).isEqualTo(1);
         assertThat(statements(() -> projects.countBySubject())).isEqualTo(1);
     }
+
+    @Autowired com.stemotion.domain.production.repository.PublicationRepository publications;
+
+    @Test
+    @DisplayName("paged lists cut in SQL and count with their own query")
+    void pagedQueries() {
+        ClipProject first = project(physics, "A", ScriptStatus.IN_REVIEW, 1);
+        project(physics, "B", ScriptStatus.IN_REVIEW, 1);
+        project(physics, "C", ScriptStatus.IN_REVIEW, 1);
+        var page = org.springframework.data.domain.PageRequest.of(0, 2);
+
+        var workspacePage = projects.findSummariesByWorkspace(physics.getId(), page);
+        assertThat(workspacePage.getContent()).hasSize(2);
+        assertThat(workspacePage.getTotalElements()).isEqualTo(3);
+        assertThat(projects.findSummariesByWorkspace(physics.getId(), org.springframework.data.domain.PageRequest.of(1, 2))
+            .getContent()).hasSize(1);
+        assertThat(projects.findSummariesByOwner(writer.getId(), false, MemberStatus.ACTIVE, page).getTotalElements()).isEqualTo(3);
+        assertThat(projects.findReviewQueueSummaries(reviewer.getId(), false, ScriptStatus.IN_REVIEW, MemberStatus.ACTIVE,
+            User.UserRole.REVIEWER, page).getTotalElements()).isEqualTo(3);
+        assertThat(versions.findHistoryWithAuthor(first.getId(), org.springframework.data.domain.PageRequest.of(0, 1))
+            .getTotalElements()).isEqualTo(2);
+        assertThat(jobs.findHistoryRows(first.getId(), page).getTotalElements()).isZero();
+        assertThat(histories.findEventsWithActor(first.getId(), StatusHistory.EventType.REVIEW_DECISION, page)
+            .getTotalElements()).isZero();
+        assertThat(publications.findLibrary(com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY,
+            VideoStatus.PUBLISHED, page).getTotalElements()).isZero();
+    }
 }

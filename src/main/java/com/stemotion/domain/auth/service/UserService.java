@@ -42,6 +42,14 @@ public class UserService {
         return userRepository.findAll().stream().map(UserResponse::from).toList();
     }
 
+    /** One page of accounts, alphabetical by name, paged in SQL. */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<UserResponse> findAll(com.stemotion.core.web.PageParams paging) {
+        var pageable = org.springframework.data.domain.PageRequest.of(paging.page(), paging.size(),
+            org.springframework.data.domain.Sort.by("fullName").ascending());
+        return userRepository.findAll(pageable).map(UserResponse::from);
+    }
+
     @Transactional(readOnly = true)
     public UserResponse findById(String id) {
         return UserResponse.from(getOrThrow(id));

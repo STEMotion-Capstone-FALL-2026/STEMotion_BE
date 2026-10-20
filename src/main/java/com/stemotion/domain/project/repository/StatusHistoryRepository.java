@@ -15,4 +15,10 @@ public interface StatusHistoryRepository extends JpaRepository<StatusHistory, St
         + "and h.eventType = :type order by h.createdAt desc")
     List<StatusHistory> findEventsWithActor(@org.springframework.data.repository.query.Param("projectId") String projectId,
                                             @org.springframework.data.repository.query.Param("type") StatusHistory.EventType type);
+
+    @org.springframework.data.jpa.repository.Query(value = "select h from StatusHistory h join fetch h.changedBy where h.project.id = :projectId "
+        + "and h.eventType = :type order by h.createdAt desc",
+        countQuery = "select count(h) from StatusHistory h where h.project.id = :projectId and h.eventType = :type")
+    org.springframework.data.domain.Page<StatusHistory> findEventsWithActor(@org.springframework.data.repository.query.Param("projectId") String projectId,
+                                            @org.springframework.data.repository.query.Param("type") StatusHistory.EventType type, org.springframework.data.domain.Pageable page);
 }

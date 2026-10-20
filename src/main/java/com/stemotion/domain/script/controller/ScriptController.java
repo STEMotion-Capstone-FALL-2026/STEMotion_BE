@@ -39,8 +39,11 @@ public class ScriptController {
 
     @GetMapping("/workspaces/{workspaceId}/scripts")
     @Operation(summary = "List the scripts of a workspace")
-    public ResponseEntity<List<ScriptSummaryResponse>> findByWorkspace(@PathVariable String workspaceId) {
-        return ResponseEntity.ok(scriptService.findByWorkspace(workspaceId));
+    public ResponseEntity<List<ScriptSummaryResponse>> findByWorkspace(@PathVariable String workspaceId,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer size) {
+        return com.stemotion.core.web.PagedResponse.list(com.stemotion.core.web.PageParams.of(page, size),
+            () -> scriptService.findByWorkspace(workspaceId), p -> scriptService.findByWorkspace(workspaceId, p));
     }
 
     @PostMapping("/workspaces/{workspaceId}/scripts")
@@ -58,16 +61,24 @@ public class ScriptController {
     @GetMapping("/scripts/mine")
     @Operation(summary = "Scripts owned by the authenticated writer")
     public ResponseEntity<List<ScriptSummaryResponse>> findMine(
-        @AuthenticationPrincipal UserDetails principal
+        @AuthenticationPrincipal UserDetails principal,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer size
     ) {
-        return ResponseEntity.ok(scriptService.findByOwner(principal.getUsername()));
+        String userId = principal.getUsername();
+        return com.stemotion.core.web.PagedResponse.list(com.stemotion.core.web.PageParams.of(page, size),
+            () -> scriptService.findByOwner(userId), p -> scriptService.findByOwner(userId, p));
     }
 
     @GetMapping("/scripts/review-queue")
     @Operation(summary = "Scripts waiting for an editorial decision")
     @PreAuthorize("@workspaceAccess.isReviewerAnywhere(authentication.name)")
-    public ResponseEntity<List<ScriptSummaryResponse>> reviewQueue(@AuthenticationPrincipal UserDetails principal) {
-        return ResponseEntity.ok(scriptService.findReviewQueue(principal.getUsername()));
+    public ResponseEntity<List<ScriptSummaryResponse>> reviewQueue(@AuthenticationPrincipal UserDetails principal,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer size) {
+        String userId = principal.getUsername();
+        return com.stemotion.core.web.PagedResponse.list(com.stemotion.core.web.PageParams.of(page, size),
+            () -> scriptService.findReviewQueue(userId), p -> scriptService.findReviewQueue(userId, p));
     }
 
     @GetMapping("/scripts/{id}")
@@ -120,8 +131,11 @@ public class ScriptController {
 
     @GetMapping("/scripts/{id}/versions")
     @Operation(summary = "Version history of a script")
-    public ResponseEntity<List<ScriptVersionResponse>> versions(@PathVariable String id) {
-        return ResponseEntity.ok(scriptService.findVersions(id));
+    public ResponseEntity<List<ScriptVersionResponse>> versions(@PathVariable String id,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer size) {
+        return com.stemotion.core.web.PagedResponse.list(com.stemotion.core.web.PageParams.of(page, size),
+            () -> scriptService.findVersions(id), p -> scriptService.findVersions(id, p));
     }
 
     @GetMapping("/scripts/{id}/diff")

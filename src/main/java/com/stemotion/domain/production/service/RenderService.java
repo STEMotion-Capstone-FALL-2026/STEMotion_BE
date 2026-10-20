@@ -179,6 +179,16 @@ public class RenderService {
     }
 
     @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<RenderJobResponse> findByProject(String projectId,
+            com.stemotion.core.web.PageParams paging) {
+        scriptService.getOrThrow(projectId);
+        return renderJobRepository.findHistoryRows(projectId, paging.pageable())
+            .map(row -> new RenderJobResponse(row.id(), row.projectId(), row.status(), row.progress(), row.stage(),
+                row.videoUrl(), row.errorMessage(), null, row.createdAt(), row.scriptVersionNo(),
+                row.compositionRevision()));
+    }
+
+    @Transactional(readOnly = true)
     public List<RenderJobResponse> findByProject(String projectId) {
         scriptService.getOrThrow(projectId);
         // Projection: no input props JSON, version number joined in (DB performance plan 2.9).
