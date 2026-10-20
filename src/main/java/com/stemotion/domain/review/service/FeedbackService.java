@@ -62,8 +62,9 @@ public class FeedbackService {
     @Transactional(readOnly = true)
     public List<FeedbackResponse> findByProject(String projectId, FeedbackStatus status, String clipId) {
         scriptService.getOrThrow(projectId);
-        List<FeedbackComment> all = feedbackRepository.findByProjectIdOrderByTimestampSecAsc(projectId);
-        List<String> kept = new ArrayList<>();
+        // One query with the people and scene each response shows (DB performance plan 2.7).
+        List<FeedbackComment> all = feedbackRepository.findForProjectWithPeople(projectId);
+        java.util.Set<String> kept = new java.util.HashSet<>();
         List<FeedbackResponse> result = new ArrayList<>();
         for (FeedbackComment comment : all) {
             if (comment.getParent() != null) continue;
@@ -87,7 +88,7 @@ public class FeedbackService {
 
     @Transactional(readOnly = true)
     public List<FeedbackResponse> findByScene(String sceneId) {
-        return feedbackRepository.findBySceneIdOrderByCreatedAtAsc(sceneId)
+        return feedbackRepository.findForSceneWithPeople(sceneId)
             .stream()
             .map(FeedbackResponse::from)
             .toList();

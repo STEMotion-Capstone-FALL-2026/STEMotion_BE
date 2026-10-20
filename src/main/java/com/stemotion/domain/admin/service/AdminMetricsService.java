@@ -45,28 +45,24 @@ public class AdminMetricsService {
     @Value("${AI_MONTHLY_BUDGET_USD:#{null}}")
     private Double monthlyBudgetUsd;
 
+    /**
+     * Render counters from two grouped queries (DB performance plan 2.10), not by reading every job:
+     * active = queued + processing now; completed/failed = jobs that ended today.
+     */
     @Transactional(readOnly = true)
     public SystemMetrics collect() {
-        List<RenderJob> jobs = renderJobRepository.findAll();
-        LocalDate today = LocalDate.now();
+        Map<RenderStatus, Long> now = byStatus(renderJobRepository.countByStatus());
+        long active = now.getOrDefault(RenderStatus.QUEUED, 0L) + now.getOrDefault(RenderStatus.PROCESSING, 0L);
 
-        long active = jobs.stream()
-            .filter(j -> j.getStatus() == RenderStatus.QUEUED || j.getStatus() == RenderStatus.PROCESSING)
-            .count();
+        Map<RenderStatus, Long> today = byStatus(
+            renderJobRepository.countByStatusUpdatedSince(LocalDate.now().atStartOfDay()));
+        long completedToday = today.getOrDefault(RenderStatus.COMPLETED, 0L);
+        long failedToday = today.getOrDefault(RenderStatus.FAILED, 0L);
+        long finishedToday = completedToday + failedToday;
 
-        List<RenderJob> finishedToday = jobs.stream()
-            .filter(j -> j.getUpdatedAt() != null && j.getUpdatedAt().toLocalDate().equals(today))
-            .filter(j -> j.getStatus() == RenderStatus.COMPLETED || j.getStatus() == RenderStatus.FAILED)
-            .toList();
-
-        long completedToday = finishedToday.stream()
-            .filter(j -> j.getStatus() == RenderStatus.COMPLETED)
-            .count();
-        long failedToday = finishedToday.size() - completedToday;
-
-        double successRate = finishedToday.isEmpty()
+        double successRate = finishedToday == 0
             ? UNAVAILABLE
-            : round((double) completedToday / finishedToday.size() * 100d);
+            : round((double) completedToday / finishedToday * 100d);
 
         Runtime runtime = Runtime.getRuntime();
         double usedMemory = runtime.totalMemory() - runtime.freeMemory();
@@ -88,14 +84,18 @@ public class AdminMetricsService {
         );
     }
 
+    private static Map<RenderStatus, Long> byStatus(List<Object[]> rows) {
+        Map<RenderStatus, Long> map = new java.util.EnumMap<>(RenderStatus.class);
+        for (Object[] row : rows) {
+            if (row[0] instanceof RenderStatus status) map.put(status, ((Number) row[1]).longValue());
+        }
+        return map;
+    }
+
+    /** The 25 newest jobs, limited in SQL, with project and requester joined in. */
     @Transactional(readOnly = true)
     public List<AdminRenderJobSummary> listRecentRenderJobs() {
-        return renderJobRepository.findAll().stream()
-            .sorted(Comparator.comparing(
-                RenderJob::getCreatedAt,
-                Comparator.nullsLast(Comparator.reverseOrder())
-            ))
-            .limit(25)
+        return renderJobRepository.findRecentWithProject(org.springframework.data.domain.PageRequest.of(0, 25)).stream()
             .map(job -> new AdminRenderJobSummary(
                 job.getId(),
                 job.getExternalJobId(),
@@ -122,8 +122,8 @@ public class AdminMetricsService {
     @Transactional(readOnly = true)
     public AdminDashboardOverview collectOverview() {
         SystemMetrics metrics = collect();
-        List<ClipProject> projects = clipProjectRepository.findAll();
-        long totalProjects = projects.size();
+        List<Object[]> bySubject = clipProjectRepository.countBySubject();
+        long totalProjects = bySubject.stream().mapToLong(row -> ((Number) row[1]).longValue()).sum();
         long totalScriptVersions = scriptVersionRepository.count();
         long totalScenes = sceneRepository.count();
 
@@ -155,10 +155,9 @@ public class AdminMetricsService {
         projectsBySubject.put("Chemistry", 0L);
         projectsBySubject.put("Biology", 0L);
         projectsBySubject.put("ComputerScience", 0L);
-        for (ClipProject p : projects) {
-            if (p.getSubject() != null) {
-                String key = p.getSubject().name();
-                projectsBySubject.put(key, projectsBySubject.getOrDefault(key, 0L) + 1L);
+        for (Object[] row : bySubject) {
+            if (row[0] instanceof com.stemotion.core.enums.StemEnums.StemSubject subject) {
+                projectsBySubject.merge(subject.name(), ((Number) row[1]).longValue(), Long::sum);
             }
         }
 

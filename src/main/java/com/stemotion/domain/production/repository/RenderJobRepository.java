@@ -20,6 +20,23 @@ public interface RenderJobRepository extends JpaRepository<RenderJob, String> {
 
     List<RenderJob> findByProjectIdOrderByCreatedAtDesc(String projectId);
 
+    /** Render history rows with the script version number, without input props, in one query. */
+    @Query("select new com.stemotion.domain.production.repository.RenderJobRow(j.id, j.project.id, j.status, "
+        + "j.progress, j.stage, j.videoUrl, j.errorMessage, j.createdAt, v.versionNo, j.compositionRevision) "
+        + "from RenderJob j left join j.scriptVersion v where j.project.id = :projectId order by j.createdAt desc")
+    List<RenderJobRow> findHistoryRows(@Param("projectId") String projectId);
+
+    /** The most recent jobs with project and requester, for the admin queue (DB performance plan 2.10). */
+    @Query("select j from RenderJob j join fetch j.project left join fetch j.requestedBy order by j.createdAt desc")
+    List<RenderJob> findRecentWithProject(org.springframework.data.domain.Pageable page);
+
+    @Query("select j.status, count(j) from RenderJob j group by j.status")
+    List<Object[]> countByStatus();
+
+    /** Jobs that ended (or changed) since a moment, counted per status. */
+    @Query("select j.status, count(j) from RenderJob j where j.updatedAt >= :since group by j.status")
+    List<Object[]> countByStatusUpdatedSince(@Param("since") java.time.LocalDateTime since);
+
     Optional<RenderJob> findByExternalJobId(String externalJobId);
 
     boolean existsByProjectIdAndStatusIn(String projectId, java.util.Collection<RenderStatus> statuses);

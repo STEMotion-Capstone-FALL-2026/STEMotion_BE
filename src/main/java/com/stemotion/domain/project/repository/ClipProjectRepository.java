@@ -16,12 +16,17 @@ public interface ClipProjectRepository extends JpaRepository<ClipProject, String
      * of two queries per project. The scene count is of the current version, or of the latest one
      * when none is marked current, as ScriptService.currentVersion reads it.
      */
+    String SCENE_COUNT = "(select count(s) from Scene s where s.scriptVersion.project = p and s.scriptVersion.versionNo = "
+        + "  (select max(v.versionNo) from ScriptVersion v where v.project = p and (v.isCurrent = true or not exists "
+        + "    (select c from ScriptVersion c where c.project = p and c.isCurrent = true))))";
+
     String SUMMARY_SELECT = "select new com.stemotion.domain.project.repository.ProjectSummaryRow("
         + "p.id, p.title, p.subject, p.gradeLevel, p.totalDurationSeconds, p.scriptStatus, p.videoStatus, o.fullName, "
-        + "(select count(s) from Scene s where s.scriptVersion.project = p and s.scriptVersion.versionNo = "
-        + "  (select max(v.versionNo) from ScriptVersion v where v.project = p and (v.isCurrent = true or not exists "
-        + "    (select c from ScriptVersion c where c.project = p and c.isCurrent = true)))), "
-        + "p.updatedAt) from ClipProject p join p.owner o ";
+        + SCENE_COUNT + ", p.updatedAt) from ClipProject p join p.owner o ";
+
+    /** Scene counts of several projects in one query: rows of (projectId, count). */
+    @org.springframework.data.jpa.repository.Query("select p.id, " + SCENE_COUNT + " from ClipProject p where p.id in :ids")
+    List<Object[]> sceneCounts(@org.springframework.data.repository.query.Param("ids") java.util.Collection<String> ids);
 
     @org.springframework.data.jpa.repository.Query(SUMMARY_SELECT
         + "where p.workspace.id = :workspaceId and (p.archived is null or p.archived = false) order by p.createdAt desc")
@@ -64,6 +69,10 @@ public interface ClipProjectRepository extends JpaRepository<ClipProject, String
     List<ClipProject> findByVideoStatusOrderByCreatedAtDesc(VideoStatus videoStatus);
 
     long countByWorkspaceId(String workspaceId);
+
+    /** Projects per subject: rows of (subject, count). */
+    @org.springframework.data.jpa.repository.Query("select p.subject, count(p) from ClipProject p group by p.subject")
+    List<Object[]> countBySubject();
 
     /** Project count per workspace in one grouped query: rows of (workspaceId, count). */
     @org.springframework.data.jpa.repository.Query("select p.workspace.id, count(p) from ClipProject p where p.workspace.id in :ids group by p.workspace.id")

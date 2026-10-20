@@ -13,6 +13,14 @@ import java.util.Optional;
 @Repository
 public interface CompositionRepository extends JpaRepository<Composition, String> {
 
+    /** Compositions with their script version, in one query. */
+    @Query("select c from Composition c join fetch c.scriptVersion where c.id in :ids")
+    java.util.List<Composition> findWithVersionByIdIn(@Param("ids") java.util.Collection<String> ids);
+
+    /** Only the theme, without the composition's scene JSON. */
+    @Query("select c.visualTheme from Composition c where c.scriptVersion.id = :versionId")
+    Optional<String> findVisualThemeByScriptVersionId(@Param("versionId") String versionId);
+
     Optional<Composition> findByScriptVersionId(String scriptVersionId);
 
     /** Row lock for a save, so two producers cannot both write the next revision. */

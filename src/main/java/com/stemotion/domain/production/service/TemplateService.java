@@ -20,6 +20,9 @@ public class TemplateService {
 
     private final RemotionTemplateRepository templateRepository;
 
+    /** Once the catalogue is known to have rows, listing no longer counts them (DB performance plan 2.11). */
+    private volatile boolean catalogueSeeded;
+
     @Transactional
     public List<TemplateResponse> findAll(String category, boolean activeOnly) {
         ensureDefaultTemplates();
@@ -39,7 +42,11 @@ public class TemplateService {
     }
 
     private void ensureDefaultTemplates() {
+        if (catalogueSeeded) {
+            return;
+        }
         if (templateRepository.count() > 0) {
+            catalogueSeeded = true;
             return;
         }
         List<RemotionTemplate> defaults = List.of(

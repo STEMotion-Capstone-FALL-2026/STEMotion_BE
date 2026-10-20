@@ -87,6 +87,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- In-memory database for the JPA query tests (QueryShapeJpaTest); test scope only -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Reads .env file into Spring environment at startup -->
         <dependency>
             <groupId>me.paulschwarz</groupId>

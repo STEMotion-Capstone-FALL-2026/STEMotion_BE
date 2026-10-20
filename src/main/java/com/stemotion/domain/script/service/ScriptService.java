@@ -90,7 +90,7 @@ public class ScriptService {
     @Transactional(readOnly = true)
     public List<ScriptVersionResponse> findVersions(String projectId) {
         getOrThrow(projectId);
-        return versionRepository.findByProjectIdOrderByVersionNoDesc(projectId)
+        return versionRepository.findHistoryWithAuthor(projectId)
             .stream()
             .map(ScriptService::toVersionResponse)
             .toList();
@@ -370,8 +370,8 @@ public class ScriptService {
 
     private String visualThemeOf(ScriptVersion version) {
         if (compositionRepository == null || version.getId() == null) return "default";
-        return compositionRepository.findByScriptVersionId(version.getId())
-            .map(com.stemotion.domain.production.entity.Composition::getVisualTheme).orElse("default");
+        // Only the theme column, not the composition's scene JSON (DB performance plan 2.12).
+        return compositionRepository.findVisualThemeByScriptVersionId(version.getId()).orElse("default");
     }
 
     // --------------------------------------------------------------- internals

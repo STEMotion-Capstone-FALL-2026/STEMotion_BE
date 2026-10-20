@@ -181,10 +181,11 @@ public class RenderService {
     @Transactional(readOnly = true)
     public List<RenderJobResponse> findByProject(String projectId) {
         scriptService.getOrThrow(projectId);
-        return renderJobRepository.findByProjectIdOrderByCreatedAtDesc(projectId)
-            .stream()
-            .map(job -> RenderJobResponse.from(job, null,
-                job.getScriptVersion() == null ? null : job.getScriptVersion().getVersionNo()))
+        // Projection: no input props JSON, version number joined in (DB performance plan 2.9).
+        return renderJobRepository.findHistoryRows(projectId).stream()
+            .map(row -> new RenderJobResponse(row.id(), row.projectId(), row.status(), row.progress(), row.stage(),
+                row.videoUrl(), row.errorMessage(), null, row.createdAt(), row.scriptVersionNo(),
+                row.compositionRevision()))
             .toList();
     }
 

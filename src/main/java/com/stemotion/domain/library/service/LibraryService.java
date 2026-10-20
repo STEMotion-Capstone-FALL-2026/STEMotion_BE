@@ -14,8 +14,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.stemotion.domain.production.entity.Publication;
+
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The internal media library: everything that reached PUBLISHED, with the
@@ -44,21 +48,20 @@ public class LibraryService {
     public List<LibraryItem> findPublished(StemSubject subject, String gradeLevel) {
         String grade = (gradeLevel == null || gradeLevel.isBlank()) ? null : gradeLevel.trim();
 
-        return publishedProjects().stream()
-            .filter(p -> subject == null || p.getSubject() == subject)
-            .filter(p -> grade == null
-                || (p.getGradeLevel() != null && p.getGradeLevel().equalsIgnoreCase(grade)))
-            .map(this::toItem)
+        List<Publication> entries = libraryEntries().stream()
+            .filter(e -> subject == null || e.getProject().getSubject() == subject)
+            .filter(e -> grade == null || (e.getProject().getGradeLevel() != null
+                && e.getProject().getGradeLevel().equalsIgnoreCase(grade)))
             .toList();
+        return toItems(entries);
     }
 
-    private List<ClipProject> publishedProjects() {
-        return projectRepository.findByVideoStatusOrderByCreatedAtDesc(VideoStatus.PUBLISHED).stream()
-            .filter(p -> !Boolean.TRUE.equals(p.getArchived()))
-            .filter(p -> publicationRepository.findByProjectIdAndPlatform(p.getId(),
-                com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY)
-                .filter(publication -> publication.getClip()!=null).isPresent())
-            .toList();
+    /**
+     * Published, non-archived projects with an artifact-backed library publication, with their
+     * clip, owner and workspace, in one query (DB performance plan 2.6).
+     */
+    private List<Publication> libraryEntries() {
+        return publicationRepository.findLibrary(Publication.Platform.INTERNAL_LIBRARY, VideoStatus.PUBLISHED);
     }
 
     @Transactional(readOnly = true)
@@ -70,8 +73,10 @@ public class LibraryService {
         if (project.getVideoStatus() != VideoStatus.PUBLISHED) {
             throw ApiException.badRequest("Clip chưa được xuất bản nên không có trong thư viện");
         }
-        requirePublication(project);
-        return toItem(project);
+        Publication entry = publicationRepository
+            .findLibraryEntry(projectId, Publication.Platform.INTERNAL_LIBRARY, VideoStatus.PUBLISHED)
+            .orElseThrow(() -> ApiException.conflict("No artifact-backed INTERNAL_LIBRARY publication exists"));
+        return toItems(List.of(entry)).get(0);
     }
 
     /**
@@ -80,7 +85,7 @@ public class LibraryService {
      */
     @Transactional(readOnly = true)
     public LibraryFilters availableFilters() {
-        List<ClipProject> published = publishedProjects();
+        List<ClipProject> published = libraryEntries().stream().map(Publication::getProject).toList();
 
         List<StemSubject> subjects = published.stream()
             .map(ClipProject::getSubject)
@@ -98,18 +103,25 @@ public class LibraryService {
         return new LibraryFilters(subjects, grades);
     }
 
-    private LibraryItem toItem(ClipProject project) {
-        var publication = requirePublication(project);
-        PublishRecord latest = publishRepository
-            .findByProjectIdOrderByCreatedAtDesc(project.getId())
-            .stream()
-            .findFirst()
-            .orElse(null);
+    /** Items for several entries: their latest publish record and scene count, one query each. */
+    private List<LibraryItem> toItems(List<Publication> entries) {
+        if (entries.isEmpty()) return List.of();
+        List<String> ids = entries.stream().map(e -> e.getProject().getId()).toList();
+        Map<String, PublishRecord> latest = new HashMap<>();
+        for (PublishRecord record : publishRepository.findByProjectIdInNewestFirst(ids)) {
+            latest.putIfAbsent(record.getProject().getId(), record);
+        }
+        Map<String, Long> scenes = new HashMap<>();
+        for (Object[] row : projectRepository.sceneCounts(ids)) {
+            scenes.put(String.valueOf(row[0]), row[1] == null ? 0L : ((Number) row[1]).longValue());
+        }
+        return entries.stream().map(e -> toItem(e, latest.get(e.getProject().getId()),
+            scenes.getOrDefault(e.getProject().getId(), 0L).intValue())).toList();
+    }
 
-        int sceneCount = sceneRepository
-            .findByScriptVersionIdOrderByOrderNoAsc(scriptService.currentVersion(project).getId())
-            .size();
-
+    private static LibraryItem toItem(Publication publication, PublishRecord latest, int sceneCount) {
+        ClipProject project = publication.getProject();
+        String videoUrl = publication.getClip().getVideoUrl();
         return new LibraryItem(
             project.getId(),
             project.getTitle(),
@@ -119,19 +131,12 @@ public class LibraryService {
             sceneCount,
             project.getOwner().getFullName(),
             project.getWorkspace().getName(),
-            publication.getClip().getVideoUrl(),
+            videoUrl,
             latest != null && latest.getLmsEmbedCode() != null
                 ? latest.getLmsEmbedCode()
-                : com.stemotion.domain.production.service.VideoEmbed.build(publication.getClip().getVideoUrl()),
+                : com.stemotion.domain.production.service.VideoEmbed.build(videoUrl),
             latest == null ? null : latest.getYoutubeUrl(),
             latest == null ? project.getUpdatedAt() : latest.getCreatedAt()
         );
-    }
-
-    private com.stemotion.domain.production.entity.Publication requirePublication(ClipProject project) {
-        return publicationRepository.findByProjectIdAndPlatform(project.getId(),
-            com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY)
-            .filter(p -> p.getClip()!=null)
-            .orElseThrow(() -> ApiException.conflict("No artifact-backed INTERNAL_LIBRARY publication exists"));
     }
 }

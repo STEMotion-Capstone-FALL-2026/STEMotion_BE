@@ -47,16 +47,18 @@ class ReviewHistoryServiceTest {
 
         User reviewer = User.builder().fullName("Cô Lan").role(User.UserRole.WRITER).build();
         reviewer.setId("reviewer");
-        when(members.findByWorkspaceIdAndUserId("ws", "reviewer"))
-            .thenReturn(Optional.of(WorkspaceMember.builder().role(User.UserRole.REVIEWER).build()));
+        when(members.findWithUserByWorkspaceId("ws"))
+            .thenReturn(List.of(WorkspaceMember.builder().user(reviewer).role(User.UserRole.REVIEWER).build()));
 
         ScriptVersion v1 = new ScriptVersion(); v1.setId("v1"); v1.setVersionNo(1);
         ScriptVersion v2 = new ScriptVersion(); v2.setId("v2"); v2.setVersionNo(2);
-        when(versions.findById("v1")).thenReturn(Optional.of(v1));
+        when(versions.findAllById(org.mockito.ArgumentMatchers.anyIterable())).thenReturn(List.of(v1));
         Clip clip = Clip.builder().renderJob(RenderJob.builder().scriptVersion(v2).compositionRevision(2).build()).build();
-        when(clips.findById("clip")).thenReturn(Optional.of(clip));
-        when(compositions.findById("composition"))
-            .thenReturn(Optional.of(Composition.builder().scriptVersion(v2).revision(4).build()));
+        clip.setId("clip");
+        when(clips.findWithRenderJobByIdIn(org.mockito.ArgumentMatchers.anyCollection())).thenReturn(List.of(clip));
+        Composition composition = Composition.builder().scriptVersion(v2).revision(4).build();
+        composition.setId("composition");
+        when(compositions.findWithVersionByIdIn(org.mockito.ArgumentMatchers.anyCollection())).thenReturn(List.of(composition));
 
         StatusHistory scriptReject = decision(reviewer, StatusHistory.TargetType.SCRIPT, "v1", StatusHistory.Decision.REJECTED, "Thiếu ví dụ", null);
         StatusHistory clipReject = decision(reviewer, StatusHistory.TargetType.CLIP, "clip", StatusHistory.Decision.REJECTED, "Âm lệch", null);
@@ -65,8 +67,8 @@ class ReviewHistoryServiceTest {
         StatusHistory transition = StatusHistory.builder().eventType(StatusHistory.EventType.PIPELINE_TRANSITION)
             .targetType(StatusHistory.TargetType.PROJECT).targetId("project").changedBy(reviewer)
             .toStatus(ProjectStatus.DRAFT).build();
-        when(histories.findByProjectIdOrderByCreatedAtDesc("project"))
-            .thenReturn(List.of(compositionApprove, transition, clipReject, scriptReject));
+        when(histories.findEventsWithActor("project", StatusHistory.EventType.REVIEW_DECISION))
+            .thenReturn(List.of(compositionApprove, clipReject, scriptReject));
 
         assertThat(service.findByProject("project"))
             .extracting(e -> e.action(), e -> e.targetType(), e -> e.scriptVersionNo(), e -> e.clipId(),
