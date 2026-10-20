@@ -1,0 +1,25 @@
+# Home worker mode: the deployed site (Vercel FE + Render BE) renders clips and runs AI on this
+# laptop, reached through Tailscale Funnel (see STEMotion_RENDER/docs/HOME_HOSTING.md).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.home.yml up -d --build ai-service render
+#
+# docker-compose.yml alone stays the all-local stack (backend in Docker, clips on localhost).
+# Here the render worker instead takes its settings from STEMotion_RENDER/.env (public Funnel URL,
+# the key the deployed BE uses, TTS, Whisper alignment) and writes clips to the host folder
+# STEMotion_RENDER/output, the same folder the native worker uses, so earlier clip links keep working.
+services:
+  render:
+    env_file:
+      - path: ../STEMotion_RENDER/.env
+        required: true
+    # Replaces the all-local values (localhost clip URLs, no TTS, the local backend callback).
+    environment: !override
+      # STEMotion_RENDER/.env points at 127.0.0.1 for the native run; in Docker the AI service is
+      # reached by its compose name.
+      ALIGNMENT_URL: http://ai-service:8000/transcribe/align
+      RENDER_IMAGE_FORMAT: png
+      RENDER_CRF: "16"
+    volumes: !override
+      - ../STEMotion_RENDER/output:/workspace/STEMotion_RENDER/output
+    depends_on:
+      - ai-service
