@@ -9,6 +9,9 @@ import java.util.List;
 @Repository
 public interface SceneRepository extends JpaRepository<Scene, String> {
 
+    @org.springframework.data.jpa.repository.Query("select s.scriptVersion.project.id from Scene s where s.id = :id")
+    java.util.Optional<String> findProjectIdById(@org.springframework.data.repository.query.Param("id") String id);
+
     List<Scene> findByScriptVersionIdOrderByOrderNoAsc(String versionId);
 
     @org.springframework.data.jpa.repository.Query("select count(f) > 0 from FeedbackComment f where f.scene.id = :sceneId")

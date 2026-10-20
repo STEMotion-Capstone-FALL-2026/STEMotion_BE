@@ -35,38 +35,32 @@ class ReviewQueueScopeTest {
     private final ScriptService service = new ScriptService(projects, versions, mock(SceneRepository.class), null,
         mock(AuthService.class), mock(WorkspaceService.class), mock(StatusHistoryService.class), access);
 
-    private ClipProject inWorkspace(String projectId, String workspaceId) {
-        Workspace workspace = Workspace.builder().name(workspaceId).build();
-        workspace.setId(workspaceId);
-        ClipProject project = ClipProject.builder().title(projectId).workspace(workspace)
-            .owner(User.builder().fullName("Writer").build())
-            .scriptStatus(ScriptStatus.IN_REVIEW).build();
-        project.setId(projectId);
-        when(versions.findFirstByProjectIdAndIsCurrentTrue(projectId)).thenReturn(Optional.of(ScriptVersion.builder().build()));
-        return project;
+    private static com.stemotion.domain.project.repository.ProjectSummaryRow row(String id) {
+        return new com.stemotion.domain.project.repository.ProjectSummaryRow(id, id, null, "10", 60,
+            ScriptStatus.IN_REVIEW, null, "Writer", 4L, null);
     }
 
     @Test
-    @DisplayName("the review queue only lists scripts from workspaces where the user reviews")
+    @DisplayName("the review queue asks for scripts in workspaces where the user is an active reviewer")
     void listsOnlyWorkspacesWhereTheUserReviews() {
-        List<ClipProject> waiting = List.of(
-            inWorkspace("physics-script", "physics"), inWorkspace("chemistry-script", "chemistry"));
-        when(projects.findByScriptStatusOrderByCreatedAtDesc(ScriptStatus.IN_REVIEW)).thenReturn(waiting);
-        when(access.hasWorkspaceRole("physics", "teacher", "REVIEWER")).thenReturn(true);
-        when(access.hasWorkspaceRole("chemistry", "teacher", "REVIEWER")).thenReturn(false);
+        when(projects.findReviewQueueSummaries("teacher", false, ScriptStatus.IN_REVIEW,
+                com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE, User.UserRole.REVIEWER))
+            .thenReturn(List.of(row("physics-script")));
 
         assertThat(service.findReviewQueue("teacher")).extracting("id").containsExactly("physics-script");
+        assertThat(service.findReviewQueue("teacher").get(0).sceneCount()).isEqualTo(4);
     }
 
     @Test
-    @DisplayName("after leaving a workspace, the writer no longer sees their own scripts from it")
+    @DisplayName("own scripts are listed only from workspaces the writer still belongs to (admins see all)")
     void leavingAWorkspaceHidesOwnScripts() {
-        List<ClipProject> owned = List.of(
-            inWorkspace("physics-script", "physics"), inWorkspace("chemistry-script", "chemistry"));
-        when(projects.findByOwnerIdOrderByCreatedAtDesc("teacher")).thenReturn(owned);
-        when(access.canRead("physics", "teacher")).thenReturn(true);
-        when(access.canRead("chemistry", "teacher")).thenReturn(false);
+        when(projects.findSummariesByOwner("teacher", false, com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE))
+            .thenReturn(List.of(row("physics-script")));
+        when(access.isAdmin("admin")).thenReturn(true);
+        when(projects.findSummariesByOwner("admin", true, com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE))
+            .thenReturn(List.of(row("physics-script"), row("chemistry-script")));
 
         assertThat(service.findByOwner("teacher")).extracting("id").containsExactly("physics-script");
+        assertThat(service.findByOwner("admin")).extracting("id").containsExactly("physics-script", "chemistry-script");
     }
 }

@@ -48,7 +48,7 @@ public class ResourceAccessInterceptor implements HandlerInterceptor {
 
         // Must change password check: block all other endpoints until password is changed
         if (!path.equals("/api/v1/auth/me") && !path.equals("/api/v1/auth/change-password")) {
-            users.findById(userId).ifPresent(user -> {
+            access.user(userId).ifPresent(user -> {
                 if (user.isMustChangePassword()) {
                     throw new ApiException(
                         HttpStatus.FORBIDDEN,
@@ -83,14 +83,14 @@ public class ResourceAccessInterceptor implements HandlerInterceptor {
         if (project != null) access.requireProject(project, userId,
             "PUT".equals(request.getMethod()) && path.matches("/api/v1/scripts/[^/]+"));
         String job = variables.get("jobId");
-        if (job != null) access.requireProject(jobs.findById(job)
-            .orElseThrow(() -> ApiException.notFound("RenderJob", job)).getProject().getId(), userId, false);
+        if (job != null) access.requireProject(jobs.findProjectIdById(job)
+            .orElseThrow(() -> ApiException.notFound("RenderJob", job)), userId, false);
         String scene = variables.get("sceneId");
-        if (scene != null) access.requireProject(scenes.findById(scene)
-            .orElseThrow(() -> ApiException.notFound("Scene", scene)).getScriptVersion().getProject().getId(), userId, false);
+        if (scene != null) access.requireProject(scenes.findProjectIdById(scene)
+            .orElseThrow(() -> ApiException.notFound("Scene", scene)), userId, false);
         String comment = variables.get("commentId");
-        if (comment != null) access.requireProject(comments.findById(comment)
-            .orElseThrow(() -> ApiException.notFound("FeedbackComment", comment)).getProject().getId(), userId, false);
+        if (comment != null) access.requireProject(comments.findProjectIdById(comment)
+            .orElseThrow(() -> ApiException.notFound("FeedbackComment", comment)), userId, false);
         return true;
     }
 }

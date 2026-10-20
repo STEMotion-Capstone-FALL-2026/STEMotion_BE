@@ -36,23 +36,45 @@ public class WorkspaceService {
 
     @Transactional(readOnly = true)
     public List<WorkspaceResponse> findAll() {
-        return workspaceRepository.findAllByOrderByNameAsc().stream().map(this::toResponse).toList();
+        List<Workspace> workspaces = workspaceRepository.findAllByOrderByNameAsc();
+        Counts counts = counts(workspaces.stream().map(Workspace::getId).toList());
+        return workspaces.stream().map(workspace -> counts.response(workspace, null, null)).toList();
     }
 
+    /**
+     * The user's active seats. Member and project counts are two grouped queries for all of them
+     * (DB performance plan 2.3), not two counts per workspace.
+     */
     @Transactional(readOnly = true)
     public List<WorkspaceResponse> findMine(String userId) {
-        return memberRepository.findByUserId(userId).stream()
+        List<WorkspaceMember> seats = memberRepository.findWithWorkspaceByUserId(userId).stream()
             .filter(member -> member.getStatus() == MemberStatus.ACTIVE)
-            .map(member -> new WorkspaceResponse(
-                member.getWorkspace().getId(),
-                member.getWorkspace().getName(),
-                member.getWorkspace().getDepartment(),
-                memberRepository.countByWorkspaceId(member.getWorkspace().getId()),
-                projectRepository.countByWorkspaceId(member.getWorkspace().getId()),
-                member.getRole(),
-                member.isLeader()
-            ))
             .toList();
+        Counts counts = counts(seats.stream().map(member -> member.getWorkspace().getId()).toList());
+        return seats.stream()
+            .map(member -> counts.response(member.getWorkspace(), member.getRole(), member.isLeader()))
+            .toList();
+    }
+
+    /** Member and project counts of several workspaces, read with one grouped query each. */
+    private Counts counts(java.util.Collection<String> workspaceIds) {
+        if (workspaceIds.isEmpty()) return new Counts(java.util.Map.of(), java.util.Map.of());
+        return new Counts(toMap(memberRepository.countByWorkspaceIds(workspaceIds)),
+            toMap(projectRepository.countByWorkspaceIds(workspaceIds)));
+    }
+
+    private static java.util.Map<String, Long> toMap(List<Object[]> rows) {
+        java.util.Map<String, Long> map = new java.util.HashMap<>();
+        for (Object[] row : rows) map.put(String.valueOf(row[0]), ((Number) row[1]).longValue());
+        return map;
+    }
+
+    private record Counts(java.util.Map<String, Long> members, java.util.Map<String, Long> projects) {
+        WorkspaceResponse response(Workspace workspace, User.UserRole myRole, Boolean isLeader) {
+            return new WorkspaceResponse(workspace.getId(), workspace.getName(), workspace.getDepartment(),
+                members.getOrDefault(workspace.getId(), 0L), projects.getOrDefault(workspace.getId(), 0L),
+                myRole, isLeader);
+        }
     }
 
     /**
@@ -64,11 +86,15 @@ public class WorkspaceService {
         boolean admin = userRepository.findById(userId)
             .map(user -> user.getRole() == User.UserRole.ADMIN).orElse(false);
         if (!admin) return findMine(userId);
-        var seats = findMine(userId).stream()
-            .collect(java.util.stream.Collectors.toMap(WorkspaceResponse::id, seat -> seat, (a, b) -> a));
-        return workspaceRepository.findAllByOrderByNameAsc().stream()
-            .map(workspace -> seats.getOrDefault(workspace.getId(), toResponse(workspace)))
-            .toList();
+        var seats = memberRepository.findWithWorkspaceByUserId(userId).stream()
+            .filter(member -> member.getStatus() == MemberStatus.ACTIVE)
+            .collect(java.util.stream.Collectors.toMap(member -> member.getWorkspace().getId(), member -> member, (a, b) -> a));
+        List<Workspace> workspaces = workspaceRepository.findAllByOrderByNameAsc();
+        Counts counts = counts(workspaces.stream().map(Workspace::getId).toList());
+        return workspaces.stream().map(workspace -> {
+            WorkspaceMember seat = seats.get(workspace.getId());
+            return counts.response(workspace, seat == null ? null : seat.getRole(), seat == null ? null : seat.isLeader());
+        }).toList();
     }
 
     @Transactional(readOnly = true)
@@ -134,7 +160,7 @@ public class WorkspaceService {
     @Transactional(readOnly = true)
     public List<MemberResponse> findMembers(String workspaceId) {
         getOrThrow(workspaceId);
-        return memberRepository.findByWorkspaceIdOrderByCreatedAtAsc(workspaceId)
+        return memberRepository.findWithUserByWorkspaceId(workspaceId)
             .stream()
             .map(MemberResponse::from)
             .toList();

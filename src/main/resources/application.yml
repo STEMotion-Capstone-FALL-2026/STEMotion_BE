@@ -39,6 +39,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        # Counts statements per request for the "api … q=N" log line (no SQL is logged).
+        session_factory:
+          statement_inspector: com.stemotion.core.metrics.QueryCountInspector
     open-in-view: false
 
 app:

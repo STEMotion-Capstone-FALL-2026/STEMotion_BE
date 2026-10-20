@@ -26,10 +26,7 @@ class WorkspaceAccessTest {
     final WorkspaceAccess access = new WorkspaceAccess(users, members, projects, jobs, mock(com.stemotion.domain.review.repository.FeedbackCommentRepository.class));
 
     void seat(User.UserRole role, MemberStatus status, boolean isLeader) {
-        var workspace = new Workspace();
-        workspace.setId("one");
-        when(members.findByUserId("writer")).thenReturn(List.of(WorkspaceMember.builder()
-            .workspace(workspace).role(role).status(status).isLeader(isLeader).build()));
+        when(members.findMembershipsByUserId("writer")).thenReturn(List.of(new Membership("one", role, status, isLeader)));
     }
 
     @Test
@@ -67,12 +64,7 @@ class WorkspaceAccessTest {
     @Test
     void anyWorkspaceWriterCanEditDraftEvenIfNotOriginalOwner() {
         seat(User.UserRole.WRITER, MemberStatus.ACTIVE, false);
-        var workspace = new Workspace();
-        workspace.setId("one");
-        var otherOwner = new User();
-        otherOwner.setId("other");
-        when(projects.findById("project")).thenReturn(Optional.of(ClipProject.builder()
-            .workspace(workspace).owner(otherOwner).build()));
+        when(projects.findRefById("project")).thenReturn(Optional.of(new ProjectRef("project", "one", "other")));
 
         // Any active WRITER in the workspace can edit draft
         assertThatCode(() -> access.requireProject("project", "writer", true)).doesNotThrowAnyException();
@@ -82,12 +74,7 @@ class WorkspaceAccessTest {
     @Test
     void nonWriterCannotEditDraft() {
         seat(User.UserRole.REVIEWER, MemberStatus.ACTIVE, false);
-        var workspace = new Workspace();
-        workspace.setId("one");
-        var otherOwner = new User();
-        otherOwner.setId("other");
-        when(projects.findById("project")).thenReturn(Optional.of(ClipProject.builder()
-            .workspace(workspace).owner(otherOwner).build()));
+        when(projects.findRefById("project")).thenReturn(Optional.of(new ProjectRef("project", "one", "other")));
 
         // Reviewer can read, but cannot edit draft
         assertThatCode(() -> access.requireProject("project", "writer", false)).doesNotThrowAnyException();
@@ -102,7 +89,7 @@ class WorkspaceAccessTest {
         when(users.findById("admin")).thenReturn(Optional.of(User.builder().role(User.UserRole.ADMIN).build()));
         assertThatCode(() -> access.requireAiAccess("admin")).doesNotThrowAnyException();
 
-        when(members.findByUserId("other")).thenReturn(List.of());
+        when(members.findMembershipsByUserId("other")).thenReturn(List.of());
         when(users.findById("other")).thenReturn(Optional.of(User.builder().role(User.UserRole.WRITER).build()));
         assertThatThrownBy(() -> access.requireAiAccess("other")).isInstanceOf(ApiException.class);
     }
@@ -125,5 +112,27 @@ class WorkspaceAccessTest {
         when(users.findById("writer")).thenReturn(Optional.of(User.builder().role(User.UserRole.REVIEWER).build()));
         seat(User.UserRole.PRODUCER, MemberStatus.ACTIVE, false);
         assertThat(access.hasRoleAnywhere("writer", "WRITER", "PRODUCER")).isTrue();
+    }
+
+    @Test
+    void oneRequestReadsTheUserMembershipsAndProjectOnce() {
+        seat(User.UserRole.WRITER, MemberStatus.ACTIVE, false);
+        when(users.findById("writer")).thenReturn(Optional.of(User.builder().role(User.UserRole.WRITER).build()));
+        when(projects.findRefById("project")).thenReturn(Optional.of(new ProjectRef("project", "one", "writer")));
+        var request = new org.springframework.mock.web.MockHttpServletRequest();
+        org.springframework.web.context.request.RequestContextHolder.setRequestAttributes(
+            new org.springframework.web.context.request.ServletRequestAttributes(request));
+        try {
+            access.requireProject("project", "writer", false);
+            access.requireProject("project", "writer", true);
+            assertThat(access.hasProjectRole("project", "writer", "WRITER")).isTrue();
+            assertThat(access.canArchiveProject("project", "writer")).isTrue();
+            assertThat(access.hasRoleAnywhere("writer", "WRITER")).isTrue();
+        } finally {
+            org.springframework.web.context.request.RequestContextHolder.resetRequestAttributes();
+        }
+        verify(users, times(1)).findById("writer");
+        verify(members, times(1)).findMembershipsByUserId("writer");
+        verify(projects, times(1)).findRefById("project");
     }
 }

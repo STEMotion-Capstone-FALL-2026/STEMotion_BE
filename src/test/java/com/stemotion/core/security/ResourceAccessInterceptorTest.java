@@ -56,8 +56,7 @@ class ResourceAccessInterceptorTest {
         verify(access).requireWorkspace("one", "writer-id", false);
     }
     @Test void pollingJobChecksItsWorkspaceThroughProject() {
-        var project = new ClipProject(); project.setId("one");
-        when(jobs.findById("job")).thenReturn(Optional.of(RenderJob.builder().project(project).build()));
+        when(jobs.findProjectIdById("job")).thenReturn(Optional.of("one"));
         check("GET", "/api/v1/render/status/job", Map.of("jobId", "job"));
         verify(access).requireProject("one", "writer-id", false);
     }
@@ -70,6 +69,8 @@ class ResourceAccessInterceptorTest {
     @Test void alignmentRetainsItsOwnControllerGuards() {
         check("POST", "/api/v1/ai/transcribe/align", Map.of());
         check("POST", "/api/v1/ai/internal/transcribe/align", Map.of());
-        verifyNoInteractions(access);
+        // Only the password-change gate reads the (request-cached) user; no AI or project check.
+        verify(access, never()).requireAiAccess(anyString());
+        verify(access, never()).requireProject(anyString(), anyString(), anyBoolean());
     }
 }

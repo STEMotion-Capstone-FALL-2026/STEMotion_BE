@@ -164,10 +164,22 @@ class WorkspaceServiceTest {
         when(workspaces.findAllByOrderByNameAsc()).thenReturn(List.of(workspace, other));
         WorkspaceMember seat = WorkspaceMember.builder().workspace(workspace).user(teacher)
             .role(User.UserRole.WRITER).status(MemberStatus.ACTIVE).build();
-        when(members.findByUserId("teacher-id")).thenReturn(List.of(seat));
-        when(members.findByUserId("admin-id")).thenReturn(List.of());
+        when(members.findWithWorkspaceByUserId("teacher-id")).thenReturn(List.of(seat));
+        when(members.findWithWorkspaceByUserId("admin-id")).thenReturn(List.of());
+        when(members.countByWorkspaceIds(org.mockito.ArgumentMatchers.anyCollection()))
+            .thenReturn(List.<Object[]>of(new Object[] {"ws-1", 3L}));
+        when(projects.countByWorkspaceIds(org.mockito.ArgumentMatchers.anyCollection()))
+            .thenReturn(List.<Object[]>of(new Object[] {"ws-2", 5L}));
 
-        assertThat(service.findVisible("admin-id")).extracting(WorkspaceResponse::id).containsExactly("ws-1", "ws-2");
-        assertThat(service.findVisible("teacher-id")).extracting(WorkspaceResponse::id).containsExactly("ws-1");
+        var visible = service.findVisible("admin-id");
+        assertThat(visible).extracting(WorkspaceResponse::id).containsExactly("ws-1", "ws-2");
+        assertThat(visible).extracting(WorkspaceResponse::membersCount).containsExactly(3L, 0L);
+        assertThat(visible).extracting(WorkspaceResponse::activeProjects).containsExactly(0L, 5L);
+        var mine = service.findVisible("teacher-id");
+        assertThat(mine).extracting(WorkspaceResponse::id).containsExactly("ws-1");
+        assertThat(mine.get(0).myRole()).isEqualTo(User.UserRole.WRITER);
+        // Counts are two grouped queries, never one count per workspace.
+        verify(members, never()).countByWorkspaceId(org.mockito.ArgumentMatchers.anyString());
+        verify(projects, never()).countByWorkspaceId(org.mockito.ArgumentMatchers.anyString());
     }
 }

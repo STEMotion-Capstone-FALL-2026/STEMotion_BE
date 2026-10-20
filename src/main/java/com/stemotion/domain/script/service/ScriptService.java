@@ -57,22 +57,15 @@ public class ScriptService {
     @Transactional(readOnly = true)
     public List<ScriptSummaryResponse> findByWorkspace(String workspaceId) {
         workspaceService.getOrThrow(workspaceId);
-        return projectRepository.findByWorkspaceIdOrderByCreatedAtDesc(workspaceId)
-            .stream()
-            .filter(project -> !Boolean.TRUE.equals(project.getArchived()))
-            .map(this::toSummary)
-            .toList();
+        return projectRepository.findSummariesByWorkspace(workspaceId).stream().map(ScriptService::toSummary).toList();
     }
 
     @Transactional(readOnly = true)
     public List<ScriptSummaryResponse> findByOwner(String ownerId) {
-        return projectRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId)
-            .stream()
-            .filter(project -> !Boolean.TRUE.equals(project.getArchived()))
-            // Leaving a workspace removes access to all of its projects, own ones included.
-            .filter(project -> workspaceAccess.canRead(project.getWorkspace().getId(), ownerId))
-            .map(this::toSummary)
-            .toList();
+        // Leaving a workspace removes access to all of its projects, own ones included.
+        return projectRepository.findSummariesByOwner(ownerId, workspaceAccess.isAdmin(ownerId),
+                com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE)
+            .stream().map(ScriptService::toSummary).toList();
     }
 
     /**
@@ -82,12 +75,9 @@ public class ScriptService {
      */
     @Transactional(readOnly = true)
     public List<ScriptSummaryResponse> findReviewQueue(String userId) {
-        return projectRepository.findByScriptStatusOrderByCreatedAtDesc(ScriptStatus.IN_REVIEW)
-            .stream()
-            .filter(project -> !Boolean.TRUE.equals(project.getArchived()))
-            .filter(project -> workspaceAccess.hasWorkspaceRole(project.getWorkspace().getId(), userId, "REVIEWER"))
-            .map(this::toSummary)
-            .toList();
+        return projectRepository.findReviewQueueSummaries(userId, workspaceAccess.isAdmin(userId), ScriptStatus.IN_REVIEW,
+                com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE, com.stemotion.domain.auth.entity.User.UserRole.REVIEWER)
+            .stream().map(ScriptService::toSummary).toList();
     }
 
     @Transactional(readOnly = true)
@@ -491,19 +481,18 @@ public class ScriptService {
         }
     }
 
-    private ScriptSummaryResponse toSummary(ClipProject project) {
-        ScriptVersion current = currentVersion(project);
+    private static ScriptSummaryResponse toSummary(com.stemotion.domain.project.repository.ProjectSummaryRow row) {
         return new ScriptSummaryResponse(
-            project.getId(),
-            project.getTitle(),
-            project.getSubject(),
-            project.getGradeLevel(),
-            project.getTotalDurationSeconds(),
-            project.getScriptStatus(),
-            project.getVideoStatus(),
-            project.getOwner().getFullName(),
-            sceneRepository.findByScriptVersionIdOrderByOrderNoAsc(current.getId()).size(),
-            project.getUpdatedAt()
+            row.id(),
+            row.title(),
+            row.subject(),
+            row.gradeLevel(),
+            row.totalDurationSeconds(),
+            row.scriptStatus(),
+            row.videoStatus(),
+            row.ownerName(),
+            row.sceneCount() == null ? 0 : row.sceneCount().intValue(),
+            row.updatedAt()
         );
     }
 

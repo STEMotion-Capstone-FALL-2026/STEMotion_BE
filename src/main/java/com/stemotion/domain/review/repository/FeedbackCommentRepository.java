@@ -10,6 +10,9 @@ import java.util.List;
 @Repository
 public interface FeedbackCommentRepository extends JpaRepository<FeedbackComment, String> {
 
+    @org.springframework.data.jpa.repository.Query("select c.project.id from FeedbackComment c where c.id = :id")
+    java.util.Optional<String> findProjectIdById(@org.springframework.data.repository.query.Param("id") String id);
+
     List<FeedbackComment> findByProjectIdOrderByTimestampSecAsc(String projectId);
 
     List<FeedbackComment> findByProjectIdAndStatusOrderByTimestampSecAsc(String projectId, FeedbackStatus status);

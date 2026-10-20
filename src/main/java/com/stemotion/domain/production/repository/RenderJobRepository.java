@@ -15,6 +15,9 @@ import java.util.Optional;
 @Repository
 public interface RenderJobRepository extends JpaRepository<RenderJob, String> {
 
+    @Query("select j.project.id from RenderJob j where j.id = :id")
+    Optional<String> findProjectIdById(@Param("id") String id);
+
     List<RenderJob> findByProjectIdOrderByCreatedAtDesc(String projectId);
 
     Optional<RenderJob> findByExternalJobId(String externalJobId);

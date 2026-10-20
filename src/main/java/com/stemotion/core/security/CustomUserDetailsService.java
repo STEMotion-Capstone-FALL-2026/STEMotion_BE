@@ -23,7 +23,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
-        User user = userRepository.findById(userId)
+        // Same per-request entry WorkspaceAccess reads, so the user is loaded once per request.
+        User user = com.stemotion.core.support.RequestCache.get("user:" + userId, () -> userRepository.findById(userId))
             .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
 
         return org.springframework.security.core.userdetails.User

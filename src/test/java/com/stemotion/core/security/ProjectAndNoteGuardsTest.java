@@ -67,14 +67,14 @@ class ProjectAndNoteGuardsTest {
 
     private void seat(String userId, User.UserRole role, boolean leader) {
         when(users.findById(userId)).thenReturn(Optional.of(user(userId, User.UserRole.WRITER)));
-        when(members.findByUserId(userId)).thenReturn(List.of(WorkspaceMember.builder()
-            .workspace(physics).role(role).status(MemberStatus.ACTIVE).isLeader(leader).build()));
+        when(members.findMembershipsByUserId(userId)).thenReturn(List.of(
+            new Membership(physics.getId(), role, MemberStatus.ACTIVE, leader)));
     }
 
     @Test
     @DisplayName("only the owner, the workspace leader or an admin archives a project")
     void archiveIsKeptToOwnerLeaderAndAdmin() {
-        when(projects.findById("project")).thenReturn(Optional.of(project));
+        when(projects.findRefById("project")).thenReturn(Optional.of(new ProjectRef("project", physics.getId(), "owner")));
         seat("owner", User.UserRole.WRITER, false);
         seat("leader", User.UserRole.REVIEWER, true);
         seat("writer", User.UserRole.WRITER, false);
@@ -89,8 +89,8 @@ class ProjectAndNoteGuardsTest {
     @Test
     @DisplayName("QA note roles are checked through the note's project")
     void noteRolesFollowTheProject() {
-        when(projects.findById("project")).thenReturn(Optional.of(project));
-        when(comments.findById("note")).thenReturn(Optional.of(FeedbackComment.builder().project(project).build()));
+        when(projects.findRefById("project")).thenReturn(Optional.of(new ProjectRef("project", physics.getId(), "owner")));
+        when(comments.findProjectIdById("note")).thenReturn(Optional.of("project"));
         seat("producer", User.UserRole.PRODUCER, false);
         seat("writer", User.UserRole.WRITER, false);
 
