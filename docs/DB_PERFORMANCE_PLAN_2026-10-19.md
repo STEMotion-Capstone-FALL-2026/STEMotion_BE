@@ -13,7 +13,7 @@ Dựa trên báo cáo DB audit của LeTran (SHA `74a1bf2`) và lượt kiểm t
 | 2.5–2.12 Review-history, thư viện, comments, versions, render history, admin, templates, theme | ✅ Xong | `11ce7b4` |
 | 2.13 Transaction | ✅ Xong: rà mọi service; sửa `requestChanges` bị mất `@Transactional` (ghi nhiều bảng rời rạc); `WriteTransactionsTest` chặn method ghi thiếu transaction | `2015cac` |
 | Test số query (H2, `QueryShapeJpaTest`): mọi `@Query` khởi động được, kết quả đúng phạm vi, số statement không đổi khi số dòng tăng | ✅ Xong | `11ce7b4` |
-| 3. V21 index | ✅ Code + test PGlite; **chưa chạy lên DB prod** | `dc66814` |
+| 3. V21 index | ✅ Đã chạy lên DB prod 20/10/2026 (V20 → V21, 5,5 s, Hibernate validate OK); 13/13 index có mặt | `dc66814` |
 | 4. Phân trang (BE) | ✅ Xong, tương thích ngược; FE dùng dần theo `FE_ACCOMPLISHMENTS_TODO.md` mục 9.6 | xem log |
 | 6. Hạ tầng (cùng region, gói Render) | Chờ team quyết định | — |
 
