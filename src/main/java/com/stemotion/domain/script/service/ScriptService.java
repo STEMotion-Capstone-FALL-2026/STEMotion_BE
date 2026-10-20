@@ -260,12 +260,6 @@ public class ScriptService {
     }
 
     /**
-     * Reviewer returns the script. A fresh version is opened and seeded with a
-     * copy of the reviewed scenes, so the writer edits a new revision while the
-     * reviewed one stays intact for the diff view.
-     */
-    @Transactional
-    /**
      * A return without a reason leaves the writer or producer guessing, so returning a script or a
      * clip needs one; it is stored with the decision and shown in the history.
      */
@@ -277,6 +271,12 @@ public class ScriptService {
         return note.trim();
     }
 
+    /**
+     * Reviewer returns the script. A fresh version is opened and seeded with a
+     * copy of the reviewed scenes, so the writer edits a new revision while the
+     * reviewed one stays intact for the diff view. All of it commits together.
+     */
+    @Transactional
     public ScriptResponse requestChanges(String projectId, ReviewDecisionRequest request, String reviewerId) {
         String reason = requireReason(request == null ? null : request.note());
         ClipProject project = getOrThrow(projectId);
