@@ -48,12 +48,7 @@ public class LibraryService {
     public List<LibraryItem> findPublished(StemSubject subject, String gradeLevel) {
         String grade = (gradeLevel == null || gradeLevel.isBlank()) ? null : gradeLevel.trim();
 
-        List<Publication> entries = libraryEntries().stream()
-            .filter(e -> subject == null || e.getProject().getSubject() == subject)
-            .filter(e -> grade == null || (e.getProject().getGradeLevel() != null
-                && e.getProject().getGradeLevel().equalsIgnoreCase(grade)))
-            .toList();
-        return toItems(entries);
+        return toItems(library(subject, grade, org.springframework.data.domain.Pageable.unpaged()).getContent());
     }
 
     /**
@@ -63,21 +58,20 @@ public class LibraryService {
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<LibraryItem> findPublished(StemSubject subject, String gradeLevel,
             com.stemotion.core.web.PageParams paging) {
-        boolean filtered = subject != null || (gradeLevel != null && !gradeLevel.isBlank());
-        if (filtered) return paging.slice(findPublished(subject, gradeLevel));
-        var page = publicationRepository.findLibrary(Publication.Platform.INTERNAL_LIBRARY, VideoStatus.PUBLISHED,
-            paging.pageable());
+        String grade = (gradeLevel == null || gradeLevel.isBlank()) ? null : gradeLevel.trim();
+        var page = library(subject, grade, paging.pageable());
         return new org.springframework.data.domain.PageImpl<>(toItems(page.getContent()), page.getPageable(),
             page.getTotalElements());
     }
 
-    /**
-     * Published, non-archived projects with an artifact-backed library publication, with their
-     * clip, owner and workspace, in one query (DB performance plan 2.6).
-     */
-    private List<Publication> libraryEntries() {
-        return publicationRepository.findLibrary(Publication.Platform.INTERNAL_LIBRARY, VideoStatus.PUBLISHED);
+    /** Library entries with the optional filters applied in SQL, cut by the given page. */
+    private org.springframework.data.domain.Page<Publication> library(StemSubject subject, String grade,
+            org.springframework.data.domain.Pageable pageable) {
+        return publicationRepository.findLibrary(Publication.Platform.INTERNAL_LIBRARY, VideoStatus.PUBLISHED,
+            subject == null, subject == null ? StemSubject.Physics : subject,
+            grade == null, grade == null ? "" : grade.toLowerCase(java.util.Locale.ROOT), pageable);
     }
+
 
     @Transactional(readOnly = true)
     public LibraryItem findOne(String projectId) {
@@ -100,17 +94,16 @@ public class LibraryService {
      */
     @Transactional(readOnly = true)
     public LibraryFilters availableFilters() {
-        List<ClipProject> published = libraryEntries().stream().map(Publication::getProject).toList();
-
-        List<StemSubject> subjects = published.stream()
-            .map(ClipProject::getSubject)
-            .distinct()
+        // Two DISTINCT queries over the columns, not the library rows (DB performance plan, follow-up).
+        List<StemSubject> subjects = publicationRepository
+            .findLibrarySubjects(Publication.Platform.INTERNAL_LIBRARY, VideoStatus.PUBLISHED).stream()
+            .filter(java.util.Objects::nonNull)
             .sorted(Comparator.comparing(Enum::name))
             .toList();
 
-        List<String> grades = published.stream()
-            .map(ClipProject::getGradeLevel)
-            .filter(g -> g != null && !g.isBlank())
+        List<String> grades = publicationRepository
+            .findLibraryGrades(Publication.Platform.INTERNAL_LIBRARY, VideoStatus.PUBLISHED).stream()
+            .filter(g -> !g.isBlank())
             .distinct()
             .sorted()
             .toList();
@@ -123,8 +116,8 @@ public class LibraryService {
         if (entries.isEmpty()) return List.of();
         List<String> ids = entries.stream().map(e -> e.getProject().getId()).toList();
         Map<String, PublishRecord> latest = new HashMap<>();
-        for (PublishRecord record : publishRepository.findByProjectIdInNewestFirst(ids)) {
-            latest.putIfAbsent(record.getProject().getId(), record);
+        for (PublishRecord record : publishRepository.findLatestByProjectIds(ids)) {
+            latest.put(record.getProject().getId(), record);
         }
         Map<String, Long> scenes = new HashMap<>();
         for (Object[] row : projectRepository.sceneCounts(ids)) {

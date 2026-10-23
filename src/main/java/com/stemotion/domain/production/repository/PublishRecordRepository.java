@@ -10,7 +10,13 @@ import java.util.List;
 public interface PublishRecordRepository extends JpaRepository<PublishRecord, String> {
     List<PublishRecord> findByProjectIdOrderByCreatedAtDesc(String projectId);
 
-    /** Publish records of several projects, newest first, in one query. */
-    @org.springframework.data.jpa.repository.Query("select r from PublishRecord r where r.project.id in :ids order by r.createdAt desc")
-    List<PublishRecord> findByProjectIdInNewestFirst(@org.springframework.data.repository.query.Param("ids") java.util.Collection<String> ids);
+    /**
+     * The newest publish record of each project, one row per project: no record of the same
+     * project is newer, and on equal created_at the higher id wins, so the choice is stable.
+     */
+    @org.springframework.data.jpa.repository.Query("select r from PublishRecord r where r.project.id in :ids and not exists ("
+        + "select n from PublishRecord n where n.project = r.project and "
+        + "(n.createdAt > r.createdAt or (n.createdAt = r.createdAt and n.id > r.id)))")
+    List<PublishRecord> findLatestByProjectIds(@org.springframework.data.repository.query.Param("ids") java.util.Collection<String> ids);
+
 }

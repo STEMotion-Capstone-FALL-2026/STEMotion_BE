@@ -222,6 +222,117 @@ class QueryShapeJpaTest {
         assertThat(histories.findEventsWithActor(first.getId(), StatusHistory.EventType.REVIEW_DECISION, page)
             .getTotalElements()).isZero();
         assertThat(publications.findLibrary(com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY,
-            VideoStatus.PUBLISHED, page).getTotalElements()).isZero();
+            VideoStatus.PUBLISHED, true, StemSubject.Physics, true, "", page).getTotalElements()).isZero();
+    }
+
+    @Autowired com.stemotion.domain.production.repository.PublishRecordRepository publishRecords;
+
+    private com.stemotion.domain.production.entity.Publication published(String title, StemSubject subject, String grade,
+                                                                         boolean withClip) {
+        ClipProject project = project(physics, title, ScriptStatus.APPROVED, 1);
+        project.setSubject(subject);
+        project.setGradeLevel(grade);
+        project.setVideoStatus(VideoStatus.PUBLISHED);
+        com.stemotion.domain.production.entity.Clip clip = null;
+        if (withClip) {
+            var job = persist(com.stemotion.domain.production.entity.RenderJob.builder().project(project).requestedBy(writer)
+                .scriptVersion(versions.findFirstByProjectIdAndIsCurrentTrue(project.getId()).orElseThrow()).build());
+            clip = persist(com.stemotion.domain.production.entity.Clip.builder().renderJob(job)
+                .videoUrl("https://videos/" + title + ".mp4").build());
+        }
+        return persist(com.stemotion.domain.production.entity.Publication.builder().project(project).clip(clip)
+            .platform(com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY).build());
+    }
+
+    @Test
+    @DisplayName("library: filters and paging in SQL, the count skips publications without a clip, DISTINCT filters")
+    void libraryQueries() {
+        published("Ohm", StemSubject.Physics, "Grade 9", true);
+        published("Acid", StemSubject.Chemistry, "Grade 10", true);
+        published("Cell", StemSubject.Biology, "grade 9", true);
+        published("NoClip", StemSubject.Physics, "Grade 9", false);
+        var platform = com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY;
+        var all = org.springframework.data.domain.PageRequest.of(0, 10);
+
+        var unfiltered = publications.findLibrary(platform, VideoStatus.PUBLISHED, true, StemSubject.Physics, true, "", all);
+        assertThat(unfiltered.getTotalElements()).isEqualTo(3);
+        assertThat(unfiltered.getContent()).extracting(p -> p.getProject().getTitle()).doesNotContain("NoClip");
+
+        var physicsOnly = publications.findLibrary(platform, VideoStatus.PUBLISHED, false, StemSubject.Physics, true, "", all);
+        assertThat(physicsOnly.getContent()).extracting(p -> p.getProject().getTitle()).containsExactly("Ohm");
+        assertThat(physicsOnly.getTotalElements()).isEqualTo(1);
+
+        var grade9 = publications.findLibrary(platform, VideoStatus.PUBLISHED, true, StemSubject.Physics, false, "grade 9",
+            org.springframework.data.domain.PageRequest.of(0, 1));
+        assertThat(grade9.getTotalElements()).isEqualTo(2); // case-insensitive grade
+        assertThat(grade9.getContent()).hasSize(1);
+
+        assertThat(publications.findLibrarySubjects(platform, VideoStatus.PUBLISHED))
+            .containsExactlyInAnyOrder(StemSubject.Physics, StemSubject.Chemistry, StemSubject.Biology);
+        assertThat(publications.findLibraryGrades(platform, VideoStatus.PUBLISHED))
+            .containsExactlyInAnyOrder("Grade 9", "Grade 10", "grade 9");
+        assertThat(statements(() -> publications.findLibrarySubjects(platform, VideoStatus.PUBLISHED))).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("latest publish record: one row per project, ties on created_at broken by id")
+    void latestPublishRecord() {
+        ClipProject ohm = project(physics, "Ohm", ScriptStatus.APPROVED, 1);
+        ClipProject acid = project(physics, "Acid", ScriptStatus.APPROVED, 1);
+        var older = persist(com.stemotion.domain.production.entity.PublishRecord.builder().project(ohm).publishedBy(writer)
+            .targets("INTERNAL_LIBRARY").title("v1").build());
+        var newer = persist(com.stemotion.domain.production.entity.PublishRecord.builder().project(ohm).publishedBy(writer)
+            .targets("INTERNAL_LIBRARY").title("v2").build());
+        var a1 = persist(com.stemotion.domain.production.entity.PublishRecord.builder().project(acid).publishedBy(writer)
+            .targets("INTERNAL_LIBRARY").title("a1").build());
+        var a2 = persist(com.stemotion.domain.production.entity.PublishRecord.builder().project(acid).publishedBy(writer)
+            .targets("INTERNAL_LIBRARY").title("a2").build());
+        em.flush();
+        java.time.LocalDateTime t = java.time.LocalDateTime.of(2026, 10, 20, 9, 0);
+        em.createQuery("update PublishRecord r set r.createdAt = :t where r.id = :id")
+            .setParameter("t", t).setParameter("id", older.getId()).executeUpdate();
+        em.createQuery("update PublishRecord r set r.createdAt = :t where r.id = :id")
+            .setParameter("t", t.plusMinutes(5)).setParameter("id", newer.getId()).executeUpdate();
+        em.createQuery("update PublishRecord r set r.createdAt = :t where r.project.id = :p")
+            .setParameter("t", t).setParameter("p", acid.getId()).executeUpdate();
+        em.clear();
+
+        var latest = publishRecords.findLatestByProjectIds(List.of(ohm.getId(), acid.getId()));
+        assertThat(latest).hasSize(2);
+        assertThat(latest).extracting(r -> r.getTitle()).contains("v2");
+        String tieWinner = a1.getId().compareTo(a2.getId()) > 0 ? "a1" : "a2";
+        assertThat(latest).extracting(r -> r.getTitle()).contains(tieWinner);
+    }
+
+    private static final String NO_CLIP = "00000000-0000-0000-0000-000000000000";
+
+    @Test
+    @DisplayName("comments: a page of root notes filtered in SQL, then all their replies in one query")
+    void commentPages() {
+        ClipProject ohm = project(physics, "Ohm", ScriptStatus.DRAFT, 1);
+        var open = com.stemotion.core.enums.StemEnums.FeedbackStatus.OPEN;
+        var resolved = com.stemotion.core.enums.StemEnums.FeedbackStatus.RESOLVED;
+        List<com.stemotion.domain.review.entity.FeedbackComment> roots = new java.util.ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            var root = persist(com.stemotion.domain.review.entity.FeedbackComment.builder().project(ohm).author(reviewer)
+                .timestampSec((double) i).content("note " + i).clipId(i == 2 ? "00000000-0000-0000-0000-00000000000b" : null)
+                .status(i == 1 ? resolved : open).build());
+            roots.add(root);
+            persist(com.stemotion.domain.review.entity.FeedbackComment.builder().project(ohm).author(writer).parent(root)
+                .timestampSec((double) i).content("reply " + i).status(open).build());
+        }
+        var firstTwo = org.springframework.data.domain.PageRequest.of(0, 2);
+        var page = comments.findRootPage(ohm.getId(), true, open, true, NO_CLIP, firstTwo);
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getContent()).extracting(c -> c.getContent()).containsExactly("note 0", "note 1");
+
+        var five = org.springframework.data.domain.PageRequest.of(0, 5);
+        assertThat(comments.findRootPage(ohm.getId(), false, open, true, NO_CLIP, five).getTotalElements()).isEqualTo(2);
+        assertThat(comments.findRootPage(ohm.getId(), true, open, false, "00000000-0000-0000-0000-00000000000a", five).getContent())
+            .extracting(c -> c.getContent()).containsExactly("note 0", "note 1");
+
+        var ids = List.of(roots.get(0).getId(), roots.get(1).getId());
+        assertThat(comments.findRepliesOf(ids)).extracting(c -> c.getContent()).containsExactlyInAnyOrder("reply 0", "reply 1");
+        assertThat(statements(() -> comments.findRepliesOf(ids).forEach(c -> c.getAuthor().getFullName()))).isEqualTo(1);
     }
 }

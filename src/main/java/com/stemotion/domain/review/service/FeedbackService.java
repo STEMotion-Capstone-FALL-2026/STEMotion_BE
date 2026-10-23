@@ -88,15 +88,25 @@ public class FeedbackService {
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<FeedbackResponse> findByProject(String projectId, FeedbackStatus status,
             String clipId, com.stemotion.core.web.PageParams paging) {
-        List<FeedbackResponse> all = findByProject(projectId, status, clipId);
-        List<FeedbackResponse> notes = all.stream().filter(c -> c.parentId() == null).toList();
-        var page = paging.slice(notes);
-        java.util.Set<String> onPage = page.getContent().stream().map(FeedbackResponse::id)
-            .collect(java.util.stream.Collectors.toSet());
-        List<FeedbackResponse> content = new ArrayList<>(page.getContent());
-        all.stream().filter(c -> c.parentId() != null && onPage.contains(c.parentId())).forEach(content::add);
-        return new org.springframework.data.domain.PageImpl<>(content, page.getPageable(), page.getTotalElements());
+        scriptService.getOrThrow(projectId);
+        // The page of notes is cut and counted in SQL; their replies come in one more query.
+        var roots = feedbackRepository.findRootPage(projectId,
+            status == null, status == null ? FeedbackStatus.OPEN : status,
+            clipId == null, clipId == null ? NO_CLIP : clipId, paging.pageable());
+        List<FeedbackResponse> content = new ArrayList<>();
+        roots.getContent().forEach(note -> content.add(FeedbackResponse.from(note)));
+        if (!roots.isEmpty()) {
+            feedbackRepository.findRepliesOf(roots.getContent().stream().map(FeedbackComment::getId).toList())
+                .forEach(reply -> content.add(FeedbackResponse.from(reply)));
+        }
+        return new org.springframework.data.domain.PageImpl<>(content, roots.getPageable(), roots.getTotalElements());
     }
+
+    /**
+     * Stand-in for "no clip filter": clip_id is a uuid column, and Postgres casts a bound value to
+     * uuid while planning, even on an OR branch that is never taken, so it must be a valid uuid.
+     */
+    private static final String NO_CLIP = "00000000-0000-0000-0000-000000000000";
 
     @Transactional(readOnly = true)
     public List<FeedbackResponse> findByProject(String projectId, FeedbackStatus status) {

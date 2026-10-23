@@ -193,21 +193,27 @@ class WebFirstReviewTest {
     @Test
     @DisplayName("a page of notes brings each note's replies and counts notes only")
     void pagedNotesKeepTheirThreads() {
-        java.util.List<FeedbackComment> all = new java.util.ArrayList<>();
-        for (int i = 0; i < 3; i++) {
+        java.util.List<FeedbackComment> notes = new java.util.ArrayList<>();
+        java.util.List<FeedbackComment> replies = new java.util.ArrayList<>();
+        for (int i = 0; i < 2; i++) {
             FeedbackComment note = FeedbackComment.builder().project(project).author(reviewer).timestampSec((double) i)
                 .content("note " + i).status(FeedbackStatus.OPEN).build();
             note.setId("note-" + i);
-            all.add(note);
+            notes.add(note);
             FeedbackComment reply = FeedbackComment.builder().project(project).author(reviewer).parent(note)
                 .content("reply " + i).status(FeedbackStatus.OPEN).build();
             reply.setId("reply-" + i);
-            all.add(reply);
+            replies.add(reply);
         }
-        when(comments.findForProjectWithPeople("project")).thenReturn(all);
+        var pageable = org.springframework.data.domain.PageRequest.of(0, 2);
+        // The page of notes (3 in all) is cut in SQL; no status or clip filter is applied.
+        when(comments.findRootPage(eq("project"), eq(true), any(), eq(true), anyString(), eq(pageable)))
+            .thenReturn(new org.springframework.data.domain.PageImpl<>(notes, pageable, 3));
+        when(comments.findRepliesOf(List.of("note-0", "note-1"))).thenReturn(replies);
 
         var page = service.findByProject("project", null, null, com.stemotion.core.web.PageParams.of(0, 2).orElseThrow());
         assertThat(page.getTotalElements()).isEqualTo(3);
         assertThat(page.getContent()).extracting(r -> r.id()).containsExactly("note-0", "note-1", "reply-0", "reply-1");
+        verify(comments, never()).findForProjectWithPeople(anyString());
     }
 }

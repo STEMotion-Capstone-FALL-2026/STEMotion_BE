@@ -15,6 +15,7 @@ Dựa trên báo cáo DB audit của LeTran (SHA `74a1bf2`) và lượt kiểm t
 | Test số query (H2, `QueryShapeJpaTest`): mọi `@Query` khởi động được, kết quả đúng phạm vi, số statement không đổi khi số dòng tăng | ✅ Xong | `11ce7b4` |
 | 3. V21 index | ✅ Đã chạy lên DB prod 20/10/2026 (V20 → V21, 5,5 s, Hibernate validate OK); 13/13 index có mặt | `dc66814` |
 | 4. Phân trang (BE) | ✅ Xong, tương thích ngược; FE dùng dần theo `FE_ACCOMPLISHMENTS_TODO.md` mục 9.6 | xem log |
+| Follow-up (23/10): comments phân trang note gốc trong SQL + reply theo lô; thư viện lọc môn/khối + phân trang trong SQL, câu đếm loại publication không có clip; bản xuất bản mới nhất 1 dòng/project (trùng giờ → id lớn hơn); bộ lọc thư viện bằng `DISTINCT` | ✅ Xong | xem log |
 | 6. Hạ tầng (cùng region, gói Render) | Chờ team quyết định | — |
 
 ## 0. Tóm tắt
