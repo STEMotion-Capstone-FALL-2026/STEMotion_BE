@@ -41,7 +41,14 @@ public final class ScriptDtos {
         String summary,
 
         @Valid
-        List<SceneRequest> scenes
+        List<SceneRequest> scenes,
+
+        /**
+         * The draft revision the edit started from ({@code draftRevision} of the loaded script).
+         * A different current revision is a 409. Optional while older clients do not send it.
+         */
+        @jakarta.validation.constraints.Min(value = 0, message = "baseRevision must not be negative")
+        Integer baseRevision
     ) {}
 
     /** Mirrors the front end's STEMScript interface. */
@@ -62,7 +69,9 @@ public final class ScriptDtos {
         String videoUrl,
         LocalDateTime createdAt,
         /** The production composition's visual theme; "default" before the producer picks one. */
-        String visualTheme
+        String visualTheme,
+        /** Revision of the working draft; send it back as {@code baseRevision} when saving. */
+        Integer draftRevision
     ) {}
 
     /** Lightweight row for dashboards and the pipeline board. */

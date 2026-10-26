@@ -187,6 +187,14 @@ public class ScriptService {
                 "Only a draft or returned script can be edited; submitted versions are immutable"
             );
         }
+        // Locked and checked before anything changes, so a stale save leaves the draft as it is.
+        ScriptVersion current = lockCurrentVersion(project);
+        int revision = draftRevisionOf(current);
+        if (request.baseRevision() != null && request.baseRevision() != revision) {
+            throw ApiException.conflict("The draft is now at revision " + revision
+                + " (your edit started from " + request.baseRevision() + "); reload it before saving");
+        }
+        current.setDraftRevision(revision + 1);
 
         if (request.title() != null) {
             project.setTitle(request.title());
@@ -201,7 +209,6 @@ public class ScriptService {
             project.setFps(request.fps());
         }
 
-        ScriptVersion current = currentVersion(project);
         if (request.title() != null) {
             current.setTitle(request.title());
         }
@@ -229,7 +236,10 @@ public class ScriptService {
             && project.getScriptStatus() != ScriptStatus.CHANGE_REQUESTED) {
             throw ApiException.badRequest("Only a draft or returned script can be edited; submitted versions are immutable");
         }
-        ScriptVersion current = currentVersion(project);
+        ScriptVersion current = lockCurrentVersion(project);
+        // Measured durations change the draft, so an editor still on the old revision must reload.
+        current.setDraftRevision(draftRevisionOf(current) + 1);
+        versionRepository.save(current);
         List<Scene> scenes = sceneRepository.findForUpdateByScriptVersionId(current.getId());
         for (Scene scene : scenes) {
             Integer frames = framesBySceneId.get(scene.getId());
@@ -373,6 +383,14 @@ public class ScriptService {
             .orElseThrow(() -> ApiException.notFound("ScriptVersion for project", project.getId()));
     }
 
+    private ScriptVersion lockCurrentVersion(ClipProject project) {
+        return versionRepository.lockCurrentByProjectId(project.getId()).orElseGet(() -> currentVersion(project));
+    }
+
+    private static int draftRevisionOf(ScriptVersion version) {
+        return version.getDraftRevision() == null ? 0 : version.getDraftRevision();
+    }
+
     public List<Scene> scenesOf(ScriptVersion version) {
         return sceneRepository.findByScriptVersionIdOrderByOrderNoAsc(version.getId());
     }
@@ -395,7 +413,8 @@ public class ScriptService {
             version.getVersionNo(),
             project.getVideoUrl(),
             project.getCreatedAt(),
-            visualThemeOf(version)
+            visualThemeOf(version),
+            draftRevisionOf(version)
         );
     }
 

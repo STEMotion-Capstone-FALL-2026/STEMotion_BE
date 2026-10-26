@@ -55,7 +55,7 @@ public class WorkspaceController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Admin creates a workspace with a designated leader")
+    @Operation(summary = "Admin creates a workspace with a leader and at least 3 members covering WRITER, REVIEWER and PRODUCER")
     public ResponseEntity<WorkspaceResponse> create(
         @Valid @RequestBody WorkspaceRequest request,
         @AuthenticationPrincipal UserDetails principal
@@ -86,13 +86,15 @@ public class WorkspaceController {
     }
 
     @GetMapping("/{id}/candidates")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "List active users eligible to be added to this workspace")
     public ResponseEntity<List<CandidateUserResponse>> candidates(@PathVariable String id) {
         return ResponseEntity.ok(workspaceService.findCandidates(id));
     }
 
     @PostMapping("/{id}/members")
-    @Operation(summary = "Directly assign an existing user to this workspace")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Administrator assigns an existing user to this workspace")
     public ResponseEntity<MemberResponse> addMember(
         @PathVariable String id,
         @Valid @RequestBody AddMemberRequest request
@@ -101,17 +103,19 @@ public class WorkspaceController {
     }
 
     @PatchMapping("/{id}/members/{memberId}")
-    @Operation(summary = "Update member role, status, or leader designation")
+    @Operation(summary = "Leader or administrator changes a member's role; status and leader designation are administrator-only")
     public ResponseEntity<MemberResponse> updateMember(
         @PathVariable String id,
         @PathVariable String memberId,
-        @RequestBody UpdateMemberRequest request
+        @RequestBody UpdateMemberRequest request,
+        @AuthenticationPrincipal UserDetails principal
     ) {
-        return ResponseEntity.ok(workspaceService.updateMember(id, memberId, request));
+        return ResponseEntity.ok(workspaceService.updateMember(id, memberId, request, principal.getUsername()));
     }
 
     @DeleteMapping("/{id}/members/{memberId}")
-    @Operation(summary = "Remove a member from this workspace")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Administrator removes a member from this workspace")
     public ResponseEntity<Void> removeMember(@PathVariable String id, @PathVariable String memberId) {
         workspaceService.removeMember(id, memberId);
         return ResponseEntity.noContent().build();

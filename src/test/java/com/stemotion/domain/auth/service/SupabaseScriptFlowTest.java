@@ -52,10 +52,17 @@ class SupabaseScriptFlowTest {
     @Autowired com.stemotion.domain.ai.repository.AiRequestRepository aiRequests;
     private String email;
 
+    /** A reviewer and a producer, so the workspace has the three roles it needs (master update plan M11). */
+    private List<AddMemberRequest> crew() {
+        return List.of(UserRole.REVIEWER, UserRole.PRODUCER).stream().map(role -> new AddMemberRequest(
+            provisioning.create(new RegisterRequest("Crew " + role, "crew-" + UUID.randomUUID() + "@example.invalid",
+                UUID.randomUUID().toString(), role)).id(), role, false)).toList();
+    }
+
     @Test void artifactReviewPublicationAndFailedAiRoundTrip() {
         email="phase1-smoke-"+UUID.randomUUID()+"@example.invalid";
         var actor=provisioning.create(new RegisterRequest("Phase1 smoke",email,UUID.randomUUID().toString(),UserRole.ADMIN));
-        var workspace=workspaces.create(new WorkspaceRequest("Phase1 smoke","CS", actor.id(), UserRole.WRITER),actor.id());
+        var workspace=workspaces.create(new WorkspaceRequest("Phase1 smoke","CS", actor.id(), UserRole.WRITER, crew()), actor.id());
         var scene=new SceneRequest();scene.setType(SceneType.TITLE_HERO);scene.setTitle("Phase1 smoke");
         scene.setDurationInFrames(600);
         Map.of("subtitle","Test","subject","ComputerScience","gradeLevel","10","badgeText","CS").forEach(scene::putProp);
@@ -96,7 +103,7 @@ class SupabaseScriptFlowTest {
         email = "assign-smoke-" + UUID.randomUUID() + "@example.invalid";
         var leader = provisioning.create(new RegisterRequest("Leader user", email,
             UUID.randomUUID().toString(), UserRole.WRITER));
-        var workspace = workspaces.create(new WorkspaceRequest("Assign smoke", "CS", leader.id(), UserRole.WRITER), leader.id());
+        var workspace = workspaces.create(new WorkspaceRequest("Assign smoke", "CS", leader.id(), UserRole.WRITER, crew()), leader.id());
         String memberEmail = "member-smoke-" + UUID.randomUUID() + "@example.invalid";
         var member = provisioning.create(new RegisterRequest("Member user", memberEmail,
             UUID.randomUUID().toString(), UserRole.PRODUCER));
@@ -116,7 +123,7 @@ class SupabaseScriptFlowTest {
         email = "schema-smoke-" + UUID.randomUUID() + "@example.invalid";
         var user = provisioning.create(new RegisterRequest("Schema smoke", email,
             UUID.randomUUID().toString(), UserRole.WRITER));
-        var workspace = workspaces.create(new WorkspaceRequest("Schema smoke", "CS", user.id(), UserRole.WRITER), user.id());
+        var workspace = workspaces.create(new WorkspaceRequest("Schema smoke", "CS", user.id(), UserRole.WRITER, crew()), user.id());
         var scene = new SceneRequest();
         scene.setType(SceneType.TITLE_HERO);
         scene.setTitle("Schema smoke");
@@ -138,13 +145,13 @@ class SupabaseScriptFlowTest {
         scene.setId(sceneId);
         scene.setTitle("Edited without changing identity");
         var updated = scripts.updateDraft(script.id(), new com.stemotion.domain.script.dto.ScriptDtos.UpdateScriptRequest(
-            null, null, null, null, null, List.of(scene)));
+            null, null, null, null, null, List.of(scene), null));
         em.flush(); em.clear();
         assertEquals(sceneId, updated.scenes().get(0).getId());
         assertEquals(2, feedback.findByProject(script.id(), null).size());
         assertTrue(scenes.existsById(sceneId));
         assertThrows(com.stemotion.core.exception.ApiException.class, () -> scripts.updateDraft(script.id(),
-            new com.stemotion.domain.script.dto.ScriptDtos.UpdateScriptRequest(null, null, null, null, null, List.of())));
+            new com.stemotion.domain.script.dto.ScriptDtos.UpdateScriptRequest(null, null, null, null, null, List.of(), null)));
     }
 
     @AfterTransaction void fixtureWasRolledBack() {

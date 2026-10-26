@@ -30,7 +30,7 @@ class SubmittedScriptTest {
             mock(AuthService.class), mock(WorkspaceService.class), mock(StatusHistoryService.class),
             mock(WorkspaceAccess.class));
         assertThatThrownBy(() -> service.updateDraft("project", new UpdateScriptRequest(
-            "Changed", null, null, null, null, java.util.List.of()))).isInstanceOf(ApiException.class);
+            "Changed", null, null, null, null, java.util.List.of(), null))).isInstanceOf(ApiException.class);
         verifyNoInteractions(scenes, versions);
         verify(projects, never()).save(any());
     }

@@ -77,10 +77,12 @@ class NarrationToolsServiceTest {
         project.setScriptStatus(ScriptStatus.DRAFT);
         ScriptResponse draft = mock(ScriptResponse.class);
         when(draft.totalDurationSeconds()).thenReturn(4);
+        when(draft.draftRevision()).thenReturn(7);
         when(scripts.applyMeasuredDurations("project", Map.of("s1", 96))).thenReturn(draft);
         var response = service.syncDurations("project", null, "writer");
         assertThat(response.target()).isEqualTo("SCRIPT");
         assertThat(response.totalDurationSeconds()).isEqualTo(4);
+        assertThat(response.revision()).as("the new draft revision").isEqualTo(7);
         verify(access).requireProjectRole("project", "writer", Set.of(User.UserRole.WRITER));
     }
 

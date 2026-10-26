@@ -23,7 +23,11 @@ import java.util.List;
 
 /**
  * Subject departments ("tổ bộ môn") and their memberships.
- * Members are assigned directly by administrators or workspace leaders without email tokens.
+ *
+ * <p>Master update plan M10/M11/M15: an administrator creates a workspace with at least three
+ * people covering WRITER, REVIEWER and PRODUCER, and is the only one who adds or removes members,
+ * changes a member's status or appoints a leader. A leader assigns roles inside the workspace.
+ * No change may leave a covered production role without an active member.
  */
 @Service
 @RequiredArgsConstructor
@@ -110,12 +114,23 @@ public class WorkspaceService {
         User creator = userRepository.findById(currentUserId)
             .orElseThrow(() -> ApiException.notFound("User", currentUserId));
 
-        User leader = userRepository.findById(request.leaderUserId())
-            .orElseThrow(() -> ApiException.notFound("User", request.leaderUserId()));
+        List<AddMemberRequest> seats = new java.util.ArrayList<>();
+        seats.add(new AddMemberRequest(request.leaderUserId(),
+            request.leaderRole() != null ? request.leaderRole() : User.UserRole.WRITER, true));
+        if (request.members() != null) seats.addAll(request.members());
 
-        if (leader.getStatus() != User.UserStatus.ACTIVE) {
-            throw ApiException.badRequest("Selected workspace leader must be an active user");
+        // Everything is checked before the workspace row exists, and it is one transaction,
+        // so a refused team never leaves a workspace behind.
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        List<User> people = new java.util.ArrayList<>();
+        for (AddMemberRequest seat : seats) {
+            if (!seen.add(seat.userId())) {
+                throw ApiException.badRequest("User " + seat.userId() + " is listed more than once");
+            }
+            productionRole(seat.role());
+            people.add(activeUser(seat.userId()));
         }
+        requireFullTeam(seats.stream().map(AddMemberRequest::role).toList());
 
         Workspace workspace = workspaceRepository.save(Workspace.builder()
             .name(request.name())
@@ -123,20 +138,81 @@ public class WorkspaceService {
             .createdBy(creator)
             .build());
 
-        User.UserRole leaderRole = request.leaderRole() != null ? request.leaderRole() : User.UserRole.WRITER;
-        if (leaderRole == User.UserRole.ADMIN) {
-            leaderRole = User.UserRole.WRITER;
+        for (int i = 0; i < seats.size(); i++) {
+            memberRepository.save(WorkspaceMember.builder()
+                .workspace(workspace)
+                .user(people.get(i))
+                .role(seats.get(i).role())
+                .isLeader(Boolean.TRUE.equals(seats.get(i).leader()))
+                .status(MemberStatus.ACTIVE)
+                .build());
         }
 
-        memberRepository.save(WorkspaceMember.builder()
-            .workspace(workspace)
-            .user(leader)
-            .role(leaderRole)
-            .isLeader(true)
-            .status(MemberStatus.ACTIVE)
-            .build());
-
         return toResponse(workspace);
+    }
+
+    /** Production roles a workspace must cover (master update plan M11). */
+    public static final java.util.Set<User.UserRole> PRODUCTION_ROLES =
+        java.util.EnumSet.of(User.UserRole.WRITER, User.UserRole.REVIEWER, User.UserRole.PRODUCER);
+    public static final int MIN_MEMBERS = 3;
+
+    static void requireFullTeam(List<User.UserRole> roles) {
+        if (roles.size() < MIN_MEMBERS) {
+            throw ApiException.badRequest("A workspace needs at least " + MIN_MEMBERS
+                + " different members (WRITER, REVIEWER and PRODUCER); got " + roles.size());
+        }
+        java.util.Set<User.UserRole> missing = java.util.EnumSet.copyOf(PRODUCTION_ROLES);
+        missing.removeAll(roles);
+        if (!missing.isEmpty()) {
+            throw ApiException.badRequest("A workspace needs at least one WRITER, REVIEWER and PRODUCER; missing "
+                + missing);
+        }
+    }
+
+    private static User.UserRole productionRole(User.UserRole role) {
+        if (role == null) throw ApiException.badRequest("Every member needs a role");
+        if (!PRODUCTION_ROLES.contains(role)) {
+            throw ApiException.badRequest("A workspace role must be WRITER, REVIEWER or PRODUCER, not " + role);
+        }
+        return role;
+    }
+
+    private User activeUser(String userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> ApiException.notFound("User", userId));
+        if (user.getStatus() != User.UserStatus.ACTIVE) {
+            throw ApiException.badRequest("User " + user.getFullName() + " is not active and cannot join a workspace");
+        }
+        return user;
+    }
+
+    private boolean isAdmin(String userId) {
+        return userId != null && userRepository.findById(userId)
+            .map(user -> user.getRole() == User.UserRole.ADMIN).orElse(false);
+    }
+
+    /**
+     * Refuses a change that would leave a production role, covered by an active member now,
+     * without one (master update plan D10). A workspace that already lacks a role, from before
+     * this rule, can still be changed so it can be completed.
+     */
+    private void requireCoverageKept(String workspaceId, WorkspaceMember changed, User.UserRole newRole,
+                                     MemberStatus newStatus, boolean removed) {
+        java.util.Set<User.UserRole> before = java.util.EnumSet.noneOf(User.UserRole.class);
+        java.util.Set<User.UserRole> after = java.util.EnumSet.noneOf(User.UserRole.class);
+        for (WorkspaceMember seat : memberRepository.findWithUserByWorkspaceId(workspaceId)) {
+            if (seat.getStatus() == MemberStatus.ACTIVE) before.add(seat.getRole());
+            boolean isChanged = seat.getId().equals(changed.getId());
+            if (isChanged && removed) continue;
+            if ((isChanged ? newStatus : seat.getStatus()) == MemberStatus.ACTIVE) {
+                after.add(isChanged ? newRole : seat.getRole());
+            }
+        }
+        before.retainAll(PRODUCTION_ROLES);
+        before.removeAll(after);
+        if (!before.isEmpty()) {
+            throw ApiException.badRequest("This change would leave the workspace without an active "
+                + before + "; give that role to another member first");
+        }
     }
 
     @Transactional
@@ -175,23 +251,15 @@ public class WorkspaceService {
             .toList();
     }
 
+    /** Administrators only (controller); a leader assigns roles but does not add people (M15). */
     @Transactional
     public MemberResponse addMember(String workspaceId, AddMemberRequest request) {
-        Workspace workspace = getOrThrow(workspaceId);
-        User user = userRepository.findById(request.userId())
-            .orElseThrow(() -> ApiException.notFound("User", request.userId()));
-
-        if (user.getStatus() != User.UserStatus.ACTIVE) {
-            throw ApiException.badRequest("User is not active and cannot be added to a workspace");
-        }
+        Workspace workspace = lockOrThrow(workspaceId);
+        User.UserRole memberRole = productionRole(request.role());
+        User user = activeUser(request.userId());
 
         if (memberRepository.existsByWorkspaceIdAndUserId(workspaceId, user.getId())) {
             throw ApiException.conflict("This user is already a member of this workspace");
-        }
-
-        User.UserRole memberRole = request.role();
-        if (memberRole == User.UserRole.ADMIN) {
-            memberRole = User.UserRole.WRITER;
         }
 
         WorkspaceMember member = memberRepository.save(WorkspaceMember.builder()
@@ -205,9 +273,24 @@ public class WorkspaceService {
         return MemberResponse.from(member);
     }
 
+    /**
+     * A leader may change a member's role; status and the leader designation are kept to
+     * administrators (M15), so a leader cannot deactivate someone instead of removing them.
+     * Fields sent unchanged are not a change, so a client may send the whole member back.
+     */
     @Transactional
-    public MemberResponse updateMember(String workspaceId, String memberId, UpdateMemberRequest request) {
+    public MemberResponse updateMember(String workspaceId, String memberId, UpdateMemberRequest request,
+                                       String actorId) {
+        lockOrThrow(workspaceId);
         WorkspaceMember member = memberOrThrow(workspaceId, memberId);
+
+        boolean statusChange = request.status() != null && request.status() != member.getStatus();
+        boolean leaderChange = request.leader() != null && request.leader() != member.isLeader();
+        if ((statusChange || leaderChange) && !isAdmin(actorId)) {
+            throw ApiException.forbidden("Only a system administrator can change a member's status or leader "
+                + "designation; a workspace leader assigns roles");
+        }
+        User.UserRole newRole = request.role() == null ? member.getRole() : productionRole(request.role());
 
         boolean isDemotingLeader = member.isLeader() && Boolean.FALSE.equals(request.leader());
         boolean isDeactivatingLeader = member.isLeader() && request.status() == MemberStatus.INACTIVE;
@@ -219,10 +302,10 @@ public class WorkspaceService {
             }
         }
 
-        if (request.role() != null) {
-            User.UserRole newRole = request.role() == User.UserRole.ADMIN ? User.UserRole.WRITER : request.role();
-            member.setRole(newRole);
-        }
+        requireCoverageKept(workspaceId, member, newRole,
+            request.status() != null ? request.status() : member.getStatus(), false);
+
+        member.setRole(newRole);
         if (request.status() != null) {
             member.setStatus(request.status());
         }
@@ -233,8 +316,10 @@ public class WorkspaceService {
         return MemberResponse.from(memberRepository.save(member));
     }
 
+    /** Administrators only (controller). */
     @Transactional
     public void removeMember(String workspaceId, String memberId) {
+        lockOrThrow(workspaceId);
         WorkspaceMember member = memberOrThrow(workspaceId, memberId);
         if (member.isLeader() && member.getStatus() == MemberStatus.ACTIVE) {
             long activeLeaders = memberRepository.countByWorkspaceIdAndIsLeaderTrueAndStatus(workspaceId, MemberStatus.ACTIVE);
@@ -242,7 +327,12 @@ public class WorkspaceService {
                 throw ApiException.badRequest("Cannot delete the last active leader of the workspace");
             }
         }
+        requireCoverageKept(workspaceId, member, member.getRole(), member.getStatus(), true);
         memberRepository.delete(member);
+    }
+
+    private Workspace lockOrThrow(String id) {
+        return workspaceRepository.lockById(id).orElseThrow(() -> ApiException.notFound("Workspace", id));
     }
 
     @Transactional(readOnly = true)

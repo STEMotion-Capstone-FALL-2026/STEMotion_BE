@@ -59,7 +59,7 @@ class SceneIdentityTest {
         return existing;
     }
     void save(SceneRequest... requests) {
-        service.updateDraft("project", new UpdateScriptRequest(null, null, null, null, null, List.of(requests)));
+        service.updateDraft("project", new UpdateScriptRequest(null, null, null, null, null, List.of(requests), null));
     }
     @Test void editingAndReorderingKeepOriginalRowsAndFeedbackIdentity() {
         var existing = fixture();
@@ -74,7 +74,7 @@ class SceneIdentityTest {
     @Test void addingSceneDoesNotRecreateExistingScenes() {
         fixture();
         var response = service.updateDraft("project", new UpdateScriptRequest(null, null, null, null, null,
-            List.of(request(first, "One"), request(second, "Two"), request("scene_new", "Three"))));
+            List.of(request(first, "One"), request(second, "Two"), request("scene_new", "Three")), null));
         assertThat(response.scenes().get(0).getId()).isEqualTo(first);
         assertThat(response.scenes().get(1).getId()).isEqualTo(second);
         assertThat(response.scenes().get(2).getId()).isNotEqualTo("scene_new");

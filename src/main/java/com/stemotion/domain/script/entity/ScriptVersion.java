@@ -57,6 +57,14 @@ public class ScriptVersion extends BaseEntity {
     @Builder.Default
     private Boolean isCurrent = true;
 
+    /**
+     * Bumped on every save of the working draft. A save names the revision it was
+     * edited from, so a save from an older tab is a 409, not a silent overwrite (V22).
+     */
+    @Column(name = "draft_revision", nullable = false)
+    @Builder.Default
+    private Integer draftRevision = 0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private ClipProject project;

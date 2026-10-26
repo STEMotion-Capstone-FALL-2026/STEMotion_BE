@@ -107,7 +107,8 @@ public final class ProductionDtos {
     public record SyncDurationsRequest(Integer baseRevision) {}
 
     /**
-     * target SCRIPT (a draft's scene rows were updated) or COMPOSITION (a new revision was saved);
+     * target SCRIPT (a draft's scene rows were updated; revision is the new draftRevision) or
+     * COMPOSITION (a new revision was saved);
      * scenes carry id, durationInFrames and, when Whisper ran, captionWords.
      */
     public record SyncDurationsResponse(

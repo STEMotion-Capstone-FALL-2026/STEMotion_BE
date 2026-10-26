@@ -119,7 +119,7 @@ public class NarrationToolsService {
                 Math.round(totalFrames / (float) fps), result, captionSync);
         }
         var draft = scriptService.applyMeasuredDurations(projectId, frames);
-        return new SyncDurationsResponse("SCRIPT", null, draft.totalDurationSeconds(), result, captionSync);
+        return new SyncDurationsResponse("SCRIPT", draft.draftRevision(), draft.totalDurationSeconds(), result, captionSync);
     }
 
     private String narrationOf(ClipProject project, String sceneId) {

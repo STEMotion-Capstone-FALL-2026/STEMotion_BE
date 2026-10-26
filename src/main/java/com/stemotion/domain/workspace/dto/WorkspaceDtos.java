@@ -18,7 +18,14 @@ public final class WorkspaceDtos {
         String department,
         @NotBlank(message = "leaderUserId is required")
         String leaderUserId,
-        User.UserRole leaderRole
+        User.UserRole leaderRole,
+        /**
+         * Everyone else seated when the workspace is created. With the leader they must be at
+         * least 3 different active users covering WRITER, REVIEWER and PRODUCER (master update
+         * plan M11). Not used when a workspace is renamed.
+         */
+        @jakarta.validation.Valid
+        java.util.List<AddMemberRequest> members
     ) {}
 
     public record WorkspaceResponse(
