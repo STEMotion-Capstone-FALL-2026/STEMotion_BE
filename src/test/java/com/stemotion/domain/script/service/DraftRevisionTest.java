@@ -90,9 +90,34 @@ class DraftRevisionTest {
     @Test
     @DisplayName("measured durations change the draft, so they bump the revision too")
     void measuredDurationsBumpTheRevision() {
-        var response = service.applyMeasuredDurations("project", Map.of());
+        var response = service.applyMeasuredDurations("project", Map.of(), 4);
         assertThat(response.draftRevision()).isEqualTo(5);
         assertThatThrownBy(() -> service.updateDraft("project", titled("Before sync", 4)))
             .isInstanceOf(ApiException.class).hasMessageContaining("revision 5");
+    }
+
+    @Test
+    @DisplayName("durations measured from an older draft are refused under the lock and change nothing")
+    void durationsOfAnOlderDraftAreRefused() {
+        assertThatThrownBy(() -> service.applyMeasuredDurations("project", Map.of(), 3))
+            .isInstanceOf(ApiException.class)
+            .satisfies(e -> {
+                ApiException api = (ApiException) e;
+                assertThat(api.getStatus().value()).isEqualTo(409);
+                assertThat(api.getCode()).isEqualTo("STALE_REVISION");
+                assertThat(api.getDetails()).containsEntry("resource", "SCRIPT_DRAFT")
+                    .containsEntry("currentRevision", 4).containsEntry("baseRevision", 3);
+            });
+        assertThat(version.getDraftRevision()).isEqualTo(4);
+        verify(versions, never()).save(any());
+        verify(scenes, never()).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("a stale save answers STALE_REVISION with the revisions in details")
+    void staleSaveCarriesDetails() {
+        assertThatThrownBy(() -> service.updateDraft("project", titled("Stale", 2)))
+            .satisfies(e -> assertThat(((ApiException) e).getDetails())
+                .containsEntry("resource", "SCRIPT_DRAFT").containsEntry("currentRevision", 4).containsEntry("baseRevision", 2));
     }
 }

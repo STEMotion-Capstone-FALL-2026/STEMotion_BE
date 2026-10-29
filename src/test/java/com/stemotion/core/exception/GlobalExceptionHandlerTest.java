@@ -44,6 +44,22 @@ class GlobalExceptionHandlerTest {
         assertThat(status(r)).isEqualTo(409);
         assertThat(r.getBody().code()).isEqualTo("CONFLICT");
         assertThat(r.getBody().message()).isEqualTo("already exists");
+        assertThat(r.getBody().details()).isNull();
+    }
+
+    @Test
+    @DisplayName("a stale revision is a 409 whose details name the resource and both revisions")
+    void staleRevisionCarriesDetails() throws Exception {
+        ResponseEntity<ErrorResponse> r = handler.handleApiException(
+            ApiException.staleRevision("SCRIPT_DRAFT", 5, 4, "The draft is now at revision 5"));
+
+        assertThat(status(r)).isEqualTo(409);
+        assertThat(r.getBody().code()).isEqualTo("STALE_REVISION");
+        var json = new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules().writeValueAsString(r.getBody());
+        assertThat(json).contains("\"details\":{\"resource\":\"SCRIPT_DRAFT\",\"currentRevision\":5,\"baseRevision\":4}");
+        var plain = new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules()
+            .writeValueAsString(handler.handleApiException(ApiException.conflict("x")).getBody());
+        assertThat(plain).as("other errors keep the old shape").doesNotContain("details");
     }
 
     @Test

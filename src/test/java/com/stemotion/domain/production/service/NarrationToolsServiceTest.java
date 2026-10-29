@@ -46,7 +46,7 @@ class NarrationToolsServiceTest {
         when(scripts.getOrThrow("project")).thenReturn(project);
         when(scripts.currentVersion(project)).thenReturn(version);
         Map<String, Object> scene = new LinkedHashMap<>(Map.of("id", "s1", "narration", "Xin chào các em", "durationInFrames", 60));
-        when(compositions.renderInput(version)).thenReturn(new CompositionService.RenderInput(null, null, List.of(scene)));
+        when(compositions.renderInput(version)).thenReturn(new CompositionService.RenderInput(null, 2, List.of(scene)));
         when(compositions.scriptScenes(version)).thenReturn(List.of(scene));
         when(worker.syncDurations(anyMap(), eq(30))).thenReturn(json.readTree("""
             {"script":{"scenes":[{"id":"s1","durationInFrames":96,
@@ -78,12 +78,48 @@ class NarrationToolsServiceTest {
         ScriptResponse draft = mock(ScriptResponse.class);
         when(draft.totalDurationSeconds()).thenReturn(4);
         when(draft.draftRevision()).thenReturn(7);
-        when(scripts.applyMeasuredDurations("project", Map.of("s1", 96))).thenReturn(draft);
+        version.setDraftRevision(6);
+        when(scripts.applyMeasuredDurations("project", Map.of("s1", 96), 6)).thenReturn(draft);
         var response = service.syncDurations("project", null, "writer");
         assertThat(response.target()).isEqualTo("SCRIPT");
         assertThat(response.totalDurationSeconds()).isEqualTo(4);
         assertThat(response.revision()).as("the new draft revision").isEqualTo(7);
         verify(access).requireProjectRole("project", "writer", Set.of(User.UserRole.WRITER));
+    }
+
+    @Test
+    void theDraftRevisionReadBeforeMeasuringIsTheOneTheWriteMustStillMatch() {
+        project.setScriptStatus(ScriptStatus.DRAFT);
+        version.setDraftRevision(6);
+        // The writer saved while TTS/Whisper ran: the draft is now at 7, the measurement is of 6.
+        when(worker.syncDurations(anyMap(), eq(30))).thenAnswer(call -> {
+            version.setDraftRevision(7);
+            return json.readTree("{\"script\":{\"scenes\":[{\"id\":\"s1\",\"durationInFrames\":96}]}}");
+        });
+        when(scripts.applyMeasuredDurations("project", Map.of("s1", 96), 6))
+            .thenThrow(ScriptService.staleDraft(7, 6, "sync"));
+        assertThatThrownBy(() -> service.syncDurations("project", null, "writer"))
+            .isInstanceOf(ApiException.class)
+            .satisfies(e -> assertThat(((ApiException) e).getCode()).isEqualTo("STALE_REVISION"));
+        verify(scripts).applyMeasuredDurations("project", Map.of("s1", 96), 6);
+    }
+
+    @Test
+    void aStaleBaseRevisionIsRefusedBeforeAnyTtsIsPaidFor() {
+        assertThatThrownBy(() -> service.syncDurations("project", 1, "producer"))
+            .isInstanceOf(ApiException.class)
+            .satisfies(e -> {
+                ApiException api = (ApiException) e;
+                assertThat(api.getCode()).isEqualTo("STALE_REVISION");
+                assertThat(api.getDetails()).containsEntry("resource", "COMPOSITION")
+                    .containsEntry("currentRevision", 2).containsEntry("baseRevision", 1);
+            });
+        project.setScriptStatus(ScriptStatus.DRAFT);
+        version.setDraftRevision(5);
+        assertThatThrownBy(() -> service.syncDurations("project", 4, "writer"))
+            .isInstanceOf(ApiException.class)
+            .satisfies(e -> assertThat(((ApiException) e).getDetails()).containsEntry("resource", "SCRIPT_DRAFT"));
+        verifyNoInteractions(worker);
     }
 
     @Test

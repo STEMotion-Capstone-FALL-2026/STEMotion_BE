@@ -54,6 +54,9 @@ public class CompositionService {
     private final ObjectMapper objectMapper;
 
     /** What a render draws: the saved composition, or the approved script as it is. */
+    /** {@code details.resource} of a stale composition save or sync. */
+    public static final String COMPOSITION = "COMPOSITION";
+
     public record RenderInput(Composition composition, Integer revision, List<Map<String, Object>> scenes) {}
 
     @Transactional(readOnly = true)
@@ -80,8 +83,8 @@ public class CompositionService {
         Composition current = compositions.lockByScriptVersionId(version.getId()).orElse(null);
         int currentRevision = current == null ? 0 : current.getRevision();
         if (request.baseRevision() != currentRevision) {
-            throw ApiException.conflict("The composition is now at revision " + currentRevision
-                + " (edited elsewhere); reload it before saving");
+            throw ApiException.staleRevision(COMPOSITION, currentRevision, request.baseRevision(),
+                "The composition is now at revision " + currentRevision + " (edited elsewhere); reload it before saving");
         }
 
         List<Map<String, Object>> scenes = normalize(scriptService.scenesOf(version), request.scenes(), version);
@@ -100,7 +103,8 @@ public class CompositionService {
             try {
                 saved = compositions.saveAndFlush(composition);
             } catch (org.springframework.dao.DataIntegrityViolationException ex) {
-                throw ApiException.conflict("The composition was just saved elsewhere; reload it before saving");
+                throw ApiException.staleRevision(COMPOSITION, null, request.baseRevision(),
+                    "The composition was just saved elsewhere; reload it before saving");
             }
         }
         return response(project, version, saved, scenes);
@@ -143,8 +147,8 @@ public class CompositionService {
         Composition current = compositions.lockByScriptVersionId(version.getId()).orElse(null);
         int currentRevision = current == null ? 0 : current.getRevision();
         if (baseRevision != currentRevision) {
-            throw ApiException.conflict("The composition is now at revision " + currentRevision
-                + " (edited elsewhere); reload it before syncing");
+            throw ApiException.staleRevision(COMPOSITION, currentRevision, baseRevision,
+                "The composition is now at revision " + currentRevision + " (edited elsewhere); reload it before syncing");
         }
         List<Map<String, Object>> scenes = current == null ? scriptScenes(version) : read(current.getScenes());
         for (Map<String, Object> scene : scenes) {
@@ -163,7 +167,8 @@ public class CompositionService {
         try {
             saved = current != null ? compositions.save(composition) : compositions.saveAndFlush(composition);
         } catch (org.springframework.dao.DataIntegrityViolationException ex) {
-            throw ApiException.conflict("The composition was just saved elsewhere; reload it before syncing");
+            throw ApiException.staleRevision(COMPOSITION, null, baseRevision,
+                "The composition was just saved elsewhere; reload it before syncing");
         }
         return response(project, version, saved, scenes);
     }

@@ -94,6 +94,14 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Throwaway real Postgres for the migration and concurrency tests (PostgresConcurrencyTest); test scope only -->
+        <dependency>
+            <groupId>io.zonky.test</groupId>
+            <artifactId>embedded-postgres</artifactId>
+            <version>2.0.7</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Reads .env file into Spring environment at startup -->
         <dependency>
             <groupId>me.paulschwarz</groupId>
@@ -133,6 +141,19 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Postgres 16 binaries for embedded-postgres (its default is 14); production runs 17 -->
+            <dependency>
+                <groupId>io.zonky.test.postgres</groupId>
+                <artifactId>embedded-postgres-binaries-bom</artifactId>
+                <version>16.2.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>

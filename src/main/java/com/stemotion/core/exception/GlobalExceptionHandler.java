@@ -37,14 +37,19 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static ResponseEntity<ErrorResponse> build(HttpStatus status, String code, String message) {
+        return build(status, code, message, null);
+    }
+
+    private static ResponseEntity<ErrorResponse> build(HttpStatus status, String code, String message,
+                                                       Map<String, Object> details) {
         return ResponseEntity.status(status)
-            .body(new ErrorResponse(status.value(), code, message, LocalDateTime.now()));
+            .body(new ErrorResponse(status.value(), code, message, LocalDateTime.now(), details));
     }
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorResponse> handleApiException(ApiException ex) {
         log.warn("API Exception: [{}] {}", ex.getCode(), ex.getMessage());
-        return build(ex.getStatus(), ex.getCode(), ex.getMessage());
+        return build(ex.getStatus(), ex.getCode(), ex.getMessage(), ex.getDetails());
     }
 
     /**
@@ -174,6 +179,9 @@ public class GlobalExceptionHandler {
         int status,
         String code,
         String message,
-        LocalDateTime timestamp
+        LocalDateTime timestamp,
+        /** Only present when the error carries machine-readable facts, e.g. STALE_REVISION. */
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        Map<String, Object> details
     ) {}
 }

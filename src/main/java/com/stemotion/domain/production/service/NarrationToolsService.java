@@ -65,6 +65,11 @@ public class NarrationToolsService {
         scriptService.requireActive(project);
         ScriptVersion version = scriptService.currentVersion(project);
         boolean production = project.getScriptStatus() == ScriptStatus.APPROVED;
+        // The revision whose narration is measured. The worker call takes seconds to minutes; the
+        // result is written only if the resource is still at this revision (checked under the row
+        // lock that writes it), so durations of old text never land on newer edits.
+        int measuredRevision;
+        List<Map<String, Object>> scenes;
         if (production) {
             workspaceAccess.requireProjectRole(projectId, userId, Set.of(User.UserRole.PRODUCER));
             if (baseRevision == null) {
@@ -72,17 +77,26 @@ public class NarrationToolsService {
             }
             String locked = CompositionService.lockedReason(project);
             if (locked != null) throw ApiException.conflict(locked);
+            var input = compositionService.renderInput(version);
+            measuredRevision = input.revision() == null ? 0 : input.revision();
+            scenes = input.scenes();
         } else {
             workspaceAccess.requireProjectRole(projectId, userId, Set.of(User.UserRole.WRITER));
             if (project.getScriptStatus() == ScriptStatus.IN_REVIEW) {
                 throw ApiException.badRequest("The script is in review; sync durations on the draft or after approval");
             }
+            measuredRevision = ScriptService.draftRevisionOf(version);
+            scenes = compositionService.scriptScenes(version);
+        }
+        // A stale client is told before any TTS is paid for, not after.
+        if (baseRevision != null && baseRevision != measuredRevision) {
+            throw production
+                ? ApiException.staleRevision(CompositionService.COMPOSITION, measuredRevision, baseRevision,
+                    "The composition is now at revision " + measuredRevision + " (edited elsewhere); reload it before syncing")
+                : ScriptService.staleDraft(measuredRevision, baseRevision, "sync");
         }
 
         int fps = project.getFps() == null || project.getFps() <= 0 ? 30 : project.getFps();
-        List<Map<String, Object>> scenes = production
-            ? compositionService.renderInput(version).scenes()
-            : compositionService.scriptScenes(version);
         Map<String, Object> script = new LinkedHashMap<>();
         script.put("id", project.getId());
         script.put("fps", fps);
@@ -112,13 +126,13 @@ public class NarrationToolsService {
         JsonNode captionSync = synced.path("captionSync").isObject() ? synced.get("captionSync") : null;
 
         if (production) {
-            var saved = compositionService.applyMeasured(projectId, baseRevision, frames, captions, userId);
+            var saved = compositionService.applyMeasured(projectId, measuredRevision, frames, captions, userId);
             int totalFrames = saved.scenes().stream()
                 .mapToInt(scene -> ((Number) scene.get("durationInFrames")).intValue()).sum();
             return new SyncDurationsResponse("COMPOSITION", saved.revision(),
                 Math.round(totalFrames / (float) fps), result, captionSync);
         }
-        var draft = scriptService.applyMeasuredDurations(projectId, frames);
+        var draft = scriptService.applyMeasuredDurations(projectId, frames, measuredRevision);
         return new SyncDurationsResponse("SCRIPT", draft.draftRevision(), draft.totalDurationSeconds(), result, captionSync);
     }
 

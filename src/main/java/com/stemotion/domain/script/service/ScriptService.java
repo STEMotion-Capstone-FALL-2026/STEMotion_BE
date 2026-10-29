@@ -191,8 +191,7 @@ public class ScriptService {
         ScriptVersion current = lockCurrentVersion(project);
         int revision = draftRevisionOf(current);
         if (request.baseRevision() != null && request.baseRevision() != revision) {
-            throw ApiException.conflict("The draft is now at revision " + revision
-                + " (your edit started from " + request.baseRevision() + "); reload it before saving");
+            throw staleDraft(revision, request.baseRevision(), "save");
         }
         current.setDraftRevision(revision + 1);
 
@@ -227,9 +226,15 @@ public class ScriptService {
     }
 
     /** Writer hands the draft to the reviewer queue. */
-    /** Scene durations measured from TTS audio, written to an editable draft (BE-P0-2). */
+    /**
+     * Scene durations measured from TTS audio, written to an editable draft (BE-P0-2).
+     * {@code measuredRevision} is the draft revision whose narration was measured. Measuring takes
+     * seconds to minutes; if the draft was saved meanwhile the durations belong to old text, so
+     * they are refused (409) under the same row lock that writes them.
+     */
     @Transactional
-    public ScriptResponse applyMeasuredDurations(String projectId, java.util.Map<String, Integer> framesBySceneId) {
+    public ScriptResponse applyMeasuredDurations(String projectId, java.util.Map<String, Integer> framesBySceneId,
+                                                 int measuredRevision) {
         ClipProject project = getOrThrow(projectId);
         requireActive(project);
         if (project.getScriptStatus() != ScriptStatus.DRAFT
@@ -237,8 +242,12 @@ public class ScriptService {
             throw ApiException.badRequest("Only a draft or returned script can be edited; submitted versions are immutable");
         }
         ScriptVersion current = lockCurrentVersion(project);
+        int revision = draftRevisionOf(current);
+        if (revision != measuredRevision) {
+            throw staleDraft(revision, measuredRevision, "sync");
+        }
         // Measured durations change the draft, so an editor still on the old revision must reload.
-        current.setDraftRevision(draftRevisionOf(current) + 1);
+        current.setDraftRevision(revision + 1);
         versionRepository.save(current);
         List<Scene> scenes = sceneRepository.findForUpdateByScriptVersionId(current.getId());
         for (Scene scene : scenes) {
@@ -387,8 +396,17 @@ public class ScriptService {
         return versionRepository.lockCurrentByProjectId(project.getId()).orElseGet(() -> currentVersion(project));
     }
 
-    private static int draftRevisionOf(ScriptVersion version) {
+    public static int draftRevisionOf(ScriptVersion version) {
         return version.getDraftRevision() == null ? 0 : version.getDraftRevision();
+    }
+
+    /** {@code details.resource} of a stale draft save or sync. */
+    public static final String SCRIPT_DRAFT = "SCRIPT_DRAFT";
+
+    public static ApiException staleDraft(int currentRevision, int baseRevision, String action) {
+        return ApiException.staleRevision(SCRIPT_DRAFT, currentRevision, baseRevision,
+            "The draft is now at revision " + currentRevision + " (your " + action + " started from "
+                + baseRevision + "); reload it before trying again");
     }
 
     public List<Scene> scenesOf(ScriptVersion version) {
