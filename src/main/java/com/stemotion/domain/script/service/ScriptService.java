@@ -37,7 +37,10 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class ScriptService {
+    @org.springframework.beans.factory.annotation.Value("${app.draft.require-base-revision:false}")
+    private boolean requireBaseRevision;
 
     private final ClipProjectRepository projectRepository;
     private final ScriptVersionRepository versionRepository;
@@ -179,6 +182,11 @@ public class ScriptService {
      */
     @Transactional
     public ScriptResponse updateDraft(String projectId, UpdateScriptRequest request) {
+        if (request.baseRevision() == null) {
+            var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            log.warn("Draft save without baseRevision project={} actor={}", projectId, auth == null ? "unknown" : auth.getName());
+            if (requireBaseRevision) throw ApiException.badRequest("baseRevision is required to save a draft");
+        }
         ClipProject project = getOrThrow(projectId);
         requireActive(project);
         if (project.getScriptStatus() != ScriptStatus.DRAFT
@@ -230,10 +238,11 @@ public class ScriptService {
      * Scene durations measured from TTS audio, written to an editable draft (BE-P0-2).
      * {@code measuredRevision} is the draft revision whose narration was measured. Measuring takes
      * seconds to minutes; if the draft was saved meanwhile the durations belong to old text, so
-     * they are refused (409) under the same row lock that writes them.
+     * they are refused (409) under the same row lock that writes them. Version identity is also
+     * checked because a replacement version starts its own revision counter.
      */
     @Transactional
-    public ScriptResponse applyMeasuredDurations(String projectId, java.util.Map<String, Integer> framesBySceneId,
+    public ScriptResponse applyMeasuredDurations(String projectId, String measuredVersionId, java.util.Map<String, Integer> framesBySceneId,
                                                  int measuredRevision) {
         ClipProject project = getOrThrow(projectId);
         requireActive(project);
@@ -241,8 +250,12 @@ public class ScriptService {
             && project.getScriptStatus() != ScriptStatus.CHANGE_REQUESTED) {
             throw ApiException.badRequest("Only a draft or returned script can be edited; submitted versions are immutable");
         }
-        ScriptVersion current = lockCurrentVersion(project);
+        ScriptVersion current = lockVersionForMeasurement(project);
         int revision = draftRevisionOf(current);
+        requireMeasuredVersion(SCRIPT_DRAFT, current, measuredVersionId, revision, measuredRevision);
+        if (current.getStatus() != ScriptStatus.DRAFT && current.getStatus() != ScriptStatus.CHANGE_REQUESTED) {
+            throw ApiException.conflict("The script entered review while measuring audio; reload before syncing");
+        }
         if (revision != measuredRevision) {
             throw staleDraft(revision, measuredRevision, "sync");
         }
@@ -394,6 +407,27 @@ public class ScriptService {
 
     private ScriptVersion lockCurrentVersion(ClipProject project) {
         return versionRepository.lockCurrentByProjectId(project.getId()).orElseGet(() -> currentVersion(project));
+    }
+
+    /** Called only inside the short write transaction, never while waiting for TTS.
+     * A version switch may cause the row-lock query to return no row after waiting;
+     * refuse that result rather than falling back to an unlocked latest version.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public ScriptVersion lockVersionForMeasurement(ClipProject project) {
+        return versionRepository.lockCurrentByProjectId(project.getId())
+            .orElseThrow(() -> ApiException.conflict("The current script version changed; reload before syncing"));
+    }
+
+    public static void requireMeasuredVersion(String resource, ScriptVersion current, String measuredVersionId,
+                                              int currentRevision, int measuredRevision) {
+        if (measuredVersionId == null || !measuredVersionId.equals(current.getId())) {
+            ApiException error = ApiException.staleRevision(resource, currentRevision, measuredRevision,
+                "The script version changed while measuring audio; reload before syncing");
+            error.getDetails().put("currentVersionId", current.getId());
+            error.getDetails().put("baseVersionId", measuredVersionId);
+            throw error;
+        }
     }
 
     public static int draftRevisionOf(ScriptVersion version) {

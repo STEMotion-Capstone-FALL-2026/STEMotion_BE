@@ -44,10 +44,14 @@ public class AiGateway {
     }
 
     public Generation generateJson(com.stemotion.domain.ai.entity.AiRequest.RequestType type,String instruction,String prompt,Map<String,Object> schema) {
-        String id=audit.start(type,properties.getGemini().getModel(),new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(Map.of("prompt",prompt)).toString());
+        return generateJson(type, instruction, prompt, schema, type == com.stemotion.domain.ai.entity.AiRequest.RequestType.SEGMENTATION ? "generate" : "grade");
+    }
+
+    public Generation generateJson(com.stemotion.domain.ai.entity.AiRequest.RequestType type,String instruction,String prompt,Map<String,Object> schema,String task) {
+        String id=audit.start(type,isRemote() ? "remote:" + task : properties.getGemini().getModel(),new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(Map.of("prompt",prompt)).toString());
         long started=System.nanoTime();
         Generation generation;
-        try { generation=invoke(instruction,prompt,schema); }
+        try { generation=invoke(instruction,prompt,schema,task); }
         catch(RuntimeException ex) {
             audit.complete(id,null,(System.nanoTime()-started)/1_000_000,ex instanceof ApiException api?api.getCode():"AI_CALL_FAILED");
             throw ex;
@@ -56,14 +60,14 @@ public class AiGateway {
         return new Generation(generation.result(),generation.model(),id,generation.inputTokens(),generation.outputTokens(),generation.totalTokens());
     }
 
-    private Generation invoke(String instruction,String prompt,Map<String,Object> schema) {
+    private Generation invoke(String instruction,String prompt,Map<String,Object> schema,String task) {
         if (!isRemote()) {
             var result=embedded.generateWithUsage(instruction,prompt,schema);
             return new Generation(result.result(),properties.getGemini().getModel(),null,result.inputTokens(),result.outputTokens(),result.totalTokens());
         }
         if (!isConfigured()) throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
             "AI_NOT_CONFIGURED", "Configure AI_SERVICE_URL and AI_SERVICE_KEY");
-        return invokeRemote("/internal/v1/generate", Map.of("systemInstruction", instruction, "prompt", prompt, "responseSchema", schema));
+        return invokeRemote("/internal/v1/generate", Map.of("systemInstruction", instruction, "prompt", prompt, "responseSchema", schema, "task", task));
     }
 
     public Generation generateScript(com.stemotion.domain.ai.dto.AiDtos.GenerateScriptRequest request) {

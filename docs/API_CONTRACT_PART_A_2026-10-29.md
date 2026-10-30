@@ -2,7 +2,8 @@
 
 Ngày: **29/10/2026**.
 - `c7435c7` (đã push): workspace, member, `draftRevision`/`baseRevision`.
-- Commit kèm tài liệu này (chưa push): `STALE_REVISION` có `details`, sync không áp kết quả đo cũ.
+- `7f207bb` (đã push): `STALE_REVISION` có `details`, sync kiểm revision nguyên tử.
+- Bổ sung local 30/10/2026 (chưa push): sync kiểm cả scriptVersionId và revision ở bước ghi (A-8).
 - Thiết kế và lý do: `docs/DESIGN_MEMBERSHIP_APPROVAL_2026-10-26.md` phần A.
 
 Tất cả endpoint nằm dưới `/api/v1`, header `Authorization: Bearer <jwt>`.
@@ -146,6 +147,15 @@ FE dùng hai capability riêng: Admin (đủ thao tác) và Leader (chỉ đổi
 409 `STALE_REVISION` khi:
 - `baseRevision` cũ ngay lúc gửi → BE từ chối **trước khi gọi TTS**;
 - bản nháp/bản dựng bị lưu trong lúc worker đang đo (vài giây đến vài phút) → kết quả đo **không được ghi**.
+- phiên bản kịch bản đổi trong lúc worker đo, kể cả version mới có cùng revision → kết quả đo **không được ghi**.
+
+Trường hợp đổi version: `details` thêm `baseVersionId` và `currentVersionId` bên cạnh resource/revisions.
+Đây là ID nội bộ của ScriptVersion, không phải số versionNo. Request FE không cần thêm trường:
+BE chụp ID trước khi gọi worker và kiểm lại dưới row lock trong transaction ghi ngắn.
+Nếu không còn dòng current sau khi chờ lock, trả 409 CONFLICT và yêu cầu reload,
+không fallback sang version mới nhất không có lock. Không giữ transaction/row lock trong lúc gọi TTS.
+Trạng thái của version đã khóa cũng được kiểm lại: draft vừa chuyển IN_REVIEW hoặc version
+composition không còn APPROVED bị từ chối 409 CONFLICT, kể cả project được đọc trước đó còn trạng thái cũ.
 
 Khi gặp: tải lại, rồi sync lại nếu vẫn cần.
 
@@ -153,5 +163,6 @@ Khi gặp: tải lại, rồi sync lại nếu vẫn cần.
 
 - Mọi thay đổi chỉ **thêm trường**; client cũ đọc được.
 - Client cũ không gửi `baseRevision` vẫn lưu được cho tới khi bật `app.draft.require-base-revision` (A4.5).
-- Không thêm feature flag nào cho phần A. Phần B dùng cờ, tài liệu thiết kế B6.
+- Local 30/10 có `DRAFT_REQUIRE_BASE_REVISION` mặc định false cho rollout A4.5.
+  Bảo vệ A-8 ở bước ghi sync luôn áp dụng, không có cờ tắt. Phần B dùng cờ theo thiết kế B6.
 - Migration: V22 (đã có trên production). Phần này không có migration mới.

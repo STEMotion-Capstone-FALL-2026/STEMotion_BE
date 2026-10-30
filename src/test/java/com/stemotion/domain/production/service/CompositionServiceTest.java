@@ -84,8 +84,10 @@ class CompositionServiceTest {
         version = new ScriptVersion();
         version.setId("version");
         version.setVersionNo(3);
+        version.setStatus(ScriptStatus.APPROVED);
         when(scripts.getOrThrow("project")).thenReturn(project);
         when(scripts.currentVersion(project)).thenReturn(version);
+        when(scripts.lockVersionForMeasurement(project)).thenReturn(version);
         when(scripts.scenesOf(version)).thenReturn(List.of(scene("s1", SceneType.STEM_QUIZ,
             "{\"question\":\"U = ?\",\"options\":[\"IR\",\"I/R\"],\"correctIndex\":0,\"hint\":\"Ôm\",\"explanation\":\"U = I·R\"}")));
         when(compositions.findByScriptVersionId("version")).thenReturn(Optional.empty());
@@ -235,12 +237,36 @@ class CompositionServiceTest {
     @Test
     @DisplayName("measured durations and caption words become the next revision, nothing else changes")
     void appliesMeasuredDurations() {
-        CompositionResponse saved = service.applyMeasured("project", 0, Map.of("s1", 210),
+        CompositionResponse saved = service.applyMeasured("project", "version", 0, Map.of("s1", 210),
             Map.of("s1", List.of(Map.of("text", "U", "start", 0.1, "end", 0.4))), "producer");
         assertThat(saved.revision()).isEqualTo(1);
         assertThat(saved.scenes().get(0)).containsEntry("durationInFrames", 210).containsKey("captionWords")
             .containsEntry("question", "U = ?");
-        assertThatThrownBy(() -> service.applyMeasured("project", 5, Map.of("s1", 210), Map.of(), "producer"))
+        assertThatThrownBy(() -> service.applyMeasured("project", "version", 5, Map.of("s1", 210), Map.of(), "producer"))
             .isInstanceOf(ApiException.class).hasMessageContaining("revision 0");
+    }
+
+    @Test
+    void replacementApprovedVersionWithTheSameCompositionRevisionRefusesOldAudio() {
+        assertThatThrownBy(() -> service.applyMeasured("project", "old-version", 0,
+            Map.of("s1", 210), Map.of(), "producer"))
+            .isInstanceOf(ApiException.class).satisfies(e -> {
+                ApiException api = (ApiException)e;
+                assertThat(api.getCode()).isEqualTo("STALE_REVISION");
+                assertThat(api.getDetails()).containsEntry("resource", "COMPOSITION")
+                    .containsEntry("baseVersionId", "old-version").containsEntry("currentVersionId", "version")
+                    .containsEntry("baseRevision", 0).containsEntry("currentRevision", 0);
+            });
+        verify(scripts).lockVersionForMeasurement(project);
+        verify(compositions, never()).save(any());
+        verify(compositions, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void approvalChangedBeforeVersionLockRefusesMeasurement() {
+        version.setStatus(ScriptStatus.CHANGE_REQUESTED);
+        assertThatThrownBy(() -> service.applyMeasured("project", "version", 0, Map.of(), Map.of(), "producer"))
+            .isInstanceOf(ApiException.class).hasMessageContaining("approval changed");
+        verify(compositions, never()).saveAndFlush(any());
     }
 }

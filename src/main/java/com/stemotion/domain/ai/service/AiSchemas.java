@@ -11,6 +11,14 @@ final class AiSchemas {
 
     private AiSchemas() {}
 
+    static Map<String, Object> storyboard() {
+        var scene = object(Map.of("sceneId", str(), "learningObjective", str(), "layout", str(),
+            "visualDescription", str(), "motionCue", str(), "pronunciationNotes", str(),
+            "reviewWarnings", arrayOf(str())),
+            List.of("sceneId", "learningObjective", "layout", "visualDescription", "motionCue", "pronunciationNotes", "reviewWarnings"));
+        return object(Map.of("scenes", arrayOf(scene)), List.of("scenes"));
+    }
+
     static final List<String> FLAT_AMBIENCES = List.of("space", "cell", "lab", "ocean", "lilac", "sky");
     static final List<String> FLAT_LAYOUTS = List.of("focus", "row", "cluster", "swarm", "exchange", "zoom");
     static final List<String> COMPOSED_FRAMES = List.of("center", "split", "thirds", "grid", "sidebar");

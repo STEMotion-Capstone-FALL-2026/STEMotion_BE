@@ -19,9 +19,16 @@ def weights_present():
 
 
 def configured():
-    provider = os.getenv("AI_PROVIDER", "openai")
-    key_name = {"openai": "OPENAI_API_KEY", "gemini": "GEMINI_API_KEY"}.get(provider)
-    return bool(shared_key() and key_name and os.getenv(key_name))
+    names = {os.getenv("AI_PROVIDER", "openai")}
+    names.update(os.getenv(k, "").strip() for k in ("AI_STORYBOARD_PROVIDER", "AI_REVIEW_PROVIDER") if os.getenv(k, "").strip())
+    return bool(shared_key().strip() and all(provider_configured(name) for name in names))
+
+
+def provider_configured(provider):
+    key_name = {"openai": "OPENAI_API_KEY", "gemini": "GEMINI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}.get(provider)
+    models_ready = provider != "anthropic" or all(os.getenv(name, "").strip()
+        for name in ("ANTHROPIC_MODEL_DRAFT", "ANTHROPIC_MODEL_LIGHT"))
+    return bool(key_name and os.getenv(key_name, "").strip() and models_ready)
 
 
 def readiness():

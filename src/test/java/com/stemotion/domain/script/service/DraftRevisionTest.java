@@ -57,6 +57,15 @@ class DraftRevisionTest {
     }
 
     @Test
+    void requiredRevisionFlagRefusesLegacySaveBeforeMutation() {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "requireBaseRevision", true);
+        assertThatThrownBy(() -> service.updateDraft("project", titled("Edited", null)))
+            .isInstanceOf(ApiException.class).hasMessageContaining("baseRevision is required");
+        verify(versions, never()).lockCurrentByProjectId(anyString());
+        assertThat(version.getDraftRevision()).isEqualTo(4);
+    }
+
+    @Test
     @DisplayName("a save from the current revision is applied and moves the draft to the next revision")
     void currentRevisionSaves() {
         var response = service.updateDraft("project", titled("Edited", 4));
@@ -90,7 +99,7 @@ class DraftRevisionTest {
     @Test
     @DisplayName("measured durations change the draft, so they bump the revision too")
     void measuredDurationsBumpTheRevision() {
-        var response = service.applyMeasuredDurations("project", Map.of(), 4);
+        var response = service.applyMeasuredDurations("project", "version", Map.of(), 4);
         assertThat(response.draftRevision()).isEqualTo(5);
         assertThatThrownBy(() -> service.updateDraft("project", titled("Before sync", 4)))
             .isInstanceOf(ApiException.class).hasMessageContaining("revision 5");
@@ -99,7 +108,7 @@ class DraftRevisionTest {
     @Test
     @DisplayName("durations measured from an older draft are refused under the lock and change nothing")
     void durationsOfAnOlderDraftAreRefused() {
-        assertThatThrownBy(() -> service.applyMeasuredDurations("project", Map.of(), 3))
+        assertThatThrownBy(() -> service.applyMeasuredDurations("project", "version", Map.of(), 3))
             .isInstanceOf(ApiException.class)
             .satisfies(e -> {
                 ApiException api = (ApiException) e;
@@ -111,6 +120,40 @@ class DraftRevisionTest {
         assertThat(version.getDraftRevision()).isEqualTo(4);
         verify(versions, never()).save(any());
         verify(scenes, never()).saveAll(any());
+    }
+
+    @Test
+    void replacementVersionWithTheSameRevisionRejectsOldDurations() {
+        assertThatThrownBy(() -> service.applyMeasuredDurations("project", "old-version", Map.of("copied-scene", 99), 4))
+            .isInstanceOf(ApiException.class).satisfies(e -> {
+                ApiException api = (ApiException) e;
+                assertThat(api.getStatus().value()).isEqualTo(409);
+                assertThat(api.getCode()).isEqualTo("STALE_REVISION");
+                assertThat(api.getDetails()).containsEntry("baseVersionId", "old-version")
+                    .containsEntry("currentVersionId", "version")
+                    .containsEntry("baseRevision", 4).containsEntry("currentRevision", 4);
+            });
+        assertThat(version.getDraftRevision()).isEqualTo(4);
+        verify(versions, never()).save(any());
+        verifyNoInteractions(scenes);
+    }
+
+    @Test
+    void aVersionSwitchDuringLockAcquisitionNeverFallsBackToAnUnlockedVersion() {
+        when(versions.lockCurrentByProjectId("project")).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.applyMeasuredDurations("project", "version", Map.of(), 4))
+            .isInstanceOf(ApiException.class).satisfies(e -> assertThat(((ApiException)e).getStatus().value()).isEqualTo(409));
+        verify(versions, never()).findFirstByProjectIdOrderByVersionNoDesc(anyString());
+        verifyNoInteractions(scenes);
+    }
+
+    @Test
+    void submittedVersionCannotBeTimedEvenWhenProjectReadWasStillDraft() {
+        version.setStatus(ScriptStatus.IN_REVIEW);
+        assertThatThrownBy(() -> service.applyMeasuredDurations("project", "version", Map.of(), 4))
+            .isInstanceOf(ApiException.class).hasMessageContaining("entered review");
+        verify(versions, never()).save(any());
+        verifyNoInteractions(scenes);
     }
 
     @Test

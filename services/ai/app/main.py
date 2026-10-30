@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from .deployment import shared_key, configured, readiness
 from .alignment import aligner, MAX_AUDIO_BYTES
 from .models import GenerationRequest, GenerationResponse, ScriptInput, AnalysisInput, ActionInput
-from .providers import GeminiProvider, OpenAIProvider
+from .providers import GeminiProvider, OpenAIProvider, AnthropicProvider, TaskRoutedProvider
 from .schemas import json_schema
 from .prompting import build_request
 from .validation import InvalidResult, normalize_scenes, validate_result
@@ -23,11 +23,15 @@ def require_service_key(x_ai_api_key: str = Header(default="")) -> None:
 
 
 def provider():
+    if os.getenv("AI_STORYBOARD_PROVIDER", "").strip() or os.getenv("AI_REVIEW_PROVIDER", "").strip():
+        return TaskRoutedProvider()
     name = os.getenv("AI_PROVIDER", "openai")
     if name == "openai":
         return OpenAIProvider()
     if name == "gemini":
         return GeminiProvider()
+    if name == "anthropic":
+        return AnthropicProvider()
     raise HTTPException(503, "Unsupported AI provider configuration")
 
 app = FastAPI(title="STEMotion AI Service", version="2.0.0", docs_url=None, redoc_url=None)

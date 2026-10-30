@@ -33,6 +33,9 @@ public class AiScriptService {
         Write narration in Vietnamese, keep scientific terminology accurate and
         consistent, and match the vocabulary to the requested grade level.
         Respond only with JSON that satisfies the provided schema.
+        Assist the human Writer and Reviewer. Prefer learning objectives, prerequisites,
+        accurate examples, common misconceptions and a concise recap. Do not invent sources
+        or measurements. Never substitute an unrelated diagram for the correct scientific concept.
         """;
 
     /** Shown in place of an icon the renderer does not know. */
@@ -153,7 +156,7 @@ public class AiScriptService {
               và "icons" (3-5 biểu tượng, mỗi cái có "name" BẮT BUỘC lấy từ danh sách [%s] và "label" tiếng Việt tối đa 3 từ).
               Với layout focus và swarm, biểu tượng đầu tiên là tâm điểm.
             - STEM_QUIZ: Cung cấp "question", "options" (3-4 phương án), "correctIndex" (0-3, đếm từ 0), "hint", "explanation".
-            - DIAGRAM_EXPLAINER: Cung cấp "diagramTitle", "svgType" (pendulum, atom, circuit hoặc cell; chọn cái gần nhất)
+            - DIAGRAM_EXPLAINER: Cung cấp "diagramTitle", "svgType" (pendulum, atom, circuit hoặc cell; chỉ khi đúng nội dung; nếu không phù hợp chọn template khác, không chọn hình gần nhất)
               và "labels" (2-5 chú thích, mỗi cái có "name", "description", "xPercent", "yPercent" từ 0 đến 100).
             - ALGORITHM_WALKTHROUGH: Cung cấp "language", "codeSnippet" (mã ngắn, chạy được) và "steps".
             - PROCESS_TIMELINE: Cung cấp "processTitle" và "stages" (3-4 giai đoạn, mỗi cái có stageNumber, title, description).
@@ -192,8 +195,9 @@ public class AiScriptService {
 
             Ngược lại, đặt "isValidStemTopic": true và đề xuất ĐÚNG 3 cách dẫn dắt một video ngắn (60-120 giây)
             dạy bài này, KHÁC NHAU THẬT SỰ về cách mở đầu và mạch đi (không chỉ đổi lời). Ít nhất một cách phải
-            bất ngờ, sáng tạo (VD: trò chơi đố vui, một cuộc điều tra, phỏng vấn một hạt electron, nhật ký của nhà khoa học,
-            phá một hiểu lầm, thử thách đoán số...). Cả ba phải phù hợp với học sinh %s và giữ kiến thức chính xác.
+            giải thích trực tiếp bằng ví dụ chuẩn; các cách còn lại có thể dùng vấn đề thực tế hoặc phá một hiểu lầm.
+            Không bắt buộc nhân hóa, phỏng vấn hạt hay kể chuyện cho lạ. Cả ba phải phù hợp với học sinh %s,
+            có mục tiêu học, kiến thức nền cần có và giữ kiến thức chính xác.
 
             Với mỗi cách:
             - "name": tên ngắn (tối đa 6 từ).

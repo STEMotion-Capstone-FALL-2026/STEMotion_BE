@@ -1,7 +1,7 @@
 from typing import Any, Literal
 from pydantic import BaseModel, Field, ConfigDict
 
-Operation = Literal["generate", "resegment", "grade", "extract", "terms"]
+Operation = Literal["generate", "resegment", "grade", "extract", "terms", "storyboard"]
 Subject = Literal["Math", "Physics", "Chemistry", "Biology", "ComputerScience", "CS"]
 
 class GenerationRequest(BaseModel):

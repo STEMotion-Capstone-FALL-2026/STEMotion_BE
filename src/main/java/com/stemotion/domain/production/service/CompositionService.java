@@ -130,11 +130,12 @@ public class CompositionService {
 
     /**
      * Scene durations measured from TTS audio and Whisper word timings, saved as the next
-     * revision (BE-P0-2). Same lock and stale-revision rules as a save by the producer; nothing
+     * revision (BE-P0-2). Locks the current script version and composition; verifies both the
+     * measured version identity and composition revision before writing. Nothing
      * but durationInFrames and captionWords changes.
      */
     @Transactional
-    public CompositionResponse applyMeasured(String projectId, int baseRevision, Map<String, Integer> framesBySceneId,
+    public CompositionResponse applyMeasured(String projectId, String measuredVersionId, int baseRevision, Map<String, Integer> framesBySceneId,
                                              Map<String, Object> captionWordsBySceneId, String userId) {
         ClipProject project = scriptService.getOrThrow(projectId);
         scriptService.requireActive(project);
@@ -143,9 +144,13 @@ public class CompositionService {
         if (locked != null) {
             throw ApiException.conflict(locked);
         }
-        ScriptVersion version = scriptService.currentVersion(project);
+        ScriptVersion version = scriptService.lockVersionForMeasurement(project);
         Composition current = compositions.lockByScriptVersionId(version.getId()).orElse(null);
         int currentRevision = current == null ? 0 : current.getRevision();
+        ScriptService.requireMeasuredVersion(COMPOSITION, version, measuredVersionId, currentRevision, baseRevision);
+        if (version.getStatus() != ScriptStatus.APPROVED) {
+            throw ApiException.conflict("The script approval changed while measuring audio; reload before syncing");
+        }
         if (baseRevision != currentRevision) {
             throw ApiException.staleRevision(COMPOSITION, currentRevision, baseRevision,
                 "The composition is now at revision " + currentRevision + " (edited elsewhere); reload it before syncing");

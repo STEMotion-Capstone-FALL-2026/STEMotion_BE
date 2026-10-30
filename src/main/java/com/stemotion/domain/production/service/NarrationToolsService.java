@@ -64,9 +64,11 @@ public class NarrationToolsService {
         ClipProject project = scriptService.getOrThrow(projectId);
         scriptService.requireActive(project);
         ScriptVersion version = scriptService.currentVersion(project);
+        // Capture identity before the remote call: a replacement version may also start at revision 0.
+        String measuredVersionId = version.getId();
         boolean production = project.getScriptStatus() == ScriptStatus.APPROVED;
         // The revision whose narration is measured. The worker call takes seconds to minutes; the
-        // result is written only if the resource is still at this revision (checked under the row
+        // result is written only if the resource still has this version identity and revision (under the row
         // lock that writes it), so durations of old text never land on newer edits.
         int measuredRevision;
         List<Map<String, Object>> scenes;
@@ -126,13 +128,13 @@ public class NarrationToolsService {
         JsonNode captionSync = synced.path("captionSync").isObject() ? synced.get("captionSync") : null;
 
         if (production) {
-            var saved = compositionService.applyMeasured(projectId, measuredRevision, frames, captions, userId);
+            var saved = compositionService.applyMeasured(projectId, measuredVersionId, measuredRevision, frames, captions, userId);
             int totalFrames = saved.scenes().stream()
                 .mapToInt(scene -> ((Number) scene.get("durationInFrames")).intValue()).sum();
             return new SyncDurationsResponse("COMPOSITION", saved.revision(),
                 Math.round(totalFrames / (float) fps), result, captionSync);
         }
-        var draft = scriptService.applyMeasuredDurations(projectId, frames, measuredRevision);
+        var draft = scriptService.applyMeasuredDurations(projectId, measuredVersionId, frames, measuredRevision);
         return new SyncDurationsResponse("SCRIPT", draft.draftRevision(), draft.totalDurationSeconds(), result, captionSync);
     }
 

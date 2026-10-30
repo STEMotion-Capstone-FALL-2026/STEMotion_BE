@@ -45,6 +45,11 @@ spring:
     open-in-view: false
 
 app:
+  draft:
+    require-base-revision: ${DRAFT_REQUIRE_BASE_REVISION:false}
+  video:
+    # Paid-capable operation: off until provider, model and budget have been configured.
+    storyboard-enabled: ${VIDEO_STORYBOARD_ENABLED:false}
   jwt:
     secret: ${JWT_SECRET}
     expiration-ms: 86400000

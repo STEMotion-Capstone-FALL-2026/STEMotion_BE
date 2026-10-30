@@ -43,6 +43,7 @@ class NarrationToolsServiceTest {
             .scriptStatus(ScriptStatus.APPROVED).videoStatus(VideoStatus.NOT_RENDERED).build();
         project.setId("project");
         version = new ScriptVersion();
+        version.setId("version");
         when(scripts.getOrThrow("project")).thenReturn(project);
         when(scripts.currentVersion(project)).thenReturn(version);
         Map<String, Object> scene = new LinkedHashMap<>(Map.of("id", "s1", "narration", "Xin chào các em", "durationInFrames", 60));
@@ -56,7 +57,7 @@ class NarrationToolsServiceTest {
 
     @Test
     void anApprovedScriptsCompositionGetsANewRevisionWithCaptionWords() {
-        when(compositions.applyMeasured(eq("project"), eq(2), anyMap(), anyMap(), eq("producer")))
+        when(compositions.applyMeasured(eq("project"), eq("version"), eq(2), anyMap(), anyMap(), eq("producer")))
             .thenReturn(new CompositionResponse("project", 1, 3, true, null,
                 List.of(Map.of("id", "s1", "durationInFrames", 96)), null, null, "default"));
         var response = service.syncDurations("project", 2, "producer");
@@ -66,7 +67,7 @@ class NarrationToolsServiceTest {
         assertThat(response.scenes().get(0)).containsEntry("durationInFrames", 96).containsKey("captionWords");
         assertThat(response.captionSync().path("status").asText()).isEqualTo("ALIGNED");
         verify(access).requireProjectRole("project", "producer", Set.of(User.UserRole.PRODUCER));
-        verify(compositions).applyMeasured(eq("project"), eq(2), eq(Map.of("s1", 96)), anyMap(), eq("producer"));
+        verify(compositions).applyMeasured(eq("project"), eq("version"), eq(2), eq(Map.of("s1", 96)), anyMap(), eq("producer"));
 
         assertThatThrownBy(() -> service.syncDurations("project", null, "producer"))
             .isInstanceOf(ApiException.class).hasMessageContaining("baseRevision");
@@ -79,7 +80,7 @@ class NarrationToolsServiceTest {
         when(draft.totalDurationSeconds()).thenReturn(4);
         when(draft.draftRevision()).thenReturn(7);
         version.setDraftRevision(6);
-        when(scripts.applyMeasuredDurations("project", Map.of("s1", 96), 6)).thenReturn(draft);
+        when(scripts.applyMeasuredDurations("project", "version", Map.of("s1", 96), 6)).thenReturn(draft);
         var response = service.syncDurations("project", null, "writer");
         assertThat(response.target()).isEqualTo("SCRIPT");
         assertThat(response.totalDurationSeconds()).isEqualTo(4);
@@ -96,12 +97,36 @@ class NarrationToolsServiceTest {
             version.setDraftRevision(7);
             return json.readTree("{\"script\":{\"scenes\":[{\"id\":\"s1\",\"durationInFrames\":96}]}}");
         });
-        when(scripts.applyMeasuredDurations("project", Map.of("s1", 96), 6))
+        when(scripts.applyMeasuredDurations("project", "version", Map.of("s1", 96), 6))
             .thenThrow(ScriptService.staleDraft(7, 6, "sync"));
         assertThatThrownBy(() -> service.syncDurations("project", null, "writer"))
             .isInstanceOf(ApiException.class)
             .satisfies(e -> assertThat(((ApiException) e).getCode()).isEqualTo("STALE_REVISION"));
-        verify(scripts).applyMeasuredDurations("project", Map.of("s1", 96), 6);
+        verify(scripts).applyMeasuredDurations("project", "version", Map.of("s1", 96), 6);
+    }
+
+    @Test
+    void versionIdentityIsCapturedBeforeWorkerForBothDraftAndComposition() throws Exception {
+        for (boolean production : List.of(false, true)) {
+            project.setScriptStatus(production ? ScriptStatus.APPROVED : ScriptStatus.DRAFT);
+            version.setId("version");
+            version.setDraftRevision(2);
+            when(worker.syncDurations(anyMap(), eq(30))).thenAnswer(call -> {
+                version.setId("replacement"); // Simulate replacement while remote measurement is running.
+                return json.readTree("{\"script\":{\"scenes\":[{\"id\":\"s1\",\"durationInFrames\":96}]}}");
+            });
+            if (production) {
+                when(compositions.applyMeasured(eq("project"), eq("version"), eq(2), anyMap(), anyMap(), eq("producer")))
+                    .thenThrow(ApiException.conflict("version changed"));
+            } else {
+                when(scripts.applyMeasuredDurations("project", "version", Map.of("s1", 96), 2))
+                    .thenThrow(ApiException.conflict("version changed"));
+            }
+            assertThatThrownBy(() -> service.syncDurations("project", 2, production ? "producer" : "writer"))
+                .isInstanceOf(ApiException.class).hasMessageContaining("version changed");
+        }
+        verify(scripts).applyMeasuredDurations("project", "version", Map.of("s1", 96), 2);
+        verify(compositions).applyMeasured(eq("project"), eq("version"), eq(2), anyMap(), anyMap(), eq("producer"));
     }
 
     @Test

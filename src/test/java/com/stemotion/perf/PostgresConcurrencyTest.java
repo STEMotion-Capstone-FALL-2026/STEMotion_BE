@@ -5,6 +5,7 @@ import com.stemotion.core.enums.StemEnums.ScriptStatus;
 import com.stemotion.core.enums.StemEnums.StemSubject;
 import com.stemotion.core.enums.StemEnums.VideoStatus;
 import com.stemotion.core.exception.ApiException;
+import com.stemotion.core.enums.StemEnums.SceneType;
 import com.stemotion.core.security.WorkspaceAccess;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.repository.UserRepository;
@@ -101,6 +102,7 @@ class PostgresConcurrencyTest {
     @Autowired ClipProjectRepository projects;
     @Autowired ScriptVersionRepository versions;
     @Autowired SceneRepository scenes;
+    @Autowired com.stemotion.domain.production.repository.CompositionRepository compositions;
 
     WorkspaceService workspaceService;
     ScriptService scriptService;
@@ -242,13 +244,14 @@ class PostgresConcurrencyTest {
     @DisplayName("durations measured from a draft that was saved meanwhile are refused; a rolled-back save does not bump")
     void staleMeasurementAndRollback() {
         ClipProject project = draftProject(5);
+        String measuredVersionId = versions.findFirstByProjectIdAndIsCurrentTrue(project.getId()).orElseThrow().getId();
         // The writer saves while TTS/Whisper is measuring revision 5.
         tx.executeWithoutResult(s -> scriptService.updateDraft(project.getId(),
             new UpdateScriptRequest("Edited during sync", null, null, null, null, null, 5)));
         assertThat(draftRevision(project)).isEqualTo(6);
 
         Throwable stale = catchThrowable(() -> tx.executeWithoutResult(s ->
-            scriptService.applyMeasuredDurations(project.getId(), Map.of(), 5)));
+            scriptService.applyMeasuredDurations(project.getId(), measuredVersionId, Map.of(), 5)));
         assertThat(stale).isInstanceOf(ApiException.class);
         assertThat(((ApiException) stale).getDetails()).containsEntry("currentRevision", 6).containsEntry("baseRevision", 5);
         assertThat(draftRevision(project)).as("refused sync changes nothing").isEqualTo(6);
@@ -259,6 +262,68 @@ class PostgresConcurrencyTest {
             s.setRollbackOnly();
         });
         assertThat(draftRevision(project)).isEqualTo(6);
+    }
+
+    private ScriptVersion replaceVersion(ClipProject project, ScriptStatus status) {
+        return tx.execute(s -> {
+            ScriptVersion old = versions.findFirstByProjectIdAndIsCurrentTrue(project.getId()).orElseThrow();
+            old.setIsCurrent(false);
+            versions.saveAndFlush(old);
+            ScriptVersion next = versions.saveAndFlush(ScriptVersion.builder().project(old.getProject())
+                .createdBy(old.getCreatedBy()).versionNo(old.getVersionNo() + 1).title("Replacement")
+                .draftRevision(0).status(status).isCurrent(true).build());
+            ClipProject updated = projects.findById(project.getId()).orElseThrow();
+            updated.setScriptStatus(status);
+            projects.save(updated);
+            return next;
+        });
+    }
+
+    @Test
+    void measurementOfVersionOneCannotWriteVersionTwoAtTheSameRevision() {
+        ClipProject project = draftProject(0);
+        String measuredId = versions.findFirstByProjectIdAndIsCurrentTrue(project.getId()).orElseThrow().getId();
+        // The review/return commits in a different transaction while the worker measures v1/r0.
+        ScriptVersion next = replaceVersion(project, ScriptStatus.CHANGE_REQUESTED);
+        var copied = scenes.saveAndFlush(com.stemotion.domain.script.entity.Scene.builder()
+            .scriptVersion(next).orderNo(1).title("Copied scene").narration("Changed narration")
+            .sceneType(SceneType.STEM_QUIZ).props("{}").durationInFrames(120).build());
+
+        Throwable stale = catchThrowable(() -> tx.executeWithoutResult(s -> scriptService.applyMeasuredDurations(
+            project.getId(), measuredId, Map.of(copied.getId(), 999), 0)));
+        assertThat(stale).isInstanceOf(ApiException.class);
+        assertThat(((ApiException)stale).getDetails()).containsEntry("baseVersionId", measuredId)
+            .containsEntry("currentVersionId", next.getId()).containsEntry("baseRevision", 0)
+            .containsEntry("currentRevision", 0);
+        assertThat(draftRevision(project)).isZero();
+        assertThat(scenes.findById(copied.getId()).orElseThrow().getDurationInFrames()).isEqualTo(120);
+        // A measurement of the new identity still succeeds.
+        tx.executeWithoutResult(s -> scriptService.applyMeasuredDurations(project.getId(), next.getId(),
+            Map.of(copied.getId(), 150), 0));
+        assertThat(draftRevision(project)).isEqualTo(1);
+        assertThat(scenes.findById(copied.getId()).orElseThrow().getDurationInFrames()).isEqualTo(150);
+    }
+
+    @Test
+    void measurementOfOldApprovedVersionCannotWriteReplacementComposition() throws Exception {
+        ClipProject project = draftProject(0);
+        String measuredId = versions.findFirstByProjectIdAndIsCurrentTrue(project.getId()).orElseThrow().getId();
+        ScriptVersion next = replaceVersion(project, ScriptStatus.APPROVED);
+        String original = "[{\"id\":\"scene\",\"durationInFrames\":120,\"narration\":\"New narration\"}]";
+        var saved = compositions.saveAndFlush(com.stemotion.domain.production.entity.Composition.builder()
+            .project(project).scriptVersion(next).revision(1).scenes(original).build());
+        var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        var service = new com.stemotion.domain.production.service.CompositionService(compositions, scriptService,
+            new SceneMapper(mapper, new ScenePropsValidator()), mock(AuthService.class), mapper);
+        Throwable stale = catchThrowable(() -> tx.executeWithoutResult(s -> service.applyMeasured(project.getId(),
+            measuredId, 1, Map.of("scene", 999), Map.of("scene", List.of()), project.getOwner().getId())));
+        assertThat(stale).isInstanceOf(ApiException.class);
+        assertThat(((ApiException)stale).getDetails()).containsEntry("resource", "COMPOSITION")
+            .containsEntry("baseVersionId", measuredId).containsEntry("currentVersionId", next.getId())
+            .containsEntry("currentRevision", 1).containsEntry("baseRevision", 1);
+        var unchanged = compositions.findById(saved.getId()).orElseThrow();
+        assertThat(unchanged.getRevision()).isEqualTo(1);
+        assertThat(mapper.readTree(unchanged.getScenes())).isEqualTo(mapper.readTree(original));
     }
 
     private static Throwable catchThrowable(Runnable run) {

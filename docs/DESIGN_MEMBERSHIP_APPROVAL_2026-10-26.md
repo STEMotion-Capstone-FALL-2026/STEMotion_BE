@@ -5,7 +5,7 @@ Nguồn: `master_update_plan.md` (biên bản mentor 26/10), mục M10–M17, D0
 
 | Phần | Nội dung | Trạng thái |
 |---|---|---|
-| **A** | Workspace đủ 3 role, quyền Leader, giữ role, revision bản nháp, sync không áp kết quả cũ, 409 có cấu trúc | Code + test. A1–A3 và V22 đã push (`c7435c7`); A4.2–A4.4 ở commit kèm bản cập nhật này, **chưa push** |
+| **A** | Workspace đủ 3 role, quyền Leader, giữ role, revision bản nháp, sync không áp kết quả cũ, 409 có cấu trúc | A1–A3/V22 ở `c7435c7`; A4.2–A4.4 đã push trong `7f207bb`. A-8 kiểm identity phiên bản + revision bổ sung local 30/10/2026, chưa push |
 | **B** | Đề xuất project, tham gia, role theo project, edit lease, contribution, dashboard Leader | **Thiết kế, chưa code.** Mọi `Dxx` ở B1 chờ người phụ trách team xác nhận |
 
 Contract FE cho phần A (ví dụ request/response/lỗi): `docs/API_CONTRACT_PART_A_2026-10-29.md`.

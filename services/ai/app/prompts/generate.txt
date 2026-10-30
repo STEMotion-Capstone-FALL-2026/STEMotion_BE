@@ -8,10 +8,10 @@ BƯỚC 1: KIỂM DUYỆT ĐẦU VÀO (GUARDRAIL)
   + Set "fallbackMessage": Lời giải thích ngắn gọn, lịch sự bằng tiếng Việt (VD: "Chủ đề 'bún chả' không phù hợp với môn Vật Lý lớp 10. Vui lòng chọn chủ đề khoa học.").
   + BỎ QUA BƯỚC 2. Trả về mảng scenes rỗng để tiết kiệm token.
 
-BƯỚC 1.5: THIẾT KẾ MẠCH DẪN DẮT (NARRATIVE ARC) — TỰ DO SÁNG TẠO
+BƯỚC 1.5: THIẾT KẾ MẠCH GIẢI THÍCH HỌC THUẬT (NARRATIVE ARC)
 - Chỉ thực hiện khi topic hợp lệ ở BƯỚC 1; ý tưởng dẫn dắt không được ghi đè guardrail, độ chính xác khoa học hoặc ràng buộc template.
-- Bạn được TỰ DO thiết kế mạch dẫn dắt cho bài này: kiểu mở đầu gây tò mò
-  (hook), thứ tự triển khai các ý, nhịp điệu nhanh/chậm theo độ khó.
+- Ưu tiên mục tiêu học, kiến thức nền, ví dụ chuẩn, lỗi hiểu nhầm và chốt kiến thức.
+  Thiết kế bố cục theo nội dung; không bắt buộc nhân hóa hoặc kể chuyện để gây bất ngờ.
 - Các cách dạy quen thuộc (thí nghiệm, so sánh, kể chuyện, vấn đáp...) chỉ là
   GỢI Ý THAM KHẢO, không phải danh sách bắt buộc chọn.
 - NẾU có "Ý tưởng dẫn dắt của Writer" bên dưới: BẮT BUỘC dựng toàn bộ mạch
@@ -68,7 +68,7 @@ YÊU CẦU ĐẶC THÙ CHO CÁC TEMPLATE STEM:
   và "icons" (3-5 biểu tượng, mỗi cái có "name" BẮT BUỘC lấy từ danh sách [%s] và "label" tiếng Việt tối đa 3 từ).
   Với layout focus và swarm, biểu tượng đầu tiên là tâm điểm.
 - STEM_QUIZ: Cung cấp "question", "options" (3-4 phương án), "correctIndex" (0-3, đếm từ 0), "hint", "explanation".
-- DIAGRAM_EXPLAINER: Cung cấp "diagramTitle", "svgType" (pendulum, atom, circuit hoặc cell; chọn cái gần nhất)
+- DIAGRAM_EXPLAINER: Cung cấp "diagramTitle", "svgType" (pendulum, atom, circuit hoặc cell; chỉ chọn khi đúng nội dung, không chọn cái gần nhất; nếu không phù hợp dùng template giải thích khác)
   và "labels" (2-5 chú thích, mỗi cái có "name", "description", "xPercent", "yPercent" từ 0 đến 100).
 - ALGORITHM_WALKTHROUGH: Cung cấp "language", "codeSnippet" (mã ngắn, chạy được) và "steps".
 - PROCESS_TIMELINE: Cung cấp "processTitle" và "stages" (3-4 giai đoạn, mỗi cái có stageNumber, title, description).
