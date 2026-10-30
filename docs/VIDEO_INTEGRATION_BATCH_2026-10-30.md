@@ -90,3 +90,20 @@ Không merge main/deploy; thay đổi local có sẵn của FE và BE `.gitignor
 Người dùng đã yêu cầu push batch hoàn tất. Hai nhánh độc lập để review/tích hợp, không merge main.
 A-8 đã code/test tại đây; Nemo không cần triển khai lại. Nhãn chưa push/local trong roadmap
 là trạng thái tại lúc lập plan; trạng thái publication xem nhánh và commit Git hiện tại.
+
+## Preflight trước merge main — 30/10/2026
+
+Người dùng tiếp tục yêu cầu merge BE/worker vào main để CI/CD BE tự chạy; worker được teammate
+cập nhật trên máy Tailscale sau. Các ghi chú "chưa merge/deploy" ở trên là trạng thái batch trước yêu cầu này.
+
+- origin/main BE vẫn 7f207bb, worker vẫn 7e5aeea khi fetch trước merge; không có conflict remote.
+- Batch không thay đổi migration, entity mapping, JDBC dependency, Dockerfile hoặc profile cloud.
+- Profile cloud tắt Flyway, Hibernate ddl-auto=validate; không chạy migration production trong preflight.
+- Chạy SupabaseSchemaValidationTest opt-in với DB Singapore từ .env local, cloud profile,
+  Flyway=false, ddl-auto=validate, Hikari read-only=true và pool tối đa 1: **PASS**.
+- URL được kiểm: Singapore transaction pooler 6543, sslmode=require, prepareThreshold=0.
+  Đây là kiểm tra credentials/schema trong .env local, không phải đọc lại Environment hiện tại của Render.
+- Không phát hiện lỗi kết nối/schema/startup cần sửa trước merge. Không đổi DB_URL, password,
+  config infrastructure hay schema để phòng một lỗi giả định. Nếu Render dùng env khác,
+  log deploy vẫn là nguồn xác nhận cuối; giữ SPRING_PROFILES_ACTIVE=cloud hiện có.
+- Chưa chạy paid provider smoke hoặc triển khai worker tại nhà. Paid flags giữ nguyên mặc định off.
