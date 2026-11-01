@@ -3,12 +3,15 @@ package com.stemotion.e2e;
 import com.stemotion.StemotionApplication;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.repository.UserRepository;
+import com.stemotion.integration.config.IntegrationProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.sql.DataSource;
@@ -22,7 +25,8 @@ import java.util.List;
  * shared database. Lives in test scope: it is not packaged into the deployed jar.
  *
  * Every secret and outside service is overridden on the command line, which outranks the .env
- * file loaded by spring-dotenv: no paid AI, TTS or render call can leave this process.
+ * file loaded by spring-dotenv: no paid AI, TTS or render call can leave this process. AI and the
+ * render worker are answered by {@link E2eFakes}, so the workflows still run end to end.
  *
  * Start: mvnw spring-boot:test-run -Dspring-boot.run.main-class=com.stemotion.e2e.E2eServer
  */
@@ -52,6 +56,7 @@ public class E2eServer {
             "--app.integration.gemini.api-key=",
             "--app.integration.render.base-url=http://127.0.0.1:9",
             "--app.integration.render.api-key=e2e-worker-key",
+            "--app.integration.render.callback-url=http://127.0.0.1:" + env("E2E_API_PORT", "18080") + "/api/v1/render/callback",
             "--app.integration.render.max-attempts=1",
             "--AI_PRICING_JSON={}",
             "--app.video.storyboard-enabled=false",
@@ -77,6 +82,18 @@ public class E2eServer {
                 .username("postgres")
                 .password("")
                 .build();
+        }
+
+        @Bean
+        @Primary
+        E2eFakes.FakeGemini e2eGemini(IntegrationProperties properties, ObjectMapper mapper) {
+            return new E2eFakes.FakeGemini(properties, mapper);
+        }
+
+        @Bean
+        @Primary
+        E2eFakes.FakeRenderWorker e2eRenderWorker(IntegrationProperties properties, ObjectMapper mapper) {
+            return new E2eFakes.FakeRenderWorker(properties, mapper);
         }
 
         /** The one account the tests start from; everything else is provisioned through the API. */
