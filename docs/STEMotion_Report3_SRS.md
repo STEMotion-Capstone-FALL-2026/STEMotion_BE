@@ -10,6 +10,7 @@
 | --- | --- | --- | --- |
 | 29/10/2026 | A | Nguyễn Việt Hoàng | First version of Report 3: overall description, actors and use cases, functional requirements per module, screen authorization, non-functional requirements, business rules and messages, aligned with Report 1 (FE-01 to FE-17) and the implemented system. |
 | 29/10/2026 | M | Nguyễn Việt Hoàng | Removed Google / OAuth sign-in: accounts are provisioned by an Admin and users sign in with email and password (scope, UC-01, UC-24, FR-02 to FR-05, NFR-08, system context diagram, MSG17, MSG18). |
+| 01/11/2026 | M | Nguyễn Việt Hoàng | Replaced Figure 1 with the team's use case diagram; use case list renumbered UC-01 to UC-47 in the order of the diagram, with related FRs; added FR-48 to FR-55 and amended FR-39 (an Admin may publish) and FR-43 (storage used) so that every drawn use case maps to a requirement; section IV.3 headings updated. |
 
 *A - Added, M - Modified, D - Deleted*
 
@@ -75,57 +76,70 @@ In scope are the 17 major features FE-01 to FE-17 of Report 1, extended by the m
 | 3 | Writer | Creates clip projects and writes scripts scene by scene with AI assistance; answers feedback. |
 | 4 | Reviewer | Reviews scripts and clips, adds inline and timestamped notes, approves or returns them. |
 | 5 | Producer | Builds the composition from an approved script, tunes narration and timing, renders and publishes. |
-| 6 | Leader | A workspace member with the leader flag. Assigns roles inside the workspace; approves project proposals and join requests (*Planned*). |
+| 6 | Leader | A workspace member with the leader flag, not a separate account role. Assigns roles inside the workspace; approves project proposals and join requests (*Planned*). Not drawn in Figure 1 (see the note under the use case list). |
 | 7 | Admin | Manages users, workspaces, members, templates; monitors render queue, storage and AI cost. |
-| 8 | Render Worker (system) | Renders MP4, synthesises narration, measures durations and reports progress back by callback. |
-| 9 | AI Service (system) | Drafts and analyses scripts, aligns captions to narration. |
+| 8 | Render Worker (system) | Renders MP4, synthesises narration, measures durations and reports progress back by callback. Secondary system actor, not drawn in Figure 1. |
+| 9 | AI Service (system) | Drafts and analyses scripts, aligns captions to narration. Secondary system actor, not drawn in Figure 1. |
 
 ### 2. Use Case Diagram
 
 ![STEMotion use case diagram](fig_usecase.png)
 
-*Figure 1. Use case diagram from Report 1 (FE-01 to FE-17). Use cases UC-25 and UC-28 to UC-34 below were added after Report 1 and are not drawn yet. "Login via OAuth / JWT" in the diagram is implemented as email and password with a JWT; OAuth is not used.*
+*Figure 1. Use case diagram of STEMotion (team version, 01/11/2026). Users sign in with email and password on Admin-provisioned accounts; publishing to YouTube is planned. Use case IDs below follow the diagram actor by actor.*
 
 ### 3. Use Case List
 
-| ID | Use case | Primary actor | Feature | Status |
-| --- | --- | --- | --- | --- |
-| UC-01 | Login with email and password (Admin-provisioned account) | Guest | FE-01 | Implemented |
-| UC-02 | Logout | Authorized User | FE-01 | Implemented |
-| UC-03 | Change password (forced on first login) | Authorized User | FE-01 | Implemented |
-| UC-04 | Create clip project (subject, grade) | Writer | FE-02 | Implemented |
-| UC-05 | Edit clip project | Writer | FE-02 | Implemented |
-| UC-06 | Write / edit script by scene (autosave, draft revision) | Writer | FE-03 | Implemented |
-| UC-07 | View script history and diff two versions | Writer, Reviewer | FE-03, FE-12 | Implemented |
-| UC-08 | Request AI assistance (draft from topic, teaching approaches, resegment, readability, concepts, terms) | Writer | FE-04 | Implemented |
-| UC-09 | Accept / ignore an AI suggestion | Writer | FE-04 | Implemented |
-| UC-10 | Submit script for review | Writer | FE-05 | Implemented |
-| UC-11 | View pipeline board / project dashboard | Authorized User | FE-05 | Implemented |
-| UC-12 | Read, reply to and resolve feedback | Writer, Producer | FE-06 | Implemented |
-| UC-13 | Review script: per-scene comments, approve, request changes with reason | Reviewer | FE-07 | Implemented |
-| UC-14 | Open draft composition from the approved script | Producer | FE-08 | Implemented |
-| UC-15 | Edit scene properties, visual theme and blocks; preview in the Remotion Player | Producer | FE-09 | Implemented |
-| UC-16 | Preview TTS narration; sync scene durations to measured speech | Writer, Producer | FE-09 | Implemented |
-| UC-17 | Submit composition for video review | Producer | FE-11 | Implemented |
-| UC-18 | Review clip in the web player or MP4: timestamped notes, approve, send back | Reviewer | FE-11 | Implemented |
-| UC-19 | View automated pre-publish QA | Reviewer, Producer | FE-11 | Implemented |
-| UC-20 | Submit, monitor, retry and cancel a render job | Producer | FE-10 | Implemented |
-| UC-21 | Compare versions of a script or clip | Reviewer | FE-12 | Implemented |
-| UC-22 | Publish clip to the internal library / LMS embed / YouTube | Producer | FE-13 | Library + LMS implemented; YouTube planned |
-| UC-23 | Browse and export from the media library (subject, grade filters) | Authorized User | FE-14 | Implemented |
-| UC-24 | Manage users: provision accounts, change role, activate or deactivate, delete | Admin | FE-15 | Implemented |
-| UC-25 | Manage workspaces and members (Leader: assign roles only) | Admin, Leader | M10, M11, M15 | Implemented |
-| UC-26 | Manage templates | Admin | FE-16 | Implemented |
-| UC-27 | Monitor render queue, storage, AI cost and usage | Admin | FE-17 | Implemented |
-| UC-28 | Archive a project | Owner, Leader, Admin | FE-02 | Implemented |
-| UC-29 | Propose a project; approve or reject the proposal | Writer, Leader | M12 | Planned |
-| UC-30 | Request to join a project; approve, reject or revoke | Workspace member, Leader | M12, M14 | Planned |
-| UC-31 | Acquire, renew and release an edit lock | Writer, Producer, Leader | M17 | Planned |
-| UC-32 | View project contributions | Authorized User | M13 | Planned |
-| UC-33 | Leader dashboard: inbox and progress board | Leader | M16 | Planned |
-| UC-34 | Configure AI / TTS integrations and budgets | Admin | M06 | Planned |
+| ID | Use case | Actor | Feature | Related FR | Status |
+| --- | --- | --- | --- | --- | --- |
+| UC-01 | Login | Guest | FE-01 | FR-01, FR-02 | Implemented |
+| UC-02 | Logout | Authorized User | FE-01 | FR-01 | Implemented |
+| UC-03 | Change Password (forced on first login) | Authorized User | FE-01 | FR-04 | Implemented |
+| UC-04 | View / Select Workspace | Authorized User | M10 | FR-10, FR-48 | Implemented |
+| UC-05 | View Pipeline Board | Authorized User | FE-05 | FR-49 | Implemented |
+| UC-06 | View Clip Project | Authorized User | FE-02 | FR-49 | Implemented |
+| UC-07 | View Script | Authorized User | FE-03 | FR-15, FR-49 | Implemented |
+| UC-08 | Browse & Export from Media Library | Authorized User | FE-14 | FR-41 | Implemented |
+| UC-09 | Export Video / Get LMS Embed Code | Authorized User | FE-13, FE-14 | FR-39, FR-41 | Implemented |
+| UC-10 | Create Clip Project | Writer | FE-02 | FR-11 | Implemented |
+| UC-11 | Edit Clip Project (including archive) | Writer | FE-02 | FR-11, FR-16 | Implemented |
+| UC-12 | Write / Edit Script by Scene | Writer | FE-03 | FR-12, FR-13 | Implemented |
+| UC-13 | Request AI Assistance («extend» UC-12) | Writer | FE-04 | FR-18 to FR-20, FR-22 | Implemented |
+| UC-14 | Accept / Ignore AI Suggestions («extend» UC-13) | Writer | FE-04 | FR-21 | Implemented |
+| UC-15 | View Script History | Writer | FE-03 | FR-15 | Implemented |
+| UC-16 | Submit Script | Writer | FE-05 | FR-14 | Implemented |
+| UC-17 | View Review History | Writer, Producer | FE-06 | FR-51 | Implemented |
+| UC-18 | Read & Resolve Feedback | Writer, Producer | FE-06 | FR-25 | Implemented |
+| UC-19 | View Review Queue | Reviewer | FE-07 | FR-50 | Implemented |
+| UC-20 | Review Script | Reviewer | FE-07 | FR-23, FR-24 | Implemented |
+| UC-21 | Add Inline Comments («extend» UC-20) | Reviewer | FE-07 | FR-23 | Implemented |
+| UC-22 | Approve Script («extend» UC-20) | Reviewer | FE-07 | FR-24 | Implemented |
+| UC-23 | Request Script Changes («extend» UC-20) | Reviewer | FE-07 | FR-24 | Implemented |
+| UC-24 | Review Video Composition / Clip | Reviewer | FE-11 | FR-35 | Implemented |
+| UC-25 | Add Timestamp Annotations («extend» UC-24) | Reviewer | FE-11 | FR-35 | Implemented |
+| UC-26 | Approve Clip («extend» UC-24) | Reviewer | FE-11 | FR-36 | Implemented |
+| UC-27 | Return to Production («extend» UC-24) | Reviewer | FE-11 | FR-37 | Implemented |
+| UC-28 | View Automated Pre-publish QA | Reviewer | FE-11 | FR-38 | Implemented |
+| UC-29 | Compare Versions (script versions, clip renders) | Reviewer | FE-12 | FR-15, FR-55 | Implemented |
+| UC-30 | Open / Edit Draft Composition | Producer | FE-08 | FR-26, FR-28 | Implemented |
+| UC-31 | Edit Scene | Producer | FE-09 | FR-27 | Implemented |
+| UC-32 | Select / Replace Media Assets («extend» UC-31) | Producer | FE-09 | FR-52 | Implemented |
+| UC-33 | Generate / Edit Narration & Captions («extend» UC-31) | Producer | FE-09 | FR-29, FR-53 | Implemented |
+| UC-34 | Preview Scene & Video | Producer | FE-09 | FR-27 | Implemented |
+| UC-35 | Submit Clip for Review | Producer | FE-11 | FR-30 | Implemented |
+| UC-36 | Render Video | Producer | FE-10 | FR-32 | Implemented |
+| UC-37 | Monitor Render Progress | Producer | FE-10 | FR-33 | Implemented |
+| UC-38 | Retry Failed Render | Producer | FE-10 | FR-34 | Implemented |
+| UC-39 | View Render History | Producer | FE-10 | FR-54 | Implemented |
+| UC-40 | Publish Clip to Internal Library | Producer, Admin | FE-13 | FR-39 | Implemented |
+| UC-41 | Publish Clip to YouTube | Producer | FE-13 | FR-40 | Planned |
+| UC-42 | Manage Workspace | Admin | M10 | FR-06 | Implemented |
+| UC-43 | Manage Workspace Members | Admin | M11, M15 | FR-07 to FR-09 | Implemented |
+| UC-44 | Manage Users & Roles | Admin | FE-15 | FR-03, FR-05 | Implemented |
+| UC-45 | Manage Templates | Admin | FE-16 | FR-42 | Implemented |
+| UC-46 | Monitor Render Queue & Storage | Admin | FE-17 | FR-43 | Implemented |
+| UC-47 | Monitor AI Cost & Usage | Admin | FE-17 | FR-43 | Implemented |
 
-Detailed requirements for each use case are in section IV.3; *Planned* use cases depend on decisions D08 to D21 of the master update plan.
+Detailed requirements are in section IV.3. «extend» marks optional behaviour started from the base use case; Writer, Reviewer, Producer and Admin inherit every Authorized User use case. Not drawn in Figure 1: the Leader's role assignment (FR-08, implemented: a member with the leader flag changes roles inside UC-43) and the *Planned* functions FR-17, FR-31 and FR-44 to FR-47 (project proposal, edit lease, AI/TTS configuration, join requests, contributions, Leader dashboard), which are outside the registered scope (Design Brief section 1.2).
 
 ## IV. Functional Requirements
 
@@ -214,7 +228,7 @@ Roles are checked on the server for every request (BR-20); the screen matrix onl
 
 Each requirement is testable; *Planned* marks requirements from the mentor meeting not yet built.
 
-#### 3.1 Authentication and Accounts (UC-01 to UC-03, UC-24)
+#### 3.1 Authentication and Accounts (UC-01 to UC-03, UC-44)
 
 - **FR-01** The system shall authenticate users by email (case-insensitive) and password and issue a JWT.
 - **FR-02** The system shall not offer public self-registration or third-party (Google / OAuth) sign-in; every account is created by an Admin.
@@ -222,15 +236,16 @@ Each requirement is testable; *Planned* marks requirements from the mentor meeti
 - **FR-04** An Admin-provisioned account shall be forced to change its password at first login.
 - **FR-05** An Admin shall change an account's role, activate or deactivate it, or delete it; inactive accounts cannot sign in.
 
-#### 3.2 Workspaces and Members (UC-25)
+#### 3.2 Workspaces and Members (UC-04, UC-42, UC-43)
 
 - **FR-06** An Admin shall create a workspace with a leader and members totalling at least 3 different active users covering WRITER, REVIEWER and PRODUCER (BR-01); a refused request writes nothing.
 - **FR-07** Only an Admin shall add or remove members, change a member's status or appoint/revoke a leader (BR-02).
 - **FR-08** A Leader shall change members' roles inside their own workspace.
 - **FR-09** The system shall refuse any member change that leaves a covered production role without an active member, and the removal of the last active leader (BR-03).
 - **FR-10** Every member of a workspace shall see the member list read-only.
+- **FR-48** A user who belongs to several workspaces shall choose the active workspace; lists and actions are scoped to it.
 
-#### 3.3 Projects and Scripts (UC-04 to UC-07, UC-10, UC-28)
+#### 3.3 Projects and Scripts (UC-05 to UC-07, UC-10 to UC-12, UC-15, UC-16)
 
 - **FR-11** A Writer shall create a project with title, subject (Math, Physics, Chemistry, Biology, Computer Science) and grade.
 - **FR-12** A Writer shall add, edit, reorder and delete scenes of the working draft; each scene has a template type, title, narration, duration and template props validated per type.
@@ -239,8 +254,9 @@ Each requirement is testable; *Planned* marks requirements from the mentor meeti
 - **FR-15** Users shall view every stored version and the differences between two versions.
 - **FR-16** The owner, a Leader or an Admin shall archive a project; archived projects disappear from lists but keep their clips.
 - **FR-17** *Planned.* A Writer shall propose a project; a Leader approves (exactly once) or rejects with a reason; a Writer who is a Leader approves their own proposal (BR-30).
+- **FR-49** Users shall view the pipeline board of their workspace's projects with stage, owner and next action, and open a project and its script read-only unless their role allows editing.
 
-#### 3.4 AI Assistance (UC-08, UC-09)
+#### 3.4 AI Assistance (UC-13, UC-14)
 
 - **FR-18** A Writer shall request a draft script from a topic, subject and grade, optionally following one of three AI-proposed teaching approaches.
 - **FR-19** A Writer shall run resegment, readability grade, concept extraction and terminology checks on a script.
@@ -248,13 +264,15 @@ Each requirement is testable; *Planned* marks requirements from the mentor meeti
 - **FR-21** Every AI result shall be stored as a suggestion; the Writer accepts or ignores it, and nothing is saved into the script automatically (BR-12).
 - **FR-22** The system shall record model, tokens, cost and outcome of every AI request; malformed, refused or timed-out responses produce no result.
 
-#### 3.5 Script Review (UC-13)
+#### 3.5 Script Review and Feedback (UC-17 to UC-23)
 
 - **FR-23** A Reviewer shall add comments pinned to a scene of the version in review.
 - **FR-24** A Reviewer shall approve the version or request changes with a mandatory reason; requesting changes opens a new draft version for the Writer.
 - **FR-25** Writers and Producers shall reply to notes and mark a root note resolved; the system records who resolved it and when.
+- **FR-50** A Reviewer shall see a queue of scripts and compositions waiting for review in their workspaces.
+- **FR-51** Writers and Producers shall see the review history of a project: script and video decisions with reviewer, reason and time.
 
-#### 3.6 Production (UC-14 to UC-17)
+#### 3.6 Production (UC-30 to UC-35)
 
 - **FR-26** Opening an approved script shall create revision 1 of its composition from the approved scenes.
 - **FR-27** A Producer shall edit scene properties, visual theme and composed blocks and preview them in the Remotion Player.
@@ -262,33 +280,37 @@ Each requirement is testable; *Planned* marks requirements from the mentor meeti
 - **FR-29** Writers (on drafts) and Producers (on compositions) shall preview TTS narration and sync scene durations to measured speech; a sync whose resource changed while measuring is refused and writes nothing (BR-11).
 - **FR-30** A Producer shall submit the composition for video review; the reviewed revision is frozen (IN\_QA).
 - **FR-31** *Planned.* Only the holder of a valid edit lease shall write the script draft or composition; others see it read-only (BR-31).
+- **FR-52** A Producer shall select or replace the media assets of a scene (scene template from the catalog, STEM icons of illustrated scenes) without changing other scenes.
+- **FR-53** The system shall generate word-timed Vietnamese captions from the scene narration when rendering; editing the narration updates its captions on the next sync or render.
 
-#### 3.7 Rendering (UC-20)
+#### 3.7 Rendering (UC-36 to UC-39)
 
 - **FR-32** A Producer shall start a render of the frozen or approved composition at 720p, 1080p or 1440p; only one render per project runs at a time.
 - **FR-33** The system shall show live status and progress and retry a failed job up to 3 times before marking it FAILED.
 - **FR-34** A Producer shall retry or cancel a job; a completed render is recorded as a clip of that composition revision.
+- **FR-54** A Producer shall see the render history of a project: every job with status, resolution, attempts, time and its clip.
 
-#### 3.8 Clip Review and QA (UC-18, UC-19, UC-21)
+#### 3.8 Clip Review and QA (UC-24 to UC-29)
 
 - **FR-35** A Reviewer shall review the submitted composition in the web player or its MP4 and add timestamped notes scoped to the clip under review.
 - **FR-36** A Reviewer shall approve the video only when no open notes block it; approving a composition without an MP4 starts its render (BR-13).
 - **FR-37** A Reviewer shall send the video back to production with a mandatory reason.
 - **FR-38** The system shall show automated QA findings as decision support; findings never approve or block on their own (BR-12).
+- **FR-55** A Reviewer shall compare two renders of the same project side by side.
 
-#### 3.9 Publishing and Library (UC-22, UC-23)
+#### 3.9 Publishing and Library (UC-08, UC-09, UC-40, UC-41)
 
-- **FR-39** A Producer shall publish an approved clip to the internal library and/or generate an LMS embed code; each target is published once.
+- **FR-39** A Producer or an Admin shall publish an approved clip to the internal library and/or generate an LMS embed code; each target is published once.
 - **FR-40** *Planned.* Publishing to YouTube through the YouTube Data API; until configured the API answers 503 PUBLISH\_TARGET\_UNAVAILABLE.
 - **FR-41** Users shall browse published clips with subject and grade filters, play them and copy export links; lists support paging.
 
-#### 3.10 Administration (UC-26, UC-27, UC-34)
+#### 3.10 Administration (UC-45 to UC-47)
 
 - **FR-42** An Admin shall create, edit and delete templates, including recommended subjects and default visual theme.
-- **FR-43** An Admin shall see render queue state, job success rate, recent jobs and AI cost and usage against the monthly budget.
+- **FR-43** An Admin shall see render queue state, job success rate, recent jobs, storage used and AI cost and usage against the monthly budget.
 - **FR-44** *Planned.* An Admin shall configure allowed AI/TTS providers, models, voices and budgets; secrets are never returned by the API.
 
-#### 3.11 Collaboration and Tracking (UC-30, UC-32, UC-33) — *Planned*
+#### 3.11 Collaboration and Tracking — *Planned*, not drawn in Figure 1
 
 - **FR-45** Workspace members shall request to join a project with a role; a Leader approves, rejects or revokes; the approved role stays fixed for the project (BR-32).
 - **FR-46** The system shall record contribution events (script submission, composition revision, review decision, note resolution, publish) with the actor's role at the time.
