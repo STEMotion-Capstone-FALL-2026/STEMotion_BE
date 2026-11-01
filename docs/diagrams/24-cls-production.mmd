@@ -1,0 +1,50 @@
+classDiagram
+  direction TB
+  class NarrationToolsController {
+    <<controller>>
+    +ttsPreview(projectId, text, sceneId)
+    +syncDurations(projectId, baseRevision)
+  }
+  class CompositionController {
+    <<controller>>
+    +get(projectId)
+    +update(projectId, UpdateCompositionRequest)
+  }
+  class NarrationToolsService {
+    <<service>>
+    +ttsPreview(projectId, text, sceneId)
+    +syncDurations(projectId, baseRevision, userId)
+  }
+  class CompositionService {
+    <<service>>
+    +update(projectId, req, userId)
+    +ensure(project, version, userId)
+    +applyMeasured(id, revision, frames, captions, user)
+    +renderInput(version)
+  }
+  class ScriptService {
+    <<service>>
+    +applyMeasuredDurations(id, frames, revision)
+  }
+  class RenderServiceClient {
+    <<integration>>
+    +ttsPreview(text)
+    +syncDurations(script, fps)
+  }
+  class CompositionRepository {
+    <<repository>>
+    +lockByScriptVersionId(id)
+  }
+  class Composition {
+    <<entity>>
+    -int revision
+    -jsonb scenes
+    -String visualTheme
+  }
+  NarrationToolsController ..> NarrationToolsService
+  CompositionController ..> CompositionService
+  NarrationToolsService ..> CompositionService
+  NarrationToolsService ..> ScriptService
+  NarrationToolsService ..> RenderServiceClient
+  CompositionService ..> CompositionRepository
+  CompositionRepository --> Composition

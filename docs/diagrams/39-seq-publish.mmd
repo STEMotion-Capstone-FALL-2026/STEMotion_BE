@@ -1,0 +1,25 @@
+sequenceDiagram
+  actor Rv as Reviewer
+  actor P as Producer
+  participant FC as FeedbackController
+  participant FS as FeedbackService
+  participant RS as RenderService
+  participant PC as PublishController
+  participant PS as PublishService
+  Rv->>FC: POST /scripts/{id}/approve-video (note)
+  FC->>FS: approveVideo(id, reviewer, note)
+  FS->>FS: IN_QA, count open notes of current clip
+  alt open notes remain
+    FS-->>FC: 400 Resolve the open review notes
+  else no open notes
+    FS->>FS: Video APPROVED, recordReview
+    FS->>RS: renderApproved(id) if no MP4 yet
+  end
+  P->>PC: POST /scripts/{id}/publish (targets)
+  PC->>PS: publish(id, req, producer)
+  alt YOUTUBE target
+    PS-->>PC: 503 not configured
+  else INTERNAL_LIBRARY and LMS
+    PS->>PS: Save Publication, LMS embed code, PublishRecord
+    PS-->>PC: PublishResponse(embedCode), video PUBLISHED
+  end

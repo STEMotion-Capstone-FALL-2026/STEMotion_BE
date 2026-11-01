@@ -1,0 +1,155 @@
+erDiagram
+  USERS ||--o{ WORKSPACE_MEMBERS : "holds seat"
+  WORKSPACES ||--o{ WORKSPACE_MEMBERS : has
+  USERS ||--o{ WORKSPACES : creates
+  WORKSPACES ||--o{ CLIP_PROJECTS : contains
+  USERS ||--o{ CLIP_PROJECTS : owns
+  CLIP_PROJECTS ||--|{ SCRIPT_VERSIONS : versions
+  SCRIPT_VERSIONS ||--o{ SCENES : orders
+  CLIP_PROJECTS ||--o{ STATUS_HISTORIES : records
+  SCRIPT_VERSIONS ||--o| COMPOSITIONS : "produced as"
+  COMPOSITIONS ||--o{ RENDER_JOBS : "rendered by"
+  RENDER_JOBS ||--o| CLIPS : produces
+  CLIP_PROJECTS ||--o{ FEEDBACK_COMMENTS : receives
+  FEEDBACK_COMMENTS ||--o{ FEEDBACK_COMMENTS : replies
+  SCENES ||--o{ FEEDBACK_COMMENTS : "pinned to"
+  CLIPS ||--o{ PUBLICATIONS : "published as"
+  CLIP_PROJECTS ||--o{ PUBLISH_RECORDS : logs
+  USERS ||--o{ AI_REQUESTS : requests
+  SCRIPT_VERSIONS ||--o{ AI_REQUESTS : "analysed by"
+
+  USERS {
+    uuid id PK
+    string full_name
+    string email UK
+    string password_hash
+    string role
+    string status
+    boolean must_change_password
+  }
+  WORKSPACES {
+    uuid id PK
+    string name
+    string department
+    uuid created_by FK
+  }
+  WORKSPACE_MEMBERS {
+    uuid id PK
+    uuid workspace_id FK
+    uuid user_id FK
+    string role
+    boolean is_leader
+    string status
+  }
+  CLIP_PROJECTS {
+    uuid id PK
+    uuid workspace_id FK
+    uuid owner_id FK
+    string title
+    string subject
+    string grade_level
+    string script_status
+    string video_status
+    string video_url
+    boolean archived
+  }
+  SCRIPT_VERSIONS {
+    uuid id PK
+    uuid project_id FK
+    uuid created_by FK
+    int version_no
+    string status
+    boolean is_current
+    int draft_revision
+    string review_note
+  }
+  SCENES {
+    uuid id PK
+    uuid version_id FK
+    int order_no
+    string scene_type
+    string narration
+    int duration_in_frames
+    jsonb props
+  }
+  STATUS_HISTORIES {
+    uuid id PK
+    uuid project_id FK
+    uuid changed_by FK
+    string event_type
+    string target_type
+    string decision
+    string reason
+  }
+  COMPOSITIONS {
+    uuid id PK
+    uuid project_id FK
+    uuid script_version_id FK
+    uuid producer_id FK
+    int revision
+    string visual_theme
+    jsonb scenes
+  }
+  RENDER_JOBS {
+    uuid id PK
+    uuid project_id FK
+    uuid composition_id FK
+    uuid requested_by FK
+    string status
+    int progress
+    int attempt_count
+    int composition_revision
+    string video_url
+  }
+  CLIPS {
+    uuid id PK
+    uuid render_job_id FK
+    string video_url
+    float duration_sec
+    string qa_status
+  }
+  FEEDBACK_COMMENTS {
+    uuid id PK
+    uuid project_id FK
+    uuid scene_id FK
+    uuid parent_id FK
+    uuid author_id FK
+    uuid resolved_by FK
+    uuid clip_id
+    float timestamp_sec
+    string status
+  }
+  PUBLICATIONS {
+    uuid id PK
+    uuid project_id FK
+    uuid clip_id FK
+    uuid publisher_id FK
+    string platform
+  }
+  PUBLISH_RECORDS {
+    uuid id PK
+    uuid project_id FK
+    uuid published_by FK
+    string targets
+    string lms_embed_code
+  }
+  AI_REQUESTS {
+    uuid id PK
+    uuid requester_id FK
+    uuid script_version_id FK
+    string request_type
+    string model
+    string call_status
+    int input_tokens
+    int output_tokens
+    decimal monetary_cost
+    string decision
+  }
+  REMOTION_TEMPLATES {
+    uuid id PK
+    string name
+    string category
+    jsonb props_schema
+    string default_visual_theme
+    boolean is_active
+  }

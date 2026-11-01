@@ -1,0 +1,7 @@
+stateDiagram-v2
+  [*] --> DRAFT : Writer creates project (FR-11)
+  DRAFT --> IN_REVIEW : Writer submits, at least 1 scene (FR-14)
+  IN_REVIEW --> APPROVED : Reviewer approves (FR-24)
+  IN_REVIEW --> CHANGE_REQUESTED : Reviewer requests changes with reason (FR-24)
+  CHANGE_REQUESTED --> IN_REVIEW : Writer resubmits new version (FR-14)
+  APPROVED --> [*] : production starts (video lifecycle)

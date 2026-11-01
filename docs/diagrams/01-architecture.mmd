@@ -1,0 +1,36 @@
+flowchart TB
+  users(["Users<br/>Writer, Reviewer, Producer, Leader, Admin"])
+  subgraph vercel["Vercel (CDN)"]
+    web["Web application<br/>React 18 + Vite, Remotion Player"]
+  end
+  subgraph render["Render.com (Singapore)"]
+    api["Core API<br/>Spring Boot 3.2, Java 17<br/>JWT, RBAC, workflow, render orchestration"]
+  end
+  subgraph supabase["Supabase (Singapore)"]
+    db[("PostgreSQL 17<br/>Flyway V1..V22")]
+  end
+  subgraph home["Team server: Docker Compose + Tailscale Funnel (HTTPS)"]
+    worker["Render worker<br/>Node.js + Express, Remotion, Chromium"]
+    redis[("Redis (optional)<br/>BullMQ worker pool")]
+    ai["AI service<br/>Python FastAPI, LangChain, Whisper"]
+    minio[("MinIO object storage<br/>rendered MP4")]
+  end
+  subgraph ext["External services"]
+    llm["LLM APIs<br/>OpenAI, Gemini"]
+    tts["TTS APIs<br/>FPT.AI, Google Cloud"]
+    yt["YouTube Data API<br/>(planned)"]
+  end
+  users -->|HTTPS| web
+  web -->|REST/JSON + JWT| api
+  api -->|JDBC over SSL| db
+  api -->|render job, service key| worker
+  worker -->|progress callback| api
+  api -->|AI requests, service key| ai
+  worker -->|caption alignment| ai
+  worker -->|upload MP4| minio
+  web -->|play MP4| minio
+  ai -->|prompts| llm
+  worker -->|narration synthesis| tts
+  api -.->|planned| yt
+  api -.->|embedded mode: Gemini direct| llm
+  worker -.->|USE_REDIS=true| redis

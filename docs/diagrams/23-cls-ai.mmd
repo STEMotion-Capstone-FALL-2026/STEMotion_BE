@@ -1,0 +1,58 @@
+classDiagram
+  direction TB
+  class AiController {
+    <<controller>>
+    +generate(GenerateScriptRequest)
+    +approaches(ApproachRequest)
+    +action(ScriptActionRequest)
+    +decision(requestId, decision)
+  }
+  class AiScriptService {
+    <<service>>
+    +generateScript(req)
+    +suggestApproaches(req)
+    +runAction(req)
+  }
+  class AiGateway {
+    <<integration>>
+    +isRemote()
+    +generateJson(type, instruction, prompt, schema)
+    +generateScript(req)
+    +runAction(req)
+  }
+  class AiRequestLogService {
+    <<service>>
+    +start(type, model, request) id
+    +complete(id, generation, latency, error)
+    +decide(id, decision, userId)
+  }
+  class AiCostCalculator {
+    <<component>>
+    +estimate(model, input, output) Estimate
+  }
+  class GeminiClient {
+    <<integration>>
+  }
+  class RemoteAiService {
+    <<external>>
+    POST /script/generate
+    POST /script/action
+  }
+  class AiRequest {
+    <<entity>>
+    -RequestType requestType
+    -String model
+    -CallStatus callStatus
+    -int inputTokens
+    -int outputTokens
+    -BigDecimal monetaryCost
+    -Decision decision
+  }
+  AiController ..> AiScriptService
+  AiController ..> AiRequestLogService
+  AiScriptService ..> AiGateway
+  AiGateway ..> AiRequestLogService
+  AiGateway ..> GeminiClient : embedded
+  AiGateway ..> RemoteAiService : remote HTTP
+  AiRequestLogService ..> AiCostCalculator
+  AiRequestLogService --> AiRequest

@@ -1,0 +1,54 @@
+classDiagram
+  direction TB
+  class RenderController {
+    <<controller>>
+    +start(projectId, req)
+    +status(jobId)
+    +history(projectId, page)
+    +retry(jobId)
+    +cancel(jobId)
+    +callback(RenderCallbackRequest)
+  }
+  class RenderService {
+    <<service>>
+    +start(projectId, req, userId)
+    +applyCallback(callback)
+    +renderApproved(projectId, userId)
+    +retry(jobId, userId)
+    +cancel(jobId)
+    -handleFailure(job)
+  }
+  class ClipArtifactService {
+    <<service>>
+    +recordCompleted(job, captionSync)
+    +findCurrent(project, versionId)
+  }
+  class RenderServiceClient {
+    <<integration>>
+    +enqueue(jobId, props, width, height, fps, voice)
+    +cancel(externalJobId)
+  }
+  class RenderJobRepository {
+    <<repository>>
+    +existsByProjectIdAndStatusIn()
+    +findHistoryRows(projectId, page)
+  }
+  class RenderJob {
+    <<entity>>
+    -RenderStatus status
+    -int progress
+    -int attemptCount
+    -int compositionRevision
+  }
+  class Clip {
+    <<entity>>
+    -String videoUrl
+    -Double durationSec
+    -String qaStatus
+  }
+  RenderController ..> RenderService
+  RenderService ..> ClipArtifactService
+  RenderService ..> RenderServiceClient
+  RenderService ..> RenderJobRepository
+  RenderJobRepository --> RenderJob
+  Clip "0..1" --> "1" RenderJob

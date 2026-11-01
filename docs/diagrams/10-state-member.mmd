@@ -1,0 +1,6 @@
+stateDiagram-v2
+  [*] --> ACTIVE : Admin creates workspace or adds member (FR-06, FR-07)
+  ACTIVE --> INACTIVE : Admin deactivates, role coverage kept (FR-07, FR-09)
+  INACTIVE --> ACTIVE : Admin reactivates (FR-07)
+  ACTIVE --> [*] : Admin removes member, role coverage kept (FR-09)
+  INACTIVE --> [*] : Admin removes member

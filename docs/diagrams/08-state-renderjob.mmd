@@ -1,0 +1,10 @@
+stateDiagram-v2
+  [*] --> QUEUED : Producer starts render (FR-32)
+  QUEUED --> PROCESSING : worker progress callback
+  PROCESSING --> COMPLETED : callback with video URL (FR-34)
+  QUEUED --> COMPLETED : completion callback before any progress callback (FR-34)
+  QUEUED --> FAILED : worker unreachable or cancelled (FR-34)
+  PROCESSING --> FAILED : worker error or cancelled (FR-33)
+  FAILED --> QUEUED : automatic retry, attempts below 3 (FR-33)
+  COMPLETED --> [*]
+  FAILED --> [*] : attempts used up

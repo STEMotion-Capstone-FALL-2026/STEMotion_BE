@@ -1,0 +1,17 @@
+flowchart TB
+  subgraph domain["com.stemotion.domain"]
+    direction LR
+    auth["auth"] --- workspace["workspace"] --- project["project"] --- script["script"] --- review["review"]
+    production["production"] --- library["library"] --- aipkg["ai"] --- admin["admin"]
+  end
+  subgraph core["com.stemotion.core"]
+    direction LR
+    config["config"] --- security["security"] --- exception["exception"] --- webpkg["web (paging)"] --- entity["entity, enums, metrics, support"]
+  end
+  subgraph integration["com.stemotion.integration"]
+    direction LR
+    client["client: RenderServiceClient, AiGateway, GeminiClient"] --- iconfig["config: IntegrationProperties"]
+  end
+  domain -.->|uses| core
+  domain -.->|uses| integration
+  integration -.->|uses| core

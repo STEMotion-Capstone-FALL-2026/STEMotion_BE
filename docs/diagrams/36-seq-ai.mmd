@@ -1,0 +1,22 @@
+sequenceDiagram
+  actor Wr as Writer
+  participant C as AiController
+  participant S as AiScriptService
+  participant G as AiGateway
+  participant L as AiRequestLogService
+  participant A as AI service
+  participant M as LLM API
+  Wr->>C: POST /ai/script/generate (topic, subject, grade)
+  C->>S: generateScript(req)
+  S->>G: generateScript(req), remote mode
+  G->>L: start(type, model)
+  G->>A: POST /script/generate (service key)
+  A->>M: Structured prompt
+  M-->>A: JSON
+  A->>A: Validate against schema
+  A-->>G: Result, model, usage
+  G->>L: complete(id, usage), cost from AI_PRICING_JSON
+  S-->>C: AiActionResponse(requestId)
+  C-->>Wr: Suggestion shown
+  Wr->>C: PUT /ai/requests/{id}/decision
+  C->>L: decide(ACCEPTED or IGNORED)

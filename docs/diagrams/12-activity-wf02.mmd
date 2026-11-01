@@ -1,0 +1,23 @@
+flowchart TB
+  subgraph writer["Writer"]
+    w1([Start]) --> w2[Create clip project:<br/>title, subject, grade]
+    w2 --> w3[Request AI draft or analysis]
+    w3 --> w4[Accept or ignore suggestions]
+    w4 --> w5[Edit scenes, autosave with draft revision]
+    w5 --> w6[Submit script for review]
+    w9[Read reason, revise new draft version] --> w6
+  end
+  subgraph reviewer["Reviewer"]
+    r1[Open review queue] --> r2[Add per-scene comments]
+    r2 --> r3{Script acceptable?}
+    r3 -- no --> r4[Request changes with reason]
+    r3 -- yes --> r5[Approve script]
+  end
+  subgraph system["System"]
+    s1[Freeze version, status IN_REVIEW]
+    s2[Status CHANGE_REQUESTED,<br/>new draft version]
+    s3([Status APPROVED,<br/>composition revision 1 ready])
+  end
+  w6 --> s1 --> r1
+  r4 --> s2 --> w9
+  r5 --> s3

@@ -1,0 +1,69 @@
+classDiagram
+  direction TB
+  class ScriptController {
+    <<controller>>
+    +create(workspaceId, req)
+    +update(id, UpdateScriptRequest)
+    +submitForReview(id)
+    +approve(id, note)
+    +requestChanges(id, note)
+    +versions(id)
+    +diff(id, a, b)
+  }
+  class ScriptService {
+    <<service>>
+    +create(workspaceId, req, userId)
+    +updateDraft(projectId, req)
+    +applyMeasuredDurations(id, frames, revision)
+    +submitForReview(projectId, userId)
+    +approve(projectId, note, userId)
+    +requestChanges(projectId, note, userId)
+    -lockCurrentVersion(project)
+  }
+  class StatusHistoryService {
+    <<service>>
+    +record(project, from, actor, note)
+    +recordReview(project, target, decision, reason)
+  }
+  class SceneMapper {
+    <<component>>
+    +toEntity(req, order, version)
+    +updateEntity(scene, req)
+  }
+  class ScriptVersionRepository {
+    <<repository>>
+    +lockCurrentByProjectId(id)
+  }
+  class SceneRepository {
+    <<repository>>
+    +findForUpdateByScriptVersionId(id)
+  }
+  class ClipProject {
+    <<entity>>
+    -String title
+    -StemSubject subject
+    -ScriptStatus scriptStatus
+    -VideoStatus videoStatus
+    -boolean archived
+  }
+  class ScriptVersion {
+    <<entity>>
+    -int versionNo
+    -ScriptStatus status
+    -boolean isCurrent
+    -int draftRevision
+  }
+  class Scene {
+    <<entity>>
+    -int orderNo
+    -SceneType sceneType
+    -String narration
+    -int durationInFrames
+  }
+  ScriptController ..> ScriptService
+  ScriptService ..> StatusHistoryService
+  ScriptService ..> SceneMapper
+  ScriptService ..> ScriptVersionRepository
+  ScriptService ..> SceneRepository
+  ClipProject "1" *-- "1..*" ScriptVersion
+  ScriptVersion "1" *-- "1..*" Scene

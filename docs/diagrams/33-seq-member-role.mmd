@@ -1,0 +1,23 @@
+sequenceDiagram
+  actor L as Leader
+  participant FE as ManageMembersModal
+  participant I as ResourceAccessInterceptor
+  participant C as WorkspaceController
+  participant S as WorkspaceService
+  participant W as WorkspaceRepository
+  participant M as WorkspaceMemberRepository
+  L->>FE: Choose new role
+  FE->>I: PATCH /workspaces/{id}/members/{memberId}
+  I->>I: requireWorkspace(manage), leader or admin
+  I->>C: allowed
+  C->>S: updateMember(ws, memberId, req, actor)
+  S->>W: lockById(ws), SELECT FOR UPDATE
+  S->>M: findWithUserByWorkspaceId(ws)
+  S->>S: requireCoverageKept
+  alt a covered role would be lost
+    S-->>C: 400 would leave no active role
+  else coverage kept
+    S->>M: save(member)
+    S-->>C: MemberResponse
+    C-->>FE: 200 OK
+  end

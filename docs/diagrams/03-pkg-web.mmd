@@ -1,0 +1,16 @@
+flowchart TB
+  app["App.tsx / main.tsx<br/>bootstrap, session, routing by role"]
+  subgraph ui["components"]
+    direction LR
+    views["views<br/>ProjectDashboard, WriterStudio, ReviewerStudio,<br/>ProducerStudio, MediaLibrary, AdminPortal"]
+    modals["modals<br/>CreateProject, ManageMembers, VersionDiff,<br/>ClipCompare, Publish, TemplateCatalog, ChangePassword"]
+    shared["shared<br/>LoginScreen, RemotionPlayer, ErrorBoundary"]
+  end
+  services["services<br/>apiClient, auth, workspace, project, script, composition,<br/>narration, review, render, publication, library, admin, sceneSaveQueue"]
+  remotion["remotion<br/>13 scene templates, flat, director, lego, composed, captions"]
+  types["types / constants<br/>stem.ts, templatesCatalog"]
+  app -.-> ui
+  ui -.-> services
+  ui -.-> remotion
+  services -.-> types
+  remotion -.-> types

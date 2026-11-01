@@ -1,0 +1,6 @@
+stateDiagram-v2
+  [*] --> OPEN : Reviewer pins a note (FR-23, FR-35)
+  OPEN --> RESOLVED : Writer or Producer resolves (FR-25)
+  RESOLVED --> OPEN : note reopened (FR-25)
+  OPEN --> [*] : author deletes note
+  RESOLVED --> [*] : author deletes note

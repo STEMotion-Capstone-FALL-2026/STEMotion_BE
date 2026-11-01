@@ -1,0 +1,22 @@
+sequenceDiagram
+  actor U as User
+  participant FE as LoginScreen
+  participant C as AuthController
+  participant S as AuthService
+  participant R as UserRepository
+  participant J as JwtService
+  U->>FE: Email and password
+  FE->>C: POST /api/v1/auth/login
+  C->>S: login(LoginRequest)
+  S->>R: Find by email, case-insensitive
+  alt wrong credentials or inactive
+    S-->>C: 400 Invalid email or password
+  else valid
+    S->>J: generateToken(user)
+    J-->>S: JWT, 24 h
+    S-->>C: AuthResponse(token, mustChangePassword)
+    C-->>FE: 200 OK
+    FE->>C: POST /auth/change-password (if required)
+    C->>S: changePassword(userId, req)
+    S->>R: save(mustChangePassword = false)
+  end

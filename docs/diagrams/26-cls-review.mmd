@@ -1,0 +1,53 @@
+classDiagram
+  direction TB
+  class FeedbackController {
+    <<controller>>
+    +create(projectId, req)
+    +reply(commentId, req)
+    +resolve(commentId)
+    +submitVideoReview(projectId)
+    +approveVideo(projectId, note)
+    +sendBack(projectId, note)
+    +qaReport(projectId)
+  }
+  class PublishController {
+    <<controller>>
+    +publish(projectId, PublishRequest)
+  }
+  class FeedbackService {
+    <<service>>
+    +create(projectId, req, userId)
+    +submitForVideoReview(projectId, userId)
+    +approveVideo(projectId, userId, note)
+    +sendBackToProduction(projectId, userId, note)
+  }
+  class ClipQaService {
+    <<service>>
+    -MIN_CLIP_SECONDS = 20
+    -MAX_CLIP_SECONDS = 180
+    +run(projectId) QaReport
+  }
+  class PublishService {
+    <<service>>
+    +publish(projectId, req, userId)
+  }
+  class LibraryService {
+    <<service>>
+    +findPublished(subject, grade, page)
+  }
+  class FeedbackComment {
+    <<entity>>
+    -String content
+    -FeedbackStatus status
+    -Double timestampSec
+  }
+  class Publication {
+    <<entity>>
+    -Platform platform
+  }
+  FeedbackController ..> FeedbackService
+  FeedbackController ..> ClipQaService
+  PublishController ..> PublishService
+  FeedbackService --> FeedbackComment
+  PublishService --> Publication
+  LibraryService --> Publication

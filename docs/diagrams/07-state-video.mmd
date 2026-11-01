@@ -1,0 +1,11 @@
+stateDiagram-v2
+  [*] --> NOT_RENDERED : script approved
+  NOT_RENDERED --> RENDERING : Producer starts render (FR-32)
+  RENDERING --> IN_QA : render completed callback (FR-34)
+  RENDERING --> NOT_RENDERED : render failed or cancelled (FR-33, FR-34)
+  NOT_RENDERED --> IN_QA : Producer submits composition for web review (FR-30)
+  RENDERING --> IN_QA : Producer submits for web review while a render runs (FR-30)
+  IN_QA --> APPROVED : Reviewer approves, no open notes (FR-36)
+  IN_QA --> NOT_RENDERED : Reviewer sends back with reason (FR-37)
+  APPROVED --> PUBLISHED : Producer publishes (FR-39)
+  PUBLISHED --> [*]

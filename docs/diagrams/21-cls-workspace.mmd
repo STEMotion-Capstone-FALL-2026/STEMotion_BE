@@ -1,0 +1,57 @@
+classDiagram
+  direction TB
+  class WorkspaceController {
+    <<controller>>
+    +create(WorkspaceRequest) ADMIN
+    +members(id)
+    +addMember(id, req) ADMIN
+    +updateMember(id, memberId, req)
+    +removeMember(id, memberId) ADMIN
+  }
+  class WorkspaceService {
+    <<service>>
+    +PRODUCTION_ROLES
+    +MIN_MEMBERS = 3
+    +create(req, adminId)
+    +addMember(workspaceId, req)
+    +updateMember(wsId, memberId, req, actorId)
+    +removeMember(wsId, memberId)
+    -requireFullTeam(roles)
+    -requireCoverageKept()
+  }
+  class WorkspaceAccess {
+    <<component>>
+    +requireWorkspace(id, userId, manage)
+    +isLeader(wsId, userId)
+    +hasProjectRole(projectId, userId, roles)
+  }
+  class WorkspaceRepository {
+    <<repository>>
+    +lockById(id) FOR UPDATE
+  }
+  class WorkspaceMemberRepository {
+    <<repository>>
+    +findWithUserByWorkspaceId(id)
+    +existsByWorkspaceIdAndUserId()
+  }
+  class Workspace {
+    <<entity>>
+    -UUID id
+    -String name
+    -String department
+  }
+  class WorkspaceMember {
+    <<entity>>
+    -UserRole role
+    -boolean isLeader
+    -MemberStatus status
+  }
+  class User {
+    <<entity>>
+  }
+  WorkspaceController ..> WorkspaceService
+  WorkspaceService ..> WorkspaceRepository
+  WorkspaceService ..> WorkspaceMemberRepository
+  WorkspaceAccess ..> WorkspaceMemberRepository
+  Workspace "1" *-- "3..*" WorkspaceMember
+  WorkspaceMember "*" --> "1" User

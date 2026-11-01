@@ -1,0 +1,18 @@
+sequenceDiagram
+  actor Admin
+  participant FE as AdminPortal
+  participant C as UserController
+  participant S as UserService
+  participant R as UserRepository
+  Admin->>FE: Fill name, email, initial password, role
+  FE->>C: POST /api/v1/users (JWT, ADMIN)
+  C->>S: create(RegisterRequest)
+  S->>R: existsByEmailIgnoreCase(email)
+  alt email already registered
+    S-->>C: 409 Email is already registered
+  else new email
+    S->>S: BCrypt hash, mustChangePassword = true
+    S->>R: save(user)
+    S-->>C: UserResponse (no token)
+    C-->>FE: 201 Created
+  end

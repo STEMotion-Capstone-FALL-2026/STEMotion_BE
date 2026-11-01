@@ -1,0 +1,23 @@
+sequenceDiagram
+  actor Wr as Writer
+  actor Rv as Reviewer
+  participant C as ScriptController
+  participant S as ScriptService
+  participant H as StatusHistoryService
+  participant V as ScriptVersionRepository
+  Wr->>C: POST /scripts/{id}/submit-review
+  C->>S: submitForReview(id, writer)
+  S->>S: DRAFT or CHANGE_REQUESTED, at least 1 scene
+  S->>H: record(DRAFT to IN_REVIEW)
+  S-->>C: IN_REVIEW, version frozen
+  alt approve
+    Rv->>C: POST /scripts/{id}/approve
+    C->>S: approve(id, note, reviewer)
+    S->>H: recordReview(SCRIPT, APPROVED)
+  else request changes
+    Rv->>C: POST /scripts/{id}/request-changes (note)
+    C->>S: requestChanges(id, note, reviewer)
+    S->>S: requireReason(note)
+    S->>V: save new draft version (revision 0)
+    S->>H: recordReview(SCRIPT, REJECTED, reason)
+  end

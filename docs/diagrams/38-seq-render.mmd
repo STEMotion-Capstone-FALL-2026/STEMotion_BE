@@ -1,0 +1,24 @@
+sequenceDiagram
+  actor P as Producer
+  participant C as RenderController
+  participant S as RenderService
+  participant J as RenderJobRepository
+  participant K as Render worker
+  participant O as MinIO
+  participant A as ClipArtifactService
+  P->>C: POST /render/projects/{id}/start (resolution)
+  C->>S: start(projectId, req, user)
+  S->>S: No running job, not published, freeze composition
+  S->>J: save(RenderJob QUEUED), video RENDERING
+  S->>K: enqueue(job, props, width, height, fps, voice)
+  S-->>C: RenderJobResponse
+  K->>K: Bundle FE entry, TTS, renderMedia
+  K->>O: Upload MP4
+  K->>C: POST /render/callback (service key)
+  C->>S: applyCallback(status, videoUrl)
+  alt COMPLETED
+    S->>A: recordCompleted(job)
+    S->>J: video IN_QA, videoUrl set
+  else FAILED
+    S->>S: handleFailure, retry up to 3 attempts
+  end

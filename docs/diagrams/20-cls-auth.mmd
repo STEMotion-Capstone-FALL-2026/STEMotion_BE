@@ -1,0 +1,65 @@
+classDiagram
+  direction TB
+  class AuthController {
+    <<controller>>
+    +login(LoginRequest)
+    +me()
+    +changePassword(req)
+    +register(req) 403
+  }
+  class UserController {
+    <<controller>>
+    +create(RegisterRequest) ADMIN
+    +findAll(page, size)
+    +update(id, req)
+    +delete(id)
+  }
+  class JwtAuthenticationFilter {
+    <<filter>>
+    #doFilterInternal(req, res, chain)
+  }
+  class ResourceAccessInterceptor {
+    <<interceptor>>
+    +preHandle() PASSWORD_CHANGE_REQUIRED
+  }
+  class AuthService {
+    <<service>>
+    +login(LoginRequest) AuthResponse
+    +changePassword(userId, req)
+    +getCurrentUser(userId)
+  }
+  class UserService {
+    <<service>>
+    +create(RegisterRequest) UserResponse
+    +findAll(PageParams)
+    +update(id, UpdateUserRequest)
+    +delete(id)
+  }
+  class JwtService {
+    <<service>>
+    +generateToken(User) String
+    +extractUserId(token)
+    +isValid(token)
+  }
+  class UserRepository {
+    <<repository>>
+    +findByEmailIgnoreCase(email)
+    +existsByEmailIgnoreCase(email)
+  }
+  class User {
+    <<entity>>
+    -UUID id
+    -String fullName
+    -String email
+    -String passwordHash
+    -UserRole role
+    -UserStatus status
+    -boolean mustChangePassword
+  }
+  AuthController ..> AuthService
+  UserController ..> UserService
+  JwtAuthenticationFilter ..> JwtService
+  AuthService ..> JwtService
+  AuthService ..> UserRepository
+  UserService ..> UserRepository
+  UserRepository --> User

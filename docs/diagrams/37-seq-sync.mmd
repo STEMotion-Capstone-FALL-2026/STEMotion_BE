@@ -1,0 +1,26 @@
+sequenceDiagram
+  actor P as Writer or Producer
+  participant C as NarrationToolsController
+  participant S as NarrationToolsService
+  participant R as RenderServiceClient
+  participant K as Render worker
+  participant X as Script or Composition service
+  P->>C: POST /scripts/{id}/sync-durations (baseRevision)
+  C->>S: syncDurations(id, baseRevision, user)
+  S->>S: Role check, snapshot measuredRevision
+  alt baseRevision stale
+    S-->>C: 409 STALE_REVISION, no TTS spent
+  else current
+    S->>R: syncDurations(scenes, fps), timeout 180 s
+    R->>K: POST /sync-durations
+    K->>K: TTS per scene, Whisper word timings
+    K-->>R: durationInFrames, captionWords
+    S->>X: apply(frames, measuredRevision)
+    X->>X: Lock row, compare revision
+    alt edited while measuring
+      X-->>S: 409 STALE_REVISION, nothing written
+    else unchanged
+      X-->>S: Saved, revision + 1
+      S-->>C: SyncDurationsResponse(target, revision)
+    end
+  end

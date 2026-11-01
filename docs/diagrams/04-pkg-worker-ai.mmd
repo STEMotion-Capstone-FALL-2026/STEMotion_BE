@@ -1,0 +1,23 @@
+flowchart TB
+  subgraph worker["Render worker (Node.js)"]
+    direction TB
+    server["server.ts, security.ts<br/>/render /status /cancel /tts-preview /sync-durations"]
+    queue["queue.ts, jobStore.ts, callback.ts<br/>job queue (in-process, Redis optional)"]
+    tts["tts.ts, fptNarration, googleCloudNarration<br/>narrationTiming, captions"]
+    renderer["renderer.ts, bundler.ts<br/>bundle FE Remotion entry, renderMedia"]
+    storage["storage.ts<br/>MinIO upload"]
+    server -.-> queue
+    server -.-> tts
+    queue -.-> renderer
+    renderer -.-> tts
+    renderer -.-> storage
+  end
+  subgraph ai["AI service (Python)"]
+    direction TB
+    main["main.py<br/>/script/generate /script/action /transcribe/align"]
+    providers["providers.py, prompting.py, prompts/<br/>OpenAI, Gemini via LangChain"]
+    schemas["schemas.py, validation.py, contracts/<br/>alignment.py (Whisper)"]
+    main -.-> providers
+    main -.-> schemas
+  end
+  tts -.->|caption alignment| main

@@ -1,0 +1,19 @@
+flowchart LR
+  login[Login] -->|first login| cp[Change Password]
+  cp --> wp[Workspace Picker]
+  login -->|otherwise| dash[Project Dashboard]
+  wp -->|if several workspaces| dash
+  dash --> ws[Writer Studio]
+  dash --> rs[Reviewer Studio]
+  dash --> ps[Producer Studio]
+  dash --> lib[Media Library]
+  dash --> adm[Admin Portal]
+  ws -.-> m1[[Create Project]]
+  ws -.-> m2[[Version Diff]]
+  rs -.-> m3[[Clip Compare]]
+  ps -.-> m4[[Publish]]
+  m4 -->|listed| lib
+  adm -.-> m5[[Workspace form]]
+  adm -.-> m6[[Manage Members]]
+  adm -.-> m7[[Templates]]
+  dash -.->|read only| m6

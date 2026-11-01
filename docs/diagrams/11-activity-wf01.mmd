@@ -1,0 +1,18 @@
+flowchart TB
+  subgraph admin["Admin"]
+    a1([Start]) --> a2[Provision accounts:<br/>name, email, initial password, role]
+    a2 --> a3[Create workspace with leader<br/>and at least 2 more members]
+    a3 --> a4{Team valid?<br/>3 distinct active users,<br/>WRITER, REVIEWER, PRODUCER}
+    a4 -- no --> a5[Read 400 message, fix team] --> a3
+  end
+  subgraph member["New member"]
+    m1[Log in with initial password] --> m2[Forced to change password] --> m3[Open workspace dashboard]
+  end
+  subgraph leader["Leader"]
+    l1[Open Manage Members] --> l2[Change a member's role]
+    l2 --> l3{Covered role still has<br/>an active member?}
+    l3 -- no --> l4[Read 400 message, choose another change] --> l2
+    l3 -- yes --> l5([Team ready])
+  end
+  a4 -- yes --> m1
+  m3 --> l1

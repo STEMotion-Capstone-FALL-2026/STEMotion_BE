@@ -1,0 +1,28 @@
+flowchart TB
+  subgraph producer["Producer"]
+    p1([Start]) --> p2[Submit composition for video review]
+    p7[Fix composition, resolve notes] --> p2
+    p8[Publish: internal library, LMS embed]
+  end
+  subgraph reviewer["Reviewer"]
+    r1[Watch web player or MP4] --> r2[Pin timestamped notes]
+    r2 --> r3[Check automated QA report]
+    r3 --> r4{Video acceptable?}
+    r4 -- no --> r5[Send back with reason]
+    r4 -- yes --> r6[Approve video]
+  end
+  subgraph system["System"]
+    s1[Freeze revision, video IN_QA] --> r1
+    s2{Open notes on current clip?}
+    s2 -- yes --> s3[400: resolve notes first] --> p7
+    s2 -- no --> s4[Video APPROVED,<br/>render MP4 if none]
+    s5[Video NOT_RENDERED]
+    s6([Video PUBLISHED, clip in library])
+  end
+  subgraph viewer["Any member"]
+    v1[Browse library by subject and grade] --> v2([Play or copy export link])
+  end
+  p2 --> s1
+  r6 --> s2
+  r5 --> s5 --> p7
+  s4 --> p8 --> s6 --> v1

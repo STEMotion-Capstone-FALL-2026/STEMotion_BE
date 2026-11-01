@@ -1,0 +1,21 @@
+sequenceDiagram
+  actor Admin
+  participant FE as CreateWorkspaceForm
+  participant C as WorkspaceController
+  participant S as WorkspaceService
+  participant U as UserRepository
+  participant W as WorkspaceRepository
+  participant M as WorkspaceMemberRepository
+  Admin->>FE: Name, leader, members
+  FE->>C: POST /workspaces (leaderUserId, members)
+  C->>S: create(req, adminId)
+  S->>U: findById(each seat)
+  S->>S: Distinct, active, role not ADMIN, 3 roles covered
+  alt team invalid
+    S-->>C: 400, nothing written
+  else valid team
+    S->>W: save(workspace)
+    S->>M: save(member) for each seat
+    S-->>C: WorkspaceResponse
+    C-->>FE: 201 Created
+  end

@@ -1,0 +1,22 @@
+sequenceDiagram
+  actor Wr as Writer
+  participant FE as WriterStudio
+  participant Q as sceneSaveQueue
+  participant C as ScriptController
+  participant S as ScriptService
+  participant V as ScriptVersionRepository
+  participant Sc as SceneRepository
+  Wr->>FE: Edit scenes
+  FE->>Q: schedule(scenes), debounce 600 ms
+  Q->>C: PUT /scripts/{id} (scenes, baseRevision)
+  C->>S: updateDraft(id, req)
+  S->>V: lockCurrentByProjectId, FOR UPDATE
+  alt baseRevision differs from draftRevision
+    S-->>C: 409 STALE_REVISION (currentRevision)
+    C-->>Q: keep local edits, offer reload
+  else revision matches
+    S->>Sc: replace scenes, props validated
+    S->>S: draftRevision + 1
+    S-->>C: ScriptResponse(draftRevision)
+    C-->>Q: 200 OK, store new revision
+  end

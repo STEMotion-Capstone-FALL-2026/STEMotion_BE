@@ -1,0 +1,31 @@
+flowchart TB
+  subgraph producer["Producer"]
+    p1([Start]) --> p2[Open approved project,<br/>composition revision 1]
+    p2 --> p3[Edit scene properties, theme, blocks,<br/>preview in Remotion Player]
+    p3 --> p4[Preview TTS narration]
+    p4 --> p5[Sync durations to measured speech]
+    p5 --> p6[Start render: 720p, 1080p or 1440p]
+    p9[Monitor progress, retry or cancel]
+  end
+  subgraph worker["Render worker"]
+    k1[Synthesise narration, measure,<br/>align captions]
+    k2[Render MP4, upload to storage] --> k3[Send progress and result callback]
+  end
+  subgraph system["Core API"]
+    c1{Revision still the one measured?}
+    c1 -- no --> c2[409 STALE_REVISION, nothing written] --> p3
+    c1 -- yes --> c3[Save durations, revision + 1]
+    c4[Queue job, video RENDERING]
+    c5{Render result}
+    c5 -- completed --> c6([Clip recorded, video IN_QA])
+    c5 -- failed --> c7[Retry up to 3 attempts,<br/>else NOT_RENDERED] --> p9
+  end
+  subgraph adminlane["Admin"]
+    ad1[Monitor render queue,<br/>success rate, AI cost]
+  end
+  p5 --> k1
+  k1 --> c1
+  c3 --> p6
+  p6 --> c4 --> k2
+  k3 --> c5
+  c4 -.-> ad1
