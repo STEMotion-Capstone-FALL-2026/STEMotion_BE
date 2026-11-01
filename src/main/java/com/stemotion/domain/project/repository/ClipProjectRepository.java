@@ -4,6 +4,11 @@ import com.stemotion.core.enums.StemEnums.ScriptStatus;
 import com.stemotion.core.enums.StemEnums.VideoStatus;
 import com.stemotion.domain.project.entity.ClipProject;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -101,4 +106,10 @@ public interface ClipProjectRepository extends JpaRepository<ClipProject, String
     @org.springframework.data.jpa.repository.Query("select p.workspace.id, count(p) from ClipProject p where p.workspace.id in :ids group by p.workspace.id")
     List<Object[]> countByWorkspaceIds(@org.springframework.data.repository.query.Param("ids") java.util.Collection<String> ids);
 
+
+    /** Frees a project whose render could not be handed to the worker; runs after the start request committed. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE ClipProject p SET p.videoStatus = :to WHERE p.id = :id AND p.videoStatus = :from")
+    int moveVideoStatus(@Param("id") String id, @Param("from") VideoStatus from, @Param("to") VideoStatus to);
 }

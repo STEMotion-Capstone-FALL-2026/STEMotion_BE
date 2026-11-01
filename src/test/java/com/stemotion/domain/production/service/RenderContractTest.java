@@ -75,7 +75,7 @@ class RenderContractTest {
             service.start("project",new StartRenderRequest(null,null,null),"producer");
             assertThat(project.getVideoStatus()).isEqualTo(VideoStatus.RENDERING);
             org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations().forEach(s->s.afterCommit());
-            assertThat(project.getVideoStatus()).isEqualTo(VideoStatus.NOT_RENDERED);
+            verify(projects).moveVideoStatus("project",VideoStatus.RENDERING,VideoStatus.NOT_RENDERED);
         } finally {
             org.springframework.transaction.support.TransactionSynchronizationManager.clearSynchronization();
         }

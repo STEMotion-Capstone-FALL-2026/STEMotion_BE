@@ -163,12 +163,7 @@ public class RenderService {
             log.error("Render job {} could not be handed to the worker: {}", jobId, ex.getMessage());
             if (renderJobRepository.failQueued(jobId, "Render worker unreachable: " + ex.getMessage(),
                     RenderStatus.QUEUED, RenderStatus.FAILED) > 0) {
-                projectRepository.findById(projectId).ifPresent(project -> {
-                    if (project.getVideoStatus() == VideoStatus.RENDERING) {
-                        project.setVideoStatus(VideoStatus.NOT_RENDERED);
-                        projectRepository.save(project);
-                    }
-                });
+                projectRepository.moveVideoStatus(projectId, VideoStatus.RENDERING, VideoStatus.NOT_RENDERED);
             }
         }
     }

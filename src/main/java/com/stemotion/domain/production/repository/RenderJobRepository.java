@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
 
@@ -49,14 +50,15 @@ public interface RenderJobRepository extends JpaRepository<RenderJob, String> {
 
     /**
      * Column updates for a job the worker may already be reporting on: a merge of a loaded copy
-     * could overwrite progress a callback wrote in between.
+     * could overwrite progress a callback wrote in between. Called after the start request has
+     * committed, so they need a transaction of their own: joining the finished one fails.
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Modifying(clearAutomatically = true)
     @Query("UPDATE RenderJob j SET j.externalJobId = :externalJobId WHERE j.id = :id")
     int setExternalJobId(@Param("id") String id, @Param("externalJobId") String externalJobId);
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Modifying(clearAutomatically = true)
     @Query("UPDATE RenderJob j SET j.status = :failed, j.errorMessage = :message WHERE j.id = :id AND j.status = :queued")
     int failQueued(@Param("id") String id, @Param("message") String message,
