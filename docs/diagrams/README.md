@@ -36,3 +36,8 @@ Source of every diagram in Report 3 (SRS) and Report 4 (SDD). Render with Mermai
 | `37-seq-sync.mmd` | seq sync |
 | `38-seq-render.mmd` | seq render |
 | `39-seq-publish.mmd` | seq publish |
+
+## Other sources
+
+- `source/`: draw.io files of the use case diagram and the conceptual ERD (Report 1).
+- `figures/`: exported PNG figures (team use case diagram, ERD, process).
