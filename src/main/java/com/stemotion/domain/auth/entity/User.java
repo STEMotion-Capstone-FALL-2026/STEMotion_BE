@@ -40,7 +40,7 @@ public class User extends BaseEntity {
     @Column(name = "email", unique = true)
     private String email;
 
-    @Column(name = "username", unique = true, length = 32)
+    @Column(name = "username", unique = true, length = 254)
     private String username;
 
     @Column(name = "auth_version", nullable = false)

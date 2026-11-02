@@ -33,7 +33,7 @@ public final class AuthDtos {
 
     public record LoginRequest(
         @NotBlank(message = "username is required")
-        @Size(max=64)
+        @Size(max=254)
         String username,
 
         @NotBlank(message = "password is required")

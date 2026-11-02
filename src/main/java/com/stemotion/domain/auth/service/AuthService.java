@@ -30,7 +30,7 @@ public class AuthService {
     }
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        String username = AccountNames.username(request.username());
+        String username = AccountNames.loginUsername(request.username());
         if (rateLimiter != null) rateLimiter.check("username:" + username);
         User user = userRepository.findByUsername(username).orElse(null);
         boolean comparable = PasswordRules.canCompare(request.password());

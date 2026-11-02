@@ -23,9 +23,12 @@ class UsernameLoginTest {
         assertThat(r.session().authMethod()).isEqualTo("PASSWORD");
         verify(users,never()).findByEmail(anyString());
     }
-    @Test void emailCannotBeUsedAsUsername() {
-        assertThatThrownBy(()->auth.login(new LoginRequest("a@gmail.com","password"))).isInstanceOf(ApiException.class);
-        verifyNoInteractions(users);
+    @Test void migratedEmailShapedUsernameUsesOnlyUsernameLookup() {
+        var u=User.builder().username("a@gmail.com").fullName("Legacy").passwordHash(encoder.encode("correct-password")).build();u.setId("legacy");
+        when(users.findByUsername("a@gmail.com")).thenReturn(Optional.of(u));
+        assertThat(auth.login(new LoginRequest(" A@GMAIL.COM ","correct-password")).user().id()).isEqualTo("legacy");
+        verify(users,never()).findByEmail(anyString());
+        assertThatThrownBy(()->AccountNames.username("a@gmail.com")).isInstanceOf(ApiException.class);
     }
     @Test void googleOnlyCannotUsePasswordLogin() {
         when(users.findByUsername("writer")).thenReturn(Optional.of(User.builder().fullName("Google").build()));

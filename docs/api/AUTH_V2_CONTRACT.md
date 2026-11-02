@@ -42,6 +42,10 @@ SENDING, PREVIEW, ACCEPTED, RETRY, FAILED, CANCELLED or UNKNOWN. PREVIEW is loca
 does not claim inbox delivery. Mail failure never revokes the whitelist or rolls back the grant.
 
 Username is canonical lowercase ASCII, 3–32 characters matching `[a-z0-9][a-z0-9._-]{2,31}`.
+Deployment compatibility update: newly provisioned usernames keep this rule. Migrated local users
+may retain their complete canonical legacy email as users.username (up to 254 characters). Password
+login accepts that shape but still performs only a username lookup, never an email fallback or
+implicit Google link. Canonical duplicates require separate reviewed usernames before migration.
 Password is not trimmed or lowercased; new passwords require at least 8 characters and at most
 72 UTF-8 bytes (BCrypt limit). Full name is trimmed, 2–100 characters, no control characters.
 Gmail is trimmed/lowercased, exact gmail.com domain; dots and +tags are not rewritten.

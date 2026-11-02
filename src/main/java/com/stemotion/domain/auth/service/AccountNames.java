@@ -18,4 +18,10 @@ public final class AccountNames {
             throw ApiException.badRequest("Tài khoản phải có 3–32 ký tự a-z, 0-9, dấu chấm, gạch dưới hoặc gạch ngang; không chứa @.");
         return value;
     }
+    /** Migrated accounts may retain their complete legacy email as a username. No email lookup or linking. */
+    public static String loginUsername(String raw) {
+        String value = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
+        if (value.length() <= 254 && value.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) return value;
+        return username(raw);
+    }
 }

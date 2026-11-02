@@ -1,9 +1,12 @@
 -- DRAFT ONLY. Not in Flyway locations. Do not run on the shared database.
 -- Stop legacy provisioning before expansion/backfill. Preserve all existing user IDs.
 BEGIN;
-ALTER TABLE users ADD COLUMN username varchar(32);
+ALTER TABLE users ADD COLUMN username varchar(254);
 ALTER TABLE users ADD COLUMN auth_version bigint NOT NULL DEFAULT 0;
 ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+-- Legacy shared schemas can require a password even though the migration baseline does not.
+-- Google-only accounts intentionally have neither a username nor a local password.
+ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
 CREATE UNIQUE INDEX uk_users_username ON users(username);
 CREATE TABLE google_login_whitelist (
  id uuid PRIMARY KEY, email varchar(254) NOT NULL UNIQUE,

@@ -1,5 +1,15 @@
 # Auth v2 local rollout drafts
 
+Deployment follow-up 02 November 2026: the shared legacy schema can have password_hash NOT NULL;
+01_expand.sql now explicitly drops that restriction for Google-only users. Existing email-shaped
+identifiers may be retained in users.username after user approval. New provisioning still requires
+the ordinary 3–32-character username. Login accepts both shapes but queries only users.username.
+
+Choose exactly ONE backfill: 02_backfill_and_validate.sql for an explicit reviewed mapping, or
+02_retain_legacy_email_usernames.sql for complete canonical legacy email usernames. The latter
+uses the approved stable duplicate policy: ACTIVE Admin first, then oldest creation time/userId; other accounts receive legacy- plus 24 hex userId characters. Unique conflicts still abort the transaction.
+Do not run both scripts. Do not truncate or merge duplicate user accounts to force uniqueness.
+
 **Role/mail follow-up:** finish the username backfill and approved legacy Google import here before
 the [system-role cutover](../roles-mail-drafts/README.md). These legacy import checks read users.role;
 do not rerun them after the new application switches authorization to users.system_role. Reconcile

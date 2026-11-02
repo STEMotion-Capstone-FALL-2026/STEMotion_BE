@@ -1,8 +1,9 @@
 -- DRAFT ONLY. Not in Flyway locations. Do not run on the shared database.
 -- Stop legacy provisioning before expansion/backfill. Preserve all existing user IDs.
-ALTER TABLE users ADD COLUMN username varchar(32);
+ALTER TABLE users ADD COLUMN username varchar(254);
 ALTER TABLE users ADD COLUMN auth_version bigint NOT NULL DEFAULT 0;
 ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
 CREATE UNIQUE INDEX uk_users_username ON users(username);
 CREATE TABLE google_login_whitelist (
  id uuid PRIMARY KEY, email varchar(254) NOT NULL UNIQUE,
@@ -39,4 +40,5 @@ REVOKE ALL ON google_login_whitelist, google_identities, google_auth_challenges 
 -- Ephemeral fixture identifiers only; never a production username mapping.
 UPDATE users SET username='fixture_' || substring(replace(lower(id::text),'-',''),1,24) WHERE password_hash IS NOT NULL;
 ALTER TABLE users ADD CONSTRAINT users_local_username CHECK (password_hash IS NULL OR username IS NOT NULL);
-ALTER TABLE users ADD CONSTRAINT users_username_canonical CHECK (username IS NULL OR username ~ '^[a-z0-9][a-z0-9._-]{2,31}$');
+ALTER TABLE users ADD CONSTRAINT users_username_canonical CHECK (username IS NULL OR username ~ '^[a-z0-9][a-z0-9._-]{2,31}$'
+ OR (email IS NOT NULL AND username=lower(btrim(email)) AND username ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'));
