@@ -1,5 +1,7 @@
 package com.stemotion.domain.auth.controller;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.stemotion.core.config.SecurityConfig;
 import com.stemotion.core.security.*;
 import com.stemotion.domain.auth.service.*;
@@ -23,18 +25,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = {AuthController.class, UserController.class}, properties = "app.cors.allowed-origins=http://localhost:3000")
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class})
 class AccountProvisioningAccessTest {
+    @org.springframework.boot.test.mock.mockito.MockBean com.stemotion.core.security.AuthRateLimiter authRateLimiter;
     @Autowired MockMvc mvc;
     @MockBean AuthService auth;
     @MockBean UserService users;
     @MockBean JwtService jwt;
     @MockBean CustomUserDetailsService details;
     @MockBean ResourceAccessInterceptor resources;
+    @MockBean GoogleAuthService googleAuth;
+    @MockBean com.stemotion.domain.auth.repository.UserRepository userRepository;
+    @MockBean AuthEntryInterceptor entry;
     private static final String BODY = """
-        {"fullName":"Provisioned teacher","email":"teacher@example.invalid","password":"test-password-only","role":"WRITER"}
+        {"fullName":"Provisioned teacher","username":"teacher","password":"test-password-only","systemRole":"USER"}
         """;
 
     @BeforeEach void allowUnrelatedResourceInterceptor() throws Exception {
         when(resources.preHandle(any(), any(), any())).thenReturn(true);
+        when(entry.preHandle(any(), any(), any())).thenReturn(true);
     }
     @Test void guestCannotProvisionAnAccount() throws Exception {
         mvc.perform(post("/api/v1/users").contentType(MediaType.APPLICATION_JSON).content(BODY)).andExpect(status().isUnauthorized());
@@ -47,7 +54,7 @@ class AccountProvisioningAccessTest {
         verifyNoInteractions(users);
     }
     @Test void adminCreatesAccountWithoutReceivingItsSession() throws Exception {
-        when(users.create(any())).thenReturn(new UserResponse("new-id", "Teacher", "teacher@example.invalid", User.UserRole.WRITER, User.UserStatus.ACTIVE, true, null));
+        when(users.create(any())).thenReturn(new UserResponse("new-id", "Teacher", null, SystemRole.USER, User.UserStatus.ACTIVE, true, null, "teacher", true, false, null, 0));
         mvc.perform(post("/api/v1/users").with(user("admin-id").roles("ADMIN")).contentType(MediaType.APPLICATION_JSON).content(BODY))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.id").value("new-id"))
             .andExpect(jsonPath("$.accessToken").doesNotExist()).andExpect(jsonPath("$.passwordHash").doesNotExist());

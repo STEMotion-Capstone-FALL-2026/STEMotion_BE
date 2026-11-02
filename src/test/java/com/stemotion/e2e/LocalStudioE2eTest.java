@@ -1,5 +1,9 @@
 package com.stemotion.e2e;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stemotion.domain.auth.entity.User;
@@ -55,20 +59,21 @@ class LocalStudioE2eTest {
     Map<String,User> actors=new HashMap<>();
     String workspace;
 
+    enum FixtureRole { ADMIN, WRITER, REVIEWER, PRODUCER }
     @BeforeEach void fixtures() throws Exception {
-        for (var role:User.UserRole.values()) {
+        for (var role:FixtureRole.values()) {
             var user=users.saveAndFlush(User.builder().fullName("Local "+role)
-                .email(UUID.randomUUID()+"@example.invalid").passwordHash(encoder.encode("Local-fixture-only-123"))
-                .role(role).build());
+                .username("fixture_"+UUID.randomUUID().toString().substring(0,20)).passwordHash(encoder.encode("Local-fixture-only-123"))
+                .systemRole("ADMIN".equals(role.name()) ? SystemRole.ADMIN : SystemRole.USER).build());
             actors.put(role.name(),user);
-            var login=call("POST","/api/v1/auth/login",null,Map.of("email",user.getEmail(),"password","Local-fixture-only-123"),200);
+            var login=call("POST","/api/v1/auth/login",null,Map.of("username",user.getUsername(),"password","Local-fixture-only-123"),200);
             tokens.put(role.name(),login.path("accessToken").asText());
             assertFalse(tokens.get(role.name()).isBlank());
         }
         workspace=call("POST","/api/v1/workspaces","ADMIN",Map.of("name","Local E2E","department","Physics","leaderUserId",actors.get("WRITER").getId()),201).path("id").asText();
         for (String role:List.of("REVIEWER","PRODUCER")) members.saveAndFlush(WorkspaceMember.builder()
             .workspace(workspaces.findById(workspace).orElseThrow()).user(actors.get(role))
-            .role(actors.get(role).getRole()).status(MemberStatus.ACTIVE).build());
+            .role(WorkspaceRole.valueOf(role)).status(MemberStatus.ACTIVE).build());
         when(gemini.isConfigured()).thenReturn(true);
         when(worker.enqueue(anyString(),anyString(),anyMap(),anyInt(),anyInt(),anyInt(),nullable(String.class)))
             .thenAnswer(i->new RenderServiceClient.EnqueueResult(i.getArgument(0),5));
@@ -146,7 +151,7 @@ class LocalStudioE2eTest {
         // accept/ignore and persisted logging are the M01 baseline gap, tested after Track 2.
     }
     @Test void adminProvisionTemplateCrudAndQueue() throws Exception {
-        call("POST","/api/v1/users","ADMIN",Map.of("fullName","Provisioned","email",UUID.randomUUID()+"@example.invalid","password","Local-fixture-only-123","role","PRODUCER"),201);
+        call("POST","/api/v1/users","ADMIN",Map.of("fullName","Provisioned","username","local_"+UUID.randomUUID().toString().substring(0,20),"password","Local-fixture-only-123","role","PRODUCER"),201);
         var metadata=Map.of("name","E2E-"+UUID.randomUUID(),"subject","physics","assetPack","physics@1.0.0","slots","{}","propsSchema","{}","isActive",true);
         String id=call("POST","/api/v1/templates","ADMIN",metadata,201).path("id").asText();
         assertEquals("physics",call("GET","/api/v1/templates/"+id,"WRITER",null,200).path("subject").asText());

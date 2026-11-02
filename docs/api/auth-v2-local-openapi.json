@@ -1,0 +1,5139 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "STEMotion API",
+    "description": "API documentation for STEMotion — AI-Assisted STEM Video Production Platform",
+    "contact": {
+      "name": "STEMotion Team",
+      "email": "stemotion@fpt.edu.vn"
+    },
+    "license": {
+      "name": "MIT"
+    },
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local Development"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Clip QA",
+      "description": "Timestamped review notes and video sign-off"
+    },
+    {
+      "name": "Scripts",
+      "description": "Script studio and the editorial review workflow"
+    },
+    {
+      "name": "Workspaces",
+      "description": "Subject departments and their members"
+    },
+    {
+      "name": "Media library",
+      "description": "Published clips with subject and grade filters"
+    },
+    {
+      "name": "Render",
+      "description": "Remotion render jobs dispatched to the Node worker pool"
+    },
+    {
+      "name": "Production",
+      "description": "Producer's draft of an approved script"
+    },
+    {
+      "name": "Remotion templates",
+      "description": "Catalogue of scene templates"
+    },
+    {
+      "name": "Admin",
+      "description": "System monitoring, render queue & AI cost tracking for the admin dashboard"
+    },
+    {
+      "name": "Auth",
+      "description": "Login and current session; public registration disabled"
+    },
+    {
+      "name": "Users",
+      "description": "User administration"
+    },
+    {
+      "name": "AI Script Intelligence",
+      "description": "Service-backed drafting and analysis, human-in-the-loop"
+    },
+    {
+      "name": "Narration",
+      "description": "TTS preview and audio-timed scene durations through the API"
+    },
+    {
+      "name": "Publishing",
+      "description": "LMS embed codes and YouTube publishing"
+    }
+  ],
+  "paths": {
+    "/api/v1/workspaces/{id}": {
+      "get": {
+        "tags": [
+          "Workspaces"
+        ],
+        "operationId": "findById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Workspaces"
+        ],
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspaceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Workspaces"
+        ],
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/templates/{id}": {
+      "get": {
+        "tags": [
+          "Remotion templates"
+        ],
+        "operationId": "findById_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Remotion templates"
+        ],
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Remotion templates"
+        ],
+        "operationId": "delete_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/composition": {
+      "get": {
+        "tags": [
+          "Production"
+        ],
+        "summary": "Open the approved script as a production draft (scenes mapped to templates)",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompositionResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Production"
+        ],
+        "summary": "Save the producer's per-scene edits as the next composition version",
+        "operationId": "update_2",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompositionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompositionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{id}": {
+      "get": {
+        "tags": [
+          "Scripts"
+        ],
+        "summary": "Full script with its ordered scenes",
+        "operationId": "findById_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Scripts"
+        ],
+        "summary": "Save the working draft, replacing the scene list",
+        "operationId": "update_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateScriptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Scripts"
+        ],
+        "operationId": "delete_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/qa-comments/{commentId}/resolve": {
+      "put": {
+        "tags": [
+          "Clip QA"
+        ],
+        "operationId": "resolve",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/qa-comments/{commentId}/reopen": {
+      "put": {
+        "tags": [
+          "Clip QA"
+        ],
+        "operationId": "reopen",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/requests/{requestId}/decision": {
+      "put": {
+        "tags": [
+          "AI Script Intelligence"
+        ],
+        "summary": "Accept or ignore an owned AI suggestion (does not save script content)",
+        "operationId": "decision",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces": {
+      "get": {
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Workspaces the user can open: all of them for an administrator, memberships otherwise",
+        "operationId": "findAll",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkspaceResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Admin creates a workspace with a leader and at least 3 members covering WRITER, REVIEWER and PRODUCER",
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspaceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspaceId}/scripts": {
+      "get": {
+        "tags": [
+          "Scripts"
+        ],
+        "summary": "List the scripts of a workspace",
+        "operationId": "findByWorkspace",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScriptSummaryResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Scripts"
+        ],
+        "summary": "Create a clip project and its first script version",
+        "operationId": "create_1",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateScriptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{id}/members": {
+      "get": {
+        "tags": [
+          "Workspaces"
+        ],
+        "operationId": "members",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Administrator assigns an existing user to this workspace",
+        "operationId": "addMember",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMemberRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "findAll_1",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "create_2",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/templates": {
+      "get": {
+        "tags": [
+          "Remotion templates"
+        ],
+        "operationId": "findAll_2",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeOnly",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Remotion templates"
+        ],
+        "operationId": "create_3",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/sync-durations": {
+      "post": {
+        "tags": [
+          "Narration"
+        ],
+        "summary": "Time every scene from its TTS audio (and Whisper word timings) and save it",
+        "operationId": "syncDurations",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncDurationsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncDurationsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/submit-video-review": {
+      "post": {
+        "tags": [
+          "Clip QA"
+        ],
+        "summary": "Send the composition to the reviewer for review in the web player, without rendering first",
+        "operationId": "submitVideoReview",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/send-back": {
+      "post": {
+        "tags": [
+          "Clip QA"
+        ],
+        "summary": "Return the clip to the producer for a re-render",
+        "operationId": "sendBack",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/qa-comments": {
+      "get": {
+        "tags": [
+          "Clip QA"
+        ],
+        "summary": "Review notes (with their replies); clipId keeps one render's notes plus unscoped ones",
+        "operationId": "findByProject",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OPEN",
+                "RESOLVED"
+              ]
+            }
+          },
+          {
+            "name": "clipId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeedbackResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Clip QA"
+        ],
+        "summary": "Pin a note at a timecode or on a scene",
+        "operationId": "create_4",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/publish": {
+      "post": {
+        "tags": [
+          "Publishing"
+        ],
+        "summary": "Publish an approved clip to the selected targets",
+        "operationId": "publish",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/approve-video": {
+      "post": {
+        "tags": [
+          "Clip QA"
+        ],
+        "summary": "Sign off the rendered clip once every note is resolved",
+        "operationId": "approveVideo",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/ai/storyboard": {
+      "post": {
+        "tags": [
+          "video-storyboard-controller"
+        ],
+        "operationId": "suggest",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoryboardRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Suggestion"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{id}/submit-review": {
+      "post": {
+        "tags": [
+          "Scripts"
+        ],
+        "summary": "Writer submits the draft for review",
+        "operationId": "submitForReview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{id}/request-changes": {
+      "post": {
+        "tags": [
+          "Scripts"
+        ],
+        "summary": "Reviewer returns the script and opens a new version",
+        "operationId": "requestChanges",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{id}/approve": {
+      "post": {
+        "tags": [
+          "Scripts"
+        ],
+        "summary": "Reviewer approves the script",
+        "operationId": "approve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/render/projects/{projectId}/start": {
+      "post": {
+        "tags": [
+          "Render"
+        ],
+        "summary": "Queue a render of the approved script",
+        "operationId": "start",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartRenderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderJobResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/render/jobs/{jobId}/retry": {
+      "post": {
+        "tags": [
+          "Render"
+        ],
+        "operationId": "retry",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderJobResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/render/callback": {
+      "post": {
+        "tags": [
+          "Render"
+        ],
+        "summary": "Progress update pushed by the render worker (secured by X-Render-Api-Key header)",
+        "operationId": "callback",
+        "parameters": [
+          {
+            "name": "X-Render-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenderCallbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderJobResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/qa-comments/{commentId}/replies": {
+      "post": {
+        "tags": [
+          "Clip QA"
+        ],
+        "summary": "Reply under a review note",
+        "operationId": "reply",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/google/link": {
+      "post": {
+        "tags": [
+          "profile-controller"
+        ],
+        "operationId": "link",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/google/link-challenge": {
+      "post": {
+        "tags": [
+          "profile-controller"
+        ],
+        "operationId": "challenge",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkChallenge"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Challenge"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Disabled: accounts are provisioned by administrators",
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Exchange username and password for a JWT",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/google": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Sign in with a verified Google identity in the active Gmail whitelist",
+        "operationId": "google",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/google/challenge": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "challenge_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Challenge"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Change password for the authenticated user",
+        "operationId": "changePassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/transcribe/align": {
+      "post": {
+        "tags": [
+          "ai-alignment-controller"
+        ],
+        "operationId": "align",
+        "parameters": [
+          {
+            "name": "text",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "vi"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonNode"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/script/generate": {
+      "post": {
+        "tags": [
+          "AI Script Intelligence"
+        ],
+        "summary": "Draft a full STEM script from a topic",
+        "operationId": "generate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateScriptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiActionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/script/approaches": {
+      "post": {
+        "tags": [
+          "AI Script Intelligence"
+        ],
+        "summary": "Suggest three different ways to lead a video through one lesson",
+        "operationId": "approaches",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproachRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiActionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/script/action": {
+      "post": {
+        "tags": [
+          "AI Script Intelligence"
+        ],
+        "summary": "Run resegment, grade, extract or terms over a script",
+        "operationId": "action",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScriptActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiActionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/internal/transcribe/align": {
+      "post": {
+        "tags": [
+          "ai-alignment-controller"
+        ],
+        "operationId": "workerAlign",
+        "parameters": [
+          {
+            "name": "X-AI-Alignment-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "text",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "vi"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonNode"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/google-whitelist": {
+      "get": {
+        "tags": [
+          "google-whitelist-controller"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WhitelistRow"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "google-whitelist-controller"
+        ],
+        "operationId": "add",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WhitelistCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhitelistRow"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/google-whitelist/{id}/notifications/resend": {
+      "post": {
+        "tags": [
+          "google-whitelist-controller"
+        ],
+        "operationId": "resend",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{id}/members/{memberId}": {
+      "delete": {
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Administrator removes a member from this workspace",
+        "operationId": "removeMember",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Leader or administrator changes a member's role; status and leader designation are administrator-only",
+        "operationId": "updateMember",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemberRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "findById_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "delete_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "update_4",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile": {
+      "get": {
+        "tags": [
+          "profile-controller"
+        ],
+        "operationId": "get_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "profile-controller"
+        ],
+        "operationId": "rename",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Rename"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/google-whitelist/{id}": {
+      "patch": {
+        "tags": [
+          "google-whitelist-controller"
+        ],
+        "operationId": "update_5",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WhitelistUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhitelistRow"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{id}/candidates": {
+      "get": {
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "List active users eligible to be added to this workspace",
+        "operationId": "candidates",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CandidateUserResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/mine": {
+      "get": {
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Workspaces the authenticated user belongs to",
+        "operationId": "findMine",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkspaceResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/tts-preview": {
+      "get": {
+        "tags": [
+          "Narration"
+        ],
+        "summary": "Narration audio of a text or of a scene (sceneId), synthesised like a render",
+        "operationId": "ttsPreview",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "text",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sceneId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "voice",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "audio/mpeg": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "byte"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/review-history": {
+      "get": {
+        "tags": [
+          "Clip QA"
+        ],
+        "summary": "Reviewer decisions on scripts, clips and composition revisions, newest first",
+        "operationId": "reviewHistory",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewHistoryEntry"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/qa-report": {
+      "get": {
+        "tags": [
+          "Clip QA"
+        ],
+        "summary": "Run the automated pre-publish checks",
+        "operationId": "qaReport",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/QaReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{projectId}/publications": {
+      "get": {
+        "tags": [
+          "Publishing"
+        ],
+        "operationId": "history",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublishResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{id}/versions": {
+      "get": {
+        "tags": [
+          "Scripts"
+        ],
+        "summary": "Version history of a script",
+        "operationId": "versions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScriptVersionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/{id}/diff": {
+      "get": {
+        "tags": [
+          "Scripts"
+        ],
+        "summary": "Two versions side by side for the diff view",
+        "operationId": "diff",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "left",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "right",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDiffResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/review-queue": {
+      "get": {
+        "tags": [
+          "Scripts"
+        ],
+        "summary": "Scripts waiting for an editorial decision",
+        "operationId": "reviewQueue",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScriptSummaryResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scripts/mine": {
+      "get": {
+        "tags": [
+          "Scripts"
+        ],
+        "summary": "Scripts owned by the authenticated writer",
+        "operationId": "findMine_1",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScriptSummaryResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenes/{sceneId}/comments": {
+      "get": {
+        "tags": [
+          "Clip QA"
+        ],
+        "summary": "Inline comments on one scene",
+        "operationId": "findByScene",
+        "parameters": [
+          {
+            "name": "sceneId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeedbackResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/render/status/{jobId}": {
+      "get": {
+        "tags": [
+          "Render"
+        ],
+        "summary": "Poll render progress",
+        "operationId": "status",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderJobResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/render/projects/{projectId}/jobs": {
+      "get": {
+        "tags": [
+          "Render"
+        ],
+        "summary": "Render history of a project",
+        "operationId": "history_1",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RenderJobResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/library/filters": {
+      "get": {
+        "tags": [
+          "Media library"
+        ],
+        "summary": "Subjects and grades that actually have published clips",
+        "operationId": "filters",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryFilters"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/library/clips": {
+      "get": {
+        "tags": [
+          "Media library"
+        ],
+        "summary": "List published clips, filtered by subject and grade",
+        "operationId": "findClips",
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Math",
+                "Physics",
+                "Chemistry",
+                "Biology",
+                "ComputerScience"
+              ]
+            }
+          },
+          {
+            "name": "gradeLevel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LibraryItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/library/clips/{projectId}": {
+      "get": {
+        "tags": [
+          "Media library"
+        ],
+        "summary": "One published clip, with its export links",
+        "operationId": "findClip",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Return the profile of the authenticated user",
+        "operationId": "me",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentSession"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/google/enabled": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Whether Google sign-in is configured on this server",
+        "operationId": "googleEnabled",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/health": {
+      "get": {
+        "tags": [
+          "AI Script Intelligence"
+        ],
+        "summary": "Whether an AI key is configured on this environment",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/render-jobs": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "List recent render jobs for queue monitoring",
+        "operationId": "renderJobs",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminRenderJobSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/overview": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Complete FE-17 operational overview: metrics, AI cost/usage, render jobs and STEM subject distribution",
+        "operationId": "overview",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDashboardOverview"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/metrics": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Render queue, throughput and host resource usage",
+        "operationId": "metrics",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemMetrics"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/ai-usage": {
+      "get": {
+        "tags": [
+          "ai-usage-controller"
+        ],
+        "operationId": "usage",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsagePage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/render/jobs/{jobId}": {
+      "delete": {
+        "tags": [
+          "Render"
+        ],
+        "operationId": "cancel",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/qa-comments/{commentId}": {
+      "delete": {
+        "tags": [
+          "Clip QA"
+        ],
+        "operationId": "delete_4",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddMemberRequest": {
+        "required": [
+          "role",
+          "userId"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "WRITER",
+              "REVIEWER",
+              "PRODUCER"
+            ]
+          },
+          "leader": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WorkspaceRequest": {
+        "required": [
+          "leaderUserId",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "leaderUserId": {
+            "type": "string"
+          },
+          "leaderRole": {
+            "type": "string",
+            "enum": [
+              "WRITER",
+              "REVIEWER",
+              "PRODUCER"
+            ]
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddMemberRequest"
+            }
+          }
+        }
+      },
+      "WorkspaceResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "membersCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "activeProjects": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "myRole": {
+            "type": "string",
+            "enum": [
+              "WRITER",
+              "REVIEWER",
+              "PRODUCER"
+            ]
+          },
+          "isLeader": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TemplateRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "propsSchema": {
+            "type": "string"
+          },
+          "previewUrl": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "assetPack": {
+            "type": "string"
+          },
+          "slots": {
+            "type": "string"
+          },
+          "recommendedSubjects": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "defaultVisualTheme": {
+            "type": "string"
+          }
+        }
+      },
+      "TemplateResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "propsSchema": {
+            "type": "string"
+          },
+          "previewUrl": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "assetPack": {
+            "type": "string"
+          },
+          "slots": {
+            "type": "string"
+          },
+          "recommendedSubjects": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "defaultVisualTheme": {
+            "type": "string"
+          }
+        }
+      },
+      "SceneRequest": {
+        "required": [
+          "durationInFrames",
+          "title",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "TITLE_HERO",
+              "MATH_FORMULA",
+              "DIAGRAM_EXPLAINER",
+              "DATA_CHART",
+              "ALGORITHM_WALKTHROUGH",
+              "STEM_QUIZ",
+              "OUTRO",
+              "CHEMICAL_REACTION",
+              "COMPARISON_SPLIT",
+              "PROCESS_TIMELINE",
+              "GEOMETRY_SPACE",
+              "ILLUSTRATED_EXPLAINER",
+              "COMPOSED"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "narration": {
+            "type": "string"
+          },
+          "durationInFrames": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "orderNo": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "UpdateCompositionRequest": {
+        "required": [
+          "baseRevision",
+          "scenes"
+        ],
+        "type": "object",
+        "properties": {
+          "baseRevision": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "scenes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SceneRequest"
+            }
+          },
+          "visualTheme": {
+            "type": "string"
+          }
+        }
+      },
+      "CompositionResponse": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string"
+          },
+          "scriptVersionNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "lockedReason": {
+            "type": "string"
+          },
+          "scenes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedByName": {
+            "type": "string"
+          },
+          "visualTheme": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateScriptRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "enum": [
+              "Math",
+              "Physics",
+              "Chemistry",
+              "Biology",
+              "ComputerScience"
+            ]
+          },
+          "gradeLevel": {
+            "type": "string"
+          },
+          "fps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "scenes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SceneRequest"
+            }
+          },
+          "baseRevision": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SceneResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "TITLE_HERO",
+              "MATH_FORMULA",
+              "DIAGRAM_EXPLAINER",
+              "DATA_CHART",
+              "ALGORITHM_WALKTHROUGH",
+              "STEM_QUIZ",
+              "OUTRO",
+              "CHEMICAL_REACTION",
+              "COMPARISON_SPLIT",
+              "PROCESS_TIMELINE",
+              "GEOMETRY_SPACE",
+              "ILLUSTRATED_EXPLAINER",
+              "COMPOSED"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "narration": {
+            "type": "string"
+          },
+          "durationInFrames": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ScriptResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "enum": [
+              "Math",
+              "Physics",
+              "Chemistry",
+              "Biology",
+              "ComputerScience"
+            ]
+          },
+          "gradeLevel": {
+            "type": "string"
+          },
+          "totalDurationSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scriptStatus": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "IN_REVIEW",
+              "APPROVED",
+              "CHANGE_REQUESTED"
+            ]
+          },
+          "videoStatus": {
+            "type": "string",
+            "enum": [
+              "NOT_RENDERED",
+              "RENDERING",
+              "IN_QA",
+              "APPROVED",
+              "PUBLISHED"
+            ]
+          },
+          "fps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scenes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SceneResponse"
+            }
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": "string"
+          },
+          "currentVersionNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "videoUrl": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "visualTheme": {
+            "type": "string"
+          },
+          "draftRevision": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "FeedbackResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "string"
+          },
+          "systemRole": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "USER"
+            ]
+          },
+          "timestampSec": {
+            "type": "number",
+            "format": "double"
+          },
+          "sceneId": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RESOLVED"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "clipId": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string"
+          },
+          "resolvedByName": {
+            "type": "string"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AiDecisionRequest": {
+        "required": [
+          "decision"
+        ],
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACCEPTED",
+              "IGNORED"
+            ]
+          }
+        }
+      },
+      "CreateScriptRequest": {
+        "required": [
+          "subject",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "enum": [
+              "Math",
+              "Physics",
+              "Chemistry",
+              "Biology",
+              "ComputerScience"
+            ]
+          },
+          "gradeLevel": {
+            "type": "string"
+          },
+          "fps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scenes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SceneRequest"
+            }
+          }
+        }
+      },
+      "MemberResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "WRITER",
+              "REVIEWER",
+              "PRODUCER"
+            ]
+          },
+          "isLeader": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          },
+          "username": {
+            "type": "string"
+          },
+          "googleEmail": {
+            "type": "string"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "required": [
+          "fullName",
+          "password",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "maxLength": 100,
+            "minLength": 2,
+            "type": "string"
+          },
+          "username": {
+            "maxLength": 32,
+            "minLength": 0,
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 2147483647,
+            "minLength": 8,
+            "type": "string"
+          },
+          "systemRole": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "USER"
+            ]
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "systemRole": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "USER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "BANNED"
+            ]
+          },
+          "mustChangePassword": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "username": {
+            "type": "string"
+          },
+          "hasLocalPassword": {
+            "type": "boolean"
+          },
+          "googleLinked": {
+            "type": "boolean"
+          },
+          "googleEmail": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "SyncDurationsRequest": {
+        "type": "object",
+        "properties": {
+          "baseRevision": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "JsonNode": {
+        "type": "object"
+      },
+      "SyncDurationsResponse": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalDurationSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scenes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          },
+          "captionSync": {
+            "$ref": "#/components/schemas/JsonNode"
+          }
+        }
+      },
+      "ReviewDecisionRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "FeedbackRequest": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "timestampSec": {
+            "type": "number",
+            "format": "double"
+          },
+          "sceneId": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          }
+        }
+      },
+      "PublishRequest": {
+        "required": [
+          "targets",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "INTERNAL_LIBRARY",
+                "LMS",
+                "YOUTUBE"
+              ]
+            }
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "PublishResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "lmsEmbedCode": {
+            "type": "string"
+          },
+          "youtubeUrl": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "StoryboardRequest": {
+        "required": [
+          "baseRevision",
+          "baseVersion"
+        ],
+        "type": "object",
+        "properties": {
+          "baseVersion": {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "baseRevision": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AiActionResponse": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "resegment",
+              "grade",
+              "extract",
+              "terms",
+              "metaphor"
+            ]
+          },
+          "result": {
+            "$ref": "#/components/schemas/JsonNode"
+          },
+          "model": {
+            "type": "string"
+          },
+          "elapsedMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        }
+      },
+      "Suggestion": {
+        "type": "object",
+        "properties": {
+          "sourceVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sourceDraftRevision": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sourceChanged": {
+            "type": "boolean"
+          },
+          "suggestion": {
+            "$ref": "#/components/schemas/AiActionResponse"
+          }
+        }
+      },
+      "StartRenderRequest": {
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "type": "string"
+          },
+          "fps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ttsVoice": {
+            "type": "string"
+          }
+        }
+      },
+      "RenderJobResponse": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "PROCESSING",
+              "COMPLETED",
+              "FAILED"
+            ]
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "videoUrl": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "estimatedSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scriptVersionNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "compositionRevision": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "RenderCallbackRequest": {
+        "required": [
+          "jobId"
+        ],
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "PROCESSING",
+              "COMPLETED",
+              "FAILED"
+            ]
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "videoUrl": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "captionSync": {
+            "$ref": "#/components/schemas/JsonNode"
+          }
+        }
+      },
+      "ReplyRequest": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "Credential": {
+        "required": [
+          "challengeId",
+          "challengeSecret",
+          "credential"
+        ],
+        "type": "object",
+        "properties": {
+          "credential": {
+            "maxLength": 16000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "challengeId": {
+            "pattern": "[0-9a-fA-F-]{36}",
+            "type": "string"
+          },
+          "challengeSecret": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "tokenType": {
+            "type": "string"
+          },
+          "expiresInMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          },
+          "session": {
+            "$ref": "#/components/schemas/SessionResponse"
+          }
+        }
+      },
+      "SessionResponse": {
+        "type": "object",
+        "properties": {
+          "authMethod": {
+            "type": "string"
+          },
+          "requiresPasswordChange": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LinkChallenge": {
+        "required": [
+          "currentPassword"
+        ],
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "maxLength": 256,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "Challenge": {
+        "type": "object",
+        "properties": {
+          "challengeId": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "challengeSecret": {
+            "type": "string"
+          },
+          "expiresInSeconds": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "LoginRequest": {
+        "required": [
+          "password",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "maxLength": 64,
+            "minLength": 0,
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 256,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "ChangePasswordRequest": {
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ],
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "maxLength": 256,
+            "minLength": 0,
+            "type": "string"
+          },
+          "newPassword": {
+            "maxLength": 72,
+            "minLength": 8,
+            "type": "string"
+          }
+        }
+      },
+      "GenerateScriptRequest": {
+        "required": [
+          "gradeLevel",
+          "subject",
+          "topic"
+        ],
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "enum": [
+              "Math",
+              "Physics",
+              "Chemistry",
+              "Biology",
+              "ComputerScience"
+            ]
+          },
+          "gradeLevel": {
+            "type": "string"
+          },
+          "targetDurationSec": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "narrativeBrief": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "approach": {
+            "maxLength": 800,
+            "minLength": 0,
+            "type": "string"
+          }
+        }
+      },
+      "ApproachRequest": {
+        "required": [
+          "gradeLevel",
+          "subject",
+          "topic"
+        ],
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "enum": [
+              "Math",
+              "Physics",
+              "Chemistry",
+              "Biology",
+              "ComputerScience"
+            ]
+          },
+          "gradeLevel": {
+            "type": "string"
+          }
+        }
+      },
+      "ScriptActionRequest": {
+        "required": [
+          "action",
+          "scriptText"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "resegment",
+              "grade",
+              "extract",
+              "terms",
+              "metaphor"
+            ]
+          },
+          "scriptText": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "enum": [
+              "Math",
+              "Physics",
+              "Chemistry",
+              "Biology",
+              "ComputerScience"
+            ]
+          },
+          "gradeLevel": {
+            "type": "string"
+          }
+        }
+      },
+      "WhitelistCreate": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "Summary": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "lastAttemptAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nextAttemptAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "canResend": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WhitelistRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "boundUserId": {
+            "type": "string"
+          },
+          "notification": {
+            "$ref": "#/components/schemas/Summary"
+          }
+        }
+      },
+      "ResendRequest": {
+        "required": [
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "UpdateMemberRequest": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "WRITER",
+              "REVIEWER",
+              "PRODUCER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          },
+          "leader": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateUserRequest": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "systemRole": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "USER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "BANNED"
+            ]
+          },
+          "password": {
+            "maxLength": 2147483647,
+            "minLength": 8,
+            "type": "string"
+          }
+        }
+      },
+      "Rename": {
+        "required": [
+          "fullName"
+        ],
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "maxLength": 100,
+            "minLength": 2,
+            "type": "string"
+          }
+        }
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          },
+          "session": {
+            "$ref": "#/components/schemas/SessionResponse"
+          },
+          "googleLinked": {
+            "type": "boolean"
+          },
+          "googleEmail": {
+            "type": "string"
+          },
+          "googleLoginAllowed": {
+            "type": "boolean"
+          },
+          "canLinkGoogle": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WhitelistUpdate": {
+        "required": [
+          "status",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "pattern": "ACTIVE|REVOKED",
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ScriptSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "enum": [
+              "Math",
+              "Physics",
+              "Chemistry",
+              "Biology",
+              "ComputerScience"
+            ]
+          },
+          "gradeLevel": {
+            "type": "string"
+          },
+          "totalDurationSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scriptStatus": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "IN_REVIEW",
+              "APPROVED",
+              "CHANGE_REQUESTED"
+            ]
+          },
+          "videoStatus": {
+            "type": "string",
+            "enum": [
+              "NOT_RENDERED",
+              "RENDERING",
+              "IN_QA",
+              "APPROVED",
+              "PUBLISHED"
+            ]
+          },
+          "ownerName": {
+            "type": "string"
+          },
+          "sceneCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CandidateUserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "googleEmail": {
+            "type": "string"
+          }
+        }
+      },
+      "ReviewHistoryEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "actorName": {
+            "type": "string"
+          },
+          "actorRole": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "targetType": {
+            "type": "string"
+          },
+          "scriptVersionNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "clipId": {
+            "type": "string"
+          },
+          "compositionRevision": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "note": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "QaFinding": {
+        "type": "object",
+        "properties": {
+          "check": {
+            "type": "string",
+            "enum": [
+              "DURATION_BOUNDS",
+              "NARRATION_PACING",
+              "ON_SCREEN_TEXT_OVERFLOW",
+              "CONTRAST_READABILITY",
+              "SCENE_STRUCTURE",
+              "RENDER_FRESHNESS",
+              "CAPTION_SYNC"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "PASS",
+              "WARN",
+              "FAIL"
+            ]
+          },
+          "sceneId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "suggestion": {
+            "type": "string"
+          }
+        }
+      },
+      "QaReport": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "failCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "warnCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QaFinding"
+            }
+          }
+        }
+      },
+      "ScriptVersionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "versionNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "IN_REVIEW",
+              "APPROVED",
+              "CHANGE_REQUESTED"
+            ]
+          },
+          "reviewNote": {
+            "type": "string"
+          },
+          "isCurrent": {
+            "type": "boolean"
+          },
+          "createdById": {
+            "type": "string"
+          },
+          "createdByName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "VersionDiffResponse": {
+        "type": "object",
+        "properties": {
+          "left": {
+            "$ref": "#/components/schemas/ScriptVersionResponse"
+          },
+          "leftScenes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SceneResponse"
+            }
+          },
+          "right": {
+            "$ref": "#/components/schemas/ScriptVersionResponse"
+          },
+          "rightScenes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SceneResponse"
+            }
+          }
+        }
+      },
+      "LibraryFilters": {
+        "type": "object",
+        "properties": {
+          "subjects": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Math",
+                "Physics",
+                "Chemistry",
+                "Biology",
+                "ComputerScience"
+              ]
+            }
+          },
+          "gradeLevels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LibraryItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "enum": [
+              "Math",
+              "Physics",
+              "Chemistry",
+              "Biology",
+              "ComputerScience"
+            ]
+          },
+          "gradeLevel": {
+            "type": "string"
+          },
+          "totalDurationSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sceneCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ownerName": {
+            "type": "string"
+          },
+          "workspaceName": {
+            "type": "string"
+          },
+          "videoUrl": {
+            "type": "string"
+          },
+          "embedCode": {
+            "type": "string"
+          },
+          "youtubeUrl": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CurrentSession": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          },
+          "session": {
+            "$ref": "#/components/schemas/SessionResponse"
+          }
+        }
+      },
+      "AdminRenderJobSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "externalJobId": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "projectTitle": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "requestedByName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": "string"
+          },
+          "fps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "videoUrl": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "attemptCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AdminDashboardOverview": {
+        "type": "object",
+        "properties": {
+          "metrics": {
+            "$ref": "#/components/schemas/SystemMetrics"
+          },
+          "aiUsage": {
+            "$ref": "#/components/schemas/AiUsageStats"
+          },
+          "recentRenderJobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminRenderJobSummary"
+            }
+          },
+          "projectsBySubject": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        }
+      },
+      "AiUsageStats": {
+        "type": "object",
+        "properties": {
+          "totalProjects": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalScriptVersions": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalScenesGenerated": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "estimatedAiCalls": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "avgLatencyMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "estimatedTokensUsed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "estimatedCostUsd": {
+            "type": "number",
+            "format": "double"
+          },
+          "monthlyBudgetUsd": {
+            "type": "number",
+            "format": "double"
+          },
+          "modelName": {
+            "type": "string"
+          },
+          "ttsProvider": {
+            "type": "string"
+          }
+        }
+      },
+      "SystemMetrics": {
+        "type": "object",
+        "properties": {
+          "cpuUsage": {
+            "type": "number",
+            "format": "double"
+          },
+          "gpuUsage": {
+            "type": "number",
+            "format": "double"
+          },
+          "memoryUsage": {
+            "type": "number",
+            "format": "double"
+          },
+          "activeRenderJobs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "completedToday": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "storageUsedGb": {
+            "type": "number",
+            "format": "double"
+          },
+          "failedToday": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "successRate": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "UsageGroup": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date"
+          },
+          "model": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "requestCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tokensIn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tokensOut": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "unknownTokenRequests": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "failedRequests": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "estimatedCostUsd": {
+            "type": "number"
+          },
+          "knownEstimatedCostUsd": {
+            "type": "number"
+          },
+          "unknownCostRequests": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "UsagePage": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsageGroup"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

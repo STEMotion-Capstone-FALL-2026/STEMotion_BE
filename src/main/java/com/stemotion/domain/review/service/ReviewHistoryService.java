@@ -96,7 +96,7 @@ public class ReviewHistoryService {
                                        Map<String, ScriptVersion> versionsById, Map<String, Clip> clipsById,
                                        Map<String, Composition> compositionsById) {
         var actor = event.getChangedBy();
-        String role = roles.getOrDefault(actor.getId(), actor.getRole().name());
+        String role = roles.getOrDefault(actor.getId(), actor.getSystemRole().name());
         Integer versionNo = null;
         String clipId = null;
         Integer revision = null;

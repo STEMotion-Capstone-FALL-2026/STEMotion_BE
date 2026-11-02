@@ -1,5 +1,7 @@
 package com.stemotion.perf;
 
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.stemotion.core.enums.StemEnums.MemberStatus;
 import com.stemotion.core.enums.StemEnums.SceneType;
 import com.stemotion.core.enums.StemEnums.ScriptStatus;
@@ -62,6 +64,7 @@ class QueryShapeJpaTest {
     }
 
     @Autowired EntityManager em;
+    @Autowired com.stemotion.domain.auth.repository.UserRepository users;
     @Autowired ClipProjectRepository projects;
     @Autowired WorkspaceMemberRepository members;
     @Autowired ScriptVersionRepository versions;
@@ -80,12 +83,12 @@ class QueryShapeJpaTest {
         reviewer = persist(User.builder().fullName("Reviewer").email("reviewer@test.invalid").build());
         physics = persist(Workspace.builder().name("Physics").department("Physics").createdBy(writer).build());
         chemistry = persist(Workspace.builder().name("Chemistry").department("Chemistry").createdBy(writer).build());
-        persist(WorkspaceMember.builder().workspace(physics).user(writer).role(User.UserRole.WRITER)
+        persist(WorkspaceMember.builder().workspace(physics).user(writer).role(WorkspaceRole.WRITER)
             .status(MemberStatus.ACTIVE).isLeader(true).build());
-        persist(WorkspaceMember.builder().workspace(physics).user(reviewer).role(User.UserRole.REVIEWER)
+        persist(WorkspaceMember.builder().workspace(physics).user(reviewer).role(WorkspaceRole.REVIEWER)
             .status(MemberStatus.ACTIVE).build());
         // The writer left chemistry: their old project there must disappear from "mine".
-        persist(WorkspaceMember.builder().workspace(chemistry).user(writer).role(User.UserRole.WRITER)
+        persist(WorkspaceMember.builder().workspace(chemistry).user(writer).role(WorkspaceRole.WRITER)
             .status(MemberStatus.INACTIVE).build());
     }
 
@@ -142,9 +145,9 @@ class QueryShapeJpaTest {
             .extracting(ProjectSummaryRow::title).containsExactlyInAnyOrder("Ohm", "Acids");
 
         assertThat(projects.findReviewQueueSummaries(reviewer.getId(), false, ScriptStatus.IN_REVIEW,
-            MemberStatus.ACTIVE, User.UserRole.REVIEWER)).extracting(ProjectSummaryRow::id).containsExactly(inReview.getId());
+            MemberStatus.ACTIVE, WorkspaceRole.REVIEWER)).extracting(ProjectSummaryRow::id).containsExactly(inReview.getId());
         assertThat(projects.findReviewQueueSummaries(writer.getId(), false, ScriptStatus.IN_REVIEW,
-            MemberStatus.ACTIVE, User.UserRole.REVIEWER)).isEmpty();
+            MemberStatus.ACTIVE, WorkspaceRole.REVIEWER)).isEmpty();
 
         assertThat(statements(() -> projects.findSummariesByWorkspace(physics.getId()))).isEqualTo(1);
         for (int i = 0; i < 15; i++) project(physics, "Extra " + i, ScriptStatus.DRAFT, 2);
@@ -178,6 +181,21 @@ class QueryShapeJpaTest {
             .forEach(m -> m.getUser().getFullName()))).isEqualTo(1);
         assertThat(statements(() -> versions.findHistoryWithAuthor(ohm.getId())
             .forEach(v -> v.getCreatedBy().getFullName()))).isEqualTo(1);
+    }
+
+    @Test
+    void authenticationProjectionLoadsGoogleAuthorizationInOneStatement() {
+        var w = new com.stemotion.domain.auth.entity.GoogleWhitelist();
+        w.setEmail("query-fixture@gmail.com");w.setCreatedBy(writer.getId());w.setUpdatedBy(writer.getId());
+        persist(w);
+        var identity = new com.stemotion.domain.auth.entity.GoogleIdentity();
+        identity.setUser(writer);identity.setWhitelist(w);identity.setSubject("query-fixture-subject");
+        identity.setEmail(w.getEmail());identity.setLinkedAt(java.time.LocalDateTime.now());
+        persist(identity);
+        assertThat(statements(() -> {
+            var user = users.findForAuthentication(writer.getId()).orElseThrow();
+            assertThat(user.getGoogleIdentity().getWhitelist().isActive()).isTrue();
+        })).isEqualTo(1);
     }
 
     @Test
@@ -215,7 +233,7 @@ class QueryShapeJpaTest {
             .getContent()).hasSize(1);
         assertThat(projects.findSummariesByOwner(writer.getId(), false, MemberStatus.ACTIVE, page).getTotalElements()).isEqualTo(3);
         assertThat(projects.findReviewQueueSummaries(reviewer.getId(), false, ScriptStatus.IN_REVIEW, MemberStatus.ACTIVE,
-            User.UserRole.REVIEWER, page).getTotalElements()).isEqualTo(3);
+            WorkspaceRole.REVIEWER, page).getTotalElements()).isEqualTo(3);
         assertThat(versions.findHistoryWithAuthor(first.getId(), org.springframework.data.domain.PageRequest.of(0, 1))
             .getTotalElements()).isEqualTo(2);
         assertThat(jobs.findHistoryRows(first.getId(), page).getTotalElements()).isZero();

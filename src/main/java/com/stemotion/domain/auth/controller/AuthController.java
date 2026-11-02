@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final com.stemotion.domain.auth.service.GoogleAuthService googleAuth;
 
     @PostMapping("/register")
     @Operation(summary = "Disabled: accounts are provisioned by administrators")
@@ -35,38 +36,41 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Exchange email and password for a JWT")
+    @Operation(summary = "Exchange username and password for a JWT")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
     @GetMapping("/me")
     @Operation(summary = "Return the profile of the authenticated user")
-    public ResponseEntity<UserResponse> me(@AuthenticationPrincipal UserDetails principal) {
+    public ResponseEntity<com.stemotion.domain.auth.dto.AuthDtos.CurrentSession> me(@AuthenticationPrincipal UserDetails principal) {
         if (principal == null) {
             throw ApiException.unauthorized("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
         }
-        return ResponseEntity.ok(authService.getCurrentUser(principal.getUsername()));
+        return ResponseEntity.ok(authService.currentSession(principal.getUsername()));
     }
 
     /** Body: {"credential": "<Google ID token>"} from Google Identity Services. */
     @PostMapping("/google")
-    @Operation(summary = "Sign in with Google (accounts provisioned by an admin only)")
+    @Operation(summary = "Sign in with a verified Google identity in the active Gmail whitelist")
     public ResponseEntity<com.stemotion.domain.auth.dto.AuthDtos.AuthResponse> google(
-        @jakarta.validation.Valid @RequestBody com.stemotion.domain.auth.dto.AuthDtos.GoogleLoginRequest request
+        @jakarta.validation.Valid @RequestBody com.stemotion.domain.auth.dto.GoogleAuthDtos.Credential request
     ) {
-        return ResponseEntity.ok(authService.loginWithGoogle(request.credential()));
+        return ResponseEntity.ok(googleAuth.exchange(request, null));
     }
 
     @GetMapping("/google/enabled")
     @Operation(summary = "Whether Google sign-in is configured on this server")
     public ResponseEntity<java.util.Map<String, Boolean>> googleEnabled() {
-        return ResponseEntity.ok(java.util.Map.of("enabled", authService.isGoogleLoginEnabled()));
+        return ResponseEntity.ok(java.util.Map.of("enabled", googleAuth.enabled()));
     }
+
+    @PostMapping("/google/challenge")
+    public com.stemotion.domain.auth.dto.GoogleAuthDtos.Challenge challenge() { return googleAuth.loginChallenge(); }
 
     @PostMapping("/change-password")
     @Operation(summary = "Change password for the authenticated user")
-    public ResponseEntity<UserResponse> changePassword(
+    public ResponseEntity<AuthResponse> changePassword(
         @AuthenticationPrincipal UserDetails principal,
         @Valid @RequestBody com.stemotion.domain.auth.dto.AuthDtos.ChangePasswordRequest request
     ) {

@@ -1,5 +1,7 @@
 package com.stemotion.e2e;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.stemotion.StemotionApplication;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.repository.UserRepository;
@@ -32,16 +34,29 @@ import java.util.List;
  */
 public class E2eServer {
 
-    static final String ADMIN_EMAIL = env("E2E_ADMIN_EMAIL", "e2e-admin@example.invalid");
+    static final String ADMIN_USERNAME = env("E2E_ADMIN_USERNAME", "e2e-admin");
     static final String ADMIN_PASSWORD = env("E2E_ADMIN_PASSWORD", "E2e-fixture-only-123");
 
     public static void main(String[] args) {
         // DevTools would relaunch main with these arguments added a second time.
         System.setProperty("spring.devtools.restart.enabled", "false");
+        SpringApplication.from(StemotionApplication::main).with(Config.class).run(launchArguments(args));
+    }
+
+    static String[] launchArguments(String... args) {
         List<String> all = new ArrayList<>(List.of(
             "--server.port=" + env("E2E_API_PORT", "18080"),
+            "--server.address=127.0.0.1",
             "--spring.flyway.enabled=true",
             "--spring.jpa.hibernate.ddl-auto=validate",
+            "--spring.flyway.locations=classpath:db/migration,classpath:db/auth-v2-e2e",
+            "--app.auth-v2.enabled=true",
+            "--app.notification-email.enabled=true",
+            "--app.notification-email.provider=local",
+            "--app.notification-email.api-key=",
+            "--app.notification-email.public-url=http://localhost:3000",
+            "--app.auth-v2.rate-limit-attempts=500",
+            "--app.auth-v2.google-enabled=true",
             "--spring.datasource.url=unused-replaced-by-embedded-postgres",
             "--spring.datasource.username=postgres",
             "--spring.datasource.password=",
@@ -62,8 +77,14 @@ public class E2eServer {
             "--app.video.storyboard-enabled=false",
             "--logging.level.org.hibernate.SQL=WARN",
             "--logging.level.com.stemotion=INFO"));
+        // Spring joins repeated command-line option values with commas; later entries do
+        // not replace earlier ones. Remove overridden defaults before adding user arguments.
+        for (String arg : args) {
+            String option = arg.split("=", 2)[0];
+            all.removeIf(defaultArg -> defaultArg.split("=", 2)[0].equals(option));
+        }
         all.addAll(List.of(args));
-        SpringApplication.from(StemotionApplication::main).with(Config.class).run(all.toArray(String[]::new));
+        return all.toArray(String[]::new);
     }
 
     @TestConfiguration(proxyBeanMethods = false)
@@ -90,6 +111,14 @@ public class E2eServer {
             return new E2eFakes.FakeGemini(properties, mapper);
         }
 
+        /** Test classpath only. No fake-token branch exists in the production verifier. */
+        @Bean @Primary
+        @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+            name="e2e.google.fake", havingValue="true", matchIfMissing=true)
+        E2eGoogleVerifier e2eGoogleVerifier(IntegrationProperties properties) {
+            return new E2eGoogleVerifier(properties);
+        }
+
         @Bean
         @Primary
         E2eFakes.FakeRenderWorker e2eRenderWorker(IntegrationProperties properties, ObjectMapper mapper) {
@@ -98,14 +127,25 @@ public class E2eServer {
 
         /** The one account the tests start from; everything else is provisioned through the API. */
         @Bean
-        ApplicationRunner seedAdmin(UserRepository users, PasswordEncoder encoder) {
+        ApplicationRunner seedAdmin(UserRepository users, PasswordEncoder encoder, DataSource dataSource,
+            @org.springframework.beans.factory.annotation.Value("${e2e.restore-snapshot:}") String snapshot) {
             return args -> {
-                if (users.existsByEmailIgnoreCase(ADMIN_EMAIL)) return;
+                if (!snapshot.isBlank()) {
+                    // This test configuration always owns a NEW embedded DB; never the shared datasource.
+                    try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+                        String restored = java.nio.file.Files.readString(java.nio.file.Path.of(snapshot));
+                        statement.execute(restored);
+                        if (!restored.contains("\"system_role\"")) {
+                            statement.execute("UPDATE users SET system_role=CASE WHEN role::text='ADMIN' THEN 'ADMIN' ELSE 'USER' END,auth_version=auth_version+1");
+                        }
+                    }
+                }
+                if (users.existsByUsername(ADMIN_USERNAME)) return;
                 users.save(User.builder()
                     .fullName("E2E Admin")
-                    .email(ADMIN_EMAIL)
+                    .username(ADMIN_USERNAME)
                     .passwordHash(encoder.encode(ADMIN_PASSWORD))
-                    .role(User.UserRole.ADMIN)
+                    .systemRole(SystemRole.ADMIN)
                     .status(User.UserStatus.ACTIVE)
                     .mustChangePassword(false)
                     .build());

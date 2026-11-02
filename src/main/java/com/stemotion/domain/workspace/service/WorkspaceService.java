@@ -1,5 +1,9 @@
 package com.stemotion.domain.workspace.service;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.stemotion.core.enums.StemEnums.MemberStatus;
 import com.stemotion.core.exception.ApiException;
 import com.stemotion.domain.auth.entity.User;
@@ -74,7 +78,7 @@ public class WorkspaceService {
     }
 
     private record Counts(java.util.Map<String, Long> members, java.util.Map<String, Long> projects) {
-        WorkspaceResponse response(Workspace workspace, User.UserRole myRole, Boolean isLeader) {
+        WorkspaceResponse response(Workspace workspace, WorkspaceRole myRole, Boolean isLeader) {
             return new WorkspaceResponse(workspace.getId(), workspace.getName(), workspace.getDepartment(),
                 members.getOrDefault(workspace.getId(), 0L), projects.getOrDefault(workspace.getId(), 0L),
                 myRole, isLeader);
@@ -88,7 +92,7 @@ public class WorkspaceService {
     @Transactional(readOnly = true)
     public List<WorkspaceResponse> findVisible(String userId) {
         boolean admin = userRepository.findById(userId)
-            .map(user -> user.getRole() == User.UserRole.ADMIN).orElse(false);
+            .map(user -> user.getSystemRole() == SystemRole.ADMIN).orElse(false);
         if (!admin) return findMine(userId);
         var seats = memberRepository.findWithWorkspaceByUserId(userId).stream()
             .filter(member -> member.getStatus() == MemberStatus.ACTIVE)
@@ -116,7 +120,7 @@ public class WorkspaceService {
 
         List<AddMemberRequest> seats = new java.util.ArrayList<>();
         seats.add(new AddMemberRequest(request.leaderUserId(),
-            request.leaderRole() != null ? request.leaderRole() : User.UserRole.WRITER, true));
+            request.leaderRole() != null ? request.leaderRole() : WorkspaceRole.WRITER, true));
         if (request.members() != null) seats.addAll(request.members());
 
         // Everything is checked before the workspace row exists, and it is one transaction,
@@ -152,16 +156,16 @@ public class WorkspaceService {
     }
 
     /** Production roles a workspace must cover (master update plan M11). */
-    public static final java.util.Set<User.UserRole> PRODUCTION_ROLES =
-        java.util.EnumSet.of(User.UserRole.WRITER, User.UserRole.REVIEWER, User.UserRole.PRODUCER);
+    public static final java.util.Set<WorkspaceRole> PRODUCTION_ROLES =
+        java.util.EnumSet.of(WorkspaceRole.WRITER, WorkspaceRole.REVIEWER, WorkspaceRole.PRODUCER);
     public static final int MIN_MEMBERS = 3;
 
-    static void requireFullTeam(List<User.UserRole> roles) {
+    static void requireFullTeam(List<WorkspaceRole> roles) {
         if (roles.size() < MIN_MEMBERS) {
             throw ApiException.badRequest("A workspace needs at least " + MIN_MEMBERS
                 + " different members (WRITER, REVIEWER and PRODUCER); got " + roles.size());
         }
-        java.util.Set<User.UserRole> missing = java.util.EnumSet.copyOf(PRODUCTION_ROLES);
+        java.util.Set<WorkspaceRole> missing = java.util.EnumSet.copyOf(PRODUCTION_ROLES);
         missing.removeAll(roles);
         if (!missing.isEmpty()) {
             throw ApiException.badRequest("A workspace needs at least one WRITER, REVIEWER and PRODUCER; missing "
@@ -169,7 +173,7 @@ public class WorkspaceService {
         }
     }
 
-    private static User.UserRole productionRole(User.UserRole role) {
+    private static WorkspaceRole productionRole(WorkspaceRole role) {
         if (role == null) throw ApiException.badRequest("Every member needs a role");
         if (!PRODUCTION_ROLES.contains(role)) {
             throw ApiException.badRequest("A workspace role must be WRITER, REVIEWER or PRODUCER, not " + role);
@@ -187,7 +191,7 @@ public class WorkspaceService {
 
     private boolean isAdmin(String userId) {
         return userId != null && userRepository.findById(userId)
-            .map(user -> user.getRole() == User.UserRole.ADMIN).orElse(false);
+            .map(user -> user.getSystemRole() == SystemRole.ADMIN).orElse(false);
     }
 
     /**
@@ -195,10 +199,10 @@ public class WorkspaceService {
      * without one (master update plan D10). A workspace that already lacks a role, from before
      * this rule, can still be changed so it can be completed.
      */
-    private void requireCoverageKept(String workspaceId, WorkspaceMember changed, User.UserRole newRole,
+    private void requireCoverageKept(String workspaceId, WorkspaceMember changed, WorkspaceRole newRole,
                                      MemberStatus newStatus, boolean removed) {
-        java.util.Set<User.UserRole> before = java.util.EnumSet.noneOf(User.UserRole.class);
-        java.util.Set<User.UserRole> after = java.util.EnumSet.noneOf(User.UserRole.class);
+        java.util.Set<WorkspaceRole> before = java.util.EnumSet.noneOf(WorkspaceRole.class);
+        java.util.Set<WorkspaceRole> after = java.util.EnumSet.noneOf(WorkspaceRole.class);
         for (WorkspaceMember seat : memberRepository.findWithUserByWorkspaceId(workspaceId)) {
             if (seat.getStatus() == MemberStatus.ACTIVE) before.add(seat.getRole());
             boolean isChanged = seat.getId().equals(changed.getId());
@@ -236,7 +240,9 @@ public class WorkspaceService {
     @Transactional(readOnly = true)
     public List<MemberResponse> findMembers(String workspaceId) {
         getOrThrow(workspaceId);
-        return memberRepository.findWithUserByWorkspaceId(workspaceId)
+        var members = memberRepository.findWithUserByWorkspaceId(workspaceId);
+        userRepository.hydrateProfiles(members.stream().map(WorkspaceMember::getUser).toList());
+        return members
             .stream()
             .map(MemberResponse::from)
             .toList();
@@ -255,7 +261,7 @@ public class WorkspaceService {
     @Transactional
     public MemberResponse addMember(String workspaceId, AddMemberRequest request) {
         Workspace workspace = lockOrThrow(workspaceId);
-        User.UserRole memberRole = productionRole(request.role());
+        WorkspaceRole memberRole = productionRole(request.role());
         User user = activeUser(request.userId());
 
         if (memberRepository.existsByWorkspaceIdAndUserId(workspaceId, user.getId())) {
@@ -290,7 +296,7 @@ public class WorkspaceService {
             throw ApiException.forbidden("Only a system administrator can change a member's status or leader "
                 + "designation; a workspace leader assigns roles");
         }
-        User.UserRole newRole = request.role() == null ? member.getRole() : productionRole(request.role());
+        WorkspaceRole newRole = request.role() == null ? member.getRole() : productionRole(request.role());
 
         boolean isDemotingLeader = member.isLeader() && Boolean.FALSE.equals(request.leader());
         boolean isDeactivatingLeader = member.isLeader() && request.status() == MemberStatus.INACTIVE;

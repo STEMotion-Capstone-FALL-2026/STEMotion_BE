@@ -1,5 +1,7 @@
 package com.stemotion.domain.production.service;
 
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stemotion.core.enums.StemEnums.ScriptStatus;
 import com.stemotion.core.enums.StemEnums.VideoStatus;
@@ -66,7 +68,7 @@ class NarrationToolsServiceTest {
         assertThat(response.totalDurationSeconds()).isEqualTo(3);
         assertThat(response.scenes().get(0)).containsEntry("durationInFrames", 96).containsKey("captionWords");
         assertThat(response.captionSync().path("status").asText()).isEqualTo("ALIGNED");
-        verify(access).requireProjectRole("project", "producer", Set.of(User.UserRole.PRODUCER));
+        verify(access).requireProjectRole("project", "producer", Set.of(WorkspaceRole.PRODUCER));
         verify(compositions).applyMeasured(eq("project"), eq("version"), eq(2), eq(Map.of("s1", 96)), anyMap(), eq("producer"));
 
         assertThatThrownBy(() -> service.syncDurations("project", null, "producer"))
@@ -85,7 +87,7 @@ class NarrationToolsServiceTest {
         assertThat(response.target()).isEqualTo("SCRIPT");
         assertThat(response.totalDurationSeconds()).isEqualTo(4);
         assertThat(response.revision()).as("the new draft revision").isEqualTo(7);
-        verify(access).requireProjectRole("project", "writer", Set.of(User.UserRole.WRITER));
+        verify(access).requireProjectRole("project", "writer", Set.of(WorkspaceRole.WRITER));
     }
 
     @Test

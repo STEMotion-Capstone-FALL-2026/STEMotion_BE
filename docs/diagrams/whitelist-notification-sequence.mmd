@@ -1,0 +1,29 @@
+sequenceDiagram
+    actor Admin
+    participant API as Whitelist service
+    participant DB as PostgreSQL
+    participant Worker
+    participant Sender as Local capture or Brevo HTTP
+    Admin->>API: Add Gmail or restore grant
+    API->>DB: Begin transaction
+    API->>DB: Write permission and outbox event
+    API->>DB: Commit
+    API-->>Admin: Access granted, notification pending
+    Worker->>DB: Claim due event with SKIP LOCKED
+    DB-->>Worker: Event and claim token
+    Worker->>DB: Commit claim, check current grant
+    Worker->>Sender: Send outside DB transaction
+    alt Local capture
+        Sender-->>Worker: Preview reference
+        Worker->>DB: Record acceptance, UI reports PREVIEW
+    else Provider accepts
+        Sender-->>Worker: Message ID
+        Worker->>DB: Record ACCEPTED
+    else Transient failure
+        Sender-->>Worker: 429 or 5xx
+        Worker->>DB: Schedule bounded RETRY
+    else Outcome uncertain
+        Sender-->>Worker: Timeout or expired lease
+        Worker->>DB: Record UNKNOWN, require explicit resend
+    end
+    Note over DB,Sender: Revocation cancels waiting grants; already submitted mail cannot be recalled

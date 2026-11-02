@@ -1,5 +1,7 @@
 package com.stemotion.domain.auth.service;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.stemotion.core.exception.ApiException;
 import com.stemotion.domain.auth.dto.AuthDtos.RegisterRequest;
 import com.stemotion.domain.auth.entity.User;
@@ -12,8 +14,8 @@ import static org.assertj.core.api.Assertions.*;
 
 class RegistrationPolicyTest {
     @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.EnumSource(User.UserRole.class)
-    void publicSignupCannotProvisionAnyRoleOrTouchPersistence(User.UserRole role) {
+    @org.junit.jupiter.params.provider.EnumSource(SystemRole.class)
+    void publicSignupCannotProvisionAnyRoleOrTouchPersistence(SystemRole role) {
         var users = mock(UserRepository.class);
         var service = new AuthService(users, mock(PasswordEncoder.class), mock(JwtService.class), mock(com.stemotion.integration.client.GoogleTokenVerifier.class));
         assertThatThrownBy(() -> service.register(new RegisterRequest(

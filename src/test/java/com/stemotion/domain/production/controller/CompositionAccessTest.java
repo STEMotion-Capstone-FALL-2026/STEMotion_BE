@@ -21,6 +21,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = CompositionController.class, properties = "app.cors.allowed-origins=http://localhost:3000")
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class})
 class CompositionAccessTest {
+    @org.springframework.boot.test.mock.mockito.MockBean com.stemotion.domain.auth.repository.UserRepository userRepository;
+    @org.springframework.boot.test.mock.mockito.MockBean com.stemotion.core.security.AuthRateLimiter authRateLimiter;
     private static final String PATH = "/api/v1/scripts/project-id/composition";
     private static final String BODY = "{\"baseRevision\":0,\"scenes\":[{\"id\":\"s1\",\"type\":\"OUTRO\","
         + "\"title\":\"Kết\",\"durationInFrames\":90}]}";

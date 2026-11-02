@@ -1,0 +1,34 @@
+sequenceDiagram
+    actor U as User
+    participant FE as Login or Profile
+    participant BE as Auth API
+    participant G as Google Identity Services
+    participant DB as Database
+    alt Explicit local-account link
+        U->>FE: Open settings and confirm current password
+        FE->>BE: POST profile/google/link-challenge
+        BE->>DB: Check local credential, first-password-change and authVersion
+        BE-->>FE: LINK challenge bound to user ID
+    else Google login
+        FE->>BE: POST auth/google/challenge
+        BE-->>FE: LOGIN challenge, nonce and secret
+    end
+    FE->>G: Render Google button with nonce
+    U->>G: Select Google identity
+    G-->>FE: Signed ID token
+    FE->>BE: Token, challenge ID and secret
+    BE->>BE: Verify signature, claims and nonce
+    BE->>DB: Lock challenge then active Gmail whitelist
+    alt Outside whitelist
+        BE-->>FE: 403 ACCOUNT_NOT_IN_SYSTEM
+    else Active whitelist
+        BE->>DB: Check subject and owner; lock existing user if needed
+        alt LINK and identity owned by another user
+            BE-->>FE: 409 GOOGLE_IDENTITY_IN_USE; no merge
+        else Allowed
+            BE->>DB: Bind current local user or create Google-only user on LOGIN
+            BE->>DB: Consume challenge; increment authVersion on LINK
+            DB-->>BE: Commit together
+            BE-->>FE: AuthResponse for the same owner
+        end
+    end

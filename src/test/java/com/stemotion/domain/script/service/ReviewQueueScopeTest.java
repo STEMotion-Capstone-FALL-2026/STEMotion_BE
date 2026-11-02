@@ -1,5 +1,7 @@
 package com.stemotion.domain.script.service;
 
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.stemotion.core.enums.StemEnums.ScriptStatus;
 import com.stemotion.core.security.WorkspaceAccess;
 import com.stemotion.domain.auth.entity.User;
@@ -44,7 +46,7 @@ class ReviewQueueScopeTest {
     @DisplayName("the review queue asks for scripts in workspaces where the user is an active reviewer")
     void listsOnlyWorkspacesWhereTheUserReviews() {
         when(projects.findReviewQueueSummaries("teacher", false, ScriptStatus.IN_REVIEW,
-                com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE, User.UserRole.REVIEWER))
+                com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE, WorkspaceRole.REVIEWER))
             .thenReturn(List.of(row("physics-script")));
 
         assertThat(service.findReviewQueue("teacher")).extracting("id").containsExactly("physics-script");

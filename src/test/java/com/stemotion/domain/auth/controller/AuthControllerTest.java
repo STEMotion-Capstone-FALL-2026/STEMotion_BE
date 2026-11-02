@@ -18,7 +18,7 @@ import static org.mockito.Mockito.mock;
  */
 class AuthControllerTest {
 
-    private final AuthController controller = new AuthController(mock(AuthService.class));
+    private final AuthController controller = new AuthController(mock(AuthService.class), mock(com.stemotion.domain.auth.service.GoogleAuthService.class));
 
     @Test
     @DisplayName("a missing principal is rejected as 401, never a 500")

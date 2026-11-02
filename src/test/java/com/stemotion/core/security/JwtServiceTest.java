@@ -1,5 +1,7 @@
 package com.stemotion.core.security;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.stemotion.domain.auth.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,7 +18,7 @@ class JwtServiceTest {
         User user = User.builder()
             .fullName("Nguyen Van A")
             .email("writer@stemotion.vn")
-            .role(User.UserRole.WRITER)
+            .systemRole(SystemRole.USER)
             .build();
         user.setId("user-123");
         return user;

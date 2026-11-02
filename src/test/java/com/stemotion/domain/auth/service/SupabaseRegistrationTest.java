@@ -1,5 +1,7 @@
 package com.stemotion.domain.auth.service;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.stemotion.domain.auth.dto.AuthDtos.LoginRequest;
 import com.stemotion.domain.auth.dto.AuthDtos.RegisterRequest;
 import com.stemotion.domain.auth.entity.User;
@@ -18,7 +20,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Opt-in against the existing schema; each registration is rolled back. */
+/** Opt-in only against an approved isolated auth-v2 schema; fixture writes are rolled back. */
 @SpringBootTest(properties = {
     "app.cors.allowed-origins=http://localhost:3000",
     "app.integration.render.base-url=",
@@ -26,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
     "app.publish.embed-base-url="
 })
 @ActiveProfiles("cloud")
-@EnabledIfEnvironmentVariable(named = "STEMOTION_DB_SMOKE", matches = "true")
+@EnabledIfEnvironmentVariable(named = "STEMOTION_AUTH_V2_ISOLATED_SMOKE", matches = "true")
 @Transactional
 @org.springframework.security.test.context.support.WithMockUser(roles = "ADMIN")
 class SupabaseRegistrationTest {
@@ -34,26 +36,26 @@ class SupabaseRegistrationTest {
     @Autowired UserService provisioning;
     @Autowired UserRepository users;
     @Autowired EntityManager entityManager;
-    private String testEmail;
+    private String testUsername;
 
     @ParameterizedTest
-    @EnumSource(value = User.UserRole.class, names = "ADMIN", mode = EnumSource.Mode.EXCLUDE)
-    void registrationAndLoginPersistNativeEnumsAndUuid(User.UserRole role) {
-        String email = "deployment-smoke-" + UUID.randomUUID() + "@example.invalid";
-        testEmail = email;
+    @EnumSource(value = SystemRole.class, names = "ADMIN", mode = EnumSource.Mode.EXCLUDE)
+    void registrationAndLoginPersistNativeEnumsAndUuid(SystemRole role) {
+        String username = "deployment-smoke-" + UUID.randomUUID().toString().substring(0,12);
+        testUsername = username;
         String password = UUID.randomUUID().toString();
         var registration = provisioning.create(new RegisterRequest(
-            "Deployment smoke test", email, password, role));
+            "Deployment smoke test", username, password, role));
         entityManager.flush();
         entityManager.clear();
 
         var stored = users.findById(registration.id()).orElseThrow();
-        assertEquals(role, stored.getRole());
+        assertEquals(role, stored.getSystemRole());
         assertEquals(User.UserStatus.ACTIVE, stored.getStatus());
         assertEquals("Deployment smoke test", stored.getFullName());
         assertDoesNotThrow(() -> UUID.fromString(stored.getId()));
 
-        var login = authService.login(new LoginRequest(email, password));
+        var login = authService.login(new LoginRequest(username, password));
         assertEquals(stored.getId(), login.user().id());
         assertFalse(login.accessToken().isBlank());
         assertEquals(stored.getId(), authService.getCurrentUser(stored.getId()).id());
@@ -61,6 +63,6 @@ class SupabaseRegistrationTest {
 
     @AfterTransaction
     void noTestAccountRemains() {
-        assertFalse(users.existsByEmail(testEmail));
+        assertFalse(users.existsByUsername(testUsername));
     }
 }

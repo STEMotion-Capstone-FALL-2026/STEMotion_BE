@@ -20,9 +20,15 @@
 
     <properties>
         <java.version>17</java.version>
+        <stemotion.build-directory>${project.basedir}/target</stemotion.build-directory>
     </properties>
 
     <dependencies>
+        <!-- Boot manages the JOSE verifier and Nimbus dependency versions. -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
@@ -156,6 +162,8 @@
     </dependencyManagement>
 
     <build>
+        <!-- Optional isolated output prevents IDE incremental builds from replacing CLI test classes. -->
+        <directory>${stemotion.build-directory}</directory>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

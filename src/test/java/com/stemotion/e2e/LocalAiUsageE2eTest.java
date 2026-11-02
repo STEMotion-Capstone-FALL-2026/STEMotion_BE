@@ -1,5 +1,7 @@
 package com.stemotion.e2e;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.stemotion.domain.admin.service.AiUsageService;
 import com.stemotion.domain.ai.entity.AiRequest;
 import com.stemotion.domain.ai.repository.AiRequestRepository;
@@ -64,11 +66,11 @@ class LocalAiUsageE2eTest {
 
     @Test void separatesUsersAndAppliesUserFilter() {
         var first = users.saveAndFlush(com.stemotion.domain.auth.entity.User.builder().fullName("Fixture One")
-            .email(java.util.UUID.randomUUID()+"@example.invalid").passwordHash("not-a-real-credential")
-            .role(com.stemotion.domain.auth.entity.User.UserRole.WRITER).build());
+            .username("fixture_"+java.util.UUID.randomUUID().toString().substring(0,20)).passwordHash("not-a-real-credential")
+            .systemRole(SystemRole.USER).build());
         var second = users.saveAndFlush(com.stemotion.domain.auth.entity.User.builder().fullName("Fixture Two")
-            .email(java.util.UUID.randomUUID()+"@example.invalid").passwordHash("not-a-real-credential")
-            .role(com.stemotion.domain.auth.entity.User.UserRole.WRITER).build());
+            .username("fixture_"+java.util.UUID.randomUUID().toString().substring(0,20)).passwordHash("not-a-real-credential")
+            .systemRole(SystemRole.USER).build());
         for (var user:java.util.List.of(first,second)) {
             requests.saveAndFlush(AiRequest.builder().requester(user).requestType(AiRequest.RequestType.ANALYSIS)
                 .model("fixture-user-model").inputTokens(10).outputTokens(20).callStatus(AiRequest.CallStatus.SUCCEEDED).build());

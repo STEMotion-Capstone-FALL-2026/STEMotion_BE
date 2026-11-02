@@ -1,14 +1,14 @@
 package com.stemotion.domain.auth.service;
 
 import com.stemotion.core.exception.ApiException;
+import com.stemotion.core.security.AuthSession;
 import com.stemotion.core.security.JwtService;
-import com.stemotion.domain.auth.dto.AuthDtos.AuthResponse;
-import com.stemotion.domain.auth.dto.AuthDtos.LoginRequest;
-import com.stemotion.domain.auth.dto.AuthDtos.RegisterRequest;
-import com.stemotion.domain.auth.dto.AuthDtos.UserResponse;
+import com.stemotion.domain.auth.dto.AuthDtos.*;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.repository.UserRepository;
+import com.stemotion.integration.client.GoogleTokenVerifier;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,111 +16,73 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final com.stemotion.integration.client.GoogleTokenVerifier googleTokenVerifier;
+    private final GoogleTokenVerifier googleTokenVerifier;
+    @org.springframework.beans.factory.annotation.Autowired private com.stemotion.core.security.AuthRateLimiter rateLimiter;
+    private static final String DUMMY_HASH = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
+        .encode(java.util.UUID.randomUUID().toString());
 
-    @Transactional
+    @Transactional(readOnly = true)
     public AuthResponse register(RegisterRequest request) {
         throw ApiException.forbidden("Public registration is disabled. Contact an administrator for an account");
     }
-
-    /**
-     * Email addresses are case-insensitive, so "A@gmail.com" signs in to "a@gmail.com". An exact
-     * match wins; otherwise only a single case-insensitive match is used, never a guess between two.
-     */
-    private java.util.Optional<User> findAccount(String rawEmail) {
-        if (rawEmail == null) return java.util.Optional.empty();
-        String email = rawEmail.trim();
-        return userRepository.findByEmail(email).or(() -> {
-            var matches = userRepository.findAllByEmailIgnoreCase(email);
-            return matches.size() == 1 ? java.util.Optional.of(matches.get(0)) : java.util.Optional.empty();
-        });
-    }
-
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        User user = findAccount(request.email())
-            .orElseThrow(AuthService::invalidCredentials);
-
-        if (user.getPasswordHash() == null
-            || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw invalidCredentials();
-        }
-
-        if (user.getStatus() != User.UserStatus.ACTIVE) {
-            throw ApiException.badRequest("Account is " + user.getStatus().name().toLowerCase());
-        }
-
-        return buildAuthResponse(user);
+        String username = AccountNames.username(request.username());
+        if (rateLimiter != null) rateLimiter.check("username:" + username);
+        User user = userRepository.findByUsername(username).orElse(null);
+        boolean comparable = PasswordRules.canCompare(request.password());
+        boolean matches = passwordEncoder.matches(comparable ? request.password() : "invalid-long-password",
+            user == null || user.getPasswordHash() == null ? DUMMY_HASH : user.getPasswordHash());
+        if (user == null || user.getPasswordHash() == null || !matches || !comparable)
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Tài khoản hoặc mật khẩu không đúng.");
+        requireActive(user);
+        return response(user, "PASSWORD", null);
     }
-
-    /**
-     * Google Sign-In for accounts an admin has already provisioned: the verified
-     * Google email must match an existing account. Nobody can create an account
-     * by signing in with Google. The first sign-in links the Google id; later
-     * ones must come from the same Google account.
-     */
-    @Transactional
-    public AuthResponse loginWithGoogle(String idToken) {
-        var identity = googleTokenVerifier.verify(idToken);
-        User user = findAccount(identity.email())
-            .orElseThrow(() -> ApiException.forbidden(
-                "Email này chưa được quản trị viên cấp tài khoản STEMotion."));
-        if (user.getStatus() != User.UserStatus.ACTIVE) {
-            throw ApiException.badRequest("Account is " + user.getStatus().name().toLowerCase());
-        }
-        if (user.getGoogleId() == null) {
-            user.setGoogleId(identity.subject());
-            userRepository.save(user);
-        } else if (!user.getGoogleId().equals(identity.subject())) {
-            throw ApiException.forbidden("Tài khoản này đã liên kết với một tài khoản Google khác.");
-        }
-        return buildAuthResponse(user);
-    }
-
-    public boolean isGoogleLoginEnabled() {
-        return googleTokenVerifier.isConfigured();
-    }
-
+    /** The implicit email-linking entry is no longer a login mechanism. */
     @Transactional(readOnly = true)
-    public UserResponse getCurrentUser(String userId) {
-        return UserResponse.from(findUserOrThrow(userId));
+    public AuthResponse loginWithGoogle(String token) {
+        throw new ApiException(HttpStatus.BAD_REQUEST, "GOOGLE_CHALLENGE_REQUIRED", "Vui lòng bắt đầu lại đăng nhập Google.");
     }
-
-    @Transactional
-    public UserResponse changePassword(String userId, com.stemotion.domain.auth.dto.AuthDtos.ChangePasswordRequest request) {
+    public boolean isGoogleLoginEnabled() { return googleTokenVerifier.isConfigured(); }
+    @Transactional(readOnly = true)
+    public UserResponse getCurrentUser(String userId) { return UserResponse.from(findUserOrThrow(userId)); }
+    @Transactional(readOnly = true)
+    public CurrentSession currentSession(String userId) {
         User user = findUserOrThrow(userId);
-        if (user.getPasswordHash() == null
-            || !passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+        return new CurrentSession(UserResponse.from(user), session(user, AuthSession.current().method()));
+    }
+    @Transactional
+    public AuthResponse changePassword(String userId, ChangePasswordRequest request) {
+        PasswordRules.requireNew(request.newPassword());
+        User user = userRepository.lockById(userId).orElseThrow(() -> ApiException.notFound("User", userId));
+        if (user.getPasswordHash() == null || !PasswordRules.canCompare(request.currentPassword())
+                || !passwordEncoder.matches(request.currentPassword(), user.getPasswordHash()))
             throw ApiException.badRequest("Current password does not match");
-        }
-        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash()))
             throw ApiException.badRequest("New password must be different from the current password");
-        }
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         user.setMustChangePassword(false);
-        return UserResponse.from(userRepository.save(user));
+        user.setAuthVersion(user.getAuthVersion() + 1);
+        userRepository.saveAndFlush(user);
+        userRepository.hydrateProfiles(java.util.List.of(user));
+        return response(user, AuthSession.current().method(), AuthSession.current().googleIdentityId());
     }
-
     @Transactional(readOnly = true)
     public User findUserOrThrow(String userId) {
-        return userRepository.findById(userId)
-            .orElseThrow(() -> ApiException.notFound("User", userId));
+        return userRepository.findForAuthentication(userId).orElseThrow(() -> ApiException.notFound("User", userId));
     }
-
-    private AuthResponse buildAuthResponse(User user) {
-        return new AuthResponse(
-            jwtService.generateToken(user),
-            "Bearer",
-            jwtService.getExpirationMs(),
-            UserResponse.from(user)
-        );
+    public void requireActive(User user) {
+        if (user.getStatus() != User.UserStatus.ACTIVE)
+            throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_DISABLED", "Tài khoản đã bị khóa.");
     }
-
-    private static ApiException invalidCredentials() {
-        return ApiException.badRequest("Invalid email or password");
+    public SessionResponse session(User user, String method) {
+        return new SessionResponse(method, "PASSWORD".equals(method) && user.getPasswordHash() != null && user.isMustChangePassword());
+    }
+    public AuthResponse response(User user, String method, String googleIdentityId) {
+        return new AuthResponse(jwtService.generateToken(user, method, googleIdentityId), "Bearer",
+            jwtService.getExpirationMs(), UserResponse.from(user), session(user, method));
     }
 }

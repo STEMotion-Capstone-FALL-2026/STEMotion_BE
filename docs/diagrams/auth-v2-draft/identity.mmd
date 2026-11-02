@@ -1,0 +1,39 @@
+erDiagram
+    USERS ||--o| GOOGLE_IDENTITIES : owns
+    GOOGLE_LOGIN_WHITELIST ||--o| GOOGLE_IDENTITIES : permits
+    USERS ||--o{ GOOGLE_AUTH_CHALLENGES : link_target
+    USERS {
+        string id PK
+        string username UK "nullable for Google-only"
+        string email "legacy contact only"
+        string password_hash "nullable for Google-only"
+        boolean must_change_password
+        bigint auth_version
+        string role
+        string status
+    }
+    GOOGLE_LOGIN_WHITELIST {
+        uuid id PK
+        string email UK
+        string status "ACTIVE or REVOKED"
+        bigint version
+        string created_by
+        string updated_by
+    }
+    GOOGLE_IDENTITIES {
+        uuid id PK
+        string user_id FK,UK
+        uuid whitelist_id FK,UK
+        string google_subject UK
+        string email UK
+    }
+    GOOGLE_AUTH_CHALLENGES {
+        uuid id PK
+        string purpose "LOGIN or LINK"
+        string user_id "required for LINK"
+        bigint auth_version
+        string nonce_hash
+        string secret_hash
+        timestamp expires_at
+        timestamp consumed_at
+    }

@@ -1,5 +1,7 @@
 package com.stemotion.integration.client;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stemotion.core.exception.ApiException;
 import com.stemotion.core.security.JwtService;
@@ -64,7 +66,7 @@ class GoogleSignInTest {
     private final AuthService auth = new AuthService(users, mock(PasswordEncoder.class), mock(JwtService.class), verifier);
 
     private User account(String googleId, User.UserStatus status) {
-        User u = User.builder().fullName("Cô Lan").email("teacher@school.edu.vn").role(User.UserRole.WRITER)
+        User u = User.builder().fullName("Cô Lan").email("teacher@school.edu.vn").systemRole(SystemRole.USER)
             .status(status).googleId(googleId).build();
         u.setId("u1");
         return u;
@@ -75,21 +77,19 @@ class GoogleSignInTest {
     void unknownEmailIsRefused() {
         when(verifier.verify("t")).thenReturn(new GoogleTokenVerifier.GoogleIdentity("google-sub-1", "teacher@school.edu.vn"));
         when(users.findByEmail("teacher@school.edu.vn")).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> auth.loginWithGoogle("t")).isInstanceOf(ApiException.class).hasMessageContaining("chưa được");
+        assertThatThrownBy(() -> auth.loginWithGoogle("t")).isInstanceOf(ApiException.class).hasMessageContaining("bắt đầu lại");
         verify(users, never()).save(any());
     }
 
     @Test
-    @DisplayName("the first Google sign-in links the account; a different Google account is refused later")
-    void linksThenPinsTheGoogleAccount() {
+    @DisplayName("the legacy entry cannot silently link an existing account by email")
+    void legacyEntryNeverLinksByEmail() {
         User user = account(null, User.UserStatus.ACTIVE);
         when(users.findByEmail("teacher@school.edu.vn")).thenReturn(Optional.of(user));
         when(verifier.verify("t")).thenReturn(new GoogleTokenVerifier.GoogleIdentity("google-sub-1", "teacher@school.edu.vn"));
-        auth.loginWithGoogle("t");
-        assertThat(user.getGoogleId()).isEqualTo("google-sub-1");
-
-        when(verifier.verify("other")).thenReturn(new GoogleTokenVerifier.GoogleIdentity("google-sub-2", "teacher@school.edu.vn"));
-        assertThatThrownBy(() -> auth.loginWithGoogle("other")).isInstanceOf(ApiException.class).hasMessageContaining("khác");
+        assertThatThrownBy(() -> auth.loginWithGoogle("t")).isInstanceOf(ApiException.class);
+        assertThat(user.getGoogleId()).isNull();
+        verify(users, never()).save(any());
     }
 
     @Test

@@ -49,7 +49,7 @@ public class WorkspaceMember extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    private User.UserRole role;
+    private WorkspaceRole role;
 
     @Column(name = "is_leader", nullable = false)
     @Builder.Default

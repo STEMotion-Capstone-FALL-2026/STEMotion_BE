@@ -1,5 +1,7 @@
 package com.stemotion.domain.auth.service;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.stemotion.domain.auth.dto.AuthDtos.RegisterRequest;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.auth.repository.UserRepository;
@@ -19,15 +21,15 @@ class UserProvisioningTest {
             assertThat(encoder.matches("test-password-only", user.getPasswordHash())).isTrue();
             user.setId("new-id"); return user;
         });
-        var created = service.create(new RegisterRequest("Teacher", "teacher@example.invalid", "test-password-only", User.UserRole.ADMIN));
-        assertThat(created.role()).isEqualTo(User.UserRole.ADMIN);
+        var created = service.create(new RegisterRequest("Teacher", "teacher", "test-password-only", SystemRole.ADMIN));
+        assertThat(created.systemRole()).isEqualTo(SystemRole.ADMIN);
         verify(repository, never()).deleteById(any());
     }
     @Test void duplicateEmailDoesNotOverwriteExistingAccount() {
         var repository = mock(UserRepository.class);
-        when(repository.existsByEmailIgnoreCase("existing@example.invalid")).thenReturn(true);
+        when(repository.existsByUsername("existing")).thenReturn(true);
         var service = new UserService(repository, new BCryptPasswordEncoder());
-        assertThatThrownBy(() -> service.create(new RegisterRequest("Teacher", "existing@example.invalid", "test-password-only", User.UserRole.WRITER)))
+        assertThatThrownBy(() -> service.create(new RegisterRequest("Teacher", "existing", "test-password-only", SystemRole.USER)))
             .isInstanceOf(com.stemotion.core.exception.ApiException.class);
         verify(repository, never()).save(any());
     }

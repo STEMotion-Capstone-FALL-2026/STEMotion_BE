@@ -1,5 +1,7 @@
 package com.stemotion.domain.ai.service;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.stemotion.core.exception.ApiException;
 import com.stemotion.domain.ai.entity.AiRequest;
 import com.stemotion.domain.ai.repository.AiRequestRepository;
@@ -60,7 +62,7 @@ public class AiRequestLogService {
         if(decision==null || decision==AiRequest.Decision.PENDING) throw ApiException.badRequest("Choose ACCEPTED or IGNORED");
         var request=requests.findForDecision(id).orElseThrow(()->ApiException.notFound("AiRequest",id));
         var actor=users.findById(actorId).orElseThrow(()->ApiException.unauthorized("Unknown AI requester"));
-        if(actor.getRole()!=User.UserRole.ADMIN && (request.getRequester()==null || !actorId.equals(request.getRequester().getId())))
+        if(actor.getSystemRole()!=SystemRole.ADMIN && (request.getRequester()==null || !actorId.equals(request.getRequester().getId())))
             throw ApiException.forbidden("Only the requester or admin can decide this suggestion");
         if(request.getCallStatus()!=AiRequest.CallStatus.SUCCEEDED) throw ApiException.conflict("Only successful suggestions can be decided");
         if(request.getDecision()!=AiRequest.Decision.PENDING && request.getDecision()!=decision)

@@ -1,5 +1,9 @@
 package com.stemotion.core.security;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stemotion.core.enums.StemEnums.MemberStatus;
 import com.stemotion.core.exception.ApiException;
@@ -53,20 +57,20 @@ class ProjectAndNoteGuardsTest {
         return w;
     }
 
-    private static User user(String id, User.UserRole role) {
-        User u = User.builder().fullName(id).email(id + "@x").role(role).build();
+    private static User user(String id, Enum<?> role) {
+        User u = User.builder().fullName(id).email(id + "@x").systemRole("ADMIN".equals(role.name()) ? SystemRole.ADMIN : SystemRole.USER).build();
         u.setId(id);
         return u;
     }
 
     private ClipProject project() {
-        ClipProject p = ClipProject.builder().title("Ôm").workspace(physics).owner(user("owner", User.UserRole.WRITER)).build();
+        ClipProject p = ClipProject.builder().title("Ôm").workspace(physics).owner(user("owner", WorkspaceRole.WRITER)).build();
         p.setId("project");
         return p;
     }
 
-    private void seat(String userId, User.UserRole role, boolean leader) {
-        when(users.findById(userId)).thenReturn(Optional.of(user(userId, User.UserRole.WRITER)));
+    private void seat(String userId, WorkspaceRole role, boolean leader) {
+        when(users.findById(userId)).thenReturn(Optional.of(user(userId, WorkspaceRole.WRITER)));
         when(members.findMembershipsByUserId(userId)).thenReturn(List.of(
             new Membership(physics.getId(), role, MemberStatus.ACTIVE, leader)));
     }
@@ -75,10 +79,10 @@ class ProjectAndNoteGuardsTest {
     @DisplayName("only the owner, the workspace leader or an admin archives a project")
     void archiveIsKeptToOwnerLeaderAndAdmin() {
         when(projects.findRefById("project")).thenReturn(Optional.of(new ProjectRef("project", physics.getId(), "owner")));
-        seat("owner", User.UserRole.WRITER, false);
-        seat("leader", User.UserRole.REVIEWER, true);
-        seat("writer", User.UserRole.WRITER, false);
-        when(users.findById("admin")).thenReturn(Optional.of(user("admin", User.UserRole.ADMIN)));
+        seat("owner", WorkspaceRole.WRITER, false);
+        seat("leader", WorkspaceRole.REVIEWER, true);
+        seat("writer", WorkspaceRole.WRITER, false);
+        when(users.findById("admin")).thenReturn(Optional.of(user("admin", SystemRole.ADMIN)));
 
         assertThat(access.canArchiveProject("project", "owner")).isTrue();
         assertThat(access.canArchiveProject("project", "leader")).isTrue();
@@ -91,8 +95,8 @@ class ProjectAndNoteGuardsTest {
     void noteRolesFollowTheProject() {
         when(projects.findRefById("project")).thenReturn(Optional.of(new ProjectRef("project", physics.getId(), "owner")));
         when(comments.findProjectIdById("note")).thenReturn(Optional.of("project"));
-        seat("producer", User.UserRole.PRODUCER, false);
-        seat("writer", User.UserRole.WRITER, false);
+        seat("producer", WorkspaceRole.PRODUCER, false);
+        seat("writer", WorkspaceRole.WRITER, false);
 
         assertThat(access.hasCommentRole("note", "producer", "PRODUCER", "REVIEWER")).isTrue();
         assertThat(access.hasCommentRole("note", "writer", "PRODUCER", "REVIEWER")).isFalse();
@@ -105,11 +109,11 @@ class ProjectAndNoteGuardsTest {
     void notesAreDeletedByTheirAuthorOnly() {
         AuthService auth = mock(AuthService.class);
         FeedbackService service = new FeedbackService(comments, null, projects, null, auth, null, null, null, null);
-        FeedbackComment note = FeedbackComment.builder().project(project).author(user("reviewer", User.UserRole.WRITER)).build();
+        FeedbackComment note = FeedbackComment.builder().project(project).author(user("reviewer", WorkspaceRole.WRITER)).build();
         when(comments.findById("note")).thenReturn(Optional.of(note));
-        when(auth.findUserOrThrow("producer")).thenReturn(user("producer", User.UserRole.WRITER));
-        when(auth.findUserOrThrow("reviewer")).thenReturn(user("reviewer", User.UserRole.WRITER));
-        when(auth.findUserOrThrow("admin")).thenReturn(user("admin", User.UserRole.ADMIN));
+        when(auth.findUserOrThrow("producer")).thenReturn(user("producer", WorkspaceRole.WRITER));
+        when(auth.findUserOrThrow("reviewer")).thenReturn(user("reviewer", WorkspaceRole.WRITER));
+        when(auth.findUserOrThrow("admin")).thenReturn(user("admin", SystemRole.ADMIN));
 
         assertThatThrownBy(() -> service.delete("note", "producer")).isInstanceOf(ApiException.class)
             .hasMessageContaining("author");

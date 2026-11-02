@@ -1,5 +1,9 @@
 package com.stemotion.domain.review.service;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.stemotion.domain.project.entity.ProjectStatus;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.production.entity.Clip;
@@ -45,10 +49,10 @@ class ReviewHistoryServiceTest {
         project.setId("project");
         when(scripts.getOrThrow("project")).thenReturn(project);
 
-        User reviewer = User.builder().fullName("Cô Lan").role(User.UserRole.WRITER).build();
+        User reviewer = User.builder().fullName("Cô Lan").systemRole(SystemRole.USER).build();
         reviewer.setId("reviewer");
         when(members.findWithUserByWorkspaceId("ws"))
-            .thenReturn(List.of(WorkspaceMember.builder().user(reviewer).role(User.UserRole.REVIEWER).build()));
+            .thenReturn(List.of(WorkspaceMember.builder().user(reviewer).role(WorkspaceRole.REVIEWER).build()));
 
         ScriptVersion v1 = new ScriptVersion(); v1.setId("v1"); v1.setVersionNo(1);
         ScriptVersion v2 = new ScriptVersion(); v2.setId("v2"); v2.setVersionNo(2);
