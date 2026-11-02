@@ -11,6 +11,7 @@
 | 29/10/2026 | A | Nguyễn Việt Hoàng | First version of Report 3: overall description, actors and use cases, functional requirements per module, screen authorization, non-functional requirements, business rules and messages, aligned with Report 1 (FE-01 to FE-17) and the implemented system. |
 | 29/10/2026 | M | Nguyễn Việt Hoàng | Removed Google / OAuth sign-in: accounts are provisioned by an Admin and users sign in with email and password (scope, UC-01, UC-24, FR-02 to FR-05, NFR-08, system context diagram, MSG17, MSG18). |
 | 01/11/2026 | M | Nguyễn Việt Hoàng | Replaced Figure 1 with the team's use case diagram; use case list renumbered UC-01 to UC-47 in the order of the diagram, with related FRs; added FR-48 to FR-55 and amended FR-39 (an Admin may publish) and FR-43 (storage used) so that every drawn use case maps to a requirement; section IV.3 headings updated. |
+| 02/11/2026 | M | Nguyễn Việt Hoàng | Aligned with the unchanged registration form of 17/08/2026 (BM03: no changes): Google OAuth 2.0 sign-in restored for Admin-provisioned accounts (scope, FR-02, NFR-08, external interfaces); YouTube publishing (FE-13, FR-40) stated as committed scope. |
 
 *A - Added, M - Modified, D - Deleted*
 
@@ -40,9 +41,9 @@ The web app talks only to the core API; the core API drives the AI service and t
 
 In scope are the 17 major features FE-01 to FE-17 of Report 1, extended by the mentor requirements of 26/10/2026 (workspace staffing, Leader permissions, project approval, edit locking, contribution). Limitations LI-01 to LI-10 of Report 1 still apply, with three changes:
 
-- **YouTube publishing (FE-13)** is specified but the API returns *503 PUBLISH\_TARGET\_UNAVAILABLE* until OAuth is configured; publishing to the internal library and an LMS embed code works.
+- **YouTube publishing (FE-13)** is registered scope and committed for Defense 1.1; until the channel connection is built the API returns *503 PUBLISH\_TARGET\_UNAVAILABLE*; publishing to the internal library and an LMS embed code works.
 - **LMS embed** exists as a publish target (embed code only); LI-08 still excludes LMS integration beyond that code.
-- **Login (FE-01)** uses Admin-provisioned accounts with email and password only. Google / OAuth sign-in from the registered proposal is not used and there is no self-registration.
+- **Login (FE-01)** uses Admin-provisioned accounts. Users sign in with email and password, or with Google (OAuth 2.0) when the verified Google email matches an account an Admin already created, as registered; there is no self-registration.
 
 ### 4. User Classes
 
@@ -231,7 +232,7 @@ Each requirement is testable; *Planned* marks requirements from the mentor meeti
 #### 3.1 Authentication and Accounts (UC-01 to UC-03, UC-44)
 
 - **FR-01** The system shall authenticate users by email (case-insensitive) and password and issue a JWT.
-- **FR-02** The system shall not offer public self-registration or third-party (Google / OAuth) sign-in; every account is created by an Admin.
+- **FR-02** The system shall not offer public self-registration; every account is created by an Admin. Google sign-in (OAuth 2.0) shall succeed only when the verified Google email matches an existing active account; otherwise it is refused (403).
 - **FR-03** An Admin shall create an account with full name, email (unique, case-insensitive), initial password and system role, and hand the credentials to the user.
 - **FR-04** An Admin-provisioned account shall be forced to change its password at first login.
 - **FR-05** An Admin shall change an account's role, activate or deactivate it, or delete it; inactive accounts cannot sign in.
@@ -326,7 +327,7 @@ Each requirement is testable; *Planned* marks requirements from the mentor meeti
 | REST API | JSON over HTTPS under `/api/v1`, OpenAPI documented; one error envelope `{status, code, message, timestamp, details?}`; list endpoints accept optional `page`/`size` (default 20, max 100) and return `X-Total-Count`, `X-Total-Pages`, `X-Page`, `X-Size`. |
 | Render worker | HTTP API secured by a shared service key; progress by callback to the core API. |
 | AI service | HTTP API secured by a shared service key; structured JSON validated against schemas. |
-| Third parties | LLM providers (OpenAI, Gemini), TTS (FPT.AI, Google Cloud), S3-compatible storage; YouTube Data API *Planned*. |
+| Third parties | LLM providers (OpenAI, Gemini), TTS (FPT.AI, Google Cloud), Google Identity Services (sign-in), S3-compatible storage; YouTube Data API *Planned*. |
 
 ### 2. Quality Attributes
 
@@ -339,7 +340,7 @@ Each requirement is testable; *Planned* marks requirements from the mentor meeti
 | NFR-05 | Reliability | Failed render and AI jobs retry up to 3 times before alerting; render output is idempotent per composition revision. | Render retry tests |
 | NFR-06 | Reliability | Concurrent edits never overwrite each other silently: draft and composition saves carry a revision and stale writes get 409; membership changes are serialised by a row lock. | Concurrency tests on PostgreSQL |
 | NFR-07 | Reliability | Every write is atomic: a failed request leaves no partial data. | Transaction tests |
-| NFR-08 | Security | Passwords hashed with BCrypt; sessions by JWT (24 h); accounts only created by an Admin, no self-registration or third-party login. | Code review |
+| NFR-08 | Security | Passwords hashed with BCrypt; sessions by JWT (24 h); Google OAuth 2.0 sign-in only for accounts an Admin created; no self-registration. | Code review |
 | NFR-09 | Security | Role-based authorization on every endpoint, checked on the server; hidden buttons are never the only control. | Negative authorization tests per endpoint |
 | NFR-10 | Security | Secrets (DB, JWT, AI, TTS, service keys) live in environment configuration, never in source, logs or API responses; leaked keys are rotated. | Secret scanning |
 | NFR-11 | Security | CORS restricted to the configured front-end origins. | Configuration review |
