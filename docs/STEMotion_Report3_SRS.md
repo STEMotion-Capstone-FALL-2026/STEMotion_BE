@@ -1,3 +1,5 @@
+> **Superseded (02/11/2026).** The official Report 3 is `docs/Report/STEMotion_Report3_Software Requirement Specification.docx` (team version, original UC numbering UC-01 to UC-34 with FR-01 to FR-55). This Markdown copy keeps the draft that was the input of the 01/11/2026 self-review (BM02) and numbers use cases differently (UC-01 to UC-47).
+
 # STEMotion – Report 3: Software Requirement Specification
 
 29/10/2026 · Nguyễn Việt Hoàng
