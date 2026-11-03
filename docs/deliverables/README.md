@@ -19,8 +19,9 @@ The latest version of every document handed in for the reviews. Older drafts liv
 | `SWP490_FA26SE054_R2_BM01_Design_Brief.docx` | BM01 Design Brief with Appendix A (Defense 1.1 targets) |
 | `SWP490_FA26SE054_R2_BM02_Self_Review_Report.docx` | BM02 SRS/SDD self-review with the team response to each finding |
 | `SELF_REVIEW_RAW_2026-11-01.md` | Raw AI output of the self-review, kept unedited |
-| `SWP490_FA26SE054_R2_BM03_Record_of_Changes.docx` | BM03 Record of Changes: no change to the registration form |
-| `SWP490_FA26SE054_R2_Registration.docx` | Registration form of 17/08/2026, the final version |
-| `SWP490_FA26SE054_R2_BM04_Review2_Commitment_DRAFT.docx` | BM04 Commitment, draft prepared before Review 2; finalised with the reviewers |
+| `SWP490_FA26SE054_R2_BM03_Record_of_Changes.docx` | BM03 Record of Changes: change 1 (STEM curriculum framework) requested at Review 2 |
+| `SWP490_FA26SE054_R2_Registration_v2.docx` | Registration form version 2 (03/11/2026), the final version: version 1 plus change 1 |
+| `SWP490_FA26SE054_R2_Registration_v1.docx` | Registration form version 1 (17/08/2026) |
+| `SWP490_FA26SE054_R2_BM04_Review2_Commitment.docx` | BM04 Commitment filled after Review 2 (03/11/2026); signatures and conclusion to complete |
 
 Submit each file as PDF named `SWP490_FA26SE054_R2_<name>.pdf` (Review 2 guide).
