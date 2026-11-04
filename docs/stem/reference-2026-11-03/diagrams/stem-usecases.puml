@@ -1,0 +1,71 @@
+@startuml
+title STEMotion proposed STEM use cases
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Authorized User" as User
+actor Writer
+actor "Subject Reviewer" as Reviewer
+actor Producer
+actor Admin
+Writer --|> User
+Reviewer --|> User
+Producer --|> User
+Admin --|> User
+
+rectangle "STEMotion" {
+  usecase "Configure workspace\nSTEM policy scope" as Policy
+  usecase "Create clip project and\nwrite STEM brief" as Brief
+  usecase "Select grade, subjects\nand curriculum outcomes" as Outcomes
+  usecase "Link S T E M evidence\nto scenes and learning tasks" as Evidence
+  usecase "Request grounded\nAI assistance" as AI
+  usecase "Accept or ignore\nAI suggestions" as Accept
+  usecase "Submit script" as Submit
+  usecase "Validate STEM structure\nand source integrity" as Validate
+  usecase "Review STEM script\nagainst rubric" as Review
+  usecase "Inspect STEM evidence\nand curriculum sources" as Inspect
+  usecase "Approve script" as Approve
+  usecase "Request script changes" as Return
+  usecase "Edit and preview\ncomposition" as Composition
+  usecase "Check semantic\nreview freshness" as Fresh
+  usecase "Render frozen clip\nand STEM snapshot" as Render
+  usecase "Review clip against\nlearning objectives" as ClipReview
+  usecase "Publish STEM clip\nand learning card" as Publish
+  usecase "Verify current media QA\nand STEM decisions" as Gate
+  usecase "Browse learning resources\nby grade, subject and outcome" as Library
+  usecase "Complete legacy\nSTEM mapping" as Legacy
+}
+
+Admin -- Policy
+Writer -- Brief
+Writer -- Evidence
+Writer -- Submit
+Writer -- Legacy
+Reviewer -- Review
+Reviewer -- ClipReview
+Producer -- Composition
+Producer -- Render
+Producer -- Publish
+User -- Library
+
+Brief ..> Outcomes : <<include>>
+AI ..> Brief : <<extend>>
+Accept ..> AI : <<extend>>
+Submit ..> Validate : <<include>>
+Review ..> Inspect : <<include>>
+Approve ..> Review : <<extend>>
+Return ..> Review : <<extend>>
+Composition ..> Fresh : <<include>>
+Render ..> Fresh : <<include>>
+ClipReview ..> Fresh : <<include>>
+Publish ..> Gate : <<include>>
+
+note bottom of Brief
+  Draft can be incomplete.
+  Strict STEM gate applies at submission.
+end note
+note bottom of Render
+  Existing Remotion, TTS and queue are retained.
+  AI and worker never approve pedagogy.
+end note
+@enduml
