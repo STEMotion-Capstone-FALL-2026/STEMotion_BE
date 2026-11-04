@@ -66,3 +66,7 @@ logs/
 # Local Whisper weight mount; provision separately, never commit model binaries.
 /models/
 /deploy/hetzner/releases/
+
+# Isolated CLI and IDE build output
+.build-codex/
+/${stemotion.build-directory}/

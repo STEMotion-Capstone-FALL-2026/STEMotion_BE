@@ -1,5 +1,7 @@
 package com.stemotion.domain.production.service;
 
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stemotion.core.enums.StemEnums.ScriptStatus;
@@ -73,7 +75,7 @@ public class NarrationToolsService {
         int measuredRevision;
         List<Map<String, Object>> scenes;
         if (production) {
-            workspaceAccess.requireProjectRole(projectId, userId, Set.of(User.UserRole.PRODUCER));
+            workspaceAccess.requireProjectRole(projectId, userId, Set.of(WorkspaceRole.PRODUCER));
             if (baseRevision == null) {
                 throw ApiException.badRequest("baseRevision is required to sync a production composition");
             }
@@ -83,7 +85,7 @@ public class NarrationToolsService {
             measuredRevision = input.revision() == null ? 0 : input.revision();
             scenes = input.scenes();
         } else {
-            workspaceAccess.requireProjectRole(projectId, userId, Set.of(User.UserRole.WRITER));
+            workspaceAccess.requireProjectRole(projectId, userId, Set.of(WorkspaceRole.WRITER));
             if (project.getScriptStatus() == ScriptStatus.IN_REVIEW) {
                 throw ApiException.badRequest("The script is in review; sync durations on the draft or after approval");
             }

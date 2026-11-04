@@ -26,11 +26,17 @@ public class JwtService {
     }
 
     public String generateToken(User user) {
+        return generateToken(user, "PASSWORD", null);
+    }
+
+    public String generateToken(User user, String method, String googleIdentityId) {
         Date now = new Date();
         return Jwts.builder()
             .subject(user.getId())
-            .claim("email", user.getEmail())
-            .claim("role", user.getRole().name())
+            .claim("authMethod", method)
+            .claim("authVersion", user.getAuthVersion())
+            .claim("googleIdentityId", googleIdentityId)
+            .claim("systemRole", user.getSystemRole().name())
             .issuedAt(now)
             .expiration(new Date(now.getTime() + expirationMs))
             .signWith(signingKey)
@@ -39,6 +45,17 @@ public class JwtService {
 
     public String extractUserId(String token) {
         return parseClaims(token).getSubject();
+    }
+
+    public AuthSession session(String token, User user) {
+        Claims claims = parseClaims(token);
+        String method = claims.get("authMethod", String.class);
+        Number version = claims.get("authVersion", Number.class);
+        if ((!"PASSWORD".equals(method) && !"GOOGLE".equals(method)) || version == null
+                || version.longValue() != user.getAuthVersion()
+                || ("PASSWORD".equals(method) && user.getPasswordHash() == null))
+            throw new IllegalArgumentException("Expired authentication contract or credential");
+        return new AuthSession(method, claims.get("googleIdentityId", String.class));
     }
 
     public boolean isValid(String token) {

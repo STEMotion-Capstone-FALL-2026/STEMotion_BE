@@ -1,5 +1,9 @@
 package com.stemotion.core.security;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.stemotion.core.enums.StemEnums.MemberStatus;
 import com.stemotion.core.exception.ApiException;
 import com.stemotion.domain.auth.entity.User;
@@ -25,13 +29,13 @@ class WorkspaceAccessTest {
     final RenderJobRepository jobs = mock(RenderJobRepository.class);
     final WorkspaceAccess access = new WorkspaceAccess(users, members, projects, jobs, mock(com.stemotion.domain.review.repository.FeedbackCommentRepository.class));
 
-    void seat(User.UserRole role, MemberStatus status, boolean isLeader) {
+    void seat(WorkspaceRole role, MemberStatus status, boolean isLeader) {
         when(members.findMembershipsByUserId("writer")).thenReturn(List.of(new Membership("one", role, status, isLeader)));
     }
 
     @Test
     void membersCannotReadAnotherWorkspace() {
-        seat(User.UserRole.WRITER, MemberStatus.ACTIVE, false);
+        seat(WorkspaceRole.WRITER, MemberStatus.ACTIVE, false);
         assertThat(access.canRead("one", "writer")).isTrue();
         assertThat(access.canRead("two", "writer")).isFalse();
         assertThatThrownBy(() -> access.requireWorkspace("two", "writer", false)).isInstanceOf(ApiException.class);
@@ -39,31 +43,31 @@ class WorkspaceAccessTest {
 
     @Test
     void inactiveMemberIsNotActiveAccess() {
-        seat(User.UserRole.WRITER, MemberStatus.INACTIVE, false);
+        seat(WorkspaceRole.WRITER, MemberStatus.INACTIVE, false);
         assertThat(access.canRead("one", "writer")).isFalse();
     }
 
     @Test
     void workspaceLeaderCanManageWithoutGlobalAdminRole() {
-        seat(User.UserRole.WRITER, MemberStatus.ACTIVE, true);
+        seat(WorkspaceRole.WRITER, MemberStatus.ACTIVE, true);
         assertThatCode(() -> access.requireWorkspace("one", "writer", true)).doesNotThrowAnyException();
     }
 
     @Test
     void ordinaryMemberCannotManageSeats() {
-        seat(User.UserRole.WRITER, MemberStatus.ACTIVE, false);
+        seat(WorkspaceRole.WRITER, MemberStatus.ACTIVE, false);
         assertThatThrownBy(() -> access.requireWorkspace("one", "writer", true)).isInstanceOf(ApiException.class);
     }
 
     @Test
     void globalAdminCanAccessWorkspace() {
-        when(users.findById("admin")).thenReturn(Optional.of(User.builder().role(User.UserRole.ADMIN).build()));
+        when(users.findById("admin")).thenReturn(Optional.of(User.builder().systemRole(SystemRole.ADMIN).build()));
         assertThatCode(() -> access.requireWorkspace("one", "admin", true)).doesNotThrowAnyException();
     }
 
     @Test
     void anyWorkspaceWriterCanEditDraftEvenIfNotOriginalOwner() {
-        seat(User.UserRole.WRITER, MemberStatus.ACTIVE, false);
+        seat(WorkspaceRole.WRITER, MemberStatus.ACTIVE, false);
         when(projects.findRefById("project")).thenReturn(Optional.of(new ProjectRef("project", "one", "other")));
 
         // Any active WRITER in the workspace can edit draft
@@ -73,7 +77,7 @@ class WorkspaceAccessTest {
 
     @Test
     void nonWriterCannotEditDraft() {
-        seat(User.UserRole.REVIEWER, MemberStatus.ACTIVE, false);
+        seat(WorkspaceRole.REVIEWER, MemberStatus.ACTIVE, false);
         when(projects.findRefById("project")).thenReturn(Optional.of(new ProjectRef("project", "one", "other")));
 
         // Reviewer can read, but cannot edit draft
@@ -83,41 +87,41 @@ class WorkspaceAccessTest {
 
     @Test
     void requireAiAccessPassesForWriterOrAdmin() {
-        seat(User.UserRole.WRITER, MemberStatus.ACTIVE, false);
+        seat(WorkspaceRole.WRITER, MemberStatus.ACTIVE, false);
         assertThatCode(() -> access.requireAiAccess("writer")).doesNotThrowAnyException();
 
-        when(users.findById("admin")).thenReturn(Optional.of(User.builder().role(User.UserRole.ADMIN).build()));
+        when(users.findById("admin")).thenReturn(Optional.of(User.builder().systemRole(SystemRole.ADMIN).build()));
         assertThatCode(() -> access.requireAiAccess("admin")).doesNotThrowAnyException();
 
         when(members.findMembershipsByUserId("other")).thenReturn(List.of());
-        when(users.findById("other")).thenReturn(Optional.of(User.builder().role(User.UserRole.WRITER).build()));
+        when(users.findById("other")).thenReturn(Optional.of(User.builder().systemRole(SystemRole.USER).build()));
         assertThatThrownBy(() -> access.requireAiAccess("other")).isInstanceOf(ApiException.class);
     }
 
     @Test
     void producersUseAiForNarrationAndCaptionsButReviewersDoNot() {
-        seat(User.UserRole.PRODUCER, MemberStatus.ACTIVE, false);
+        seat(WorkspaceRole.PRODUCER, MemberStatus.ACTIVE, false);
         assertThatCode(() -> access.requireAiAccess("writer")).doesNotThrowAnyException();
-        seat(User.UserRole.REVIEWER, MemberStatus.ACTIVE, false);
+        seat(WorkspaceRole.REVIEWER, MemberStatus.ACTIVE, false);
         assertThatThrownBy(() -> access.requireAiAccess("writer")).isInstanceOf(ApiException.class);
     }
 
     @Test
     void roleAnywhereIgnoresTheAccountRoleAndInactiveSeats() {
         // Account role says WRITER, but the only seat is inactive: no access.
-        when(users.findById("writer")).thenReturn(Optional.of(User.builder().role(User.UserRole.WRITER).build()));
-        seat(User.UserRole.WRITER, MemberStatus.INACTIVE, false);
+        when(users.findById("writer")).thenReturn(Optional.of(User.builder().systemRole(SystemRole.USER).build()));
+        seat(WorkspaceRole.WRITER, MemberStatus.INACTIVE, false);
         assertThat(access.hasRoleAnywhere("writer", "WRITER", "PRODUCER")).isFalse();
         // Account role says REVIEWER, but the seat is PRODUCER: access.
-        when(users.findById("writer")).thenReturn(Optional.of(User.builder().role(User.UserRole.REVIEWER).build()));
-        seat(User.UserRole.PRODUCER, MemberStatus.ACTIVE, false);
+        when(users.findById("writer")).thenReturn(Optional.of(User.builder().systemRole(SystemRole.USER).build()));
+        seat(WorkspaceRole.PRODUCER, MemberStatus.ACTIVE, false);
         assertThat(access.hasRoleAnywhere("writer", "WRITER", "PRODUCER")).isTrue();
     }
 
     @Test
     void oneRequestReadsTheUserMembershipsAndProjectOnce() {
-        seat(User.UserRole.WRITER, MemberStatus.ACTIVE, false);
-        when(users.findById("writer")).thenReturn(Optional.of(User.builder().role(User.UserRole.WRITER).build()));
+        seat(WorkspaceRole.WRITER, MemberStatus.ACTIVE, false);
+        when(users.findById("writer")).thenReturn(Optional.of(User.builder().systemRole(SystemRole.USER).build()));
         when(projects.findRefById("project")).thenReturn(Optional.of(new ProjectRef("project", "one", "writer")));
         var request = new org.springframework.mock.web.MockHttpServletRequest();
         org.springframework.web.context.request.RequestContextHolder.setRequestAttributes(

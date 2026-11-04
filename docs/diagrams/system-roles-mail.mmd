@@ -1,0 +1,47 @@
+classDiagram
+    class User {
+        id
+        SystemRole systemRole
+        authVersion
+        version
+    }
+    class SystemRole {
+        <<enumeration>>
+        ADMIN
+        USER
+    }
+    class WorkspaceMember {
+        workspaceId
+        WorkspaceRole role
+        isLeader
+        status
+    }
+    class WorkspaceRole {
+        <<enumeration>>
+        WRITER
+        REVIEWER
+        PRODUCER
+    }
+    class GoogleWhitelist {
+        email
+        status
+        grantRevision
+        version
+    }
+    class GoogleIdentity {
+        googleSubject
+        email
+    }
+    class NotificationOutbox {
+        grantRevision
+        provider
+        status
+        claimToken
+        leaseUntil
+    }
+    User "1" --> "0..*" WorkspaceMember
+    User --> SystemRole
+    WorkspaceMember --> WorkspaceRole
+    User "1" --> "0..1" GoogleIdentity
+    GoogleIdentity "0..1" --> "1" GoogleWhitelist
+    GoogleWhitelist "1" --> "0..*" NotificationOutbox

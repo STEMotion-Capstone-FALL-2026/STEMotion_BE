@@ -1,5 +1,7 @@
 package com.stemotion.domain.script.service;
 
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.stemotion.core.enums.StemEnums.ScriptStatus;
 import com.stemotion.core.enums.StemEnums.VideoStatus;
 import com.stemotion.core.exception.ApiException;
@@ -82,7 +84,7 @@ public class ScriptService {
     public org.springframework.data.domain.Page<ScriptSummaryResponse> findReviewQueue(String userId,
             com.stemotion.core.web.PageParams paging) {
         return projectRepository.findReviewQueueSummaries(userId, workspaceAccess.isAdmin(userId), ScriptStatus.IN_REVIEW,
-                com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE, com.stemotion.domain.auth.entity.User.UserRole.REVIEWER,
+                com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE, WorkspaceRole.REVIEWER,
                 paging.pageable())
             .map(ScriptService::toSummary);
     }
@@ -110,7 +112,7 @@ public class ScriptService {
     @Transactional(readOnly = true)
     public List<ScriptSummaryResponse> findReviewQueue(String userId) {
         return projectRepository.findReviewQueueSummaries(userId, workspaceAccess.isAdmin(userId), ScriptStatus.IN_REVIEW,
-                com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE, com.stemotion.domain.auth.entity.User.UserRole.REVIEWER)
+                com.stemotion.core.enums.StemEnums.MemberStatus.ACTIVE, WorkspaceRole.REVIEWER)
             .stream().map(ScriptService::toSummary).toList();
     }
 
@@ -276,7 +278,7 @@ public class ScriptService {
     public ScriptResponse submitForReview(String projectId, String currentUserId) {
         ClipProject project = getOrThrow(projectId);
         requireStatus(project, ScriptStatus.DRAFT, ScriptStatus.CHANGE_REQUESTED);
-        workspaceAccess.requireProjectRole(projectId, currentUserId, java.util.Set.of(User.UserRole.WRITER));
+        workspaceAccess.requireProjectRole(projectId, currentUserId, java.util.Set.of(WorkspaceRole.WRITER));
 
         ScriptVersion current = currentVersion(project);
         List<Scene> scenes = scenesOf(current);

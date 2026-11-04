@@ -24,13 +24,13 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
         // Same per-request entry WorkspaceAccess reads, so the user is loaded once per request.
-        User user = com.stemotion.core.support.RequestCache.get("user:" + userId, () -> userRepository.findById(userId))
+        User user = com.stemotion.core.support.RequestCache.get("user:" + userId, () -> userRepository.findForAuthentication(userId))
             .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
 
         return org.springframework.security.core.userdetails.User
             .withUsername(user.getId())
             .password(user.getPasswordHash() == null ? "" : user.getPasswordHash())
-            .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))
+            .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + user.getSystemRole().name())))
             .disabled(user.getStatus() != User.UserStatus.ACTIVE)
             .build();
     }

@@ -1,5 +1,9 @@
 package com.stemotion.e2e;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.fasterxml.jackson.databind.*;
 import com.stemotion.domain.ai.entity.AiRequest;
 import com.stemotion.domain.ai.repository.AiRequestRepository;
@@ -39,14 +43,14 @@ class LocalAiDecisionE2eTest {
     final List<String> requestIds=new ArrayList<>();
     String owner,other,admin;
     @BeforeEach void fixtures() throws Exception {
-        owner=login(User.UserRole.WRITER);other=login(User.UserRole.WRITER);admin=login(User.UserRole.ADMIN);
+        owner=login(WorkspaceRole.WRITER);other=login(WorkspaceRole.WRITER);admin=login(SystemRole.ADMIN);
         when(gemini.generateWithUsage(anyString(),anyString(),anyMap()))
             .thenReturn(new GeminiClient.UsageResult(json.readTree("{\"readabilityScore\":80}"),12,8,20));
     }
-    String login(User.UserRole role) throws Exception {
-        var user=users.saveAndFlush(User.builder().fullName("Local AI").email(UUID.randomUUID()+"@example.invalid")
-            .role(role).passwordHash(encoder.encode("Local-fixture-only-123")).build());actorIds.add(user.getId());
-        return call("POST","/api/v1/auth/login",null,Map.of("email",user.getEmail(),"password","Local-fixture-only-123"),200).path("accessToken").asText();
+    String login(Enum<?> role) throws Exception {
+        var user=users.saveAndFlush(User.builder().fullName("Local AI").username("fixture_"+UUID.randomUUID().toString().substring(0,20))
+            .systemRole("ADMIN".equals(role.name()) ? SystemRole.ADMIN : SystemRole.USER).passwordHash(encoder.encode("Local-fixture-only-123")).build());actorIds.add(user.getId());
+        return call("POST","/api/v1/auth/login",null,Map.of("username",user.getUsername(),"password","Local-fixture-only-123"),200).path("accessToken").asText();
     }
     JsonNode call(String method,String path,String token,Object body,int expected) throws Exception {
         var builder=MockMvcRequestBuilders.request(org.springframework.http.HttpMethod.valueOf(method),path);

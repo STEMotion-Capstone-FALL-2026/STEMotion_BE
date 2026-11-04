@@ -36,8 +36,20 @@ public class User extends BaseEntity {
         displayName = fullName;
     }
 
-    @Column(name = "email", nullable = false, unique = true)
+    /** Legacy contact address, never a password-login identifier. */
+    @Column(name = "email", unique = true)
     private String email;
+
+    @Column(name = "username", unique = true, length = 254)
+    private String username;
+
+    @Column(name = "auth_version", nullable = false)
+    @Builder.Default
+    private long authVersion = 0;
+
+    /** Explicit authentication/profile projection; never trigger identity queries on content authors. */
+    @jakarta.persistence.Transient
+    private GoogleIdentity googleIdentity;
 
     @Column(name = "google_id", unique = true)
     private String googleId;
@@ -47,9 +59,12 @@ public class User extends BaseEntity {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
+    @Column(name = "system_role", nullable = false)
     @Builder.Default
-    private UserRole role = UserRole.WRITER;
+    private SystemRole systemRole = SystemRole.USER;
+
+    @jakarta.persistence.Version
+    private long version;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -60,12 +75,6 @@ public class User extends BaseEntity {
     @Builder.Default
     private boolean mustChangePassword = false;
 
-    public enum UserRole {
-        WRITER,
-        REVIEWER,
-        PRODUCER,
-        ADMIN
-    }
 
     public enum UserStatus {
         ACTIVE,

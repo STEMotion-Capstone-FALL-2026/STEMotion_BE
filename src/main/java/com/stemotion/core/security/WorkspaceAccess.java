@@ -1,5 +1,9 @@
 package com.stemotion.core.security;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.stemotion.core.exception.ApiException;
 import com.stemotion.core.support.RequestCache;
 import com.stemotion.domain.auth.entity.User;
@@ -52,12 +56,12 @@ public class WorkspaceAccess {
             .findFirst();
     }
 
-    private static Set<User.UserRole> roles(String... roleNames) {
-        return Arrays.stream(roleNames).map(User.UserRole::valueOf).collect(Collectors.toSet());
+    private static Set<WorkspaceRole> roles(String... roleNames) {
+        return Arrays.stream(roleNames).map(WorkspaceRole::valueOf).collect(Collectors.toSet());
     }
 
     public boolean isAdmin(String userId) {
-        return user(userId).map(u -> u.getRole() == User.UserRole.ADMIN).orElse(false);
+        return user(userId).map(u -> u.getSystemRole() == SystemRole.ADMIN).orElse(false);
     }
 
     /**
@@ -107,19 +111,19 @@ public class WorkspaceAccess {
     public void requireProject(String projectId, String userId, boolean editDraft) {
         ProjectRef ref = project(projectId).orElseThrow(() -> ApiException.notFound("Script", projectId));
         if (editDraft) {
-            requireProjectRole(projectId, userId, Set.of(User.UserRole.WRITER));
+            requireProjectRole(projectId, userId, Set.of(WorkspaceRole.WRITER));
         } else {
             requireWorkspace(ref.workspaceId(), userId, false);
         }
     }
 
-    public void requireProjectRole(String projectId, String userId, Set<User.UserRole> allowedRoles) {
+    public void requireProjectRole(String projectId, String userId, Set<WorkspaceRole> allowedRoles) {
         if (isAdmin(userId)) return;
         ProjectRef ref = project(projectId).orElseThrow(() -> ApiException.notFound("Script", projectId));
         requireWorkspaceRole(ref.workspaceId(), userId, allowedRoles);
     }
 
-    public void requireWorkspaceRole(String workspaceId, String userId, Set<User.UserRole> allowedRoles) {
+    public void requireWorkspaceRole(String workspaceId, String userId, Set<WorkspaceRole> allowedRoles) {
         if (isAdmin(userId)) return;
         boolean allowed = activeSeat(workspaceId, userId).map(m -> allowedRoles.contains(m.role())).orElse(false);
         if (!allowed) {
@@ -129,7 +133,7 @@ public class WorkspaceAccess {
 
     public boolean hasWorkspaceRole(String workspaceId, String userId, String... roleNames) {
         if (isAdmin(userId)) return true;
-        Set<User.UserRole> allowed = roles(roleNames);
+        Set<WorkspaceRole> allowed = roles(roleNames);
         return activeSeat(workspaceId, userId).map(m -> allowed.contains(m.role())).orElse(false);
     }
 
@@ -154,7 +158,7 @@ public class WorkspaceAccess {
     /** Whether the user holds one of these roles, actively, in any workspace. Roles are per workspace. */
     public boolean hasRoleAnywhere(String userId, String... roleNames) {
         if (isAdmin(userId)) return true;
-        Set<User.UserRole> allowed = roles(roleNames);
+        Set<WorkspaceRole> allowed = roles(roleNames);
         return memberships(userId).stream().anyMatch(m -> m.active() && allowed.contains(m.role()));
     }
 

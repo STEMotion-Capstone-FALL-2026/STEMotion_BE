@@ -1,5 +1,7 @@
 package com.stemotion.domain.project.repository;
 
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.stemotion.core.enums.StemEnums.ScriptStatus;
 import com.stemotion.core.enums.StemEnums.VideoStatus;
 import com.stemotion.domain.project.entity.ClipProject;
@@ -59,7 +61,7 @@ public interface ClipProjectRepository extends JpaRepository<ClipProject, String
     org.springframework.data.domain.Page<ProjectSummaryRow> findReviewQueueSummaries(@org.springframework.data.repository.query.Param("userId") String userId, @org.springframework.data.repository.query.Param("admin") boolean admin,
         @org.springframework.data.repository.query.Param("inReview") ScriptStatus inReview,
         @org.springframework.data.repository.query.Param("active") com.stemotion.core.enums.StemEnums.MemberStatus active,
-        @org.springframework.data.repository.query.Param("reviewer") com.stemotion.domain.auth.entity.User.UserRole reviewer, org.springframework.data.domain.Pageable page);
+        @org.springframework.data.repository.query.Param("reviewer") WorkspaceRole reviewer, org.springframework.data.domain.Pageable page);
 
     /** The owner's projects in workspaces they can still read (an admin reads all). */
     @org.springframework.data.jpa.repository.Query(SUMMARY_SELECT
@@ -81,7 +83,7 @@ public interface ClipProjectRepository extends JpaRepository<ClipProject, String
         @org.springframework.data.repository.query.Param("admin") boolean admin,
         @org.springframework.data.repository.query.Param("inReview") ScriptStatus inReview,
         @org.springframework.data.repository.query.Param("active") com.stemotion.core.enums.StemEnums.MemberStatus active,
-        @org.springframework.data.repository.query.Param("reviewer") com.stemotion.domain.auth.entity.User.UserRole reviewer);
+        @org.springframework.data.repository.query.Param("reviewer") WorkspaceRole reviewer);
 
     /** The ids access checks need, without loading the project row. */
     @org.springframework.data.jpa.repository.Query("select new com.stemotion.core.security.ProjectRef(p.id, p.workspace.id, p.owner.id) "

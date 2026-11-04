@@ -1,5 +1,7 @@
 package com.stemotion.domain.review.service;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.stemotion.core.enums.StemEnums.FeedbackStatus;
 import com.stemotion.core.enums.StemEnums.ScriptStatus;
 import com.stemotion.core.enums.StemEnums.StemSubject;
@@ -64,7 +66,7 @@ class WebFirstReviewTest {
         version.setId("version");
         composition = Composition.builder().project(project).scriptVersion(version).revision(3).scenes("[]").build();
         composition.setId("composition");
-        reviewer = User.builder().fullName("Reviewer").role(User.UserRole.REVIEWER).build();
+        reviewer = User.builder().fullName("Reviewer").systemRole(SystemRole.USER).build();
         reviewer.setId("reviewer");
         when(scripts.getOrThrow("project")).thenReturn(project);
         when(scripts.currentVersion(project)).thenReturn(version);

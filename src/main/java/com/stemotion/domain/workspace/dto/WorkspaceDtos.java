@@ -1,5 +1,7 @@
 package com.stemotion.domain.workspace.dto;
 
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.fasterxml.jackson.annotation.JsonAlias;
 
 import com.stemotion.core.enums.StemEnums.MemberStatus;
@@ -18,7 +20,7 @@ public final class WorkspaceDtos {
         String department,
         @NotBlank(message = "leaderUserId is required")
         String leaderUserId,
-        User.UserRole leaderRole,
+        WorkspaceRole leaderRole,
         /**
          * Everyone else seated when the workspace is created. With the leader they must be at
          * least 3 different active users covering WRITER, REVIEWER and PRODUCER (master update
@@ -34,7 +36,7 @@ public final class WorkspaceDtos {
         String department,
         long membersCount,
         long activeProjects,
-        User.UserRole myRole,
+        WorkspaceRole myRole,
         Boolean isLeader
     ) {}
 
@@ -43,7 +45,7 @@ public final class WorkspaceDtos {
         String userId,
 
         @NotNull(message = "role is required")
-        User.UserRole role,
+        WorkspaceRole role,
 
         /** The front end sends "isLeader", the name used in every response. */
         @JsonAlias("isLeader")
@@ -51,7 +53,7 @@ public final class WorkspaceDtos {
     ) {}
 
     public record UpdateMemberRequest(
-        User.UserRole role,
+        WorkspaceRole role,
         MemberStatus status,
         @JsonAlias("isLeader")
         Boolean leader
@@ -62,9 +64,11 @@ public final class WorkspaceDtos {
         String userId,
         String name,
         String email,
-        User.UserRole role,
+        WorkspaceRole role,
         boolean isLeader,
-        MemberStatus status
+        MemberStatus status,
+        String username,
+        String googleEmail
     ) {
         public static MemberResponse from(WorkspaceMember member) {
             User user = member.getUser();
@@ -75,7 +79,9 @@ public final class WorkspaceDtos {
                 user.getEmail(),
                 member.getRole(),
                 member.isLeader(),
-                member.getStatus()
+                member.getStatus(),
+                user.getUsername(),
+                user.getGoogleIdentity() == null ? null : user.getGoogleIdentity().getEmail()
             );
         }
     }
@@ -83,10 +89,13 @@ public final class WorkspaceDtos {
     public record CandidateUserResponse(
         String id,
         String fullName,
-        String email
+        String email,
+        String username,
+        String googleEmail
     ) {
         public static CandidateUserResponse from(User user) {
-            return new CandidateUserResponse(user.getId(), user.getFullName(), user.getEmail());
+            return new CandidateUserResponse(user.getId(), user.getFullName(), user.getEmail(), user.getUsername(),
+                user.getGoogleIdentity() == null ? null : user.getGoogleIdentity().getEmail());
         }
     }
 }

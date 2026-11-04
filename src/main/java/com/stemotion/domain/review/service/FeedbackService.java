@@ -1,5 +1,7 @@
 package com.stemotion.domain.review.service;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.stemotion.core.enums.StemEnums.FeedbackStatus;
 import com.stemotion.core.enums.StemEnums.ScriptStatus;
 import com.stemotion.core.enums.StemEnums.VideoStatus;
@@ -207,7 +209,7 @@ public class FeedbackService {
         FeedbackComment comment = getOrThrow(commentId);
         User actor = authService.findUserOrThrow(actorId);
         boolean author = comment.getAuthor() != null && comment.getAuthor().getId().equals(actorId);
-        if (!author && actor.getRole() != User.UserRole.ADMIN) {
+        if (!author && actor.getSystemRole() != SystemRole.ADMIN) {
             throw ApiException.forbidden("Only the author of a note can delete it");
         }
         feedbackRepository.delete(comment);

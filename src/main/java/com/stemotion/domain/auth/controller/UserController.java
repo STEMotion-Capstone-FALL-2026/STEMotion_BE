@@ -56,15 +56,17 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> update(
         @PathVariable String id,
+        @org.springframework.web.bind.annotation.RequestHeader("If-Match") long version,
         @Valid @RequestBody UpdateUserRequest request
     ) {
-        return ResponseEntity.ok(userService.update(id, request));
+        return ResponseEntity.ok(userService.update(id, request, version));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
-        userService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable String id,
+            @org.springframework.web.bind.annotation.RequestHeader("If-Match") long version) {
+        userService.delete(id, version);
         return ResponseEntity.noContent().build();
     }
 }

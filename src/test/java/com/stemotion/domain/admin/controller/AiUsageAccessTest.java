@@ -18,6 +18,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers=AiUsageController.class,properties="app.cors.allowed-origins=http://localhost:3000")
 @Import({SecurityConfig.class,JwtAuthenticationFilter.class})
 class AiUsageAccessTest {
+    @org.springframework.boot.test.mock.mockito.MockBean com.stemotion.domain.auth.repository.UserRepository userRepository;
+    @org.springframework.boot.test.mock.mockito.MockBean com.stemotion.core.security.AuthRateLimiter authRateLimiter;
     @Autowired MockMvc mvc;
     @MockBean AiUsageService usage;
     @MockBean JwtService jwt;

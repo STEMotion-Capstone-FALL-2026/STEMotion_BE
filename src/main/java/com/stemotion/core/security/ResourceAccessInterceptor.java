@@ -49,7 +49,7 @@ public class ResourceAccessInterceptor implements HandlerInterceptor {
         // Must change password check: block all other endpoints until password is changed
         if (!path.equals("/api/v1/auth/me") && !path.equals("/api/v1/auth/change-password")) {
             access.user(userId).ifPresent(user -> {
-                if (user.isMustChangePassword()) {
+                if (AuthSession.current().isPassword() && user.isMustChangePassword()) {
                     throw new ApiException(
                         HttpStatus.FORBIDDEN,
                         "PASSWORD_CHANGE_REQUIRED",

@@ -36,6 +36,11 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraint(org.springframework.dao.DataIntegrityViolationException ex) {
+        return build(HttpStatus.CONFLICT, "CONCURRENT_UPDATE", "Định danh đã được sử dụng hoặc dữ liệu vừa thay đổi. Vui lòng tải lại.");
+    }
+
     private static ResponseEntity<ErrorResponse> build(HttpStatus status, String code, String message) {
         return build(status, code, message, null);
     }
@@ -49,6 +54,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorResponse> handleApiException(ApiException ex) {
         log.warn("API Exception: [{}] {}", ex.getCode(), ex.getMessage());
+        if (ex.getStatus() == HttpStatus.TOO_MANY_REQUESTS)
+            return ResponseEntity.status(ex.getStatus()).header("Retry-After", "300")
+                .body(new ErrorResponse(ex.getStatus().value(), ex.getCode(), ex.getMessage(), LocalDateTime.now(), ex.getDetails()));
         return build(ex.getStatus(), ex.getCode(), ex.getMessage(), ex.getDetails());
     }
 

@@ -54,7 +54,7 @@ public class SecurityConfig {
                 // Workspace roles are checked on the controller method.
                 .requestMatchers("/api/v1/ai/transcribe/align").authenticated()
                 // Drafting uses active workspace membership via ResourceAccessInterceptor.
-                .requestMatchers("/api/v1/auth/google", "/api/v1/auth/google/enabled").permitAll()
+                .requestMatchers("/api/v1/auth/google", "/api/v1/auth/google/enabled", "/api/v1/auth/google/challenge").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 // The render worker authenticates with the shared render API key
                 // validated inside RenderController.callback(), not via JWT.

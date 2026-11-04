@@ -26,6 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = WorkspaceController.class, properties = "app.cors.allowed-origins=http://localhost:3000")
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class})
 class WorkspaceMemberAccessTest {
+    @org.springframework.boot.test.mock.mockito.MockBean com.stemotion.domain.auth.repository.UserRepository userRepository;
+    @org.springframework.boot.test.mock.mockito.MockBean com.stemotion.core.security.AuthRateLimiter authRateLimiter;
     @Autowired MockMvc mvc;
     @MockBean WorkspaceService workspaces;
     @MockBean JwtService jwt;

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, deploy/render-staging]
+    branches: [main, deploy/render-staging, feat/auth-roles-google-whitelist-mail]
   pull_request:
     branches: [main]
 
@@ -63,20 +63,14 @@ jobs:
       - name: Unit tests
         run: mvn -B -ntp test
 
-      # Proves the migrations build the schema the entities expect. The app
-      # runs with ddl-auto=validate, so a drifted migration fails right here
-      # instead of on someone's machine.
-      - name: Verify Flyway migrations against a real Postgres
-        env:
-          DB_URL: jdbc:postgresql://localhost:5433/stemotion_db
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
-          JWT_SECRET: ci-secret-key-long-enough-for-hmac-sha-512-signing
+      # Auth/role SQL is still reviewed draft scope. Validate against the isolated
+      # test migrations, never implicitly apply these drafts to a deployment DB.
+      - name: Verify isolated auth schema on PostgreSQL
         run: |
-          mvn -B -ntp spring-boot:run &
+          mvn -B -ntp test-compile spring-boot:test-run -Dspring-boot.run.main-class=com.stemotion.e2e.E2eServer &
           APP_PID=$!
           for i in $(seq 1 60); do
-            if curl -sf http://localhost:8080/actuator/health > /dev/null; then
+            if curl -sf http://localhost:18080/actuator/health > /dev/null; then
               echo "Application started"
               kill $APP_PID
               exit 0

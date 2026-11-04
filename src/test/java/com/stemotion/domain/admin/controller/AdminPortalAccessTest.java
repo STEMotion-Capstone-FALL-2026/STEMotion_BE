@@ -25,6 +25,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     properties = "app.cors.allowed-origins=http://localhost:3000")
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class})
 class AdminPortalAccessTest {
+    @org.springframework.boot.test.mock.mockito.MockBean com.stemotion.domain.auth.repository.UserRepository userRepository;
+    @org.springframework.boot.test.mock.mockito.MockBean com.stemotion.core.security.AuthRateLimiter authRateLimiter;
     @Autowired MockMvc mvc;
     @MockBean AdminMetricsService metrics;
     @MockBean UserService users;
@@ -48,7 +50,7 @@ class AdminPortalAccessTest {
         for (String path : new String[]{"/api/v1/admin/metrics", "/api/v1/admin/overview", "/api/v1/admin/render-jobs", "/api/v1/users"}) {
             mvc.perform(get(path).with(user("ordinary").roles(role))).andExpect(status().isForbidden());
         }
-        mvc.perform(delete("/api/v1/users/another-user").with(user("ordinary").roles(role)))
+        mvc.perform(delete("/api/v1/users/another-user").header("If-Match","0").with(user("ordinary").roles(role)))
             .andExpect(status().isForbidden());
         mvc.perform(delete("/api/v1/templates/template-id").with(user("ordinary").roles(role)))
             .andExpect(status().isForbidden());

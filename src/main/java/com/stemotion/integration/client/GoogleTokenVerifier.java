@@ -3,82 +3,68 @@ package com.stemotion.integration.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.stemotion.core.exception.ApiException;
 import com.stemotion.integration.config.IntegrationProperties;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import java.time.*;
+import java.util.*;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Set;
-
-/**
- * Checks a Google Sign-In ID token (proposal: "JWT sessions and Google OAuth
- * 2.0"). The token is sent to Google's tokeninfo endpoint, which validates its
- * signature; the audience, issuer, expiry and verified email are then checked
- * here. No Google account is ever turned into a STEMotion account: the caller
- * only learns which verified email signed in.
- */
-@Slf4j
+/** Verifies Google signatures using cached, rotating public keys. Never logs tokens. */
 @Component
 public class GoogleTokenVerifier {
-
-    private static final Set<String> ISSUERS = Set.of("accounts.google.com", "https://accounts.google.com");
-
-    /** The identity Google vouches for. */
-    public record GoogleIdentity(String subject, String email) {}
-
+    public record GoogleIdentity(String subject, String email, String name, String nonce) {
+        public GoogleIdentity(String subject, String email) { this(subject, email, "", ""); }
+    }
     private final IntegrationProperties properties;
-    private final RestClient client;
-
+    private final JwtDecoder decoder;
+    @org.springframework.beans.factory.annotation.Autowired
     public GoogleTokenVerifier(IntegrationProperties properties) {
+        this(properties, defaultDecoder());
+    }
+    GoogleTokenVerifier(IntegrationProperties properties, JwtDecoder decoder) {
         this.properties = properties;
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(5));
-        factory.setReadTimeout(Duration.ofSeconds(10));
-        this.client = RestClient.builder().baseUrl("https://oauth2.googleapis.com").requestFactory(factory).build();
+        this.decoder = decoder;
     }
-
+    private static JwtDecoder defaultDecoder() {
+        var factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000); factory.setReadTimeout(10000);
+        return NimbusJwtDecoder.withJwkSetUri("https://www.googleapis.com/oauth2/v3/certs")
+            .restOperations(new RestTemplate(factory)).build();
+    }
     public boolean isConfigured() {
-        String clientId = properties.getGoogle().getClientId();
-        return clientId != null && !clientId.isBlank();
+        String id = properties.getGoogle().getClientId();
+        return id != null && !id.isBlank();
     }
-
-    public GoogleIdentity verify(String idToken) {
-        if (!isConfigured()) {
-            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "GOOGLE_LOGIN_DISABLED",
-                "Đăng nhập Google chưa được cấu hình trên máy chủ.");
-        }
-        JsonNode info;
+    public GoogleIdentity verify(String token) {
+        if (!isConfigured()) throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "GOOGLE_LOGIN_DISABLED", "Đăng nhập Google chưa được cấu hình.");
         try {
-            info = client.get().uri(b -> b.path("/tokeninfo").queryParam("id_token", idToken).build())
-                .retrieve().body(JsonNode.class);
-        } catch (RestClientException ex) {
-            // An invalid or expired token is answered with HTTP 400 by Google.
-            log.info("Google rejected an ID token: {}", ex.getMessage());
-            throw invalid();
+            var jwt = decoder.decode(token);
+            String issuer = jwt.getClaimAsString("iss");
+            if (jwt.getAudience() == null || !jwt.getAudience().contains(properties.getGoogle().getClientId())
+                    || issuer == null || !Set.of("accounts.google.com", "https://accounts.google.com").contains(issuer)
+                    || jwt.getExpiresAt() == null || !jwt.getExpiresAt().isAfter(Instant.now())
+                    || !Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified"))) throw invalid();
+            String email = jwt.getClaimAsString("email");
+            if (jwt.getSubject() == null || jwt.getSubject().isBlank() || email == null || email.isBlank()) throw invalid();
+            return new GoogleIdentity(jwt.getSubject(), email.toLowerCase(Locale.ROOT),
+                jwt.getClaimAsString("name"), jwt.getClaimAsString("nonce"));
+        } catch (BadJwtException | IllegalArgumentException ex) { throw invalid(); }
+        catch (JwtException ex) {
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "GOOGLE_VERIFICATION_UNAVAILABLE", "Không thể xác minh Google. Vui lòng thử lại.");
         }
-        return check(info, properties.getGoogle().getClientId(), Instant.now());
     }
-
-    /** The claim checks, separate from the HTTP call so they can be tested. */
+    /** Claim-only helper for isolated tests, not a production verification entry. */
     static GoogleIdentity check(JsonNode info, String clientId, Instant now) {
-        if (info == null) throw invalid();
-        if (!clientId.equals(info.path("aud").asText())) throw invalid();
-        if (!ISSUERS.contains(info.path("iss").asText())) throw invalid();
-        long exp = info.path("exp").asLong(0);
-        if (exp <= now.getEpochSecond()) throw invalid();
-        String emailVerified = info.path("email_verified").asText();
-        String email = info.path("email").asText("");
-        if (!"true".equalsIgnoreCase(emailVerified) || email.isBlank()) throw invalid();
-        String subject = info.path("sub").asText("");
-        if (subject.isBlank()) throw invalid();
-        return new GoogleIdentity(subject, email.toLowerCase());
+        if (info == null || !clientId.equals(info.path("aud").asText())
+            || !Set.of("accounts.google.com", "https://accounts.google.com").contains(info.path("iss").asText())
+            || info.path("exp").asLong(0) <= now.getEpochSecond()
+            || !"true".equalsIgnoreCase(info.path("email_verified").asText())
+            || info.path("sub").asText().isBlank() || info.path("email").asText().isBlank()) throw invalid();
+        return new GoogleIdentity(info.path("sub").asText(), info.path("email").asText().toLowerCase(Locale.ROOT));
     }
-
     private static ApiException invalid() {
-        return ApiException.unauthorized("Đăng nhập Google không hợp lệ hoặc đã hết hạn.");
+        return new ApiException(HttpStatus.UNAUTHORIZED, "GOOGLE_TOKEN_INVALID", "Đăng nhập Google không hợp lệ hoặc đã hết hạn.");
     }
 }

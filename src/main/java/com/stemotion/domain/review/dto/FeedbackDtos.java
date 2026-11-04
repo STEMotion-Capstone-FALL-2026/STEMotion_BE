@@ -1,5 +1,7 @@
 package com.stemotion.domain.review.dto;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
 import com.stemotion.core.enums.StemEnums.FeedbackStatus;
 import com.stemotion.domain.auth.entity.User;
 import com.stemotion.domain.review.entity.FeedbackComment;
@@ -53,7 +55,7 @@ public final class FeedbackDtos {
         String id,
         String author,
         String avatar,
-        User.UserRole role,
+        SystemRole systemRole,
         Double timestampSec,
         String sceneId,
         String content,
@@ -73,7 +75,7 @@ public final class FeedbackDtos {
                 comment.getId(),
                 author.getFullName(),
                 initialsOf(author.getFullName()),
-                author.getRole(),
+                author.getSystemRole(),
                 comment.getTimestampSec(),
                 comment.getScene() == null ? null : comment.getScene().getId(),
                 comment.getContent(),

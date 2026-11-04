@@ -21,6 +21,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = ScriptController.class, properties = "app.cors.allowed-origins=http://localhost:3000")
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class})
 class ScriptDraftAccessTest {
+    @org.springframework.boot.test.mock.mockito.MockBean com.stemotion.domain.auth.repository.UserRepository userRepository;
+    @org.springframework.boot.test.mock.mockito.MockBean com.stemotion.core.security.AuthRateLimiter authRateLimiter;
     @Autowired MockMvc mvc;
     @MockBean ScriptService scripts;
     @MockBean JwtService jwt;

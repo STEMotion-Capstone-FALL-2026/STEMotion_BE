@@ -1,0 +1,15 @@
+flowchart TD
+    A[Authenticated request] --> B{JWT signature and expiry valid?}
+    B -- No --> X[401 SESSION_EXPIRED]
+    B -- Yes --> C[Load user with Google identity and whitelist]
+    C --> D{User ACTIVE and authVersion matches?}
+    D -- No --> Y[401 SESSION_REVOKED]
+    D -- Yes --> E{Session method}
+    E -- GOOGLE --> F{Identity matches and whitelist ACTIVE?}
+    F -- No --> Y
+    F -- Yes --> R[Continue existing resource and workspace authorization]
+    E -- PASSWORD --> H{Local credential has temporary password?}
+    H -- No --> R
+    H -- Yes --> I{auth/me or auth/change-password?}
+    I -- Yes --> R
+    I -- No --> J[403 PASSWORD_CHANGE_REQUIRED]

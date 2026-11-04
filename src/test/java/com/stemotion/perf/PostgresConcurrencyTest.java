@@ -1,5 +1,9 @@
 package com.stemotion.perf;
 
+import com.stemotion.domain.auth.entity.SystemRole;
+
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+
 import com.stemotion.core.enums.StemEnums.MemberStatus;
 import com.stemotion.core.enums.StemEnums.ScriptStatus;
 import com.stemotion.core.enums.StemEnums.StemSubject;
@@ -65,6 +69,7 @@ import static org.mockito.Mockito.mock;
  */
 @DataJpaTest(properties = {
     "spring.flyway.enabled=true",
+    "spring.flyway.locations=classpath:db/migration,classpath:db/auth-v2-e2e",
     "spring.jpa.hibernate.ddl-auto=validate",
     "spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect"
 })
@@ -97,6 +102,7 @@ class PostgresConcurrencyTest {
     @Autowired PlatformTransactionManager transactions;
     @Autowired JdbcTemplate jdbc;
     @Autowired UserRepository users;
+    @Autowired com.stemotion.domain.auth.repository.GoogleWhitelistRepository whitelist;
     @Autowired WorkspaceRepository workspaces;
     @Autowired WorkspaceMemberRepository members;
     @Autowired ClipProjectRepository projects;
@@ -117,12 +123,36 @@ class PostgresConcurrencyTest {
             mock(AuthService.class), workspaceService, mock(StatusHistoryService.class), mock(WorkspaceAccess.class));
     }
 
-    private User user(String name, User.UserRole role) {
-        return users.save(User.builder().fullName(name).email(name + "-" + UUID.randomUUID() + "@test.invalid")
-            .role(role).status(User.UserStatus.ACTIVE).build());
+    @Test
+    @DisplayName("whitelist pagination supports omitted status and explicit filters with untyped PostgreSQL strings")
+    void whitelistPagingSupportsDefaultAndFilteredStatus() {
+        String prefix = "paging-" + UUID.randomUUID();
+        for (String status : List.of("ACTIVE", "REVOKED")) {
+            var record = new com.stemotion.domain.auth.entity.GoogleWhitelist();
+            record.setEmail(prefix + "-" + status.toLowerCase() + "@gmail.com");
+            record.setStatus(status);
+            record.setCreatedBy("fixture-admin");
+            record.setUpdatedBy("fixture-admin");
+            whitelist.saveAndFlush(record);
+        }
+        var firstPage = org.springframework.data.domain.PageRequest.of(0, 1);
+        var all = whitelist.search(prefix, true, "ACTIVE", firstPage);
+        assertThat(all.getTotalElements()).isEqualTo(2);
+        assertThat(all.getContent()).hasSize(1);
+        assertThat(whitelist.search(prefix, false, "ACTIVE", firstPage).getContent())
+            .extracting(com.stemotion.domain.auth.entity.GoogleWhitelist::getStatus).containsExactly("ACTIVE");
+        assertThat(whitelist.search(prefix, false, "REVOKED", firstPage).getContent())
+            .extracting(com.stemotion.domain.auth.entity.GoogleWhitelist::getStatus).containsExactly("REVOKED");
+        assertThat(whitelist.search(prefix + "-missing", true, "ACTIVE", firstPage).getTotalElements()).isZero();
+        assertThat(whitelist.search("", true, "ACTIVE", firstPage).getTotalElements()).isGreaterThanOrEqualTo(2);
     }
 
-    private WorkspaceMember seat(Workspace workspace, User user, User.UserRole role, boolean leader) {
+    private User user(String name, Enum<?> role) {
+        return users.save(User.builder().fullName(name).email(name + "-" + UUID.randomUUID() + "@test.invalid")
+            .systemRole("ADMIN".equals(role.name()) ? SystemRole.ADMIN : SystemRole.USER).status(User.UserStatus.ACTIVE).build());
+    }
+
+    private WorkspaceMember seat(Workspace workspace, User user, WorkspaceRole role, boolean leader) {
         return members.save(WorkspaceMember.builder().workspace(workspace).user(user).role(role)
             .isLeader(leader).status(MemberStatus.ACTIVE).build());
     }
@@ -170,11 +200,11 @@ class PostgresConcurrencyTest {
     @DisplayName("two admins removing the only two reviewers at once: one succeeds, a reviewer always remains")
     void concurrentRemovalsKeepTheLastReviewer() throws Exception {
         Workspace workspace = workspaces.save(Workspace.builder().name("Race " + UUID.randomUUID())
-            .createdBy(user("admin", User.UserRole.ADMIN)).build());
-        seat(workspace, user("writer", User.UserRole.WRITER), User.UserRole.WRITER, true);
-        seat(workspace, user("producer", User.UserRole.PRODUCER), User.UserRole.PRODUCER, false);
-        WorkspaceMember first = seat(workspace, user("reviewer1", User.UserRole.REVIEWER), User.UserRole.REVIEWER, false);
-        WorkspaceMember second = seat(workspace, user("reviewer2", User.UserRole.REVIEWER), User.UserRole.REVIEWER, false);
+            .createdBy(user("admin", SystemRole.ADMIN)).build());
+        seat(workspace, user("writer", WorkspaceRole.WRITER), WorkspaceRole.WRITER, true);
+        seat(workspace, user("producer", WorkspaceRole.PRODUCER), WorkspaceRole.PRODUCER, false);
+        WorkspaceMember first = seat(workspace, user("reviewer1", WorkspaceRole.REVIEWER), WorkspaceRole.REVIEWER, false);
+        WorkspaceMember second = seat(workspace, user("reviewer2", WorkspaceRole.REVIEWER), WorkspaceRole.REVIEWER, false);
 
         List<Throwable> outcomes = race(
             () -> { workspaceService.removeMember(workspace.getId(), first.getId()); return null; },
@@ -190,18 +220,18 @@ class PostgresConcurrencyTest {
     @Test
     @DisplayName("deactivating one reviewer while re-roling the other at once never leaves zero reviewers")
     void concurrentDeactivateAndRoleChangeKeepCoverage() throws Exception {
-        User admin = user("admin", User.UserRole.ADMIN);
+        User admin = user("admin", SystemRole.ADMIN);
         Workspace workspace = workspaces.save(Workspace.builder().name("Race " + UUID.randomUUID()).createdBy(admin).build());
-        seat(workspace, user("writer", User.UserRole.WRITER), User.UserRole.WRITER, true);
-        seat(workspace, user("producer", User.UserRole.PRODUCER), User.UserRole.PRODUCER, false);
-        WorkspaceMember first = seat(workspace, user("reviewer1", User.UserRole.REVIEWER), User.UserRole.REVIEWER, false);
-        WorkspaceMember second = seat(workspace, user("reviewer2", User.UserRole.REVIEWER), User.UserRole.REVIEWER, false);
+        seat(workspace, user("writer", WorkspaceRole.WRITER), WorkspaceRole.WRITER, true);
+        seat(workspace, user("producer", WorkspaceRole.PRODUCER), WorkspaceRole.PRODUCER, false);
+        WorkspaceMember first = seat(workspace, user("reviewer1", WorkspaceRole.REVIEWER), WorkspaceRole.REVIEWER, false);
+        WorkspaceMember second = seat(workspace, user("reviewer2", WorkspaceRole.REVIEWER), WorkspaceRole.REVIEWER, false);
 
         List<Throwable> outcomes = race(
             () -> workspaceService.updateMember(workspace.getId(), first.getId(),
                 new UpdateMemberRequest(null, MemberStatus.INACTIVE, null), admin.getId()),
             () -> workspaceService.updateMember(workspace.getId(), second.getId(),
-                new UpdateMemberRequest(User.UserRole.PRODUCER, null, null), admin.getId()));
+                new UpdateMemberRequest(WorkspaceRole.PRODUCER, null, null), admin.getId()));
 
         assertThat(outcomes).filteredOn(t -> t == null).hasSize(1);
         assertThat(jdbc.queryForObject("select count(*) from workspace_members where workspace_id = ? and role = 'REVIEWER' "
@@ -209,7 +239,7 @@ class PostgresConcurrencyTest {
     }
 
     private ClipProject draftProject(int draftRevision) {
-        User writer = user("writer", User.UserRole.WRITER);
+        User writer = user("writer", WorkspaceRole.WRITER);
         Workspace workspace = workspaces.save(Workspace.builder().name("Draft " + UUID.randomUUID()).createdBy(writer).build());
         ClipProject project = projects.save(ClipProject.builder().title("Original").subject(StemSubject.Math).fps(30)
             .scriptStatus(ScriptStatus.DRAFT).videoStatus(VideoStatus.NOT_RENDERED).archived(false)
