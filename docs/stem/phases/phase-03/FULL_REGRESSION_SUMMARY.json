@@ -1,0 +1,1486 @@
+{
+  "log": "p3-final-regression-native.log",
+  "result": {
+    "name": "p3-final-regression-native",
+    "exit_code": 0,
+    "elapsed_seconds": 176.08,
+    "repo": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE",
+    "tests": "",
+    "external_providers": "disabled/local placeholders; environment allow-list"
+  },
+  "counts": {
+    "tests": 434,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 17,
+    "passed": 417
+  },
+  "suite_count": 80,
+  "suites": [
+    {
+      "suite": "com.stemotion.core.enums.RenderResolutionTest",
+      "counts": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "everyPresetIsSixteenByNine(RenderResolution)[1]",
+        "everyPresetIsSixteenByNine(RenderResolution)[2]",
+        "everyPresetIsSixteenByNine(RenderResolution)[3]",
+        "everyPresetIsSixteenByNine(RenderResolution)[4]",
+        "resolves1440p",
+        "defaultsTo1080p",
+        "rejectsUnknown"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.enums.StemSubjectConverterTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "readsBothSchemasAndWritesSupabaseLabel"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.exception.GlobalExceptionHandlerTest",
+      "counts": {
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "badEnumInQueryIs400",
+        "wrongContentTypeIs415",
+        "wrongMethodIs405",
+        "staleRevisionCarriesDetails",
+        "envelopeIsComplete",
+        "unexpectedStays500",
+        "unknownUrlIs404",
+        "unreadableBodyIs400",
+        "apiExceptionPassesThrough",
+        "accessDeniedIs403",
+        "missingParameterIs400",
+        "badEnumInBodyListsAllowedValues",
+        "missingHeaderIs400",
+        "concurrentUpdateIs409"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.AuthRateLimiterTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "independentKeysDoNotResetTheAccountBucket"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.AuthSessionVersionTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "credentialMutationInvalidatesPreviouslyIssuedTokens"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.JwtServiceTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsForeignSignature",
+        "rejectsTamperedToken",
+        "rejectsExpiredToken",
+        "rejectsGarbage",
+        "roundTripsUserId"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.ProjectAndNoteGuardsTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "noteRolesFollowTheProject",
+        "archiveIsKeptToOwnerLeaderAndAdmin",
+        "notesAreDeletedByTheirAuthorOnly",
+        "leaderFlagAcceptsBothNames"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.ResourceAccessInterceptorTest",
+      "counts": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "draftingAndApproachesRequireActiveWriterMembership",
+        "archivingNeedsMembershipOnlySoALeaderOfAnyRoleReachesTheArchiveCheck",
+        "guardsDraftWritesAsEdits",
+        "pollingJobChecksItsWorkspaceThroughProject",
+        "guardsNestedVideoActionsAsProjectAccess",
+        "guardsWorkspaceMemberManagement",
+        "alignmentRetainsItsOwnControllerGuards",
+        "listingWorkspaceMembersRequiresMembershipOnly",
+        "creationRequiresMembershipButNotWorkspaceAdmin"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.WorkspaceAccessTest",
+      "counts": {
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "nonWriterCannotEditDraft",
+        "requireAiAccessPassesForWriterOrAdmin",
+        "inactiveMemberIsNotActiveAccess",
+        "anyWorkspaceWriterCanEditDraftEvenIfNotOriginalOwner",
+        "oneRequestReadsTheUserMembershipsAndProjectOnce",
+        "globalAdminCanAccessWorkspace",
+        "workspaceLeaderCanManageWithoutGlobalAdminRole",
+        "producersUseAiForNarrationAndCaptionsButReviewersDoNot",
+        "membersCannotReadAnotherWorkspace",
+        "ordinaryMemberCannotManageSeats",
+        "roleAnywhereIgnoresTheAccountRoleAndInactiveSeats"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.admin.controller.AdminPortalAccessTest",
+      "counts": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "ordinaryRolesCannotReadAdminMetricsOrManageUsers(String)[1]",
+        "ordinaryRolesCannotReadAdminMetricsOrManageUsers(String)[2]",
+        "ordinaryRolesCannotReadAdminMetricsOrManageUsers(String)[3]",
+        "adminCanReadAllOverviewEndpoints",
+        "guestCannotReadAdminMetrics(String)[1]",
+        "guestCannotReadAdminMetrics(String)[2]",
+        "guestCannotReadAdminMetrics(String)[3]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.admin.controller.AiUsageAccessTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "onlyAdminReadsAiUsage"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.admin.service.AdminMetricsServiceTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "contentCountsDoNotInventProviderUsageOrCost",
+        "historicalJobsDoNotBecomeTodaysCompletions"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.controller.AiAlignmentAccessTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "workerMustHaveSeparateConfiguredKey",
+        "onlyAuthorizedRolesUsePublicAlignment"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.AiApproachTest",
+      "counts": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "draftSchemaOffersComposedScenes",
+        "refusesOffTopicApproaches",
+        "draftInventsAnApproachWhenNoneIsGiven",
+        "replacesUnknownIconsInBlocks",
+        "suggestsThreeApproaches",
+        "draftFollowsTheChosenApproach"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.AiConfiguredPricingTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "missingPricingEnvKeepsEstimatesUnknown",
+        "configuredSnapshotRatesCalculateMockTokensWithoutAnyApi"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.AiCostCalculatorTest",
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "auditStampsRateVersionAndUnknownCostsRemainNull",
+        "invalidPricesFailConfigurationInsteadOfGuessing",
+        "estimatesOnlyKnownActualModelAndCompleteTokenCounts"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.AiMetaphorTest",
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "metaphorSchemaDescribesAStagedScene",
+        "metaphorPromptCarriesSceneAndIcons",
+        "generatedScriptOffersStorytellingLayouts"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.AiScriptServiceTest",
+      "counts": {
+        "tests": 19,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "missingOrBlankBriefLetsAiChoose(String)[1]",
+        "missingOrBlankBriefLetsAiChoose(String)[2]",
+        "missingOrBlankBriefLetsAiChoose(String)[3]",
+        "rejectsOverlongBriefAtHttpValidationBeforeCallingGemini",
+        "preservesInvalidTopicGuardrail",
+        "remoteMetaphorUsesGenericGatewayInsteadOfUnsupportedActionEndpoint",
+        "preservesArcAndSegmentsInResultAndKeepsArcOptionalInSchema",
+        "olderJsonRequestsWithoutBriefRemainCompatible",
+        "replacesUnknownGeneratedIconBeforeReturningToFrontend",
+        "keepsBothWriterInputsAndApproachMetadata",
+        "includesWriterBriefBetweenGuardrailAndGenerationWithoutChangingConstraints",
+        "approachesRemainAvailableAlongsideNarrativeDrafting",
+        "preservesAllDynamicPacingBranches(int)[1]",
+        "preservesAllDynamicPacingBranches(int)[2]",
+        "preservesAllDynamicPacingBranches(int)[3]",
+        "preservesAllDynamicPacingBranches(int)[4]",
+        "invalidTopicStillThrowsBadRequestWithoutArcEvenWhenWriterProvidesBrief",
+        "replacesUnknownResegmentedIconSuggestionsToo",
+        "suppliesCatalogInInstructionAndPreservesSceneContract"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.ProposalAlignmentTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "draftOffersTheRegisteredTemplates",
+        "promptFavoursTheTemplateSetAndThePhases"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.VideoStoryboardAccessTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "wrongProjectRoleDoesNotConsumeAi",
+        "scopedProducerMayRequestSuggestion"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.VideoStoryboardServiceTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "staleInputIsRefusedBeforeProvider",
+        "disabledDoesNotCallProvider",
+        "returnsSuggestionBoundToSourceAndFlagsNewerEditsWithoutSaving",
+        "changedSceneIdentityIsRejected"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.controller.AccountProvisioningAccessTest",
+      "counts": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "legacyRegisterIsDisabledForGuestAndAdmin",
+        "adminCreatesAccountWithoutReceivingItsSession",
+        "invalidProvisioningRequestIsRejectedBeforePersistence",
+        "ordinaryRoleCannotProvision(String)[1]",
+        "ordinaryRoleCannotProvision(String)[2]",
+        "ordinaryRoleCannotProvision(String)[3]",
+        "guestCannotProvisionAnAccount"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.controller.AuthControllerTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "messageAsksForANewSession",
+        "nullPrincipalIsUnauthorized"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.AuthMigrationRehearsalTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "approvedLegacyEmailMappingSeparatesCaseDuplicatesWithoutChangingOwners",
+        "reviewedBackfillPreservesUsersAndRejectsMissingMappings"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.GoogleAuthPolicyTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "identityOwnedByAnotherUserCannotBeMergedDuringLink",
+        "outsideWhitelistNeverCreatesOrLinksAUser",
+        "approvedGoogleOnlyUserHasNoPasswordOrForcedPasswordChange",
+        "consumedOrWrongPurposeChallengeCannotMutateAccounts"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.RegistrationPolicyTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "publicSignupCannotProvisionAnyRoleOrTouchPersistence(SystemRole)[1]",
+        "publicSignupCannotProvisionAnyRoleOrTouchPersistence(SystemRole)[2]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.RoleContractTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rolesCannotCrossSystemAndWorkspaceBoundaries"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.RolesAndNotificationsPostgresTest",
+      "counts": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "retryFailureAndUnknownOutcomeNeverRevokeWhitelist",
+        "googleOnlyAdminCannotLoseTheLastUsableAdministratorLogin",
+        "concurrentDispatchersAcceptEachEventOnce",
+        "demotionInvalidatesSessionsAndCannotRemoveLastAdmin",
+        "expiredLeaseRequiresExplicitResendAndResendIsRateLimited",
+        "whitelistAndOutboxRollbackTogetherAndRevokeCancelsOldGrant",
+        "twoAdminsCannotDemoteEachOtherConcurrently"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.RolesMigrationRehearsalTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "nativeEnumIsSplitWithoutChangingMembershipsOrCredentials"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.SupabaseRegistrationTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "cases": [
+        "registrationAndLoginPersistNativeEnumsAndUuid(SystemRole)"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.SupabaseSchemaValidationTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "cases": [
+        "contextAndReadOnlySchemaValidationSucceed"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.SupabaseScriptFlowTest",
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      "cases": [
+        "scriptSceneAndBothFeedbackTargetsRoundTrip",
+        "artifactReviewPublicationAndFailedAiRoundTrip",
+        "directMemberAssignmentBecomesActiveImmediately"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.UsernameLoginTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "migratedEmailShapedUsernameUsesOnlyUsernameLookup",
+        "temporaryPasswordOnlyRestrictsPasswordSessions",
+        "googleOnlyCannotUsePasswordLogin",
+        "usernameIsCanonicalAndEmailIsNotQueried"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.UserProvisioningTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "duplicateEmailDoesNotOverwriteExistingAccount",
+        "storesOnlyPasswordHashAndPreservesExistingUsers"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.notification.ConfiguredNotificationSenderTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "brevoPayloadUsesBackendCredentialsAndProviderAcceptanceIsReturned",
+        "realEmailCannotStartWithMissingCredentialsOrInsecurePublicUrl",
+        "providerRateLimitRetriesButConfigurationFailureIsTerminal",
+        "brevoAllowsLocalFrontendLinksButRejectsPublicHttpAndLookalikeHosts",
+        "localPreviewNeverUsesTransportAndDoesNotPutRecipientInFilename"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.controller.CompositionAccessTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "membersMayOpenTheDraft",
+        "producerOfTheWorkspaceSavesTheDraft",
+        "aSaveWithoutBaseRevisionIsRejected",
+        "writerOfTheWorkspaceCannotEditTheProductionDraft"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.ClipArtifactServiceTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsRebindingExistingArtifact",
+        "createsArtifactWithoutInventingQaOrDuration",
+        "replayPreservesOriginalArtifactAndQa",
+        "incompleteAndMissingUrlCannotCreateArtifact",
+        "keepsTheWorkersCaptionSyncForQa"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.CompositionServiceTest",
+      "counts": {
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "savesTheVisualTheme",
+        "opensTheApprovedScriptAsDraft",
+        "concurrentFirstSaveIsAConflict",
+        "approvalChangedBeforeVersionLockRefusesMeasurement",
+        "onlyApprovedScripts",
+        "renderScenesForQa",
+        "lockedOutsideProduction",
+        "appliesMeasuredDurations",
+        "validatesProps",
+        "replacementApprovedVersionWithTheSameCompositionRevisionRefusesOldAudio",
+        "keepsTheApprovedStructure",
+        "renderUsesTheComposition",
+        "savesEditsAsNextRevision",
+        "refusesStaleRevision"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.FrozenCompositionRenderTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "completionKeepsApproval",
+        "publishedIsFinal",
+        "renderAfterApprovalKeepsApproval",
+        "noSecondJob"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.NarrationToolsServiceTest",
+      "counts": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "theDraftRevisionReadBeforeMeasuringIsTheOneTheWriteMustStillMatch",
+        "aStaleBaseRevisionIsRefusedBeforeAnyTtsIsPaidFor",
+        "anApprovedScriptsCompositionGetsANewRevisionWithCaptionWords",
+        "aPreviewReadsTheSceneNarrationAndRefusesLongText",
+        "aDraftHasItsSceneRowsTimedByTheWriter",
+        "versionIdentityIsCapturedBeforeWorkerForBothDraftAndComposition"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.PublicationFlowTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "embedRejectsExecutableAndInsecureUrls",
+        "failedQaCannotPublish",
+        "duplicatePlatformCannotProduceAnotherLegacyRecord",
+        "internalLibraryCreatesCanonicalAndLegacyRecords",
+        "lmsUsesActualArtifactUrl"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.PublishAvailabilityTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "unsupportedTargetCannotMarkProjectPublished(PublishTarget)[1]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.RenderContractTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "theWorkerHearsAboutAJobOnlyAfterItsRowIsCommitted",
+        "legacy4k60RequestProduces1080p30WithoutChangingTimelineAndUsesVoice"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.RenderRetryTest",
+      "counts": {
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "labelsTheAttempt",
+        "releasesProjectAfterFinalFailure",
+        "rejectsMissingApiKey",
+        "cancelledJobIgnoresLateWorkerCompletion",
+        "keepsProjectRenderingBetweenAttempts",
+        "requeuesOnFirstFailure",
+        "completionReplayCannotUndoVideoApproval",
+        "retrySendsTheSameCompositionVersion",
+        "completedRenderIsNotRetried",
+        "doesNotSpinWhenRequeueFails",
+        "rejectsWrongApiKey",
+        "rebuildsLegacyPayloadOnRetry",
+        "stopsAtTheAttemptBudget"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.TemplateMetadataTest",
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "invalidMetadataFailsBeforePersistence",
+        "recommendedSubjectsAndDefaultThemeAreValidatedAndKept",
+        "oldPayloadPreservesExistingDirectorMetadata"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.project.entity.ClipProjectPipelineStatusTest",
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "archivedWins",
+        "inReview",
+        "draft",
+        "approvedBeforeRender",
+        "published",
+        "clipReview",
+        "rendering",
+        "changeRequestedFallsBackToDraft"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.project.service.ReviewDecisionEventTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "unchangedAggregateStillRecordsArtifactDecision"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.project.service.StatusHistoryServiceTest",
+      "counts": {
+        "tests": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[1]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[2]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[3]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[4]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[5]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[6]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[7]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[1]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[2]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[3]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[4]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[5]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[6]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[7]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[8]",
+        "draftCannotJumpToApproved",
+        "archivingIsAlwaysAllowed"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.review.service.ClipQaServiceTest",
+      "counts": {
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "missingCaptionsOnlyWarn",
+        "catchesTooShortClip",
+        "structureIssuesOnlyWarn",
+        "renderedAlignmentReplacesTheEstimate",
+        "catchesLowContrastColour",
+        "catchesTitleOverflow",
+        "measuredNarrationOverridesTheEstimate",
+        "emptyScriptFails",
+        "checksTheRenderedComposition",
+        "acceptsHighContrastColour",
+        "requiresRenderedVideo",
+        "catchesTooShortScene",
+        "captionsPastTheSceneFail",
+        "alignedCaptionsPass",
+        "healthyClipPasses",
+        "catchesNarrationOverrun"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.review.service.ReviewHistoryServiceTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "decisionsOnScriptsClipsAndCompositionsReadBackWithReasonAndVersion"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.review.service.WebFirstReviewTest",
+      "counts": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "sendBackTheComposition",
+        "approveTheMatchingClip",
+        "gateCountsTheCurrentClipOnly",
+        "newPinsAreScopedToTheCurrentClip",
+        "pagedNotesKeepTheirThreads",
+        "approveTheCompositionThenRender",
+        "repliesAndResolveAudit",
+        "staleClipDoesNotCount",
+        "submitWithoutRendering"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.controller.ScriptDraftAccessTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "guestCannotSaveDraft",
+        "writerAndAdminReachDraftService(String)[1]",
+        "writerAndAdminReachDraftService(String)[2]",
+        "nonWriterCannotSaveDraftEvenWhenResourceScopeAllowsIt(String)[1]",
+        "nonWriterCannotSaveDraftEvenWhenResourceScopeAllowsIt(String)[2]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.mapper.ComposedSceneValidatorTest",
+      "counts": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsOverlongText",
+        "rejectsAnswerOutsideOptions",
+        "requiresFrameAndBlocks",
+        "rejectsUnknownBlockIcon",
+        "rejectsBlocksWithoutContent",
+        "rejectsDuplicateIdsAndTooManyBlocks",
+        "rejectsDanglingReferences",
+        "acceptsMixedBlocks",
+        "rejectsUnknownEnums"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.mapper.DirectorPlanValidatorTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsUnverifiedChemistryPresets",
+        "rejectsWrongTypesAndFrameBasedDirectorInput",
+        "acceptsKnownPlanAndRejectsUnknownOrExecutableInput",
+        "phaseBAssetsAndVariantsMatchAllowlist"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.mapper.SceneMapperTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "mapsRequestToEntity",
+        "serialisesFlattened",
+        "explicitOrderNoWins",
+        "roundTripsProps",
+        "emptyPropsAreNeverNull"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.mapper.ScenePropsValidatorTest",
+      "counts": {
+        "tests": 29,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsNamelessIcon",
+        "rejectsIncompleteGeometryDimensions",
+        "acceptsIllustratedWithoutOptionalProps",
+        "acceptsValidIllustrated",
+        "rejectsUnknownIcon",
+        "acceptsNewFlatOptions",
+        "rejectsEmptyOrOversizedIconList",
+        "rejectsIncompleteComparisonSide",
+        "rejectsOutOfRangeCorrectIndex",
+        "everySceneTypeHasRules(SceneType)[1]",
+        "everySceneTypeHasRules(SceneType)[2]",
+        "everySceneTypeHasRules(SceneType)[3]",
+        "everySceneTypeHasRules(SceneType)[4]",
+        "everySceneTypeHasRules(SceneType)[5]",
+        "everySceneTypeHasRules(SceneType)[6]",
+        "everySceneTypeHasRules(SceneType)[7]",
+        "everySceneTypeHasRules(SceneType)[8]",
+        "everySceneTypeHasRules(SceneType)[9]",
+        "everySceneTypeHasRules(SceneType)[10]",
+        "everySceneTypeHasRules(SceneType)[11]",
+        "everySceneTypeHasRules(SceneType)[12]",
+        "everySceneTypeHasRules(SceneType)[13]",
+        "rejectsUnknownAmbienceOrLayout",
+        "rejectsUnknownGeometryShape",
+        "rejectsSingleOptionQuiz",
+        "rejectsNullType",
+        "acceptsStorytellingLayouts",
+        "namesEveryMissingProp",
+        "acceptsValidQuiz"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.DraftRevisionTest",
+      "counts": {
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "replacementVersionWithTheSameRevisionRejectsOldDurations",
+        "durationsOfAnOlderDraftAreRefused",
+        "requiredRevisionFlagRefusesLegacySaveBeforeMutation",
+        "measuredDurationsBumpTheRevision",
+        "aVersionSwitchDuringLockAcquisitionNeverFallsBackToAnUnlockedVersion",
+        "staleSaveCarriesDetails",
+        "staleRevisionIsAConflict",
+        "submittedVersionCannotBeTimedEvenWhenProjectReadWasStillDraft",
+        "currentRevisionSaves",
+        "missingBaseRevisionKeepsWorking"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.ProjectArchiveTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "runningRenderMustBeCancelledFirst",
+        "deleteArchivesAndRetainsRowsAndAudit"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.ReviewQueueScopeTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "listsOnlyWorkspacesWhereTheUserReviews",
+        "leavingAWorkspaceHidesOwnScripts"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.ReviewReasonTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "returningAScriptOrClipWithoutAReasonIsRefused(String)[1]",
+        "returningAScriptOrClipWithoutAReasonIsRefused(String)[2]",
+        "returningAScriptOrClipWithoutAReasonIsRefused(String)[3]",
+        "theReasonIsKeptTrimmed"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.SceneIdentityTest",
+      "counts": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "legacyPropIdIsRecoveredAndCannotShadowCanonicalId",
+        "addingSceneDoesNotRecreateExistingScenes",
+        "feedbackPreventsDeletionEvenIfFeedbackIsResolved",
+        "deletionWithoutFeedbackRemovesOnlyOmittedScene",
+        "editingAndReorderingKeepOriginalRowsAndFeedbackIdentity",
+        "foreignVersionIdAndDuplicatesAreRejectedBeforeWrites"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.SubmittedScriptTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "reviewSnapshotCannotBeReplaced(ScriptStatus)[1]",
+        "reviewSnapshotCannotBeReplaced(ScriptStatus)[2]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.stem.StemPostgresTest",
+      "counts": {
+        "tests": 25,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "inactiveReviewerCannotWriteAssessment",
+        "testMigrationRejectsWrongPrerequisiteType",
+        "wrongActorAndAdminWithoutReviewerCannotAssess",
+        "workflowApproveLinksExactlyOneExistingDecisionAndRetry",
+        "nullDraftReplayCasAndUnknownFieldApi",
+        "staleApproveWritesNeitherDecisionNorAssessment",
+        "validationRateAndRunsAreIsolated",
+        "concurrentSavesHaveOneWinner",
+        "requestChangesCopiesEvidenceByIdentityNotOrder",
+        "sameKeyDifferentPayloadIsConflict",
+        "bothVideoBranchesUseSameAssessmentGuardAndRetry(boolean)[1]",
+        "bothVideoBranchesUseSameAssessmentGuardAndRetry(boolean)[2]",
+        "sceneDeletionPreservesOrphanAndExplicitEvidenceRetirement",
+        "copyMapWrongRollsBackNewVersion",
+        "actualBodyByteCapCannotBeBypassedWithWhitespace",
+        "keyedRequestChangesRetryCannotDuplicateVersion",
+        "catalogResponseIsTypedJsonAndUnverified",
+        "freshSchemaAndRlsHaveNoVerifiedOrStrictContent",
+        "rlsRejectsClientInsertionDespiteAnExplicitGrant",
+        "pinnedOldPolicySurvivesAssignmentChange",
+        "clientsHaveNoRlsReadOrWritePolicy",
+        "staleModeAssessmentAndLegacyConflictRequireExplicitSelection",
+        "legacyDepartmentLibrarySuggestsChannelWithoutInferringPrimary",
+        "copyFailureRollsBackWorkflowAndKeepsOriginalInReview",
+        "settingsPinNoBackfillAndStrictRefused"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.stem.StemValidatorTest",
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "aiWarningAloneIsNotAHardGate",
+        "draftNullPrimaryIsAllowedButIncomplete",
+        "legacyDecisionJsonStillDeserializesAndClaimsDoNot",
+        "unknownClaimsAreRejected",
+        "strictIsOnlyPureNegativeEvaluator",
+        "limitsAndMissingRevisionHaveFieldErrors",
+        "channelCannotBePrimary",
+        "evidenceNeedsATargetAndMatchingTask"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.workspace.controller.WorkspaceMemberAccessTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "anAdministratorAddsAndRemoves",
+        "aLeaderReachesTheRoleChangeWithTheirIdentity",
+        "aLeaderCannotAddRemoveOrListCandidates(String)[1]",
+        "aLeaderCannotAddRemoveOrListCandidates(String)[2]",
+        "aLeaderCannotAddRemoveOrListCandidates(String)[3]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.workspace.service.WorkspaceServiceTest",
+      "counts": {
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "anAdministratorListsEveryWorkspaceAndOthersOnlyTheirOwn",
+        "createWorkspaceSeatsTheWholeTeamAsActive",
+        "createRefusesATeamThatIsNotThreePeopleCoveringEveryRole",
+        "aSecondMemberOfARoleCanLeaveAndAnIncompleteLegacyWorkspaceCanStillBeChanged",
+        "findCandidatesReturnsOnlyActiveUsersNotInWorkspace",
+        "aLeaderAssignsRolesButCannotChangeStatusOrLeadership",
+        "addMemberRefusesTheAdminRoleInsteadOfTurningItIntoWriter",
+        "removeLastActiveLeaderThrowsBadRequest",
+        "addMemberDirectlyCreatesActiveMember",
+        "noChangeMayLeaveACoveredRoleWithoutAnActiveMember",
+        "addExistingMemberThrowsConflict",
+        "demoteLastActiveLeaderThrowsBadRequest"
+      ]
+    },
+    {
+      "suite": "com.stemotion.e2e.E2eServerArgumentsTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "realGoogleClientOverridesTheEmptyFixtureDefaultWithoutCommaJoining"
+      ]
+    },
+    {
+      "suite": "com.stemotion.e2e.LocalAiDecisionE2eTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      "cases": [
+        "ignorePersistsAndAdminCanDecide",
+        "missingUsageStaysUnknown",
+        "acceptsOwnedSuggestionWithRealUsageAndIdempotency",
+        "failureSurvivesCallerErrorAndCannotBeAccepted"
+      ]
+    },
+    {
+      "suite": "com.stemotion.e2e.LocalAiUsageE2eTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      "cases": [
+        "rejectsUnboundedOrInvalidPaging",
+        "separatesUsersAndAppliesUserFilter",
+        "groupsRealUsageWithTimezoneAndNeverTurnsUnknownCostsIntoZero",
+        "persistsCostAndPricingProvenanceThroughM01Transactions"
+      ]
+    },
+    {
+      "suite": "com.stemotion.e2e.LocalStudioE2eTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      "cases": [
+        "authAndRoleGates",
+        "adminProvisionTemplateCrudAndQueue",
+        "aiStubAnalysisBaseline",
+        "writerReviewerProducerQaLibraryRoundTrip"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.client.AiAlignmentClientTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "forwardsAudioKnownTextAndAuditsWordTiming",
+        "emptyAudioFailsBeforeNetworkAndAudit"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.client.AiGatewayTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "scriptBoundarySendsStructuredInputRatherThanJavaPrompt",
+        "missingRemoteConfigurationNeverFallsBackToEmbeddedGemini",
+        "remoteBoundaryUsesServiceKeyAndReturnsActualProviderModel",
+        "embeddedUsageAndFailureBothReachPersistentAuditBoundary",
+        "remoteErrorsKeepTheirMeaningInsteadOfAllBecomingUnavailable"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.client.GoogleSignatureVerifierTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "signatureAndAudienceMustBothBeValid"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.client.GoogleSignInTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "refusesBadClaims",
+        "acceptsValidClaims",
+        "unknownEmailIsRefused",
+        "inactiveAccountIsRefused",
+        "legacyEntryNeverLinksByEmail"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.client.RenderServiceClientTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "undeployedWorkerReturnsServiceUnavailableWithoutSubmittingAJob",
+        "incompleteWorkerConfigurationFailsBeforeNetworkSubmission"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.config.AiSharedKeyConfigurationTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "bothProfilesPreferSharedKeyAndPreserveLegacyFallback"
+      ]
+    },
+    {
+      "suite": "com.stemotion.perf.PageParamsTest",
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "aPageCarriesItsTotalsInHeaders",
+        "invalidPagingIsRefused",
+        "noPagingKeepsTheWholeList"
+      ]
+    },
+    {
+      "suite": "com.stemotion.perf.PostgresConcurrencyTest",
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "staleMeasurementAndRollback",
+        "measurementOfOldApprovedVersionCannotWriteReplacementComposition",
+        "whitelistPagingSupportsDefaultAndFilteredStatus",
+        "concurrentRemovalsKeepTheLastReviewer",
+        "concurrentDeactivateAndRoleChangeKeepCoverage",
+        "migrationsBuildAValidSchema",
+        "measurementOfVersionOneCannotWriteVersionTwoAtTheSameRevision",
+        "concurrentDraftSavesFromOneRevision"
+      ]
+    },
+    {
+      "suite": "com.stemotion.perf.QueryShapeJpaTest",
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "projectSummaries",
+        "libraryQueries",
+        "authenticationProjectionLoadsGoogleAuthorizationInOneStatement",
+        "accessAndWorkspaceCounts",
+        "pagedQueries",
+        "historyCommentsAndJobs",
+        "latestPublishRecord",
+        "commentPages"
+      ]
+    },
+    {
+      "suite": "com.stemotion.perf.WriteTransactionsTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "everyWritingServiceMethodIsTransactional"
+      ]
+    }
+  ],
+  "main_source_hashes": {
+    "src\\main\\java\\com\\stemotion\\StemotionApplication.java": "ac6a6ccbc50e9073796801acb0462d079aff018467cbbd96a95fba49d367ebfd",
+    "src\\main\\java\\com\\stemotion\\integration\\package-info.java": "41cf1ee946e67a2617b4cc81cdb5c0d41538ecd94ecf733d400e2746d63ecd60",
+    "src\\main\\java\\com\\stemotion\\core\\config\\OpenApiConfig.java": "e6b111af255d5195d24d08184d6d94124357e5a0d27b3c9807459c39851e1dde",
+    "src\\main\\java\\com\\stemotion\\core\\config\\ResourceAccessConfig.java": "d8dcba53a2129a83ad92e7718ab669ce89c22533199c539fc5ff77b668defbb7",
+    "src\\main\\java\\com\\stemotion\\core\\config\\SecurityConfig.java": "649de93d758b3bc27cfd0e5fc0417f46e2bed3ddc5b3075216dd91266c79aef6",
+    "src\\main\\java\\com\\stemotion\\core\\entity\\BaseEntity.java": "ae6faed738fc9cb310722803cdeefc6b6b85c95623159d0a0686d7f32c722dac",
+    "src\\main\\java\\com\\stemotion\\core\\enums\\StemEnums.java": "1545038d8b7a34437486cba25a7be323a9d5669e6779b9734aada18f37db739a",
+    "src\\main\\java\\com\\stemotion\\core\\enums\\StemSubjectConverter.java": "e8c3557f498111b5c13d9179c7f63edf90a0b67bcec5a6152834d08e36c53153",
+    "src\\main\\java\\com\\stemotion\\core\\exception\\ApiException.java": "17079f65300c4f0dc64ea82eabc887e234393ed7a0e32e3a4d2e6356b5caa675",
+    "src\\main\\java\\com\\stemotion\\core\\exception\\GlobalExceptionHandler.java": "7e28afdf76b4a41972d2c591d12619908146fd4c9b72b7d9b2c1ca2bf7300240",
+    "src\\main\\java\\com\\stemotion\\core\\metrics\\QueryCountInspector.java": "00983171b337c48af73d48d8da05f6fd948e1b239534d2b4edd8a00c6e86c82b",
+    "src\\main\\java\\com\\stemotion\\core\\metrics\\RequestMetricsFilter.java": "83615bbf47cd678bf6caf3fd817f622a444fbef276fe39222b7c82bd764d294a",
+    "src\\main\\java\\com\\stemotion\\core\\security\\AuthEntryInterceptor.java": "09550675e60803001e72ab62b7302a0699ae6d73c228ab585f1b0acb5dca8775",
+    "src\\main\\java\\com\\stemotion\\core\\security\\AuthRateLimiter.java": "25dec5f65232d307e39733da0fdca0ee8f704101c6f41245b71b7eb4576273c7",
+    "src\\main\\java\\com\\stemotion\\core\\security\\AuthSession.java": "63fbf082d3c17eebc26997f739d62f3b9a34e96785eacceb8bb60a020f324629",
+    "src\\main\\java\\com\\stemotion\\core\\security\\CustomUserDetailsService.java": "38a3033f19183b09c4332f1a17e0a0bc079798e4065f9875ce55260483c9a864",
+    "src\\main\\java\\com\\stemotion\\core\\security\\JwtAuthenticationFilter.java": "a0b6de58b2bf037f309df8040f94046163bf6445a58cfdfd49bdc61564dd9af9",
+    "src\\main\\java\\com\\stemotion\\core\\security\\JwtService.java": "129d63e658397ab9ac63ac7f921b748c4bba9a65848c85803984d40b1c812b7d",
+    "src\\main\\java\\com\\stemotion\\core\\security\\Membership.java": "c906d5a6400a3ec9dd7bed1567ffdcd430c032fb088a38a5aa8a8e172f46d06a",
+    "src\\main\\java\\com\\stemotion\\core\\security\\ProjectRef.java": "df19d425b55c0e393a7c7c1ed2f22bd46e1ba2d3a6ac95e8098979d7cce9621f",
+    "src\\main\\java\\com\\stemotion\\core\\security\\ResourceAccessInterceptor.java": "987a15273c934692e1c862eb45b7887ee8da34f901f6e8ea53cc1ff2a760ad35",
+    "src\\main\\java\\com\\stemotion\\core\\security\\WorkspaceAccess.java": "67fca2eb0095188749cf9feb49b09a9d24d6273e9d268307d04fb117cbe25336",
+    "src\\main\\java\\com\\stemotion\\core\\support\\RequestCache.java": "78874a4eb5d0ba6cf4fd35ff684888c87ba08a9a04bd9d359cf76ee0d12ab2fc",
+    "src\\main\\java\\com\\stemotion\\core\\web\\PagedResponse.java": "bbbade8a61b7c9ec7990ce256da8ef2f2eeb36a1d933029480cec5210e4cdfa5",
+    "src\\main\\java\\com\\stemotion\\core\\web\\PageParams.java": "1db3a106f9ad1ed75085bddc425a79344d0d514d2185369103ccf40ccc5c9638",
+    "src\\main\\java\\com\\stemotion\\domain\\notification\\ConfiguredNotificationSender.java": "18f1c109b0375fa4e8593873b04618bbbfc4b748af4740418dda9d6af5721a7c",
+    "src\\main\\java\\com\\stemotion\\domain\\notification\\EmailProperties.java": "bc978f73882cfeb36d6ff35d04a5b773840485e4efb39e2e87248c4d87cea4c9",
+    "src\\main\\java\\com\\stemotion\\domain\\notification\\NotificationSender.java": "7ee495efa6bf8828733389786e096147fadb6cf438fa0547009fc3a46376d222",
+    "src\\main\\java\\com\\stemotion\\domain\\notification\\NotificationService.java": "1c4dce9898a1c86bd42264011e83729af6e015f8cfacaf1cd8a15a21e4de1c74",
+    "src\\main\\java\\com\\stemotion\\domain\\stem\\StemController.java": "b6a5e12f6990de1839deb66c8382deaea8c082c8774d75a12a022f6c8093d980",
+    "src\\main\\java\\com\\stemotion\\domain\\stem\\StemDtos.java": "554391e513fa61d68c058348eae5e9aada81111e690540cc4709416a26dfa77c",
+    "src\\main\\java\\com\\stemotion\\domain\\stem\\StemModels.java": "241ab2ebc48b1f26208611a2080fe30ae3fdb0c229b88eec3ed910b9febd701b",
+    "src\\main\\java\\com\\stemotion\\domain\\stem\\StemRepository.java": "23c9ef07bea65f7fa53478d2aea695d01f780dfcc40020fd35811ccbfbe249ee",
+    "src\\main\\java\\com\\stemotion\\domain\\stem\\StemRequestLimitFilter.java": "36fbd851ce0ec4f6728ab6c0f9011617890f3e4c6e95dce4ba881312922c7941",
+    "src\\main\\java\\com\\stemotion\\domain\\stem\\StemService.java": "687481021c9bfc7838da3e8005c1be00d973fbd4c683df6aed2254605ecee9c5",
+    "src\\main\\java\\com\\stemotion\\domain\\stem\\StemValidator.java": "68535d608f349d317276e24ae7ccc7c8c102bce27e4f2956771561b2d97424c3",
+    "src\\main\\java\\com\\stemotion\\domain\\admin\\controller\\AdminController.java": "7b8713d1457afbcc477a92e8d29f446101b1a2169c52ad3268f3c98d77f887fe",
+    "src\\main\\java\\com\\stemotion\\domain\\admin\\controller\\AiUsageController.java": "ff000ba476e456a163285ded9f1273b7d7c6befd97a8afea596ac30ad485b1a7",
+    "src\\main\\java\\com\\stemotion\\domain\\admin\\dto\\AdminDtos.java": "498bac11003f59ffe5718f6590bc1a23456a45494eb5fed51247b9c6fa549ea0",
+    "src\\main\\java\\com\\stemotion\\domain\\admin\\repository\\AiUsageRepository.java": "c4b1602e71783d4d3a0a5fe3b9bd2177c36ff424e73a3d31b7ce219925656cbb",
+    "src\\main\\java\\com\\stemotion\\domain\\admin\\service\\AdminMetricsService.java": "8a43fcb6e8e70fb585ac2ccbd2b5c3ef8a24123310a07ea35167b50fb98d4828",
+    "src\\main\\java\\com\\stemotion\\domain\\admin\\service\\AiUsageService.java": "afc8ddc19c26d3fea6c7d5ad70ebde602c0a8595754383941e55a9fa440b3f62",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\controller\\AiAlignmentController.java": "fda9bae4d9316c919fe75ae61e0d8a0406c2e9416e376cdc11c0e3cc18e25a80",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\controller\\AiController.java": "00bd24ec91e91ba47892f791de727aee0a92b3c4cb01d2eaf75ea7cabc99a7f2",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\controller\\VideoStoryboardController.java": "778b88a4780227cc1601d1a843ce9b6988e3cfe85f1823aa582a5f3867f86bae",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\dto\\AiDtos.java": "6d0fab994a6fe7bef0a6c8c284fb80f7b6164881f652a17bbf183665b9e99279",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\entity\\AiRequest.java": "0e7b095209a8b8448f46ba2cdac2e8ab9845a2fb196f9658bfeb697f271e4b94",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\repository\\AiRequestRepository.java": "91ef0e6597c0f7441e97001c5e8bb34d3ea892d82cbf48a4a69b8751ea105166",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\service\\AiCostCalculator.java": "c897014cd1342c5721ab75ece18753dd8983e33195cf568fd0dc1d68f853fd7e",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\service\\AiRequestLogService.java": "e861f7f44b2a322c3831d70f12e3da0463c991ead2601c61a2b48f6f40cade83",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\service\\AiSchemas.java": "ac175a825f8b756029b9dc49f761d9dc37aac61499226c92cfebadd7ae99e90a",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\service\\AiScriptService.java": "ff7f3da247c0ca91811d6013b244c5de9f414de0eb467a2b6c530e73411c8a1b",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\service\\StemIconCatalog.java": "89c87eed162b1d94d3833d3c6e455268fa63ad84f2c6b6d9c2182449b30b0edf",
+    "src\\main\\java\\com\\stemotion\\domain\\ai\\service\\VideoStoryboardService.java": "cf5e0696cae3c98dfbd4981852999654a6d6265321917292a4186d95929bc1b4",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\controller\\AuthController.java": "37e429b0bd35f2aad2661fbdf2a8dee27912de8281d328aca27202a5e385016e",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\controller\\GoogleWhitelistController.java": "51f01062d4cb92c34564c86b8d811936ab35f414f7beb60c719539d11d2650c8",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\controller\\ProfileController.java": "dd786a80ed5df0c3a985c40fc40318e1055bbc0dc0f89e9bcfb8cc6c4bd47d7f",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\controller\\UserController.java": "afa3d064eeaa5c3772da87f26217d671c1f081dab829a815cf1c521932bd881d",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\dto\\AuthDtos.java": "ff5197e238cdf16b482cc412e6b69da6e74d211aeaebb69b8ba9937757e78c37",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\dto\\GoogleAuthDtos.java": "1ab79f924470c3cb6a831eb30e39777bc0383aa7b1609a815c4f5375dd1d6b72",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\entity\\GoogleChallenge.java": "1df09c0178ec727eb74668de3088400443901924946a7f73dbbd66aaaf40ab83",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\entity\\GoogleIdentity.java": "2b5644b31d226ba52b49a8b2150563b894be66ec66ca6f38227f4df8316166e7",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\entity\\GoogleWhitelist.java": "4cbb0431eb4139f969ee2dc3961e09fbb95422c08b04ca35e1dabe9e754bc6df",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\entity\\package-info.java": "4a2235e5d098cc8d4e0deec170a36f533e1a072107652bb8205fa80a65693b7e",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\entity\\SystemRole.java": "700b09a5577815ecab161e87a662f282a94938def91c8ece9c781414bd472507",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\entity\\User.java": "da6dac69d3e3cbd550aac4e3297ec8000c43106c88b88745cc5aa70c56e17d69",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\repository\\GoogleChallengeRepository.java": "6badb27a793645a0c4561e2fc94f14ea24d8f4189c562c20d719f7e3d9ffa719",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\repository\\GoogleIdentityRepository.java": "19bb730d54da9cec053d76efeaddd53b54ab1ef5ca03b15ed02c037544fcf89e",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\repository\\GoogleWhitelistRepository.java": "7351599b008bcba076a63abf3e79074a7250254d3723f405d21218454c73eb80",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\repository\\UserRepository.java": "6f3683ad3a968d40f3a820e9ec18ae0070e861d13713c6b3a42f6673e996ce04",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\service\\AccountNames.java": "4c27a5a87fefb04d167675d268930fc17e10627e01c6c1abf5f660da7cb3865c",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\service\\AuthService.java": "68eddec35179cbfd92d51108d5cb46367c135f21764edb8d86c21d8bf6a784ec",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\service\\GoogleAuthService.java": "c181827e8eb28a5cab272ba2aabf61c1d5f2bb9ade049beaa874cf5687429ced",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\service\\GoogleWhitelistService.java": "a6113b269541c7d9709f6009137f7c394779c2af333cc59838cc8590c2d064b7",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\service\\PasswordRules.java": "d725d2cbee86104431abd3619b81480307d50b016181d87c5ca9eabacba465ae",
+    "src\\main\\java\\com\\stemotion\\domain\\auth\\service\\UserService.java": "0f6bbc14388e90c79a92b9711a12f364a700a53d1f8884d2ab9cf4fb17f2549f",
+    "src\\main\\java\\com\\stemotion\\domain\\library\\controller\\LibraryController.java": "edf96742edfca73b9eda5a920ffb9b5c9048bbe3e394bbeae8918ccbfce593d8",
+    "src\\main\\java\\com\\stemotion\\domain\\library\\dto\\LibraryDtos.java": "4637a4ccd394a4f619280f46fac56d0b20f72d45fd0babf0948831c01f4ad5ea",
+    "src\\main\\java\\com\\stemotion\\domain\\library\\service\\LibraryService.java": "f6467037bfa97bca161b48fe49570e3dd9b3ee3a50594af73b6249f74cea04f0",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\controller\\CompositionController.java": "fba6b07cb22c21821c30d5f8d64bd02c05e7e86973a9b76276ef644820f96aaa",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\controller\\NarrationToolsController.java": "56c2d07a2889c8c36f16d744b0a5840cef348bc3d0513d51922e382c36eb13b7",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\controller\\PublishController.java": "f95b6d8233b6a49e0a9ef540bfc84cc1d7beafbd8d65030d44f2e341252216f2",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\controller\\RenderController.java": "dc3126e9eaeca7ee97920abca80346b6c9fdd81430668e98166113aa0d34a21e",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\controller\\TemplateController.java": "3faa14e410279b1c2027257e09c3bb0d8de48c610beba186c46a8c84442e0b2b",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\dto\\ProductionDtos.java": "bdeb3d91363f29ab3b20c21479b24a69a2fd6b116b10f126a0f0a1100ea208a8",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\entity\\Clip.java": "479eefcf9b5405f1d46e223f2788d6b27d166bdbf96cadf8be2a6da1a03b8f94",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\entity\\Composition.java": "ddff0b304cede3641eef74c658d9d4006078b0e9a446884c498cd59e5afb7e75",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\entity\\package-info.java": "ec815e11b020fc939aea6cb395980dfd51a1c29d111c098f8c3075090cfe5dcc",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\entity\\Publication.java": "2ebac0f21a28339bc8b47a28cb81bbc57ac6c6debdc0ae82f82f8915614b279e",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\entity\\PublishRecord.java": "6e4bb2d2c747e063ecbec0052bf63b35568cabc90b2e3126fb9c6ea57411ad05",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\entity\\RemotionTemplate.java": "b5b36619ae29c66dc2193835e85dee617e216943f9be67cbb6de357ec81ac433",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\entity\\RenderJob.java": "b5d02bd000f39e9df1783c47dff3ccf955ff105859c12b0eba0772b4df06371b",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\repository\\ClipRepository.java": "1d0a1c2273532ad9b7c177add6c21c24e00ef4e8ec95e15d408c5125113c28a0",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\repository\\CompositionRepository.java": "aa5e833841f4973dc5b47b0760d368354645340512c46ea8b74bc5b3447b42e9",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\repository\\PublicationRepository.java": "3fc2904fd514a0e1fe087880b48d5c34f5ab905453268679c695a9dedc6edd87",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\repository\\PublishRecordRepository.java": "6f549aa49e04f7e606b61f5e1bdcd32983a54be95b9c44d6ca9a3c17b0fe1073",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\repository\\RemotionTemplateRepository.java": "fa7c28fb46693ad957e901600e7f1360a872943e865e883ab3fe08bc78ee9f53",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\repository\\RenderJobRepository.java": "e97cbd77ff58fe26bf9d82005b3742767cad0de0e57382c1333ac4ab5560cfed",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\repository\\RenderJobRow.java": "dda370643e58a30ea8f1fc400994e97d4a12a6e42a2fb403a92ab3986943e240",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\service\\ClipArtifactService.java": "3e31b5b9270f39ea93af17cfb997f76e0ee064e4f3f0f05b6070ce0a28cabb6f",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\service\\CompositionService.java": "3f5723da962d5c7b8952a7de6ca82a11a6d5074caf2bf46c7ef7a3acd052f6bf",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\service\\NarrationToolsService.java": "9d53db799184dab2b75255f6d227b0d9681a212eb737cbde2f0e373676490579",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\service\\PublishService.java": "3346a31ded9f173a3c9cd82c0c520c9f3af7a62ccc97ef56869081a427ac74fe",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\service\\RenderService.java": "ad6320c8889545dcf2c7905b1081d2ab1536a728f95821550dca4268bf63a833",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\service\\TemplateService.java": "489be80adc6d7a0f730015ede2627b022736e43d250f892c426d79ae7c434e28",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\service\\VideoEmbed.java": "03f5e1d03ec319cc6d71955f41b1f8cd4f0d960c8ab76e35960412ffa0d975b4",
+    "src\\main\\java\\com\\stemotion\\domain\\production\\service\\VisualThemes.java": "2b10fc17ae5052310dc95e8d48910322decbbce916cff30d64b1dac6d674f4fd",
+    "src\\main\\java\\com\\stemotion\\domain\\project\\entity\\ClipProject.java": "c7722aa803bb5321aba7e3cbf11e9236c68a0971e3492e26d0357cd37e613aed",
+    "src\\main\\java\\com\\stemotion\\domain\\project\\entity\\ProjectStatus.java": "e8ea1efeb469c3b1849387897205f4776bde94d398cbf686f6a8e7dc1c194b67",
+    "src\\main\\java\\com\\stemotion\\domain\\project\\entity\\StatusHistory.java": "6abc5c9a3a1cbc72c40d431dacf7229eccb61f530e2cf7e207586d46223be9d3",
+    "src\\main\\java\\com\\stemotion\\domain\\project\\repository\\ClipProjectRepository.java": "769b1b7030b4b9598b62910f7a5e4583e0393836c0a70f6032882b0e1a52682b",
+    "src\\main\\java\\com\\stemotion\\domain\\project\\repository\\ProjectSummaryRow.java": "95f2befd197c860fecdc5ef7d562a4ee5e8ec6c05bd3ee131676f447751bf95d",
+    "src\\main\\java\\com\\stemotion\\domain\\project\\repository\\StatusHistoryRepository.java": "e45bbe9f51621a1134f354736a824a3619a60dd5446dea57607e111aca472e1f",
+    "src\\main\\java\\com\\stemotion\\domain\\project\\service\\StatusHistoryService.java": "3ebe9f4ed0521b0512176b92ca6b4e039c6f0a7a6deae4e9882a227b5ece209b",
+    "src\\main\\java\\com\\stemotion\\domain\\review\\controller\\FeedbackController.java": "ab6f22ff4f074c3453340d336659460d48bca2b91c2f7b6d69d4c65cbf1de7f5",
+    "src\\main\\java\\com\\stemotion\\domain\\review\\dto\\FeedbackDtos.java": "e4492a766c9122e5a9d405b4758bd25959ca0d25802da349eff5df28ed325852",
+    "src\\main\\java\\com\\stemotion\\domain\\review\\dto\\QaDtos.java": "8d9cdd710064eaef3aafaee396c2642c1e47e7fd9aa9150d6f48d75d4f82cea8",
+    "src\\main\\java\\com\\stemotion\\domain\\review\\entity\\FeedbackComment.java": "dea6d0e7db7c66ccffae7c783463635b968734ca0cdc09fd83db841ac79625ff",
+    "src\\main\\java\\com\\stemotion\\domain\\review\\repository\\FeedbackCommentRepository.java": "15e7ce3f6d3317e92b0b8bdd1babe6749107b4da18f8f0164e4a58aa0d92af45",
+    "src\\main\\java\\com\\stemotion\\domain\\review\\service\\ClipQaService.java": "e9b858375a6901f7d52bda88e470d001b6e2676d32a24e0f24969cb9a99eaa13",
+    "src\\main\\java\\com\\stemotion\\domain\\review\\service\\FeedbackService.java": "f7e697e08e52caaca4c2ce5308ea1a28ce3927716758121ed97ca2f033d880e3",
+    "src\\main\\java\\com\\stemotion\\domain\\review\\service\\ReviewHistoryService.java": "1ffdb8d27e99740453ab483822e5fa4fcbbc0a4d5ce9f4325dd2e631e516f85c",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\controller\\ScriptController.java": "b8a26a6fb724fff33d97b6d0e3a3fe33281f5e5f0cccab39b973bf00dfc0cae2",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\dto\\SceneDtos.java": "47757c835f6cecf45e718e70b927c0585be19a099a90b2a21a54d8e828290536",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\dto\\ScriptDtos.java": "8eb8b2fe1a94b2fa16e28da7286b03f2cbdfc71a5faa37d9b5abcffd28a71ef7",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\entity\\package-info.java": "413e964c8223ee7eea2a842cd9cb8a3706d3f59dadfad5efa8154f9dba201430",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\entity\\Scene.java": "648bbf56c727ac609928249f880bd367746d63ab55bface71cf53f34348e4f03",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\entity\\ScriptVersion.java": "4faaca61521dd23f00f80337823f10e7e72b13fb36e794b7185be4bedd28bdc1",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\mapper\\ComposedSceneValidator.java": "e1295df76560d11afb889a3a9c7c47f88ff29a42f1e3dd1b2add021d2dca7638",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\mapper\\DirectorPlanValidator.java": "a081454bd5cbbdf89f24f553f8872e5e7565aac824cd25aa34c68231d9e461b9",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\mapper\\SceneMapper.java": "4d6da21f0aaaba7757f64f03afe21eebfd07f9429066b83b3d6092235bd68546",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\mapper\\ScenePropsValidator.java": "c1b50fe9ef25292b3f2fbc84d85804933047499ba584528a99a91be99fa040ac",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\repository\\SceneRepository.java": "8b2915d4be7c9333430ec171f2e12db578d41da3501ec45918c5fa258c1cd595",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\repository\\ScriptVersionRepository.java": "ee09c11ef5cc06150abcbb30b6f30ca8d48030a3c1faee2bbd0a2463f3b57dca",
+    "src\\main\\java\\com\\stemotion\\domain\\script\\service\\ScriptService.java": "fb47fe26ff7f30744e3925bae8381248bb488ab4f2a61faca411a00552105608",
+    "src\\main\\java\\com\\stemotion\\domain\\workspace\\controller\\WorkspaceController.java": "c287a7e284198763cd6a4b5e413f1113dbccb75a1a273b85c091585c5ca41533",
+    "src\\main\\java\\com\\stemotion\\domain\\workspace\\dto\\WorkspaceDtos.java": "c2a09ab54f0e5d1f80e825163068f047ec6a6220cd3587a7b7b1c645993f73a0",
+    "src\\main\\java\\com\\stemotion\\domain\\workspace\\entity\\Workspace.java": "ea3f9ea458f9e80714c1728fc65a26f06c87c177c98fd99b83f65fddf6cdab53",
+    "src\\main\\java\\com\\stemotion\\domain\\workspace\\entity\\WorkspaceMember.java": "890d3f7ca2c464355093b76084c5bf44592f4195901c1bbc1a0eb480fee0b89d",
+    "src\\main\\java\\com\\stemotion\\domain\\workspace\\entity\\WorkspaceRole.java": "89fb8b8ce87467571ac09ec5f71326733bdb3298121a5afad0900377df1b3b71",
+    "src\\main\\java\\com\\stemotion\\domain\\workspace\\repository\\WorkspaceMemberRepository.java": "1d7e4909f8de9c9804dbcdd2f5b65012d194e996f40f988804b4a4c3ba4b4c26",
+    "src\\main\\java\\com\\stemotion\\domain\\workspace\\repository\\WorkspaceRepository.java": "fe148cd3a3107729465aa41bcbbadabd1f870bc5ca8e1550f4fbefbc7adeaa68",
+    "src\\main\\java\\com\\stemotion\\domain\\workspace\\service\\WorkspaceService.java": "cc778d2ea2041aafe520b28fdabc85454baa2bc440de84457054976cc1208763",
+    "src\\main\\java\\com\\stemotion\\integration\\client\\AiAlignmentClient.java": "02aa5b82309987de59ac5108c73b85762699abea8896792b1f34c57076610ccb",
+    "src\\main\\java\\com\\stemotion\\integration\\client\\AiGateway.java": "55e99e72d8304ee930831ffc1fb680dabb0662c6598f3357d210b070e034be8c",
+    "src\\main\\java\\com\\stemotion\\integration\\client\\GeminiClient.java": "0776f941ce069ff6978bb77fe7b3ad550056ee8f9d7ac8f492262c34517fc416",
+    "src\\main\\java\\com\\stemotion\\integration\\client\\GoogleTokenVerifier.java": "46e1fdc8f1eaf44713b08f114c13cdd90593b4096cfa677b731e1adc353a10a2",
+    "src\\main\\java\\com\\stemotion\\integration\\client\\RenderServiceClient.java": "d13c4520c5a5968b9ab74f779e59aec8b68f51fe75d1aa0703a255762d672935",
+    "src\\main\\java\\com\\stemotion\\integration\\config\\IntegrationProperties.java": "160d4f46a98d5123b63bdaa58f853f12bde250875620ee7cf92b6473c68d0817"
+  }
+}

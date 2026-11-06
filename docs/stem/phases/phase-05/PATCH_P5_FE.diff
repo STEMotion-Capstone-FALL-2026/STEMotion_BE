@@ -1,0 +1,281 @@
+diff --git a/src/components/modals/PublishModal.tsx b/src/components/modals/PublishModal.tsx
+--- a/src/components/modals/PublishModal.tsx
++++ b/src/components/modals/PublishModal.tsx
+@@ -5,6 +5,10 @@
+ import { STEMScript } from '../../types/stem';
+ import { projectService } from '../../services/projectService';
+ import { publicationService } from '../../services/publicationService';
++import { getArtifactStatus, artifactExpectation, stemMutationKey } from '../../services/stemClient';
++import type { StemArtifactStatus } from '../../types/stem';
++import { ApiError } from '../../services/apiClient';
++import { StemErrorNotice } from '../stem/StemErrorNotice';
+ 
+ interface PublishModalProps {
+   isOpen: boolean;
+@@ -23,6 +27,15 @@
+   const [embedCode, setEmbedCode] = useState<string | null>(null);
+   const [published, setPublished] = useState(false);
+   const [inlineError, setInlineError] = useState<string | null>(null);
++  const [artifact,setArtifact]=useState<StemArtifactStatus|null>(null);
++  const [acknowledged,setAcknowledged]=useState(false);
++  const [publicationError,setPublicationError]=useState<unknown>(null);
++  const publishRetry=useRef<{payload:string;key:string}|null>(null);
++  useEffect(()=>{
++    let current=true;setArtifact(null);setAcknowledged(false);setPublicationError(null);publishRetry.current=null;
++    if(isOpen&&canPublish&&script.videoStatus==='APPROVED')void getArtifactStatus(script.id).then(value=>{if(current)setArtifact(value);}).catch(()=>{});
++    return()=>{current=false;};
++  },[isOpen,canPublish,script.id,script.videoUrl,script.videoStatus]);
+   const activeProject = useRef(script.id);
+   activeProject.current = script.id;
+   useEffect(() => { setEmbedCode(null); setPublished(false); setInlineError(null); }, [script.id]);
+@@ -35,8 +48,16 @@
+     const projectId = script.id;
+     setBusy(true);
+     setInlineError(null);
++    setPublicationError(null);
+     try {
+-      const result = await publicationService.publishInternal(script.id, script.title);
++      if(artifact?.integrity==='MISMATCH'||artifact?.publishEligibility.route==='BLOCKED')throw new Error('Artifact không khớp nội dung đã duyệt; cần tải lại và duyệt đúng phiên bản.');
++      if(artifact?.publishEligibility.requiresLegacyAcknowledgement&&!acknowledged)throw new Error('Cần xác nhận xuất bản nội dung chưa thẩm định.');
++      const expectation=artifact?artifactExpectation(artifact):undefined;
++      const payload=JSON.stringify([script.id,script.title,acknowledged,expectation]);
++      if(publishRetry.current?.payload!==payload)publishRetry.current={payload,key:stemMutationKey()};
++      const result = artifact
++        ? await publicationService.publishInternal(script.id,script.title,{legacyUnverifiedAcknowledged:acknowledged,artifactExpectation:expectation,idempotencyKey:publishRetry.current.key})
++        : await publicationService.publishInternal(script.id, script.title);
+       if (activeProject.current === projectId) {
+         setEmbedCode(result.lmsEmbedCode);
+         setPublished(true);
+@@ -47,7 +68,9 @@
+       catch { onNotify('Đã xuất bản; hãy tải lại trang để cập nhật trạng thái.', 'info'); }
+     } catch (error: any) {
+       const msg = error.message || 'Không xuất bản được video.';
+-      if (activeProject.current === projectId) setInlineError(msg);
++      if (activeProject.current === projectId) {
++        if(error instanceof ApiError)setPublicationError(error);else setInlineError(msg);
++      }
+       onNotify(msg, 'warn');
+     } finally { setBusy(false); }
+   });
+@@ -86,8 +109,15 @@
+           <button onClick={onClose} disabled={busy} aria-label="Đóng"><X size={20} /></button>
+         </div>
+         <p className="text-sm text-slate-600">Trạng thái: {script.videoStatus}. File tải xuống là video đã kết xuất trên máy chủ.</p>
++        {artifact&&<div><p>Artifact: {artifact.freshness} · {artifact.integrity} · UNVERIFIED</p>
++          {artifact.reasons.map(reason=><p key={reason}>{reason}</p>)}
++          {artifact.publishEligibility.requiresLegacyAcknowledgement&&artifact.integrity!=='MISMATCH'&&<label><input type="checkbox" checked={acknowledged} onChange={event=>setAcknowledged(event.target.checked)}/>Tôi xác nhận xuất bản nội dung chưa được thẩm định STEM (UNVERIFIED).</label>}
++        </div>}
+ 
+         {/* Inline error banner — shown directly inside the modal on failure */}
++        <StemErrorNotice error={publicationError} onReload={()=>{
++          void getArtifactStatus(script.id).then(result=>{setArtifact(result);setAcknowledged(false);setPublicationError(null);}).catch(error=>setPublicationError(error));
++        }} onRetryReady={()=>setPublicationError(null)}/>
+         {inlineError && (
+           <div role="alert" className="flex items-start gap-2.5 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-800">
+             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+@@ -102,7 +132,7 @@
+         {!script.videoUrl && <p className="text-sm text-amber-700">Chưa có video. Dịch vụ kết xuất phải được cấu hình trước.</p>}
+         <div className="border-t pt-4 text-sm text-slate-600 space-y-3">
+           <p className="flex items-center gap-2"><Youtube size={18} /> Xuất YouTube chưa khả dụng; cần kết nối kênh bằng OAuth.</p>
+-          <button disabled={busy || published || !canPublish || script.videoStatus !== 'APPROVED'} onClick={publish}
++          <button disabled={busy || published || !canPublish || script.videoStatus !== 'APPROVED' || Boolean(publicationError) || artifact?.integrity==='MISMATCH' || artifact?.publishEligibility.route==='BLOCKED' || Boolean(artifact?.publishEligibility.requiresLegacyAcknowledgement&&!acknowledged)} onClick={publish}
+             className="bg-emerald-600 text-white rounded-lg px-4 py-2 disabled:opacity-50">
+             {published || script.videoStatus === 'PUBLISHED' ? 'Đã xuất bản vào thư viện' : 'Xuất bản vào thư viện & lấy mã nhúng LMS'}
+           </button>
+@@ -114,4 +144,4 @@
+       </div>
+     </div>
+   );
+-};+};
+diff --git a/src/components/stem/StemArtifact.p5.test.tsx b/src/components/stem/StemArtifact.p5.test.tsx
+--- /dev/null
++++ b/src/components/stem/StemArtifact.p5.test.tsx
+@@ -0,0 +1,59 @@
++import React from 'react';
++import {afterEach,beforeEach,it,expect,vi} from 'vitest';
++import {render,screen,fireEvent,waitFor,cleanup} from '@testing-library/react';
++import {PublishModal} from '../modals/PublishModal';
++import {StemReadOnlySummary} from './StemReadOnlySummary';
++import * as client from '../../services/stemClient';
++import {publicationService} from '../../services/publicationService';
++import {apiClient,ApiError} from '../../services/apiClient';
++import {scriptService} from '../../services/scriptService';
++import {reviewService} from '../../services/reviewService';
++import type {STEMScript,StemArtifactStatus} from '../../types/stem';
++
++const script:STEMScript={id:'TEST_ONLY_p5',title:'TEST_ONLY unverified',subject:'Math',gradeLevel:'4',scriptStatus:'APPROVED',videoStatus:'APPROVED',scenes:[],videoUrl:'https://example.invalid/test.mp4'};
++const status=(patch:Partial<StemArtifactStatus>={}):StemArtifactStatus=>({schemaVersion:'stem-artifact.v1',target:{projectId:script.id,versionId:'version',clipId:'clip',jobId:'job',snapshotId:'snapshot',inputHash:'a'.repeat(64)},freshness:'CURRENT',classification:'UNKNOWN',integrity:'MATCH',publishEligibility:{allowed:true,route:'LEGACY_UNVERIFIED',requiresLegacyAcknowledgement:true},snapshotOrigin:{snapshotId:'snapshot',capturedMode:'ADVISORY',effectiveMode:'OFF'},verificationStatus:'UNVERIFIED',reasons:['LEGACY_ACK_REQUIRED'],...patch});
++beforeEach(()=>{vi.spyOn(client,'getArtifactStatus').mockResolvedValue(status());});
++afterEach(()=>{cleanup();vi.restoreAllMocks();});
++const modal=()=>render(<PublishModal isOpen canPublish script={script} onClose={()=>{}} onNotify={()=>{}}/>);
++
++it('requires explicit unverified acknowledgement and sends exact artifact preconditions',async()=>{
++ const publish=vi.spyOn(publicationService,'publishInternal').mockResolvedValue({id:'publication',projectId:script.id,lmsEmbedCode:null,youtubeUrl:null,publishedAt:'TEST_ONLY'});
++ modal();const ack=await screen.findByRole('checkbox');const button=screen.getByRole('button',{name:/Xuất bản vào thư viện/});
++ expect(button.hasAttribute('disabled')).toBe(true);expect(publish).not.toHaveBeenCalled();fireEvent.click(ack);fireEvent.click(button);
++ await waitFor(()=>expect(publish).toHaveBeenCalledWith(script.id,script.title,expect.objectContaining({legacyUnverifiedAcknowledged:true,artifactExpectation:{clipId:'clip',jobId:'job',snapshotId:'snapshot',inputHash:'a'.repeat(64)},idempotencyKey:expect.any(String)})));
++});
++it('known mismatch remains blocked and cannot be acknowledged around',async()=>{
++ vi.mocked(client.getArtifactStatus).mockResolvedValue(status({integrity:'MISMATCH',freshness:'NEEDS_REVIEW',publishEligibility:{allowed:false,route:'BLOCKED',requiresLegacyAcknowledgement:false},reasons:['ARTIFACT_BINDING_MISMATCH']}));
++ const publish=vi.spyOn(publicationService,'publishInternal');modal();await screen.findByText('ARTIFACT_BINDING_MISMATCH');
++ expect(screen.queryByRole('checkbox')).toBeNull();expect(screen.getByRole('button',{name:/Xuất bản vào thư viện/}).hasAttribute('disabled')).toBe(true);expect(publish).not.toHaveBeenCalled();
++});
++it('uncertain publication failure keeps the same retry key and never claims success',async()=>{
++ const publish=vi.spyOn(publicationService,'publishInternal').mockRejectedValue(new Error('TEST_ONLY uncertain response'));
++ modal();fireEvent.click(await screen.findByRole('checkbox'));const button=screen.getByRole('button',{name:/Xuất bản vào thư viện/});fireEvent.click(button);
++ await screen.findByText('TEST_ONLY uncertain response');const first=publish.mock.calls[0][2]?.idempotencyKey;fireEvent.click(button);await waitFor(()=>expect(publish).toHaveBeenCalledTimes(2));
++ expect(publish.mock.calls[1][2]?.idempotencyKey).toBe(first);expect(screen.queryByLabelText('Mã nhúng LMS')).toBeNull();
++});
++it('publication service does not send whole status object or verification claims',async()=>{
++ const post=vi.spyOn(apiClient,'post').mockResolvedValue({});await publicationService.publishInternal('p','TEST_ONLY',{legacyUnverifiedAcknowledged:true,artifactExpectation:client.artifactExpectation(status()),idempotencyKey:'TEST_ONLY_key'});
++ expect(post.mock.calls[0][1]).toEqual({targets:['INTERNAL_LIBRARY','LMS'],title:'TEST_ONLY',legacyUnverifiedAcknowledged:true,artifactExpectation:{clipId:'clip',jobId:'job',snapshotId:'snapshot',inputHash:'a'.repeat(64)},idempotencyKey:'TEST_ONLY_key'});
++});
++it('summary separates artifact origin, mode rollback and media QA from scientific verification',async()=>{
++ vi.spyOn(scriptService,'getStemTarget').mockResolvedValue({versionId:'version',versionNo:1,scriptRevision:0,workspaceId:'workspace'});
++ vi.spyOn(scriptService,'getStemBrief').mockResolvedValue({schemaVersion:'stem.v1',scriptVersionId:'version',brief:null,revision:0,verificationStatus:'UNVERIFIED',readiness:'LEGACY_UNMAPPED',effectiveMode:'OFF',modeRevision:2,evidence:[],findings:[]});
++ vi.spyOn(reviewService,'getQaReport').mockResolvedValue({projectId:script.id,passed:false,failCount:1,warnCount:2,findings:[]});
++ render(<StemReadOnlySummary script={script}/>);expect(await screen.findByText(/Snapshot: snapshot/)).toBeTruthy();expect(await screen.findByText(/Media QA: FAIL/)).toBeTruthy();expect(screen.getByText(/mode lúc chụp ADVISORY.*hiện tại OFF/)).toBeTruthy();
++});
++it('switching project ignores the prior asynchronous artifact status',async()=>{
++ let resolve!:(value:StemArtifactStatus)=>void;
++ vi.mocked(client.getArtifactStatus).mockReturnValueOnce(new Promise(r=>{resolve=r;})).mockResolvedValueOnce(status({reasons:['TEST_ONLY_current']}));
++ const view=modal();view.rerender(<PublishModal isOpen canPublish script={{...script,id:'other'}} onClose={()=>{}} onNotify={()=>{}}/>);
++ await screen.findByText('TEST_ONLY_current');resolve(status({reasons:['TEST_ONLY_old']}));await waitFor(()=>expect(screen.queryByText('TEST_ONLY_old')).toBeNull());
++});
++
++it.each([400,403,404,409,429])('publication %s keeps acknowledgement and requires explicit recovery',async(code)=>{
++ const publish=vi.spyOn(publicationService,'publishInternal').mockRejectedValue(new ApiError('TEST_ONLY operational error','TEST_ONLY_CODE',code,{field:'title'},2));
++ modal();fireEvent.click(await screen.findByRole('checkbox'));fireEvent.click(screen.getByRole('button',{name:/Xuất bản vào thư viện/}));
++ await screen.findByText(/TEST_ONLY operational error/);expect(publish).toHaveBeenCalledTimes(1);
++ expect(screen.getByRole('button',{name:/Xuất bản vào thư viện/}).hasAttribute('disabled')).toBe(true);
++ expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(true);
++});
+diff --git a/src/components/stem/StemReadOnlySummary.tsx b/src/components/stem/StemReadOnlySummary.tsx
+--- a/src/components/stem/StemReadOnlySummary.tsx
++++ b/src/components/stem/StemReadOnlySummary.tsx
+@@ -3,12 +3,24 @@
+ import { scriptService } from '../../services/scriptService';
+ import { useStemTarget } from './useStemTarget';
+ import { StemErrorNotice } from './StemErrorNotice';
++import { getArtifactStatus } from '../../services/stemClient';
++import { reviewService } from '../../services/reviewService';
++import type { StemArtifactStatus } from '../../types/stem';
+ 
+-export function StemReadOnlySummary({script,compositionVersionNo}:{script:STEMScript;compositionVersionNo?:number}) {
++export function StemReadOnlySummary({script,compositionVersionNo,compositionRevision}:{script:STEMScript;compositionVersionNo?:number;compositionRevision?:number}) {
+   const {target,error:targetError}=useStemTarget(script.id,script.currentVersionNo??script.version);
+   const [view,setView]=useState<StemViewResponse|null>(null);
+   const [error,setError]=useState<unknown>(null);
+   const [reload,setReload]=useState(0);
++  const [artifact,setArtifact]=useState<StemArtifactStatus|null>(null);
++  const [artifactError,setArtifactError]=useState(false);
++  const [qa,setQa]=useState<Awaited<ReturnType<typeof reviewService.getQaReport>>|null>(null);
++  useEffect(()=>{
++    let current=true;setArtifact(null);setQa(null);setArtifactError(false);
++    void getArtifactStatus(script.id).then(result=>{if(current)setArtifact(result);}).catch(()=>{if(current)setArtifactError(true);});
++    if(script.videoUrl)void reviewService.getQaReport(script.id).then(result=>{if(current)setQa(result);}).catch(()=>{});
++    return()=>{current=false;};
++  },[script.id,script.videoUrl,script.videoStatus,script.draftRevision,compositionRevision,reload]);
+   useEffect(()=>{
+     let current=true;setView(null);setError(null);
+     if(target)void scriptService.getStemBrief(script.id,target.versionId).then(result=>{if(current)setView(result);}).catch(err=>{if(current)setError(err);});
+@@ -16,6 +28,13 @@
+   },[script.id,target?.versionId,script.draftRevision,reload]);
+   return <details className="border border-amber-200 bg-amber-50 p-3 text-xs" open><summary>Hồ sơ STEM — chỉ đọc · DRAFT/UNVERIFIED</summary>
+     <StemErrorNotice error={targetError??error} onReload={()=>setReload(n=>n+1)}/>
++    {artifact?<div aria-label="Trạng thái artifact STEM">
++      <p>{artifact.freshness} · {artifact.classification} · integrity {artifact.integrity} · UNVERIFIED</p>
++      <p>Xuất bản: {artifact.publishEligibility.route}{artifact.publishEligibility.requiresLegacyAcknowledgement?' — cần xác nhận nội dung chưa thẩm định':''}</p>
++      <p>Snapshot: {artifact.snapshotOrigin.snapshotId??'Legacy/chưa có'} · mode lúc chụp {artifact.snapshotOrigin.capturedMode??'Không rõ'} · hiện tại {artifact.snapshotOrigin.effectiveMode??'Không rõ'}</p>
++      {artifact.reasons.map(reason=><p key={reason}>{reason}</p>)}
++    </div>:artifactError?<p>Chưa đọc được trạng thái artifact; máy chủ kiểm tra lại khi duyệt/xuất bản.</p>:<p>Đang đọc trạng thái artifact…</p>}
++    {qa&&<div aria-label="Media QA"><p>Media QA: {qa.passed?'PASS':'FAIL'} · {qa.failCount} lỗi · {qa.warnCount} cảnh báo. Kết quả kỹ thuật không chứng nhận STEM.</p><p>QA input: {qa.evaluatedAgainst?.snapshotId??'Legacy/chưa có snapshot'} · job {qa.evaluatedAgainst?.jobId??'Không rõ'}</p></div>}
+     {compositionVersionNo!==undefined&&target&&compositionVersionNo!==target.versionNo?<p role="alert">NEEDS_REVIEW: bản dựng v{compositionVersionNo} khác script hiện tại v{target.versionNo}; tóm tắt dưới đây chưa xác nhận cho bản dựng này.</p>:null}
+     {!view?<p>Chưa tải được trạng thái STEM.</p>:<>
+       <p>{view.readiness} · {view.effectiveMode} · brief revision {view.revision} · mode revision {view.modeRevision}</p>
+diff --git a/src/components/views/ProducerStudio/ProducerStudio.tsx b/src/components/views/ProducerStudio/ProducerStudio.tsx
+--- a/src/components/views/ProducerStudio/ProducerStudio.tsx
++++ b/src/components/views/ProducerStudio/ProducerStudio.tsx
+@@ -261,7 +261,7 @@
+   });
+   return (
+     <section className="studio-workspace flex-1 min-h-0 flex flex-col overflow-hidden">
+-      <StemReadOnlySummary script={script} compositionVersionNo={production?.scriptVersionNo}/>
++      <StemReadOnlySummary script={script} compositionVersionNo={production?.scriptVersionNo} compositionRevision={production?.revision}/>
+       <p role="note" className="px-4 py-1 text-xs text-amber-800">{PRESENTATION_REVIEW_NOTICE}</p>
+       {/* Top Bar Studio */}
+       <div className="studio-toolbar bg-white border-b px-6 py-2.5 flex justify-between items-center text-xs shrink-0 z-10 shadow-2xs">
+diff --git a/src/services/libraryService.ts b/src/services/libraryService.ts
+--- a/src/services/libraryService.ts
++++ b/src/services/libraryService.ts
+@@ -19,6 +19,8 @@
+   embedCode: string;
+   youtubeUrl?: string | null;
+   publishedAt: string;
++  verificationStatus?: 'UNVERIFIED'|'LEGACY_UNMAPPED';
++  snapshotId?: string|null;
+ }
+ 
+ export interface LibraryFilters {
+diff --git a/src/services/publicationService.ts b/src/services/publicationService.ts
+--- a/src/services/publicationService.ts
++++ b/src/services/publicationService.ts
+@@ -9,9 +9,10 @@
+ }
+ 
+ export const publicationService = {
+-  publishInternal(projectId: string, title: string): Promise<PublicationResponse> {
++  publishInternal(projectId: string, title: string, options?:{legacyUnverifiedAcknowledged:boolean;artifactExpectation?:import('../types/stem').StemArtifactExpectation;idempotencyKey:string}): Promise<PublicationResponse> {
+     return apiClient.post(`/scripts/${projectId}/publish`, {
+       targets: ['INTERNAL_LIBRARY', 'LMS'], title,
++      ...(options?{legacyUnverifiedAcknowledged:options.legacyUnverifiedAcknowledged,artifactExpectation:options.artifactExpectation,idempotencyKey:options.idempotencyKey}:{}),
+     });
+   },
+ };
+diff --git a/src/services/reviewService.ts b/src/services/reviewService.ts
+--- a/src/services/reviewService.ts
++++ b/src/services/reviewService.ts
+@@ -85,6 +85,7 @@
+   failCount: number;
+   warnCount: number;
+   findings: QaFinding[];
++  evaluatedAgainst?: {jobId?:string;snapshotId?:string;inputHash?:string;assurance?:string}|null;
+ }
+ 
+ export interface ReviewQueueItem {
+diff --git a/src/services/stemClient.ts b/src/services/stemClient.ts
+--- a/src/services/stemClient.ts
++++ b/src/services/stemClient.ts
+@@ -2,6 +2,11 @@
+ import type { StemBrief, StemEvidence, StemSaveRequest, StemValidationFinding, WorkspaceStemSettings, WorkspaceStemSettingsWire, SceneData, StemAssessment, StemChangeTarget } from '../types/stem';
+ 
+ export const STEM_CONTEXT_KEYS = ['IN_CLASS_SCREEN', 'GROUP_PRACTICE'] as const;
++export const getArtifactStatus = (projectId:string) => apiClient.get<import('../types/stem').StemArtifactStatus>(`/scripts/${projectId}/stem-artifact-status`);
++export function artifactExpectation(status:import('../types/stem').StemArtifactStatus):import('../types/stem').StemArtifactExpectation|undefined {
++ const {clipId,jobId,snapshotId,inputHash}=status.target;
++ return clipId&&jobId&&snapshotId&&inputHash?{clipId,jobId,snapshotId,inputHash}:undefined;
++}
+ export async function hasActiveReviewerSeat(workspaceId:string,userId:string):Promise<boolean> {
+  if(!workspaceId||!userId)return false;
+  const rows=await apiClient.get<Array<{userId?:string;role?:string;status?:string}>>(`/workspaces/${workspaceId}/members`);
+diff --git a/src/types/stem.ts b/src/types/stem.ts
+--- a/src/types/stem.ts
++++ b/src/types/stem.ts
+@@ -562,3 +562,17 @@
+   revision: number;
+   verificationStatus: 'UNVERIFIED' | string;
+ }
++
++/** P5 server-owned technical state; CURRENT never implies expert verification. */
++export interface StemArtifactStatus {
++  schemaVersion: 'stem-artifact.v1';
++  target: {projectId:string;versionId:string;compositionRevision?:number|null;clipId?:string;jobId?:string;snapshotId?:string;inputHash?:string};
++  freshness: 'CURRENT'|'NEEDS_REVIEW'|string;
++  classification: 'CLASSIFIED'|'UNKNOWN';
++  integrity: 'MATCH'|'MISMATCH'|'UNKNOWN';
++  publishEligibility: {allowed:boolean;route:'CURRENT'|'LEGACY_UNVERIFIED'|'BLOCKED';requiresLegacyAcknowledgement:boolean};
++  snapshotOrigin: {snapshotId?:string;capturedMode?:string;effectiveMode?:string};
++  verificationStatus: 'UNVERIFIED'|'LEGACY_UNMAPPED';
++  reasons: string[];
++}
++export interface StemArtifactExpectation {clipId:string;jobId:string;snapshotId:string;inputHash:string}

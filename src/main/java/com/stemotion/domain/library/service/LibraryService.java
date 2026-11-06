@@ -34,6 +34,8 @@ public class LibraryService {
     private final SceneRepository sceneRepository;
     private final ScriptService scriptService;
     private final com.stemotion.domain.production.repository.PublicationRepository publicationRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
 
     /** Subjects and grades present in the library, for the filter dropdowns. */
     public record LibraryFilters(List<StemSubject> subjects, List<String> gradeLevels) {}
@@ -48,6 +50,7 @@ public class LibraryService {
     public List<LibraryItem> findPublished(StemSubject subject, String gradeLevel) {
         String grade = (gradeLevel == null || gradeLevel.isBlank()) ? null : gradeLevel.trim();
 
+        if(stemArtifacts!=null)return snapshotItems(subject,grade);
         return toItems(library(subject, grade, org.springframework.data.domain.Pageable.unpaged()).getContent());
     }
 
@@ -59,6 +62,10 @@ public class LibraryService {
     public org.springframework.data.domain.Page<LibraryItem> findPublished(StemSubject subject, String gradeLevel,
             com.stemotion.core.web.PageParams paging) {
         String grade = (gradeLevel == null || gradeLevel.isBlank()) ? null : gradeLevel.trim();
+        if(stemArtifacts!=null){
+            var all=snapshotItems(subject,grade);var pageable=paging.pageable();int from=(int)Math.min(pageable.getOffset(),all.size());int to=Math.min(from+pageable.getPageSize(),all.size());
+            return new org.springframework.data.domain.PageImpl<>(all.subList(from,to),pageable,all.size());
+        }
         var page = library(subject, grade, paging.pageable());
         return new org.springframework.data.domain.PageImpl<>(toItems(page.getContent()), page.getPageable(),
             page.getTotalElements());
@@ -94,6 +101,10 @@ public class LibraryService {
      */
     @Transactional(readOnly = true)
     public LibraryFilters availableFilters() {
+        if(stemArtifacts!=null){
+            var items=snapshotItems(null,null);
+            return new LibraryFilters(items.stream().map(LibraryItem::subject).distinct().sorted(Comparator.comparing(Enum::name)).toList(),items.stream().map(LibraryItem::gradeLevel).filter(java.util.Objects::nonNull).distinct().sorted().toList());
+        }
         // Two DISTINCT queries over the columns, not the library rows (DB performance plan, follow-up).
         List<StemSubject> subjects = publicationRepository
             .findLibrarySubjects(Publication.Platform.INTERNAL_LIBRARY, VideoStatus.PUBLISHED).stream()
@@ -127,9 +138,22 @@ public class LibraryService {
             scenes.getOrDefault(e.getProject().getId(), 0L).intValue())).toList();
     }
 
-    private static LibraryItem toItem(Publication publication, PublishRecord latest, int sceneCount) {
+    private List<LibraryItem> snapshotItems(StemSubject subject,String grade){
+        return toItems(library(null,null,org.springframework.data.domain.Pageable.unpaged()).getContent()).stream()
+            .filter(i->subject==null||i.subject()==subject).filter(i->grade==null||grade.equalsIgnoreCase(i.gradeLevel())).toList();
+    }
+
+    private LibraryItem toItem(Publication publication, PublishRecord latest, int sceneCount) {
         ClipProject project = publication.getProject();
         String videoUrl = publication.getClip().getVideoUrl();
+        if(stemArtifacts!=null){
+            var meta=stemArtifacts.publicationMetadata(publication.getId());
+            if(meta.isObject()){
+                com.fasterxml.jackson.databind.JsonNode export;
+                try{export=new com.fasterxml.jackson.databind.ObjectMapper().readTree(publication.getMetadata());}catch(Exception ex){throw ApiException.conflict("Unreadable publication snapshot metadata");}
+                return new LibraryItem(project.getId(),meta.path("title").asText(),StemSubject.valueOf(meta.path("subject").asText()),meta.path("gradeLevel").asText(),meta.path("totalDurationSeconds").asInt(),meta.path("sceneCount").asInt(),meta.path("ownerName").asText(),meta.path("workspaceName").asText(),videoUrl,export.path("lmsEmbedCode").isTextual()?export.path("lmsEmbedCode").asText():com.stemotion.domain.production.service.VideoEmbed.build(videoUrl),null,publication.getPublishedAt(),meta.path("verificationStatus").asText("UNVERIFIED"),meta.path("snapshotId").asText());
+            }
+        }
         return new LibraryItem(
             project.getId(),
             project.getTitle(),

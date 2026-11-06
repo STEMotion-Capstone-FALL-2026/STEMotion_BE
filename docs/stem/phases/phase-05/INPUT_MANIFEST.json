@@ -1,0 +1,142 @@
+{
+  "captured_at": "2026-11-05T13:38:59.456304+00:00",
+  "note": "Files read or targeted source sections/locators inspected, not all source files read in full. Source-wide baseline is INPUT_BASELINE.json. No secrets/env/real user data.",
+  "files": [
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-05\\PHASE_05_SCOPE_DRAFT.md",
+      "sha256": "6551783011bfff779c87e09d6d96791392730e55bc8f32cc11e782087e52fc9a"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-05\\APPROVED_EXECUTION_PROMPT.md",
+      "sha256": "9fb35fa4e7791641b9ce7c19c5455928a378259c55a95f6f67c27037683fef7f"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-03\\CONTRACT_DELTA.md",
+      "sha256": "bb3a7b85e95badea9f10dcac227ab15802330adb8e0a96584767764e0bbf0674"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-03\\P3_HANDOFF.md",
+      "sha256": "e2260959fff6f8a7cf92ca8f87ff8bd0ec9d7aff745d2b4bc5dc795af20ef13a"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-03\\MIGRATION_TEST_LEDGER.md",
+      "sha256": "05ea574b16943beb5e4f6b91808b6b764614aefa301604a9b5e7ee80ffb2ac72"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-04\\be-blocker-fix\\BE_BLOCKER_FIX_HANDOFF.md",
+      "sha256": "e6187c882f26df75afb0deb4f18fed318fecdc2bdaf1cb238d94bd6d9b712584"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\docs\\stem\\phases\\phase-04\\takeover-codex\\P4_HANDOFF.md",
+      "sha256": "96d48854911ae9deb66dcabe9072e5809b4e257afbd93d3c8e52f62b42bbb2d0"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\production\\entity\\RenderJob.java",
+      "sha256": "b5d02bd000f39e9df1783c47dff3ccf955ff105859c12b0eba0772b4df06371b"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\production\\entity\\Clip.java",
+      "sha256": "479eefcf9b5405f1d46e223f2788d6b27d166bdbf96cadf8be2a6da1a03b8f94"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\production\\entity\\Publication.java",
+      "sha256": "2ebac0f21a28339bc8b47a28cb81bbc57ac6c6debdc0ae82f82f8915614b279e"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\production\\dto\\ProductionDtos.java",
+      "sha256": "bdeb3d91363f29ab3b20c21479b24a69a2fd6b116b10f126a0f0a1100ea208a8"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\production\\service\\RenderService.java",
+      "sha256": "ad6320c8889545dcf2c7905b1081d2ab1536a728f95821550dca4268bf63a833"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\production\\service\\CompositionService.java",
+      "sha256": "3f5723da962d5c7b8952a7de6ca82a11a6d5074caf2bf46c7ef7a3acd052f6bf"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\production\\service\\PublishService.java",
+      "sha256": "3346a31ded9f173a3c9cd82c0c520c9f3af7a62ccc97ef56869081a427ac74fe"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\library\\service\\LibraryService.java",
+      "sha256": "f6467037bfa97bca161b48fe49570e3dd9b3ee3a50594af73b6249f74cea04f0"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\production\\repository\\PublicationRepository.java",
+      "sha256": "3fc2904fd514a0e1fe087880b48d5c34f5ab905453268679c695a9dedc6edd87"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\stem\\StemDtos.java",
+      "sha256": "554391e513fa61d68c058348eae5e9aada81111e690540cc4709416a26dfa77c"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\stem\\StemRepository.java",
+      "sha256": "87a5233c651b0c73c944ead44ac15ef7c84bce7c3004d043ba2c0e24211956f9"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\script\\mapper\\ScenePropsValidator.java",
+      "sha256": "c1b50fe9ef25292b3f2fbc84d85804933047499ba584528a99a91be99fa040ac"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\script\\mapper\\ComposedSceneValidator.java",
+      "sha256": "e1295df76560d11afb889a3a9c7c47f88ff29a42f1e3dd1b2add021d2dca7638"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\resources\\db\\migration\\V10__clip_artifacts.sql",
+      "sha256": "17a18ba296e48af3ba8f4a3fdf3de2a2b7b16a34082f002fda31e40a42beb063"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\resources\\db\\migration\\V13__publication_transition.sql",
+      "sha256": "6531b8d3d0939692d04378b753aa45594c888efb5ded50fefeb4cc386195e5b5"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\resources\\db\\migration\\V19__production_composition.sql",
+      "sha256": "95dfe36633c9e56115b4b23d9c3b7e8ef3f5fe05ff7b4a38189a14d322d65314"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\test\\resources\\db\\stem-p3\\V91000__stem_p3_test_only.sql",
+      "sha256": "013f9998e636eb4fb98d294888c498420a74780eeed138f1fdd34285df4b33cd"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\types\\stem.ts",
+      "sha256": "3d4ca8dbae91d073341c3ecf33797915a3f2558cdd1fbf4a6e5977a9c372b7bf"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\services\\composed.ts",
+      "sha256": "65933df1d72d9e572620a1b577d9745da3b98f9509057454e3202ebd59ad6516"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\remotion\\composed\\ComposedScene.tsx",
+      "sha256": "9cea6c3fb040247c0e96f29dc737ab0860d36773bf02211de8d62f142827ecf3"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\remotion\\composed\\layout.ts",
+      "sha256": "bbc4fbf59cd67aaa04afe409d7d295b0d015fdd04edf6e7bfd3c83ac74221cb6"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\services\\publicationService.ts",
+      "sha256": "ab026c6d9d4a6bc2f3628029ef455bf29b296fe3bc5ba085ccb50d985975950b"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\components\\modals\\PublishModal.tsx",
+      "sha256": "4316b50ef9cb22774703ff6d1b9156dc854e44b7ac7292446a86a4880c01c370"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\services\\renderService.ts",
+      "sha256": "29fdce753949269e234a032e56afc3e8a97108a8734ea059ed493bd984cf6a74"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\services\\reviewService.ts",
+      "sha256": "c852225db4ac49abb6eaa26db8905a1f3339e88ccba472be6ab164e2a046e086"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\services\\libraryService.ts",
+      "sha256": "f7d0208a182c5c4d029d8313b8a1b3d4451abed4c9a32c6ad8f9ae440a700407"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\services\\compositionService.ts",
+      "sha256": "b4797dda2935e4fd2fcf28c1ba402cde0793550276298227ed3026cc8ada71ac"
+    }
+  ]
+}

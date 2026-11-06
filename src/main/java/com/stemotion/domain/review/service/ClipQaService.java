@@ -56,15 +56,40 @@ public class ClipQaService {
     private final CompositionService compositionService;
     private final ClipRepository clipRepository;
     private final ObjectMapper objectMapper;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
+
 
     @Transactional(readOnly = true)
     public QaReport run(String projectId) {
         ClipProject project = scriptService.getOrThrow(projectId);
         // The clip as rendered: the producer's composition when there is one.
-        List<Scene> scenes = compositionService.renderScenes(scriptService.currentVersion(project));
+        var version=scriptService.currentVersion(project);
+        List<Scene> scenes = compositionService.renderScenes(version);
+        Integer frozenFps=null;
+        java.util.Map<String,String> evaluatedAgainst=null;
+        if(stemArtifacts!=null){
+            var current=clipRepository.findCurrentArtifacts(project.getId(),version.getId(),project.getVideoUrl());
+            if(current.size()==1){
+                var frozen=stemArtifacts.frozenScenes(current.get(0));
+                if(frozen.isArray()){
+                    frozenFps=current.get(0).getRenderJob().getFps();
+                    evaluatedAgainst=stemArtifacts.frozenReference(current.get(0));
+                    scenes=new ArrayList<>();
+                    for(var raw:frozen){
+                        var props=((com.fasterxml.jackson.databind.node.ObjectNode)raw).deepCopy();
+                        props.remove(java.util.List.of("id","type","title","narration","durationInFrames"));
+                        Scene scene=Scene.builder().scriptVersion(version).orderNo(scenes.size()+1)
+                            .sceneType(SceneType.valueOf(raw.path("type").asText())).title(raw.path("title").asText())
+                            .narration(raw.path("narration").asText()).durationInFrames(raw.path("durationInFrames").asInt())
+                            .props(props.toString()).build();scene.setId(raw.path("id").asText());scenes.add(scene);
+                    }
+                }
+            }
+        }
 
         List<QaFinding> findings = new ArrayList<>();
-        int fps = project.getFps() == null || project.getFps() <= 0 ? 30 : project.getFps();
+        int fps = frozenFps!=null?frozenFps:(project.getFps() == null || project.getFps() <= 0 ? 30 : project.getFps());
 
         checkStructure(scenes, findings);
         checkClipDuration(scenes, fps, findings);
@@ -93,7 +118,7 @@ public class ClipQaService {
             ));
         }
 
-        return new QaReport(projectId, fails == 0, (int) fails, (int) warns, findings);
+        return new QaReport(projectId, fails == 0, (int) fails, (int) warns, findings,evaluatedAgainst);
     }
 
     // ------------------------------------------------------------------ checks

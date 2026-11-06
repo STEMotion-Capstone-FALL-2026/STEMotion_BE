@@ -53,6 +53,9 @@ public class RenderService {
     private final AuthService authService;
     private final IntegrationProperties properties;
     private final ClipArtifactService clipArtifactService;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
+
 
     /**
      * Queues a render of the producer's composition of the approved script,
@@ -63,7 +66,12 @@ public class RenderService {
      */
     @Transactional
     public RenderJobResponse start(String projectId, StartRenderRequest request, String currentUserId) {
+        return startFrozen(projectId,request,currentUserId,null);
+    }
+
+    private RenderJobResponse startFrozen(String projectId, StartRenderRequest request,String currentUserId,String approvalSnapshot) {
         ClipProject project = requireRenderable(projectId);
+        if(stemArtifacts!=null)stemArtifacts.lock(project);
         ScriptVersion version = scriptService.currentVersion(project);
         CompositionService.RenderInput input = compositionService.renderInput(version);
         if (input.scenes().isEmpty()) {
@@ -71,7 +79,7 @@ public class RenderService {
         }
         String theme = input.composition() == null ? VisualThemes.DEFAULT : input.composition().getVisualTheme();
         return enqueueNew(project, version, toScriptProps(project, input.scenes(), theme), input.composition(),
-            input.revision(), request.ttsVoice(), currentUserId);
+            input.revision(), request.ttsVoice(), currentUserId,approvalSnapshot);
     }
 
     private ClipProject requireRenderable(String projectId) {
@@ -108,7 +116,7 @@ public class RenderService {
 
     private RenderJobResponse enqueueNew(ClipProject project, ScriptVersion version, Map<String, Object> scriptProps,
                                          Composition composition, Integer compositionRevision, String ttsVoice,
-                                         String currentUserId) {
+                                         String currentUserId,String approvalSnapshot) {
         // Proposal output contract: clamp legacy requests to 1080p30.
         RenderResolution resolution = RenderResolution.RES_1080P;
         int fps = 30;
@@ -129,6 +137,7 @@ public class RenderService {
             .inputProps(writeProps(scriptProps))
             .build());
 
+        if(stemArtifacts!=null)stemArtifacts.freeze(job,approvalSnapshot);
         moveProduction(project, VideoStatus.RENDERING);
 
         String jobId = job.getId();
@@ -211,6 +220,8 @@ public class RenderService {
             .or(() -> renderJobRepository.findByExternalJobId(callback.jobId()))
             .orElseThrow(() -> ApiException.notFound("RenderJob", callback.jobId()));
 
+        boolean currentArtifact=stemArtifacts==null||stemArtifacts.callback(job,callback);
+
         // Duplicate completion and late progress must never undo QA approval,
         // cancellation or a terminal failure.
         if (job.getStatus() == RenderStatus.COMPLETED || job.getStatus() == RenderStatus.FAILED) {
@@ -241,9 +252,12 @@ public class RenderService {
         ClipProject project = job.getProject();
         if (job.getStatus() == RenderStatus.COMPLETED) {
             job.setProgress(100);
-            clipArtifactService.recordCompleted(job, callback.captionSync());
-            project.setVideoUrl(job.getVideoUrl());
-            moveProduction(project, VideoStatus.IN_QA);
+            var artifact=clipArtifactService.recordCompleted(job, callback.captionSync());
+            if(stemArtifacts!=null)stemArtifacts.completed(job,artifact,callback);
+            if(currentArtifact){
+                project.setVideoUrl(job.getVideoUrl());
+                moveProduction(project, VideoStatus.IN_QA);
+            }
         } else if (job.getStatus() == RenderStatus.FAILED) {
             return RenderJobResponse.from(handleFailure(job), null);
         }
@@ -272,6 +286,13 @@ public class RenderService {
         }
 
         int nextAttempt = job.getAttemptCount() + 1;
+        if(stemArtifacts!=null){
+            // P5 retries have a distinct job/attempt binding; old callbacks cannot complete the replacement.
+            renderJobRepository.saveAndFlush(job);
+            var response=enqueueNew(project,job.getScriptVersion(),propsOf(job),job.getComposition(),job.getCompositionRevision(),job.getTtsVoice(),job.getRequestedBy().getId(),stemArtifacts.approvalForJob(job.getId()));
+            var replacement=getOrThrow(response.jobId());replacement.setAttemptCount(nextAttempt);
+            return renderJobRepository.save(replacement);
+        }
         log.warn("Render job {} failed on attempt {} ({}), retrying as attempt {}",
             job.getId(), job.getAttemptCount(), job.getErrorMessage(), nextAttempt);
 
@@ -312,11 +333,16 @@ public class RenderService {
      */
     @Transactional
     public void renderApproved(String projectId, String userId) {
+        renderApproved(projectId,userId,null);
+    }
+
+    @Transactional
+    public void renderApproved(String projectId, String userId,String approvalSnapshot) {
         if (renderJobRepository.existsByProjectIdAndStatusIn(projectId,
                 List.of(RenderStatus.QUEUED, RenderStatus.PROCESSING))) {
             return;
         }
-        start(projectId, new StartRenderRequest(null, null, null), userId);
+        startFrozen(projectId, new StartRenderRequest(null, null, null), userId,approvalSnapshot);
     }
 
     /** Re-queues a failed job manually, outside the automatic budget. */
@@ -335,7 +361,7 @@ public class RenderService {
         // Same composition version as the failed job, even if the draft changed since.
         ClipProject project = requireRenderable(failed.getProject().getId());
         RenderJobResponse response = enqueueNew(project, failed.getScriptVersion(), propsOf(failed),
-            failed.getComposition(), failed.getCompositionRevision(), failed.getTtsVoice(), currentUserId);
+            failed.getComposition(), failed.getCompositionRevision(), failed.getTtsVoice(), currentUserId,stemArtifacts==null?null:stemArtifacts.approvalForJob(failed.getId()));
 
         RenderJob retried = getOrThrow(response.jobId());
         retried.setAttemptCount(failed.getAttemptCount() + 1);

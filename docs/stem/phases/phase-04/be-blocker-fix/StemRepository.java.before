@@ -1,0 +1,45 @@
+package com.stemotion.domain.stem;
+import com.fasterxml.jackson.databind.*;
+import com.stemotion.core.exception.ApiException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import java.util.*;
+@Repository
+@ConditionalOnProperty(name="app.stem.enabled",havingValue="true")
+public class StemRepository {
+ public final JdbcTemplate jdbc;
+ public final ObjectMapper json;
+ public StemRepository(JdbcTemplate jdbc,ObjectMapper json){this.jdbc=jdbc;this.json=json.copy().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);}
+ public String encode(Object data){try{return json.writeValueAsString(data);}catch(Exception e){throw ApiException.badRequest("Invalid STEM JSON");}}
+ public <T>T decode(String text,Class<T> type){try{return json.readValue(text,type);}catch(Exception e){throw ApiException.badRequest("Invalid STEM JSON for "+type.getSimpleName());}}
+ public String id(){return UUID.randomUUID().toString();}
+ public Map<String,Object> brief(String version){return jdbc.queryForList("select * from stem_briefs where version_id=?",version).stream().findFirst().orElse(null);}
+ public String text(Map<String,Object> row,String key){return row.get(key)==null?null:row.get(key).toString();}
+ public int number(Map<String,Object> row,String key){return ((Number)row.get(key)).intValue();}
+ public List<StemDtos.Evidence> evidence(String brief){return jdbc.query("select * from stem_evidence where brief_id=? and not retired order by id",(rs,n)->new StemDtos.Evidence(rs.getString("id"),rs.getString("original_scene_id"),rs.getString("task_key"),rs.getString("objective_key"),rs.getString("component"),rs.getString("explanation")),brief);}
+ public StemModels.WorkspaceMode settings(String workspace){
+  return jdbc.query("select * from stem_settings where workspace_id=?",(rs,n)->new StemModels.WorkspaceMode(workspace,rs.getInt("revision"),rs.getString("mode"),Arrays.asList(decode(rs.getString("policy_ids"),String[].class)),rs.getString("default_policy_id")),workspace).stream().findFirst().orElse(new StemModels.WorkspaceMode(workspace,0,"OFF",List.of(),null));
+ }
+ public void audit(String actor,String target,String event,Object payload){jdbc.update("insert into stem_audit(id,actor_id,target,event,payload) values(?,?,?,?,?::jsonb)",id(),actor,target,event,encode(payload));}
+ public List<StemModels.CatalogVersion> catalog(String kind,int page,int size){
+  if(page<0||page>10000||size<1||size>100)throw ApiException.badRequest("Invalid catalog page/size");
+  if(kind!=null)try{StemModels.Kind.valueOf(kind);}catch(Exception e){throw ApiException.badRequest("Invalid catalog kind");}
+  org.springframework.jdbc.core.RowMapper<StemModels.CatalogVersion> mapper=(rs,n)->new StemModels.CatalogVersion(rs.getString("id"),StemModels.Kind.valueOf(rs.getString("kind")),rs.getString("logical_key"),rs.getInt("version_no"),rs.getString("parent_id"),rs.getString("source_id"),rs.getString("status"),decode(rs.getString("data"),JsonNode.class),rs.getInt("revision"),"UNVERIFIED");
+  return kind==null?jdbc.query("select * from stem_catalog order by kind,logical_key,version_no limit ? offset ?",mapper,size,page*size):jdbc.query("select * from stem_catalog where kind=? order by logical_key,version_no limit ? offset ?",mapper,kind,size,page*size);
+ }
+ /** Internal MVP DRAFT CRUD; intentionally no public catalog mutation endpoint. */
+ public String createDraft(StemModels.Kind kind,String key,int version,String parent,String source,JsonNode data){
+  if(key==null||key.isBlank()||key.length()>128||version<1||data==null||!data.isObject()||encode(data).length()>65536)throw ApiException.badRequest("Invalid catalog draft");
+  if(parent!=null && jdbc.queryForObject("select count(*) from stem_catalog where id=?",Integer.class,parent)!=1)throw ApiException.badRequest("Missing catalog parent");
+  if(source!=null && jdbc.queryForObject("select count(*) from stem_catalog where id=? and kind='SOURCE_EDITION'",Integer.class,source)!=1)throw ApiException.badRequest("Missing source edition");
+  String id=id();jdbc.update("insert into stem_catalog(id,kind,logical_key,version_no,parent_id,source_id,data) values(?,?,?,?,?,?,?::jsonb)",id,kind.name(),key,version,parent,source,encode(data));return id;
+ }
+ public void updateDraft(String id,int base,JsonNode data){
+  // Referenced editions are immutable; new version is required, even while status remains DRAFT.
+  if(jdbc.queryForObject("select count(*) from stem_catalog where parent_id=? or source_id=?",Integer.class,id,id)>0||jdbc.queryForObject("select count(*) from stem_briefs where policy_id=? or topic_id=? or payload::text like ?",Integer.class,id,id,"%"+id+"%")>0||jdbc.queryForObject("select count(*) from stem_settings where policy_ids::text like ?",Integer.class,"%"+id+"%")>0)throw ApiException.conflict("Referenced catalog edition is immutable");
+  if(data==null||!data.isObject()||encode(data).length()>65536)throw ApiException.badRequest("Invalid catalog payload");
+  if(jdbc.update("update stem_catalog set data=?::jsonb,revision=revision+1 where id=? and revision=? and status='DRAFT'",encode(data),id,base)!=1)throw ApiException.conflict("Catalog revision stale");
+ }
+ public void deleteDraft(String id,int base){updateDraft(id,base,json.createObjectNode().put("archived",true));}
+}

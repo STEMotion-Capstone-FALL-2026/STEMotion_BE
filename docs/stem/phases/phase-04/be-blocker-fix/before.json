@@ -1,0 +1,16 @@
+{
+  "name": "before",
+  "exit_code": 1,
+  "seconds": 89.13,
+  "build_directory": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\be-blocker-fix\\before",
+  "suites": [
+    {
+      "name": "com.stemotion.e2e.StemFullContextRegressionTest",
+      "tests": "3",
+      "failures": "3",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "tests": "StemFullContextRegressionTest"
+}

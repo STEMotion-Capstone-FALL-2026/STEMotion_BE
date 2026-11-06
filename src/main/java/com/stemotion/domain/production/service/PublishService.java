@@ -38,6 +38,9 @@ public class PublishService {
     private final com.stemotion.domain.production.repository.PublicationRepository publicationRepository;
     private final ClipArtifactService clipArtifactService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
+
 
     @Transactional(readOnly = true)
     public List<PublishResponse> findByProject(String projectId) {
@@ -59,6 +62,11 @@ public class PublishService {
                 "PUBLISH_TARGET_UNAVAILABLE", "YouTube OAuth publishing is not configured yet");
         }
 
+        if(stemArtifacts!=null){
+            stemArtifacts.lock(project);
+            var replay=stemArtifacts.publishReplay(project,currentUserId,request);
+            if(replay!=null)return replay;
+        }
         if (publicationRepository.existsByProjectIdAndPlatform(projectId,
                 com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY)) {
             throw ApiException.conflict("This project already has an INTERNAL_LIBRARY publication");
@@ -73,6 +81,7 @@ public class PublishService {
             throw ApiException.badRequest("The project has no rendered video to publish");
         }
         var clip = clipArtifactService.requireCurrent(project, scriptService.currentVersion(project).getId());
+        var artifactPublish=stemArtifacts==null?null:stemArtifacts.beforePublish(project,clip,request);
         // Library exports must also produce a usable, safely escaped LMS iframe.
         VideoEmbed.build(clip.getVideoUrl());
 
@@ -113,8 +122,9 @@ public class PublishService {
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
             throw new IllegalStateException("Could not serialize publication metadata",ex);
         }
+        com.stemotion.domain.production.entity.Publication publication;
         try {
-            publicationRepository.saveAndFlush(com.stemotion.domain.production.entity.Publication.builder()
+            publication=publicationRepository.saveAndFlush(com.stemotion.domain.production.entity.Publication.builder()
             .project(project).clip(clip).publisher(record.getPublishedBy())
             .platform(com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY)
             .metadata(metadata).publishedAt(java.time.LocalDateTime.now()).build());
@@ -126,10 +136,13 @@ public class PublishService {
             throw ex;
         }
 
+        if(stemArtifacts!=null)stemArtifacts.published(publication,currentUserId,artifactPublish);
         project.setVideoStatus(VideoStatus.PUBLISHED);
         projectRepository.save(project);
 
-        return PublishResponse.from(record);
+        var response=PublishResponse.from(record);
+        if(stemArtifacts!=null)stemArtifacts.rememberPublish(project,currentUserId,request,response);
+        return response;
     }
 
 }

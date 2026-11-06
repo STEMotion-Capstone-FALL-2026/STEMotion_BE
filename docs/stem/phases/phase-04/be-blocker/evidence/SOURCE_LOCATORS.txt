@@ -1,0 +1,189 @@
+
+C:\Users\LeTran\FPT University\2026_FALL\STEMotion\.audit\stem-phase-2026-11-05\phase-03\STEMotion_BE\src\main\java\com\stemotion\domain\stem\StemRepository.java
+8: @Repository
+9: @ConditionalOnProperty(name="app.stem.enabled",havingValue="true")
+10: public class StemRepository {
+11:  public final JdbcTemplate jdbc;
+12:  public final ObjectMapper json;
+13:  public StemRepository(JdbcTemplate jdbc,ObjectMapper json){this.jdbc=jdbc;this.json=json.copy().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);}
+14:  public String encode(Object data){try{return json.writeValueAsString(data);}catch(Exception e){throw ApiException.badRequest("Invalid STEM JSON");}}
+15:  public <T>T decode(String text,Class<T> type){try{return json.readValue(text,type);}catch(Exception e){throw ApiException.badRequest("Invalid STEM JSON for "+type.getSimpleName());}}
+16:  public String id(){return UUID.randomUUID().toString();}
+17:  public Map<String,Object> brief(String version){return jdbc.queryForList("select * from stem_briefs where version_id=?",version).stream().findFirst().orElse(null);}
+18:  public String text(Map<String,Object> row,String key){return row.get(key)==null?null:row.get(key).toString();}
+19:  public int number(Map<String,Object> row,String key){return ((Number)row.get(key)).intValue();}
+20:  public List<StemDtos.Evidence> evidence(String brief){return jdbc.query("select * from stem_evidence where brief_id=? and not retired order by id",(rs,n)->new StemDtos.Evidence(rs.getString("id"),rs.getString("original_scene_id"),rs.getString("task_key"),rs.getString("objective_key"),rs.getString("component"),rs.getString("explanation")),brief);}
+21:  public StemModels.WorkspaceMode settings(String workspace){
+22:   return jdbc.query("select * from stem_settings where workspace_id=?",(rs,n)->new StemModels.WorkspaceMode(workspace,rs.getInt("revision"),rs.getString("mode"),Arrays.asList(decode(rs.getString("policy_ids"),String[].class)),rs.getString("default_policy_id")),workspace).stream().findFirst().orElse(new StemModels.WorkspaceMode(workspace,0,"OFF",List.of(),null));
+23:  }
+24:  public void audit(String actor,String target,String event,Object payload){jdbc.update("insert into stem_audit(id,actor_id,target,event,payload) values(?,?,?,?,?::jsonb)",id(),actor,target,event,encode(payload));}
+25:  public List<StemModels.CatalogVersion> catalog(String kind,int page,int size){
+26:   if(page<0||page>10000||size<1||size>100)throw ApiException.badRequest("Invalid catalog page/size");
+
+C:\Users\LeTran\FPT University\2026_FALL\STEMotion\.audit\stem-phase-2026-11-05\phase-03\STEMotion_BE\src\main\java\com\stemotion\domain\stem\StemService.java
+17: @Service
+18: @ConditionalOnProperty(name="app.stem.enabled",havingValue="true")
+19: @Transactional
+20: public class StemService {
+21:  private final StemRepository db; private final StemValidator validator;private final WorkspaceAccess access;private final ScriptVersionRepository versions;private final ClipProjectRepository projects;
+22:  @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager em;
+23:  public StemService(StemRepository db,StemValidator validator,WorkspaceAccess access,ScriptVersionRepository versions,ClipProjectRepository projects){this.db=db;this.validator=validator;this.access=access;this.versions=versions;this.projects=projects;}
+24:  private void revision(Integer expected,int actual,String field){validator.rev(expected,field);if(expected!=actual)throw ApiException.staleRevision(field,actual,expected,"STEM target changed; reload");}
+25:  private ScriptVersion target(String project,String version,String actor,boolean write){
+26:   access.requireProject(project,actor,false);
+27:   ScriptVersion v=versions.findById(version).orElseThrow(()->ApiException.notFound("ScriptVersion",version));
+28:   if(!v.getProject().getId().equals(project))throw ApiException.forbidden("Version is outside project");
+29:   if(write)access.requireActiveStemSeat(v.getProject().getWorkspace().getId(),actor,WorkspaceRole.WRITER);
+30:   return v;
+31:  }
+32:  private void lock(ScriptVersion v){
+33:   var row=db.jdbc.queryForList("select id from script_versions where id=? for update",v.getId());if(row.isEmpty())throw ApiException.conflict("Version changed");
+34:   if(em!=null){em.refresh(v);em.refresh(v.getProject());}
+35:   db.jdbc.queryForList("select id from workspaces where id=? for update",v.getProject().getWorkspace().getId());
+36:  }
+37:  private void editable(ScriptVersion v){if(Boolean.TRUE.equals(v.getProject().getArchived())||!Boolean.TRUE.equals(v.getIsCurrent())||!(v.getStatus()==com.stemotion.core.enums.StemEnums.ScriptStatus.DRAFT||v.getStatus()==com.stemotion.core.enums.StemEnums.ScriptStatus.CHANGE_REQUESTED))throw new ApiException(org.springframework.http.HttpStatus.CONFLICT,"STEM_IMMUTABLE","Submitted brief is immutable");}
+38:  private String digest(Object request){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(db.encode(request).getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
+39:  private String receipt(String actor,String op,String target,String key,Object payload){
+40:   validator.idem(key);db.jdbc.update("delete from stem_receipts where actor_id=? and operation=? and request_key=? and expires_at<=current_timestamp",actor,op,key);
+41:   var rows=db.jdbc.queryForList("select * from stem_receipts where actor_id=? and operation=? and request_key=?",actor,op,key);
+42:   if(rows.isEmpty())return null;var r=rows.get(0);if(!target.equals(db.text(r,"target"))||!digest(payload).equals(db.text(r,"request_digest")))throw new ApiException(org.springframework.http.HttpStatus.CONFLICT,"STEM_IDEMPOTENCY_CONFLICT","Key reused with another payload or target");return db.text(r,"response");
+43:  }
+44:  private void remember(String actor,String op,String target,String key,Object payload,Object result){db.jdbc.update("insert into stem_receipts(actor_id,operation,target,request_key,request_digest,response,expires_at) values(?,?,?,?,?,?::jsonb,current_timestamp+interval '24 hours')",actor,op,target,key,digest(payload),db.encode(result));}
+45:  public View get(String project,String version,String actor){target(project,version,actor,false);return view(version);}
+46:  public View create(String project,String version,String actor,Create request){validator.limits(db.json.valueToTree(request),0);
+47:   validator.schema(request.schemaVersion());validator.rev(request.expectedScriptRevision(),"expectedScriptRevision");var v=target(project,version,actor,true);lock(v);
+48:   String replay=receipt(actor,"CREATE",version,request.idempotencyKey(),request);if(replay!=null)return db.decode(replay,View.class);
+49:   editable(v);revision(request.expectedScriptRevision(),v.getDraftRevision(),"SCRIPT_DRAFT");if(db.brief(version)!=null)throw ApiException.conflict("Brief already exists");
+50:   db.jdbc.update("insert into stem_briefs(id,version_id,payload) values(?,?,?::jsonb)",db.id(),version,db.encode(StemDtos.empty()));
+51:   View result=view(version);remember(actor,"CREATE",version,request.idempotencyKey(),request,result);db.audit(actor,version,"BRIEF_CREATED",Map.of("revision",0));return result;
+52:  }
+53:  public View save(String project,String version,String actor,Save request){validator.limits(db.json.valueToTree(request),0);
+97:  public StemModels.WorkspaceMode settings(String workspace,String actor){access.requireWorkspace(workspace,actor,false);workspace(workspace);return db.settings(workspace);}
+98:  private void workspace(String id){if(db.jdbc.queryForObject("select count(*) from workspaces where id=?",Integer.class,id)!=1)throw ApiException.notFound("Workspace",id);db.jdbc.queryForList("select id from workspaces where id=? for update",id);}
+99:  public StemModels.WorkspaceMode saveSettings(String workspace,String actor,Settings request){validator.limits(db.json.valueToTree(request),0);
+100:   if(!access.isAdmin(actor))throw ApiException.forbidden("Only Admin assigns STEM framework");workspace(workspace);validator.rev(request.baseRevision(),"baseRevision");validator.list(request.policyVersionIds(),100,"policyVersionIds");
+101:   if(!Set.of("OFF","ADVISORY").contains(Objects.toString(request.mode(),"")))throw StemValidator.invalid("mode","Only OFF/ADVISORY in P3");
+102:   String replay=receipt(actor,"SETTINGS",workspace,request.idempotencyKey(),request);if(replay!=null)return db.decode(replay,StemModels.WorkspaceMode.class);
+103:   var old=db.settings(workspace);revision(request.baseRevision(),old.revision(),"STEM_MODE");for(String policy:request.policyVersionIds())checkKind(policy,"POLICY");
+104:   if(new HashSet<>(request.policyVersionIds()).size()!=request.policyVersionIds().size())throw StemValidator.invalid("policyVersionIds","Duplicate policy");
+105:   if(request.defaultPolicyVersionId()!=null&&!request.policyVersionIds().contains(request.defaultPolicyVersionId()))throw StemValidator.invalid("defaultPolicyVersionId","Default must be assigned");
+106:   var legacy=db.jdbc.queryForList("select legacy_modes from stem_settings where workspace_id=?",workspace);
+107:   if(!legacy.isEmpty()&&db.decode(db.text(legacy.get(0),"legacy_modes"),String[].class).length>1&&!request.mode().equals(request.legacyModeSelection()))throw ApiException.conflict("Legacy mode conflict requires explicit selection");
+108:   db.jdbc.update("insert into stem_settings(workspace_id,revision,mode,policy_ids,default_policy_id) values(?,?,?,?,?) on conflict(workspace_id) do update set revision=excluded.revision,mode=excluded.mode,policy_ids=excluded.policy_ids,default_policy_id=excluded.default_policy_id,legacy_modes='[]'::jsonb",workspace,old.revision()+1,request.mode(),db.encode(request.policyVersionIds()),request.defaultPolicyVersionId());
+109:   db.audit(actor,workspace,"MODE_ASSIGNED",request);var result=db.settings(workspace);remember(actor,"SETTINGS",workspace,request.idempotencyKey(),request,result);return result;
+110:  }
+111:  public List<StemModels.CatalogVersion> catalog(String actor,String kind,int page,int size,boolean admin){if(admin&&!access.isAdmin(actor))throw ApiException.forbidden("Admin framework view required");if(access.user(actor).isEmpty())throw ApiException.forbidden("Authenticated user required");return db.catalog(kind,page,size);}
+112:  public View validate(String project,String version,String actor,Validate request){validator.limits(db.json.valueToTree(request),0);
+113:   var v=target(project,version,actor,false);lock(v);var r=requiredBrief(version);revision(request.expectedBriefRevision(),db.number(r,"revision"),"STEM_BRIEF");revision(request.expectedScriptRevision(),v.getDraftRevision(),"SCRIPT_DRAFT");phase(request.phase());
+119:  private void compositionRevision(String version,Integer expected){validator.rev(expected,"expectedCompositionRevision");var r=db.jdbc.queryForList("select revision from compositions where script_version_id=? for update",version);if(r.isEmpty())throw ApiException.conflict("Composition missing");revision(expected,db.number(r.get(0),"revision"),"COMPOSITION");}
+120:  public void onScriptMutation(String version){if(db.brief(version)!=null)invalidate(version);}
+121:  private void invalidate(String version){db.jdbc.update("update stem_briefs set readiness='NEEDS_REVIEW' where version_id=?",version);db.jdbc.update("update stem_assessments set freshness='NEEDS_REVIEW' where version_id=?",version);}
+122:  public void submission(ClipProject project,ScriptVersion version){lock(version);if(db.brief(version.getId())!=null){View v=view(version.getId());validator.transition(v.effectiveMode(),v.findings(),false);}}
+123:  public record ReviewTicket(String actor,String version,String phase,Assessment request,Set<String> previous,boolean replay,String note) {}
+124:  public ReviewTicket prepare(ClipProject project,ScriptVersion version,String actor,String phase,Assessment a){return prepare(project,version,actor,phase,a,null);}
+125:  public ReviewTicket prepare(ClipProject project,ScriptVersion version,String actor,String phase,Assessment a,String note){
+126:   lock(version);access.requireProjectRole(project.getId(),actor,Set.of(WorkspaceRole.REVIEWER));
+127:   if(a==null)return null;validator.limits(db.json.valueToTree(a),0);access.requireActiveStemSeat(project.getWorkspace().getId(),actor,WorkspaceRole.REVIEWER);phase(phase);validator.list(a.criteria(),20,"criteria");
+128:   Set<String> criterionKeys=new HashSet<>();for(Criterion c:a.criteria()){if(!criterionKeys.add(c.key()))throw StemValidator.invalid("criteria.key","Duplicate criterion");validator.key(c.key(),"criteria.key");if(!Set.of("ADEQUATE","NEEDS_CHANGES","NOT_ASSESSED","NOT_APPLICABLE").contains(Objects.toString(c.judgment(),"")))throw StemValidator.invalid("criteria.judgment","Unknown judgment");validator.list(c.evidenceIds(),20,"criteria.evidenceIds");if(c.rationale()==null||c.rationale().isBlank())throw StemValidator.invalid("criteria.rationale","Rationale required");}
+129:   String replay=receipt(actor,"APPROVE_"+phase,version.getId(),a.idempotencyKey(),Map.of("assessment",a,"note",Objects.toString(note,"")));if(replay!=null)return new ReviewTicket(actor,version.getId(),phase,a,Set.of(),true,note);
+130:   var r=requiredBrief(version.getId());revision(a.expectedBriefRevision(),db.number(r,"revision"),"STEM_BRIEF");revision(a.expectedScriptRevision(),version.getDraftRevision(),"SCRIPT_DRAFT");revision(a.expectedModeRevision(),db.settings(project.getWorkspace().getId()).revision(),"STEM_MODE");
+
+C:\Users\LeTran\FPT University\2026_FALL\STEMotion\.audit\stem-phase-2026-11-05\phase-03\STEMotion_BE\src\test\java\com\stemotion\domain\stem\StemPostgresTest.java
+42: @DataJpaTest(properties={"app.stem.enabled=true","spring.flyway.enabled=true","spring.jpa.hibernate.ddl-auto=validate","spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect"})
+43: @ActiveProfiles("stem-p3-test")
+44: @AutoConfigureTestDatabase(replace=AutoConfigureTestDatabase.Replace.NONE)
+45: @Import({StemRepository.class,StemValidator.class,StemService.class,WorkspaceAccess.class})
+46: @Transactional(propagation=Propagation.NOT_SUPPORTED)
+47: class StemPostgresTest {
+48:  static EmbeddedPostgres pg;
+49:  @TestConfiguration static class Config {
+50:   @Bean DataSource dataSource()throws Exception{pg=EmbeddedPostgres.builder().start();return pg.getDatabase("postgres","postgres",Map.of("stringtype","unspecified"));}
+51:   @Bean ObjectMapper objectMapper(){return new ObjectMapper();}
+52:  }
+53:  @AfterAll static void stop()throws Exception{if(pg!=null)pg.close();}
+54:  @Autowired StemService stem;@Autowired StemRepository db;@Autowired StemValidator validator;@Autowired WorkspaceAccess access;
+55:  @Autowired JdbcTemplate jdbc;@Autowired ObjectMapper json;@Autowired PlatformTransactionManager manager;
+56:  @Autowired UserRepository users;@Autowired WorkspaceRepository workspaces;@Autowired WorkspaceMemberRepository members;@Autowired ClipProjectRepository projects;@Autowired ScriptVersionRepository versions;@Autowired SceneRepository scenes;@Autowired StatusHistoryRepository history;
+57:  TransactionTemplate tx;String writer,reviewer,admin,workspace,project,version,scene;ScriptService scripts;MockMvc mvc;
+58:  @BeforeEach void fixture(){tx=new TransactionTemplate(manager);tx.executeWithoutResult(s->{
+59:   User w=user("WRITER",SystemRole.USER),r=user("REVIEWER",SystemRole.USER),a=user("ADMIN",SystemRole.ADMIN);writer=w.getId();reviewer=r.getId();admin=a.getId();
+60:   Workspace ws=workspaces.saveAndFlush(Workspace.builder().name("TEST_ONLY "+UUID.randomUUID()).createdBy(a).build());workspace=ws.getId();
+61:   members.saveAndFlush(WorkspaceMember.builder().workspace(ws).user(w).role(WorkspaceRole.WRITER).build());members.saveAndFlush(WorkspaceMember.builder().workspace(ws).user(r).role(WorkspaceRole.REVIEWER).build());
+62:   ClipProject cp=projects.saveAndFlush(ClipProject.builder().title("TEST_ONLY not a verified lesson").subject(StemSubject.Math).gradeLevel("TEST_ONLY").owner(w).workspace(ws).build());project=cp.getId();
+63:   ScriptVersion sv=versions.saveAndFlush(ScriptVersion.builder().project(cp).title("TEST_ONLY").versionNo(1).createdBy(w).build());version=sv.getId();
+64:   Scene sc=scenes.saveAndFlush(Scene.builder().scriptVersion(sv).sceneType(SceneType.TITLE_HERO).title("TEST_ONLY").narration("TEST_ONLY").props("{}").orderNo(1).build());scene=sc.getId();
+65:  });
+66:  AuthService auth=mock(AuthService.class);when(auth.findUserOrThrow(anyString())).thenAnswer(i->users.findById(i.getArgument(0)).orElseThrow());
+67:  scripts=new ScriptService(projects,versions,scenes,new SceneMapper(json,new ScenePropsValidator()),auth,mock(WorkspaceService.class),new StatusHistoryService(history),access);ReflectionTestUtils.setField(scripts,"stem",stem);
+68:  mvc=MockMvcBuilders.standaloneSetup(new StemController(stem,validator)).addFilters(new StemRequestLimitFilter(json)).setControllerAdvice(new GlobalExceptionHandler()).build();
+69:  }
+70:  User user(String name,SystemRole role){return users.saveAndFlush(User.builder().fullName("TEST_ONLY "+name).username("p3"+UUID.randomUUID().toString().replace("-", "").substring(0,24)).email(UUID.randomUUID()+"@example.invalid").systemRole(role).build());}
+71:  StemDtos.View create(){return stem.create(project,version,writer,new StemDtos.Create("stem.v1",0,"create-test-01"));}
+72:  StemDtos.Save save(StemDtos.Brief b,List<StemDtos.Evidence> ev,int rev,String key){return new StemDtos.Save("stem.v1",rev,0,key,b,ev);}
+73:  StemDtos.Assessment assessment(int br,String key){return new StemDtos.Assessment(br,0,null,0,null,List.of(new StemDtos.Criterion("TEST_ONLY","NOT_ASSESSED","TEST_ONLY no expert feedback",List.of())),key);}
+74:  @Test void freshSchemaAndRlsHaveNoVerifiedOrStrictContent(){assertThat(jdbc.queryForObject("select count(*) from flyway_schema_history where success",Integer.class)).isEqualTo(25);assertThat(jdbc.queryForObject("select count(*) from pg_class where relname like 'stem_%' and relkind='r' and relrowsecurity",Integer.class)).isEqualTo(9);assertThat(jdbc.queryForObject("select count(*) from stem_settings where mode='STRICT'",Integer.class)).isZero();assertThat(jdbc.queryForObject("select count(*) from stem_catalog where status<>'DRAFT'",Integer.class)).isZero();}
+75:  @Test void nullDraftReplayCasAndUnknownFieldApi()throws Exception{
+76:   var a=create();assertThat(create().briefId()).isEqualTo(a.briefId());assertThat(a.brief().context().primary()).isNull();assertThat(a.verificationStatus()).isEqualTo("UNVERIFIED");
+77:   stem.save(project,version,writer,save(StemDtos.empty(),List.of(),0,"save-test-01"));var again=stem.save(project,version,writer,save(StemDtos.empty(),List.of(),0,"save-test-01"));assertThat(again.revision()).isEqualTo(1);
+78:   assertThatThrownBy(()->stem.save(project,version,writer,save(StemDtos.empty(),List.of(),0,"save-test-02"))).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getStatus().value()).isEqualTo(409));
+79:   mvc.perform(put("/api/v1/scripts/{p}/versions/{v}/stem",project,version).principal(()->writer).contentType("application/json").content("{\"verified\":true}")).andExpect(status().isBadRequest()).andExpect(jsonPath("$.details.field").exists());
+80:  }
+
+C:\Users\LeTran\FPT University\2026_FALL\STEMotion\.audit\stem-phase-2026-11-05\phase-03\STEMotion_BE\src\test\java\com\stemotion\e2e\E2eServer.java
+34:  */
+35: public class E2eServer {
+36: 
+37:     static final String ADMIN_USERNAME = env("E2E_ADMIN_USERNAME", "e2e-admin");
+38:     static final String ADMIN_PASSWORD = env("E2E_ADMIN_PASSWORD", "E2e-fixture-only-123");
+39: 
+40:     public static void main(String[] args) {
+41:         // DevTools would relaunch main with these arguments added a second time.
+42:         System.setProperty("spring.devtools.restart.enabled", "false");
+43:         SpringApplication.from(StemotionApplication::main).with(Config.class).run(launchArguments(args));
+44:     }
+45: 
+46:     static String[] launchArguments(String... args) {
+47:         List<String> all = new ArrayList<>(List.of(
+91:     static class Config {
+92: 
+93:         @Bean(destroyMethod = "close")
+94:         EmbeddedPostgres e2ePostgres() throws IOException {
+95:             return EmbeddedPostgres.builder().start();
+96:         }
+97: 
+98:         /** stringtype=unspecified as in application.yml: string ids bind to uuid columns. */
+99:         @Bean
+100:         DataSource dataSource(EmbeddedPostgres postgres) {
+101:             return DataSourceBuilder.create()
+102:                 .url(postgres.getJdbcUrl("postgres", "postgres") + "&stringtype=unspecified")
+103:                 .username("postgres")
+104:                 .password("")
+105:                 .build();
+106:         }
+107: 
+108:         @Bean
+109:         @Primary
+110:         E2eFakes.FakeGemini e2eGemini(IntegrationProperties properties, ObjectMapper mapper) {
+111:             return new E2eFakes.FakeGemini(properties, mapper);
+112:         }
+113: 
+
+C:\Users\LeTran\FPT University\2026_FALL\STEMotion\.audit\stem-phase-2026-11-05\phase-03\STEMotion_BE\src\test\resources\application-stem-p3-test.properties
+1: app.stem.enabled=true
+2: spring.flyway.locations=classpath:db/migration,classpath:db/auth-v2-e2e,classpath:db/stem-p3
+3: spring.jpa.hibernate.ddl-auto=validate
+4: spring.dotenv.enabled=false
+
+C:\Users\LeTran\FPT University\2026_FALL\STEMotion\.audit\stem-phase-2026-11-05\phase-03\STEMotion_BE\src\main\java\com\stemotion\StemotionApplication.java
+1: package com.stemotion;
+2: 
+3: import org.springframework.boot.SpringApplication;
+4: import org.springframework.boot.autoconfigure.SpringBootApplication;
+5: 
+6: @SpringBootApplication
+7: public class StemotionApplication {
+8: 
+9:     public static void main(String[] args) {
+10:         SpringApplication.run(StemotionApplication.class, args);
+11:     }
+12: }

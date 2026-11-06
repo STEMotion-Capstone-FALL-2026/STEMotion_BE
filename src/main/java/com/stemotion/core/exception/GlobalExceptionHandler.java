@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleApiException(ApiException ex) {
         log.warn("API Exception: [{}] {}", ex.getCode(), ex.getMessage());
         if (ex.getStatus() == HttpStatus.TOO_MANY_REQUESTS)
-            return ResponseEntity.status(ex.getStatus()).header("Retry-After", "300")
+            return ResponseEntity.status(ex.getStatus()).header("Retry-After", ex.getDetails()!=null && ex.getDetails().get("retryAfterSeconds") instanceof Number seconds ? Integer.toString(Math.max(1,seconds.intValue())) : "300")
                 .body(new ErrorResponse(ex.getStatus().value(), ex.getCode(), ex.getMessage(), LocalDateTime.now(), ex.getDetails()));
         return build(ex.getStatus(), ex.getCode(), ex.getMessage(), ex.getDetails());
     }
@@ -102,6 +102,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException ex) {
+        for(Throwable cause=ex;cause!=null;cause=cause.getCause()) {
+            if(cause instanceof ApiException api)return handleApiException(api);
+        }
         String message = "Request body is missing or not valid JSON";
 
         if (ex.getCause() instanceof InvalidFormatException ife) {

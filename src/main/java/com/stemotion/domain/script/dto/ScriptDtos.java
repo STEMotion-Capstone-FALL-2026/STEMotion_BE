@@ -89,9 +89,22 @@ public final class ScriptDtos {
     ) {}
 
     /** Reviewer decision payload for approve / request-changes. */
-    public record ReviewDecisionRequest(
-        String note
-    ) {}
+    @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = StrictDecisionReader.class)
+    public record ReviewDecisionRequest(String note, com.stemotion.domain.stem.StemDtos.Assessment stemAssessment, com.stemotion.domain.stem.StemDtos.ChangeTarget changeTarget) {
+        public ReviewDecisionRequest(String note) { this(note, null, null); }
+        public ReviewDecisionRequest(String note,com.stemotion.domain.stem.StemDtos.Assessment assessment) { this(note,assessment,null); }
+    }
+    public static class StrictDecisionReader extends com.fasterxml.jackson.databind.JsonDeserializer<ReviewDecisionRequest> {
+        @Override public ReviewDecisionRequest deserialize(com.fasterxml.jackson.core.JsonParser parser, com.fasterxml.jackson.databind.DeserializationContext context) throws java.io.IOException {
+            com.fasterxml.jackson.databind.JsonNode tree=parser.getCodec().readTree(parser);
+            var validator=new com.stemotion.domain.stem.StemValidator(new com.fasterxml.jackson.databind.ObjectMapper());
+            validator.limits(tree,0);
+            if(!tree.isObject())throw com.stemotion.domain.stem.StemValidator.invalid("request","Expected review object");
+            var fields=tree.fieldNames();while(fields.hasNext()){String key=fields.next();if(!java.util.Set.of("note","stemAssessment","changeTarget").contains(key))throw com.stemotion.domain.stem.StemValidator.invalid(key,"Unknown/server-owned review field");}
+            if(tree.hasNonNull("note")&&!tree.get("note").isTextual())throw com.stemotion.domain.stem.StemValidator.invalid("note","Expected string");
+            return new ReviewDecisionRequest(tree.hasNonNull("note")?tree.get("note").asText():null,tree.hasNonNull("stemAssessment")?validator.parse(tree.get("stemAssessment"),com.stemotion.domain.stem.StemDtos.Assessment.class):null,tree.hasNonNull("changeTarget")?validator.parse(tree.get("changeTarget"),com.stemotion.domain.stem.StemDtos.ChangeTarget.class):null);
+        }
+    }
 
     public record ScriptVersionResponse(
         String id,

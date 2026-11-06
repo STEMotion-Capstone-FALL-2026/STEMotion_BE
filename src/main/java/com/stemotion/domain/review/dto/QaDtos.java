@@ -41,6 +41,11 @@ public final class QaDtos {
         boolean passed,
         int failCount,
         int warnCount,
-        List<QaFinding> findings
-    ) {}
+        List<QaFinding> findings,
+        java.util.Map<String,String> evaluatedAgainst
+    ) {
+        public QaReport(String projectId,boolean passed,int failCount,int warnCount,List<QaFinding> findings){
+            this(projectId,passed,failCount,warnCount,findings,null);
+        }
+    }
 }

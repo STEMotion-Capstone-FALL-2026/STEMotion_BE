@@ -23,6 +23,12 @@ public final class LibraryDtos {
         /** Ready-to-paste iframe for Canvas/Moodle. */
         String embedCode,
         String youtubeUrl,
-        LocalDateTime publishedAt
-    ) {}
+        LocalDateTime publishedAt,
+        String verificationStatus,
+        String snapshotId
+    ) {
+        public LibraryItem(String id,String title,StemSubject subject,String gradeLevel,Integer totalDurationSeconds,Integer sceneCount,String ownerName,String workspaceName,String videoUrl,String embedCode,String youtubeUrl,LocalDateTime publishedAt){
+            this(id,title,subject,gradeLevel,totalDurationSeconds,sceneCount,ownerName,workspaceName,videoUrl,embedCode,youtubeUrl,publishedAt,"LEGACY_UNMAPPED",null);
+        }
+    }
 }

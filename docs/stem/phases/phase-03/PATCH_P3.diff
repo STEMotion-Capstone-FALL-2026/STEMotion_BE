@@ -1,0 +1,868 @@
+diff --git a/src/main/java/com/stemotion/core/exception/GlobalExceptionHandler.java b/src/main/java/com/stemotion/core/exception/GlobalExceptionHandler.java
+--- a/src/main/java/com/stemotion/core/exception/GlobalExceptionHandler.java
++++ b/src/main/java/com/stemotion/core/exception/GlobalExceptionHandler.java
+@@ -55,7 +55,7 @@
+     public ResponseEntity<ErrorResponse> handleApiException(ApiException ex) {
+         log.warn("API Exception: [{}] {}", ex.getCode(), ex.getMessage());
+         if (ex.getStatus() == HttpStatus.TOO_MANY_REQUESTS)
+-            return ResponseEntity.status(ex.getStatus()).header("Retry-After", "300")
++            return ResponseEntity.status(ex.getStatus()).header("Retry-After", ex.getDetails()!=null && ex.getDetails().get("retryAfterSeconds") instanceof Number seconds ? Integer.toString(Math.max(1,seconds.intValue())) : "300")
+                 .body(new ErrorResponse(ex.getStatus().value(), ex.getCode(), ex.getMessage(), LocalDateTime.now(), ex.getDetails()));
+         return build(ex.getStatus(), ex.getCode(), ex.getMessage(), ex.getDetails());
+     }
+@@ -102,6 +102,9 @@
+      */
+     @ExceptionHandler(HttpMessageNotReadableException.class)
+     public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException ex) {
++        for(Throwable cause=ex;cause!=null;cause=cause.getCause()) {
++            if(cause instanceof ApiException api)return handleApiException(api);
++        }
+         String message = "Request body is missing or not valid JSON";
+ 
+         if (ex.getCause() instanceof InvalidFormatException ife) {
+diff --git a/src/main/java/com/stemotion/core/security/WorkspaceAccess.java b/src/main/java/com/stemotion/core/security/WorkspaceAccess.java
+--- a/src/main/java/com/stemotion/core/security/WorkspaceAccess.java
++++ b/src/main/java/com/stemotion/core/security/WorkspaceAccess.java
+@@ -58,6 +58,15 @@
+ 
+     private static Set<WorkspaceRole> roles(String... roleNames) {
+         return Arrays.stream(roleNames).map(WorkspaceRole::valueOf).collect(Collectors.toSet());
++    }
++
++    /** A real active seat is required for STEM; deliberately no system-admin bypass. */
++    public void requireActiveStemSeat(String workspaceId, String userId, WorkspaceRole role) {
++        if(users.findById(userId).filter(u->u.getStatus()==User.UserStatus.ACTIVE).isEmpty())
++            throw ApiException.forbidden("Active user required for STEM");
++        boolean allowed=members.findMembershipsByUserId(userId).stream()
++            .anyMatch(m -> m.active() && m.workspaceId().equals(workspaceId) && m.role()==role);
++        if(!allowed)throw ApiException.forbidden("Active "+role+" seat required for STEM");
+     }
+ 
+     public boolean isAdmin(String userId) {
+diff --git a/src/main/java/com/stemotion/domain/review/controller/FeedbackController.java b/src/main/java/com/stemotion/domain/review/controller/FeedbackController.java
+--- a/src/main/java/com/stemotion/domain/review/controller/FeedbackController.java
++++ b/src/main/java/com/stemotion/domain/review/controller/FeedbackController.java
+@@ -136,7 +136,8 @@
+     public ResponseEntity<Void> approveVideo(@PathVariable String projectId,
+             @AuthenticationPrincipal UserDetails principal,
+             @RequestBody(required = false) com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest request) {
+-        feedbackService.approveVideo(projectId, principal.getUsername(), request == null ? null : request.note());
++        if(request!=null && request.changeTarget()!=null)throw com.stemotion.core.exception.ApiException.badRequest("changeTarget only allowed on request-changes");
++        feedbackService.approveVideo(projectId, principal.getUsername(), request == null ? null : request.note(), request == null ? null : request.stemAssessment());
+         return ResponseEntity.noContent().build();
+     }
+ 
+@@ -146,6 +147,7 @@
+     public ResponseEntity<Void> sendBack(@PathVariable String projectId,
+             @AuthenticationPrincipal UserDetails principal,
+             @RequestBody(required = false) com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest request) {
++        if(request!=null && (request.stemAssessment()!=null || request.changeTarget()!=null))throw com.stemotion.core.exception.ApiException.badRequest("Send-back accepts note only");
+         feedbackService.sendBackToProduction(projectId, principal.getUsername(), request == null ? null : request.note());
+         return ResponseEntity.noContent().build();
+     }
+diff --git a/src/main/java/com/stemotion/domain/review/service/FeedbackService.java b/src/main/java/com/stemotion/domain/review/service/FeedbackService.java
+--- a/src/main/java/com/stemotion/domain/review/service/FeedbackService.java
++++ b/src/main/java/com/stemotion/domain/review/service/FeedbackService.java
+@@ -57,6 +57,9 @@
+     private final CompositionService compositionService;
+     private final RenderService renderService;
+ 
++    @org.springframework.beans.factory.annotation.Autowired(required=false)
++    private com.stemotion.domain.stem.StemService stem;
++
+     /**
+      * Notes of a project. A status filter applies to the notes themselves; their replies come
+      * along. A clipId keeps the notes written on that render plus the unscoped ones.
+@@ -232,6 +235,7 @@
+         }
+         ScriptVersion version = scriptService.currentVersion(project);
+         Composition composition = compositionService.ensure(project, version, producerId);
++        if(stem!=null)stem.submission(project,version);
+         var from = project.getPipelineStatus();
+         project.setVideoStatus(VideoStatus.IN_QA);
+         projectRepository.save(project);
+@@ -247,8 +251,15 @@
+      */
+     @Transactional
+     public void approveVideo(String projectId, String reviewerId, String reason) {
++        approveVideo(projectId,reviewerId,reason,null);
++    }
++    @Transactional
++    public void approveVideo(String projectId, String reviewerId, String reason, com.stemotion.domain.stem.StemDtos.Assessment assessment) {
++        if(stem==null && assessment!=null)throw ApiException.badRequest("STEM is disabled");
+         ClipProject project = scriptService.getOrThrow(projectId);
+         scriptService.requireActive(project);
++        var stemTicket=stem==null?null:stem.prepare(project,scriptService.currentVersion(project),reviewerId,"VIDEO",assessment,reason);
++        if(stemTicket!=null && stemTicket.replay())return;
+ 
+         if (project.getVideoStatus() != VideoStatus.IN_QA) {
+             throw ApiException.badRequest(
+@@ -272,11 +283,13 @@
+         if (clip.isPresent()) {
+             statusHistoryService.recordReview(project, from, reviewer,
+                 StatusHistory.TargetType.CLIP, clip.get().getId(), StatusHistory.Decision.APPROVED, reason);
++            if(stem!=null)stem.finish(project,stemTicket);
+             return;
+         }
+         Composition composition = compositionService.ensure(project, version, reviewerId);
+         statusHistoryService.recordReview(project, from, reviewer, StatusHistory.TargetType.COMPOSITION,
+             composition.getId(), StatusHistory.Decision.APPROVED, reason, revisionNote(composition));
++        if(stem!=null)stem.finish(project,stemTicket);
+         renderService.renderApproved(projectId, reviewerId);
+     }
+ 
+diff --git a/src/main/java/com/stemotion/domain/script/dto/ScriptDtos.java b/src/main/java/com/stemotion/domain/script/dto/ScriptDtos.java
+--- a/src/main/java/com/stemotion/domain/script/dto/ScriptDtos.java
++++ b/src/main/java/com/stemotion/domain/script/dto/ScriptDtos.java
+@@ -89,9 +89,22 @@
+     ) {}
+ 
+     /** Reviewer decision payload for approve / request-changes. */
+-    public record ReviewDecisionRequest(
+-        String note
+-    ) {}
++    @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = StrictDecisionReader.class)
++    public record ReviewDecisionRequest(String note, com.stemotion.domain.stem.StemDtos.Assessment stemAssessment, com.stemotion.domain.stem.StemDtos.ChangeTarget changeTarget) {
++        public ReviewDecisionRequest(String note) { this(note, null, null); }
++        public ReviewDecisionRequest(String note,com.stemotion.domain.stem.StemDtos.Assessment assessment) { this(note,assessment,null); }
++    }
++    public static class StrictDecisionReader extends com.fasterxml.jackson.databind.JsonDeserializer<ReviewDecisionRequest> {
++        @Override public ReviewDecisionRequest deserialize(com.fasterxml.jackson.core.JsonParser parser, com.fasterxml.jackson.databind.DeserializationContext context) throws java.io.IOException {
++            com.fasterxml.jackson.databind.JsonNode tree=parser.getCodec().readTree(parser);
++            var validator=new com.stemotion.domain.stem.StemValidator(new com.fasterxml.jackson.databind.ObjectMapper());
++            validator.limits(tree,0);
++            if(!tree.isObject())throw com.stemotion.domain.stem.StemValidator.invalid("request","Expected review object");
++            var fields=tree.fieldNames();while(fields.hasNext()){String key=fields.next();if(!java.util.Set.of("note","stemAssessment","changeTarget").contains(key))throw com.stemotion.domain.stem.StemValidator.invalid(key,"Unknown/server-owned review field");}
++            if(tree.hasNonNull("note")&&!tree.get("note").isTextual())throw com.stemotion.domain.stem.StemValidator.invalid("note","Expected string");
++            return new ReviewDecisionRequest(tree.hasNonNull("note")?tree.get("note").asText():null,tree.hasNonNull("stemAssessment")?validator.parse(tree.get("stemAssessment"),com.stemotion.domain.stem.StemDtos.Assessment.class):null,tree.hasNonNull("changeTarget")?validator.parse(tree.get("changeTarget"),com.stemotion.domain.stem.StemDtos.ChangeTarget.class):null);
++        }
++    }
+ 
+     public record ScriptVersionResponse(
+         String id,
+diff --git a/src/main/java/com/stemotion/domain/script/service/ScriptService.java b/src/main/java/com/stemotion/domain/script/service/ScriptService.java
+--- a/src/main/java/com/stemotion/domain/script/service/ScriptService.java
++++ b/src/main/java/com/stemotion/domain/script/service/ScriptService.java
+@@ -57,6 +57,9 @@
+     @org.springframework.beans.factory.annotation.Autowired(required = false)
+     private com.stemotion.domain.production.repository.CompositionRepository compositionRepository;
+ 
++    @org.springframework.beans.factory.annotation.Autowired(required=false)
++    private com.stemotion.domain.stem.StemService stem;
++
+     // ---------------------------------------------------------------- queries
+ 
+     @Transactional(readOnly = true)
+@@ -230,6 +233,7 @@
+             : replaceScenes(current, request.scenes());
+ 
+         versionRepository.save(current);
++        if(stem!=null)stem.onScriptMutation(current.getId());
+         applyTotalDuration(project, scenes);
+ 
+         return toResponse(project, current, scenes);
+@@ -286,6 +290,7 @@
+             throw ApiException.badRequest("A script needs at least one scene before it can be reviewed");
+         }
+ 
++        if(stem!=null)stem.submission(project,current);
+         ProjectStatus from = project.getPipelineStatus();
+         statusHistoryService.validateTransition(from, ProjectStatus.SCRIPT_REVIEW);
+ 
+@@ -302,7 +307,11 @@
+     /** Reviewer accepts the script; it becomes available to the producer. */
+     @Transactional
+     public ScriptResponse approve(String projectId, ReviewDecisionRequest request, String reviewerId) {
++        if(request!=null && request.changeTarget()!=null)throw ApiException.badRequest("changeTarget only allowed on request-changes");
++        if(stem==null && request!=null && request.stemAssessment()!=null)throw ApiException.badRequest("STEM is disabled");
+         ClipProject project = getOrThrow(projectId);
++        var stemTicket=stem==null?null:stem.prepare(project,currentVersion(project),reviewerId,"SCRIPT",request==null?null:request.stemAssessment(),request==null?null:request.note());
++        if(stemTicket!=null && stemTicket.replay())return findById(projectId);
+         requireStatus(project, ScriptStatus.IN_REVIEW);
+ 
+         ProjectStatus from = project.getPipelineStatus();
+@@ -321,6 +330,7 @@
+             com.stemotion.domain.project.entity.StatusHistory.Decision.APPROVED,
+             request == null ? null : request.note());
+ 
++        if(stem!=null)stem.finish(project,stemTicket);
+         return toResponse(project, current, scenesOf(current));
+     }
+ 
+@@ -344,7 +354,14 @@
+     @Transactional
+     public ScriptResponse requestChanges(String projectId, ReviewDecisionRequest request, String reviewerId) {
+         String reason = requireReason(request == null ? null : request.note());
++        if(request!=null && request.stemAssessment()!=null)throw ApiException.badRequest("Assessment is not accepted on request-changes");
++        if(stem==null && request!=null && request.changeTarget()!=null)throw ApiException.badRequest("STEM is disabled");
+         ClipProject project = getOrThrow(projectId);
++        var changeTicket=stem==null?null:stem.beginChange(project,reviewerId,request==null?null:request.changeTarget(),reason);
++        if(changeTicket!=null && changeTicket.copiedVersion()!=null) {
++            ScriptVersion copiedVersion=versionOrThrow(changeTicket.copiedVersion(),projectId);
++            return toResponse(project,copiedVersion,scenesOf(copiedVersion));
++        }
+         requireStatus(project, ScriptStatus.IN_REVIEW);
+ 
+         ProjectStatus from = project.getPipelineStatus();
+@@ -367,7 +384,9 @@
+             .createdBy(authService.findUserOrThrow(reviewerId))
+             .build());
+ 
+-        List<Scene> copied = copyScenes(scenesOf(reviewed), next);
++        var copy = copyScenes(scenesOf(reviewed), next);
++        List<Scene> copied = copy.scenes();
++        if(stem!=null)stem.copy(reviewed.getId(),next.getId(),copy.oldToNew());
+         project.setScriptStatus(ScriptStatus.CHANGE_REQUESTED);
+         projectRepository.save(project);
+         statusHistoryService.recordReview(
+@@ -376,6 +395,7 @@
+             com.stemotion.domain.project.entity.StatusHistory.Decision.REJECTED,
+             reason);
+ 
++        if(stem!=null)stem.finishChange(changeTicket,next.getId());
+         return toResponse(project, next, copied);
+     }
+ 
+@@ -527,19 +547,26 @@
+         return sceneRepository.saveAll(scenes);
+     }
+ 
+-    private List<Scene> copyScenes(List<Scene> source, ScriptVersion target) {
+-        List<Scene> copies = source.stream()
+-            .map(scene -> Scene.builder()
+-                .orderNo(scene.getOrderNo())
+-                .sceneType(scene.getSceneType())
+-                .title(scene.getTitle())
+-                .narration(scene.getNarration())
+-                .durationInFrames(scene.getDurationInFrames())
+-                .props(scene.getProps())
+-                .scriptVersion(target)
+-                .build())
+-            .toList();
+-        return sceneRepository.saveAll(copies);
++    private record SceneCopy(List<Scene> scenes, java.util.Map<String,String> oldToNew) {}
++    private SceneCopy copyScenes(List<Scene> source, ScriptVersion target) {
++        java.util.Map<Scene,String> originals = new java.util.IdentityHashMap<>();
++        List<Scene> copies = new java.util.ArrayList<>();
++        for(Scene original:source) {
++            Scene copy=Scene.builder().orderNo(original.getOrderNo()).sceneType(original.getSceneType())
++                .title(original.getTitle()).narration(original.getNarration()).durationInFrames(original.getDurationInFrames())
++                .props(original.getProps()).scriptVersion(target).build();
++            copies.add(copy); originals.put(copy,original.getId());
++        }
++        List<Scene> saved=sceneRepository.saveAll(copies);
++        java.util.Map<String,String> map=new java.util.LinkedHashMap<>();
++        for(Scene copy:copies) {
++            if(copy.getId()==null||originals.get(copy)==null){
++                if(stem!=null)throw ApiException.conflict("Copy did not allocate a scene identity");
++                continue; // Legacy bare-service mocks do not allocate database ids.
++            }
++            if(map.put(originals.get(copy),copy.getId())!=null)throw ApiException.conflict("Duplicate source scene");
++        }
++        return new SceneCopy(saved,java.util.Map.copyOf(map));
+     }
+ 
+     private void applyTotalDuration(ClipProject project, List<Scene> scenes) {
+diff --git a/src/main/java/com/stemotion/domain/stem/StemController.java b/src/main/java/com/stemotion/domain/stem/StemController.java
+new file mode 100644
+--- /dev/null
++++ b/src/main/java/com/stemotion/domain/stem/StemController.java
+@@ -0,0 +1,33 @@
++package com.stemotion.domain.stem;
++import com.fasterxml.jackson.databind.JsonNode;
++import org.springframework.web.bind.annotation.*;
++import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
++import java.security.Principal;
++import java.util.*;
++@RestController
++@RequestMapping("/api/v1")
++@ConditionalOnProperty(name="app.stem.enabled",havingValue="true")
++public class StemController {
++ private final StemService service;private final StemValidator validator;
++ public StemController(StemService s,StemValidator v){service=s;validator=v;}
++ private String actor(Principal p){if(p==null)throw com.stemotion.core.exception.ApiException.unauthorized("Authentication required");return p.getName();}
++ @GetMapping("/scripts/{project}/versions/{version}/stem")
++ public StemDtos.View get(@PathVariable String project,@PathVariable String version,Principal p){return service.get(project,version,actor(p));}
++ @PostMapping("/scripts/{project}/versions/{version}/stem")
++ public StemDtos.View create(@PathVariable String project,@PathVariable String version,@RequestBody JsonNode body,Principal p){return service.create(project,version,actor(p),validator.parse(body,StemDtos.Create.class));}
++ @PutMapping("/scripts/{project}/versions/{version}/stem")
++ public StemDtos.View save(@PathVariable String project,@PathVariable String version,@RequestBody JsonNode body,Principal p){
++  if(!body.path("brief").path("context").has("primary"))throw StemValidator.invalid("brief.context.primary","Explicit nullable primary required");
++  return service.save(project,version,actor(p),validator.parse(body,StemDtos.Save.class));
++ }
++ @PostMapping("/scripts/{project}/versions/{version}/stem/validate")
++ public StemDtos.View validate(@PathVariable String project,@PathVariable String version,@RequestBody JsonNode body,Principal p){return service.validate(project,version,actor(p),validator.parse(body,StemDtos.Validate.class));}
++ @GetMapping("/workspaces/{workspace}/stem-settings")
++ public StemModels.WorkspaceMode settings(@PathVariable String workspace,Principal p){return service.settings(workspace,actor(p));}
++ @PutMapping("/workspaces/{workspace}/stem-settings")
++ public StemModels.WorkspaceMode settings(@PathVariable String workspace,@RequestBody JsonNode body,Principal p){return service.saveSettings(workspace,actor(p),validator.parse(body,StemDtos.Settings.class));}
++ @GetMapping("/stem/catalog")
++ public List<StemModels.CatalogVersion> catalog(@RequestParam(required=false)String kind,@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="20")int size,Principal p){return service.catalog(actor(p),kind,page,size,false);}
++ @GetMapping("/stem/frameworks")
++ public List<StemModels.CatalogVersion> frameworks(@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="20")int size,Principal p){return service.catalog(actor(p),null,page,size,true);}
++}
+diff --git a/src/main/java/com/stemotion/domain/stem/StemDtos.java b/src/main/java/com/stemotion/domain/stem/StemDtos.java
+new file mode 100644
+--- /dev/null
++++ b/src/main/java/com/stemotion/domain/stem/StemDtos.java
+@@ -0,0 +1,26 @@
++package com.stemotion.domain.stem;
++import java.util.List;
++/** P3 schema. No client-supplied verification or semantic hashes. */
++public final class StemDtos {
++ private StemDtos() {}
++ public record ContextEntry(String key,String condition,String adaptations) {}
++ public record UsageContext(ContextEntry primary,List<ContextEntry> secondary) {}
++ public record Objective(String key,String outcomeId,String learnerAction,String observableEvidence) {}
++ public record Task(String key,String learnerAction,String teacherSupport,String materials,String safety,String assessmentEvidence,String executionContextKey) {}
++ public record Contribution(String component,String explanation,List<String> objectiveKeys,List<String> taskKeys) {}
++ public record Brief(String policyVersionId,String topicVersionId,String gradeKey,List<String> subjectKeys,List<String> outcomeIds,String scopeOfClip,UsageContext context,List<String> distributionChannels,List<Objective> objectives,List<Task> studentTasks,List<Contribution> contributions,String safetyNotes,String rawLegacy) {}
++ public record Evidence(String id,String sceneId,String taskKey,String objectiveKey,String component,String explanation) {}
++ public record Create(String schemaVersion,Integer expectedScriptRevision,String idempotencyKey) {}
++ public record Save(String schemaVersion,Integer baseRevision,Integer expectedScriptRevision,String idempotencyKey,Brief brief,List<Evidence> evidence) {}
++ public record Settings(Integer baseRevision,String mode,List<String> policyVersionIds,String defaultPolicyVersionId,String idempotencyKey,String legacyModeSelection) {}
++ public record Validate(Integer expectedBriefRevision,Integer expectedScriptRevision,String phase,Integer expectedCompositionRevision) {}
++ public record ChangeTarget(String expectedVersionId,Integer expectedScriptRevision,Integer expectedBriefRevision,String idempotencyKey) {}
++ public record Criterion(String key,String judgment,String rationale,List<String> evidenceIds) {}
++ public record Assessment(Integer expectedBriefRevision,Integer expectedScriptRevision,Integer expectedCompositionRevision,Integer expectedModeRevision,String rubricVersionId,List<Criterion> criteria,String idempotencyKey) {}
++ public record Finding(String ruleId,String field,String severity,String message,String basis) {
++  public Finding(String ruleId,String field,String severity,String message){this(ruleId,field,severity,message,"PRODUCT_RULE");}
++ }
++ public record LegacySuggestion(String primaryKey,List<String> channelKeys,boolean requiresConfirmation,String reason) {}
++ public record View(String schemaVersion,String briefId,String scriptVersionId,int revision,String verificationStatus,String readiness,String effectiveMode,int modeRevision,Brief brief,List<Evidence> evidence,List<Finding> findings,LegacySuggestion legacySuggestion) {}
++ public static Brief empty() { return new Brief(null,null,null,List.of(),List.of(),null,new UsageContext(null,List.of()),List.of(),List.of(),List.of(),List.of(),null,null); }
++}
+diff --git a/src/main/java/com/stemotion/domain/stem/StemModels.java b/src/main/java/com/stemotion/domain/stem/StemModels.java
+new file mode 100644
+--- /dev/null
++++ b/src/main/java/com/stemotion/domain/stem/StemModels.java
+@@ -0,0 +1,10 @@
++package com.stemotion.domain.stem;
++import com.fasterxml.jackson.databind.JsonNode;
++/** JDBC domain entities. Versioned catalog is a discriminated hierarchy, not scientific verification. */
++public final class StemModels {
++ private StemModels() {}
++ public enum Kind { TOPIC, TOPIC_VERSION, SOURCE_EDITION, OUTCOME, PROFILE, POLICY, RUBRIC }
++ public record CatalogVersion(String id,Kind kind,String logicalKey,int version,String parentId,String sourceId,String status,JsonNode data,int revision,String verificationStatus) {}
++ public record StemBrief(String id,String versionId,int revision,String status,StemDtos.Brief content) {}
++ public record WorkspaceMode(String workspaceId,int revision,String mode,java.util.List<String> policyIds,String defaultPolicyId) {}
++}
+diff --git a/src/main/java/com/stemotion/domain/stem/StemRepository.java b/src/main/java/com/stemotion/domain/stem/StemRepository.java
+new file mode 100644
+--- /dev/null
++++ b/src/main/java/com/stemotion/domain/stem/StemRepository.java
+@@ -0,0 +1,45 @@
++package com.stemotion.domain.stem;
++import com.fasterxml.jackson.databind.*;
++import com.stemotion.core.exception.ApiException;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.stereotype.Repository;
++import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
++import java.util.*;
++@Repository
++@ConditionalOnProperty(name="app.stem.enabled",havingValue="true")
++public class StemRepository {
++ public final JdbcTemplate jdbc;
++ public final ObjectMapper json;
++ public StemRepository(JdbcTemplate jdbc,ObjectMapper json){this.jdbc=jdbc;this.json=json.copy().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);}
++ public String encode(Object data){try{return json.writeValueAsString(data);}catch(Exception e){throw ApiException.badRequest("Invalid STEM JSON");}}
++ public <T>T decode(String text,Class<T> type){try{return json.readValue(text,type);}catch(Exception e){throw ApiException.badRequest("Invalid STEM JSON for "+type.getSimpleName());}}
++ public String id(){return UUID.randomUUID().toString();}
++ public Map<String,Object> brief(String version){return jdbc.queryForList("select * from stem_briefs where version_id=?",version).stream().findFirst().orElse(null);}
++ public String text(Map<String,Object> row,String key){return row.get(key)==null?null:row.get(key).toString();}
++ public int number(Map<String,Object> row,String key){return ((Number)row.get(key)).intValue();}
++ public List<StemDtos.Evidence> evidence(String brief){return jdbc.query("select * from stem_evidence where brief_id=? and not retired order by id",(rs,n)->new StemDtos.Evidence(rs.getString("id"),rs.getString("original_scene_id"),rs.getString("task_key"),rs.getString("objective_key"),rs.getString("component"),rs.getString("explanation")),brief);}
++ public StemModels.WorkspaceMode settings(String workspace){
++  return jdbc.query("select * from stem_settings where workspace_id=?",(rs,n)->new StemModels.WorkspaceMode(workspace,rs.getInt("revision"),rs.getString("mode"),Arrays.asList(decode(rs.getString("policy_ids"),String[].class)),rs.getString("default_policy_id")),workspace).stream().findFirst().orElse(new StemModels.WorkspaceMode(workspace,0,"OFF",List.of(),null));
++ }
++ public void audit(String actor,String target,String event,Object payload){jdbc.update("insert into stem_audit(id,actor_id,target,event,payload) values(?,?,?,?,?::jsonb)",id(),actor,target,event,encode(payload));}
++ public List<StemModels.CatalogVersion> catalog(String kind,int page,int size){
++  if(page<0||page>10000||size<1||size>100)throw ApiException.badRequest("Invalid catalog page/size");
++  if(kind!=null)try{StemModels.Kind.valueOf(kind);}catch(Exception e){throw ApiException.badRequest("Invalid catalog kind");}
++  org.springframework.jdbc.core.RowMapper<StemModels.CatalogVersion> mapper=(rs,n)->new StemModels.CatalogVersion(rs.getString("id"),StemModels.Kind.valueOf(rs.getString("kind")),rs.getString("logical_key"),rs.getInt("version_no"),rs.getString("parent_id"),rs.getString("source_id"),rs.getString("status"),decode(rs.getString("data"),JsonNode.class),rs.getInt("revision"),"UNVERIFIED");
++  return kind==null?jdbc.query("select * from stem_catalog order by kind,logical_key,version_no limit ? offset ?",mapper,size,page*size):jdbc.query("select * from stem_catalog where kind=? order by logical_key,version_no limit ? offset ?",mapper,kind,size,page*size);
++ }
++ /** Internal MVP DRAFT CRUD; intentionally no public catalog mutation endpoint. */
++ public String createDraft(StemModels.Kind kind,String key,int version,String parent,String source,JsonNode data){
++  if(key==null||key.isBlank()||key.length()>128||version<1||data==null||!data.isObject()||encode(data).length()>65536)throw ApiException.badRequest("Invalid catalog draft");
++  if(parent!=null && jdbc.queryForObject("select count(*) from stem_catalog where id=?",Integer.class,parent)!=1)throw ApiException.badRequest("Missing catalog parent");
++  if(source!=null && jdbc.queryForObject("select count(*) from stem_catalog where id=? and kind='SOURCE_EDITION'",Integer.class,source)!=1)throw ApiException.badRequest("Missing source edition");
++  String id=id();jdbc.update("insert into stem_catalog(id,kind,logical_key,version_no,parent_id,source_id,data) values(?,?,?,?,?,?,?::jsonb)",id,kind.name(),key,version,parent,source,encode(data));return id;
++ }
++ public void updateDraft(String id,int base,JsonNode data){
++  // Referenced editions are immutable; new version is required, even while status remains DRAFT.
++  if(jdbc.queryForObject("select count(*) from stem_catalog where parent_id=? or source_id=?",Integer.class,id,id)>0||jdbc.queryForObject("select count(*) from stem_briefs where policy_id=? or topic_id=? or payload::text like ?",Integer.class,id,id,"%"+id+"%")>0||jdbc.queryForObject("select count(*) from stem_settings where policy_ids::text like ?",Integer.class,"%"+id+"%")>0)throw ApiException.conflict("Referenced catalog edition is immutable");
++  if(data==null||!data.isObject()||encode(data).length()>65536)throw ApiException.badRequest("Invalid catalog payload");
++  if(jdbc.update("update stem_catalog set data=?::jsonb,revision=revision+1 where id=? and revision=? and status='DRAFT'",encode(data),id,base)!=1)throw ApiException.conflict("Catalog revision stale");
++ }
++ public void deleteDraft(String id,int base){updateDraft(id,base,json.createObjectNode().put("archived",true));}
++}
+diff --git a/src/main/java/com/stemotion/domain/stem/StemRequestLimitFilter.java b/src/main/java/com/stemotion/domain/stem/StemRequestLimitFilter.java
+new file mode 100644
+--- /dev/null
++++ b/src/main/java/com/stemotion/domain/stem/StemRequestLimitFilter.java
+@@ -0,0 +1,26 @@
++package com.stemotion.domain.stem;
++import com.fasterxml.jackson.databind.ObjectMapper;
++import jakarta.servlet.*;
++import jakarta.servlet.http.*;
++import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
++import org.springframework.stereotype.Component;
++import org.springframework.web.filter.OncePerRequestFilter;
++import java.io.*;
++import java.nio.charset.StandardCharsets;
++import java.util.Map;
++/** Limits actual bytes before JSON parsing, including whitespace; never logs payload. */
++@Component
++@ConditionalOnProperty(name="app.stem.enabled",havingValue="true")
++public class StemRequestLimitFilter extends OncePerRequestFilter {
++ private final ObjectMapper json;
++ public StemRequestLimitFilter(ObjectMapper json){this.json=json;}
++ @Override protected boolean shouldNotFilter(HttpServletRequest r){String path=r.getRequestURI();return !path.startsWith("/api/v1/")||(!path.contains("/stem")&&!path.matches(".*/scripts/[^/]+/(approve|approve-video|request-changes|send-back)$"));}
++ @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)throws ServletException,IOException{
++  byte[] bytes=request.getInputStream().readNBytes(262145);
++  if(bytes.length>262144){response.setStatus(400);response.setContentType("application/json");json.writeValue(response.getOutputStream(),Map.of("status",400,"code","STEM_INVALID_FIELD","message","Maximum request body262144bytes","timestamp",java.time.Instant.now().toString(),"details",Map.of("field","request")));return;}
++  chain.doFilter(new HttpServletRequestWrapper(request){
++   @Override public ServletInputStream getInputStream(){var input=new ByteArrayInputStream(bytes);return new ServletInputStream(){public int read(){return input.read();}public boolean isFinished(){return input.available()==0;}public boolean isReady(){return true;}public void setReadListener(ReadListener listener){throw new UnsupportedOperationException("Synchronous JSON endpoint");}};}
++   @Override public BufferedReader getReader(){return new BufferedReader(new InputStreamReader(getInputStream(),StandardCharsets.UTF_8));}
++  },response);
++ }
++}
+diff --git a/src/main/java/com/stemotion/domain/stem/StemService.java b/src/main/java/com/stemotion/domain/stem/StemService.java
+new file mode 100644
+--- /dev/null
++++ b/src/main/java/com/stemotion/domain/stem/StemService.java
+@@ -0,0 +1,160 @@
++package com.stemotion.domain.stem;
++import com.fasterxml.jackson.databind.*;
++import com.stemotion.core.exception.ApiException;
++import com.stemotion.core.security.WorkspaceAccess;
++import com.stemotion.domain.workspace.entity.WorkspaceRole;
++import com.stemotion.domain.script.entity.ScriptVersion;
++import com.stemotion.domain.script.repository.ScriptVersionRepository;
++import com.stemotion.domain.project.entity.ClipProject;
++import com.stemotion.domain.project.repository.ClipProjectRepository;
++import org.springframework.stereotype.Service;
++import org.springframework.transaction.annotation.Transactional;
++import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
++import java.util.*;
++import java.nio.charset.StandardCharsets;
++import java.security.MessageDigest;
++import static com.stemotion.domain.stem.StemDtos.*;
++@Service
++@ConditionalOnProperty(name="app.stem.enabled",havingValue="true")
++@Transactional
++public class StemService {
++ private final StemRepository db; private final StemValidator validator;private final WorkspaceAccess access;private final ScriptVersionRepository versions;private final ClipProjectRepository projects;
++ @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager em;
++ public StemService(StemRepository db,StemValidator validator,WorkspaceAccess access,ScriptVersionRepository versions,ClipProjectRepository projects){this.db=db;this.validator=validator;this.access=access;this.versions=versions;this.projects=projects;}
++ private void revision(Integer expected,int actual,String field){validator.rev(expected,field);if(expected!=actual)throw ApiException.staleRevision(field,actual,expected,"STEM target changed; reload");}
++ private ScriptVersion target(String project,String version,String actor,boolean write){
++  access.requireProject(project,actor,false);
++  ScriptVersion v=versions.findById(version).orElseThrow(()->ApiException.notFound("ScriptVersion",version));
++  if(!v.getProject().getId().equals(project))throw ApiException.forbidden("Version is outside project");
++  if(write)access.requireActiveStemSeat(v.getProject().getWorkspace().getId(),actor,WorkspaceRole.WRITER);
++  return v;
++ }
++ private void lock(ScriptVersion v){
++  var row=db.jdbc.queryForList("select id from script_versions where id=? for update",v.getId());if(row.isEmpty())throw ApiException.conflict("Version changed");
++  if(em!=null){em.refresh(v);em.refresh(v.getProject());}
++  db.jdbc.queryForList("select id from workspaces where id=? for update",v.getProject().getWorkspace().getId());
++ }
++ private void editable(ScriptVersion v){if(Boolean.TRUE.equals(v.getProject().getArchived())||!Boolean.TRUE.equals(v.getIsCurrent())||!(v.getStatus()==com.stemotion.core.enums.StemEnums.ScriptStatus.DRAFT||v.getStatus()==com.stemotion.core.enums.StemEnums.ScriptStatus.CHANGE_REQUESTED))throw new ApiException(org.springframework.http.HttpStatus.CONFLICT,"STEM_IMMUTABLE","Submitted brief is immutable");}
++ private String digest(Object request){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(db.encode(request).getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
++ private String receipt(String actor,String op,String target,String key,Object payload){
++  validator.idem(key);db.jdbc.update("delete from stem_receipts where actor_id=? and operation=? and request_key=? and expires_at<=current_timestamp",actor,op,key);
++  var rows=db.jdbc.queryForList("select * from stem_receipts where actor_id=? and operation=? and request_key=?",actor,op,key);
++  if(rows.isEmpty())return null;var r=rows.get(0);if(!target.equals(db.text(r,"target"))||!digest(payload).equals(db.text(r,"request_digest")))throw new ApiException(org.springframework.http.HttpStatus.CONFLICT,"STEM_IDEMPOTENCY_CONFLICT","Key reused with another payload or target");return db.text(r,"response");
++ }
++ private void remember(String actor,String op,String target,String key,Object payload,Object result){db.jdbc.update("insert into stem_receipts(actor_id,operation,target,request_key,request_digest,response,expires_at) values(?,?,?,?,?,?::jsonb,current_timestamp+interval '24 hours')",actor,op,target,key,digest(payload),db.encode(result));}
++ public View get(String project,String version,String actor){target(project,version,actor,false);return view(version);}
++ public View create(String project,String version,String actor,Create request){validator.limits(db.json.valueToTree(request),0);
++  validator.schema(request.schemaVersion());validator.rev(request.expectedScriptRevision(),"expectedScriptRevision");var v=target(project,version,actor,true);lock(v);
++  String replay=receipt(actor,"CREATE",version,request.idempotencyKey(),request);if(replay!=null)return db.decode(replay,View.class);
++  editable(v);revision(request.expectedScriptRevision(),v.getDraftRevision(),"SCRIPT_DRAFT");if(db.brief(version)!=null)throw ApiException.conflict("Brief already exists");
++  db.jdbc.update("insert into stem_briefs(id,version_id,payload) values(?,?,?::jsonb)",db.id(),version,db.encode(StemDtos.empty()));
++  View result=view(version);remember(actor,"CREATE",version,request.idempotencyKey(),request,result);db.audit(actor,version,"BRIEF_CREATED",Map.of("revision",0));return result;
++ }
++ public View save(String project,String version,String actor,Save request){validator.limits(db.json.valueToTree(request),0);
++  validator.schema(request.schemaVersion());validator.rev(request.baseRevision(),"baseRevision");validator.rev(request.expectedScriptRevision(),"expectedScriptRevision");
++  var v=target(project,version,actor,true);lock(v);String replay=receipt(actor,"SAVE",version,request.idempotencyKey(),request);if(replay!=null)return db.decode(replay,View.class);
++  editable(v);revision(request.expectedScriptRevision(),v.getDraftRevision(),"SCRIPT_DRAFT");var row=requiredBrief(version);revision(request.baseRevision(),db.number(row,"revision"),"STEM_BRIEF");
++  validator.check(request.brief(),request.evidence());catalogReferences(request.brief(),v.getProject().getWorkspace().getId(),db.decode(db.text(row,"payload"),Brief.class));
++  Set<String> existing=new HashSet<>();for(Evidence e:db.evidence(db.text(row,"id")))existing.add(e.id());
++  Set<String> allIds=new HashSet<>();for(Evidence e:request.evidence()){
++   if(e.id()!=null&&!existing.contains(e.id()))throw StemValidator.invalid("evidence.id","Evidence outside brief");
++   if(e.sceneId()!=null){Integer n=db.jdbc.queryForObject("select count(*) from scenes where id=? and version_id=?",Integer.class,e.sceneId(),version);if(n!=1){boolean oldOrphan=e.id()!=null&&db.jdbc.queryForObject("select count(*) from stem_evidence where id=? and brief_id=? and original_scene_id=? and scene_id is null",Integer.class,e.id(),db.text(row,"id"),e.sceneId())==1;if(!oldOrphan)throw StemValidator.invalid("evidence.sceneId","Scene outside version");}}
++  }
++  db.jdbc.update("update stem_briefs set payload=?::jsonb,policy_id=?,topic_id=?,revision=revision+1,readiness='NEEDS_REVIEW' where id=?",db.encode(request.brief()),request.brief().policyVersionId(),request.brief().topicVersionId(),db.text(row,"id"));
++  db.audit(actor,version,"EVIDENCE_PREVIOUS",db.evidence(db.text(row,"id")));
++  db.jdbc.update("update stem_evidence set retired=true where brief_id=?",db.text(row,"id"));
++  for(Evidence e:request.evidence()){
++   String id=e.id()==null?db.id():e.id();if(!allIds.add(id))throw StemValidator.invalid("evidence.id","Duplicate evidence");
++   String live=e.sceneId()!=null&&db.jdbc.queryForObject("select count(*) from scenes where id=? and version_id=?",Integer.class,e.sceneId(),version)==1?e.sceneId():null;
++   db.jdbc.update("insert into stem_evidence(id,brief_id,scene_id,original_scene_id,task_key,objective_key,component,explanation) values(?,?,?,?,?,?,?,?) on conflict(id) do update set scene_id=excluded.scene_id,original_scene_id=excluded.original_scene_id,task_key=excluded.task_key,objective_key=excluded.objective_key,component=excluded.component,explanation=excluded.explanation,retired=false",id,db.text(row,"id"),live,e.sceneId(),e.taskKey(),e.objectiveKey(),e.component(),e.explanation());
++  }
++  invalidate(version);db.audit(actor,version,"BRIEF_REPLACED",Map.of("revision",request.baseRevision()+1));View result=view(version);remember(actor,"SAVE",version,request.idempotencyKey(),request,result);return result;
++ }
++ private Map<String,Object> requiredBrief(String version){var r=db.brief(version);if(r==null)throw ApiException.notFound("STEM brief",version);return r;}
++ private void catalogReferences(Brief b,String workspace,Brief old){
++  checkKind(b.topicVersionId(),"TOPIC_VERSION");checkKind(b.policyVersionId(),"POLICY");for(String id:b.outcomeIds())checkKind(id,"OUTCOME");
++  if(b.policyVersionId()!=null&&!Objects.equals(b.policyVersionId(),old.policyVersionId())&&!db.settings(workspace).policyIds().contains(b.policyVersionId()))throw StemValidator.invalid("brief.policyVersionId","Policy is not assigned");
++  for(String id:b.outcomeIds()){
++   var r=db.jdbc.queryForMap("select * from stem_catalog where id=?",id);JsonNode data=db.decode(db.text(r,"data"),JsonNode.class);
++   if(data.hasNonNull("gradeKey")&&!Objects.equals(data.path("gradeKey").asText(),b.gradeKey()))throw StemValidator.invalid("brief.outcomeIds","Outcome grade mismatch");
++   if(data.hasNonNull("subjectKey")&&!b.subjectKeys().contains(data.path("subjectKey").asText()))throw StemValidator.invalid("brief.subjectKeys","Outcome subject mismatch");
++  }
++ }
++ private void checkKind(String id,String kind){if(id!=null){validator.key(id,kind+"Id");if(db.jdbc.queryForObject("select count(*) from stem_catalog where id=? and kind=?",Integer.class,id,kind)!=1)throw StemValidator.invalid("catalog."+kind,"Missing or wrong catalog kind");}}
++ private View view(String version){var v=versions.findById(version).orElseThrow();var mode=db.settings(v.getProject().getWorkspace().getId());var r=db.brief(version);if(r==null)return new View("stem.v1",null,version,0,"UNVERIFIED","LEGACY_UNMAPPED",mode.mode(),mode.revision(),null,List.of(),List.of(),null);
++  Brief b=db.decode(db.text(r,"payload"),Brief.class);var evidence=db.evidence(db.text(r,"id"));var findings=new ArrayList<>(validator.check(b,evidence));
++  for(Evidence e:evidence)if(e.sceneId()!=null&&db.jdbc.queryForObject("select count(*) from scenes where id=? and version_id=?",Integer.class,e.sceneId(),version)!=1)findings.add(new Finding("TECH-EVIDENCE","evidence."+e.id(),"ERROR","Orphan scene reference"));
++  if(b.policyVersionId()!=null&&!mode.policyIds().contains(b.policyVersionId()))findings.add(new Finding("TECH-POLICY","brief.policyVersionId","ERROR","Pinned policy is unavailable"));
++  return new View("stem.v1",db.text(r,"id"),version,db.number(r,"revision"),"UNVERIFIED",b.rawLegacy()!=null&&!b.rawLegacy().isBlank()&&b.context().primary()==null?"LEGACY_UNMAPPED":findings.stream().anyMatch(f->f.severity().equals("ERROR"))?"INCOMPLETE":db.text(r,"readiness"),mode.mode(),mode.revision(),b,evidence,findings,legacy(b));
++ }
++ private LegacySuggestion legacy(Brief b){
++  if(b.rawLegacy()==null||b.rawLegacy().isBlank())return null;
++  String value=b.rawLegacy().strip();boolean pending=b.context().primary()==null;
++  if(value.equals("DEPARTMENT_LIBRARY"))return new LegacySuggestion(null,List.of(value),pending,"Channel suggestion only; Writer confirms learning context");
++  if(Set.of("IN_CLASS_SCREEN","GROUP_PRACTICE").contains(value))return new LegacySuggestion(value,List.of(),pending,"Suggested mapping only; Writer confirms by CAS");
++  return new LegacySuggestion(null,List.of(),true,"Unknown/multiple legacy values: Writer choice or separate variant required");
++ }
++ public StemModels.WorkspaceMode settings(String workspace,String actor){access.requireWorkspace(workspace,actor,false);workspace(workspace);return db.settings(workspace);}
++ private void workspace(String id){if(db.jdbc.queryForObject("select count(*) from workspaces where id=?",Integer.class,id)!=1)throw ApiException.notFound("Workspace",id);db.jdbc.queryForList("select id from workspaces where id=? for update",id);}
++ public StemModels.WorkspaceMode saveSettings(String workspace,String actor,Settings request){validator.limits(db.json.valueToTree(request),0);
++  if(!access.isAdmin(actor))throw ApiException.forbidden("Only Admin assigns STEM framework");workspace(workspace);validator.rev(request.baseRevision(),"baseRevision");validator.list(request.policyVersionIds(),100,"policyVersionIds");
++  if(!Set.of("OFF","ADVISORY").contains(Objects.toString(request.mode(),"")))throw StemValidator.invalid("mode","Only OFF/ADVISORY in P3");
++  String replay=receipt(actor,"SETTINGS",workspace,request.idempotencyKey(),request);if(replay!=null)return db.decode(replay,StemModels.WorkspaceMode.class);
++  var old=db.settings(workspace);revision(request.baseRevision(),old.revision(),"STEM_MODE");for(String policy:request.policyVersionIds())checkKind(policy,"POLICY");
++  if(new HashSet<>(request.policyVersionIds()).size()!=request.policyVersionIds().size())throw StemValidator.invalid("policyVersionIds","Duplicate policy");
++  if(request.defaultPolicyVersionId()!=null&&!request.policyVersionIds().contains(request.defaultPolicyVersionId()))throw StemValidator.invalid("defaultPolicyVersionId","Default must be assigned");
++  var legacy=db.jdbc.queryForList("select legacy_modes from stem_settings where workspace_id=?",workspace);
++  if(!legacy.isEmpty()&&db.decode(db.text(legacy.get(0),"legacy_modes"),String[].class).length>1&&!request.mode().equals(request.legacyModeSelection()))throw ApiException.conflict("Legacy mode conflict requires explicit selection");
++  db.jdbc.update("insert into stem_settings(workspace_id,revision,mode,policy_ids,default_policy_id) values(?,?,?,?,?) on conflict(workspace_id) do update set revision=excluded.revision,mode=excluded.mode,policy_ids=excluded.policy_ids,default_policy_id=excluded.default_policy_id,legacy_modes='[]'::jsonb",workspace,old.revision()+1,request.mode(),db.encode(request.policyVersionIds()),request.defaultPolicyVersionId());
++  db.audit(actor,workspace,"MODE_ASSIGNED",request);var result=db.settings(workspace);remember(actor,"SETTINGS",workspace,request.idempotencyKey(),request,result);return result;
++ }
++ public List<StemModels.CatalogVersion> catalog(String actor,String kind,int page,int size,boolean admin){if(admin&&!access.isAdmin(actor))throw ApiException.forbidden("Admin framework view required");if(access.user(actor).isEmpty())throw ApiException.forbidden("Authenticated user required");return db.catalog(kind,page,size);}
++ public View validate(String project,String version,String actor,Validate request){validator.limits(db.json.valueToTree(request),0);
++  var v=target(project,version,actor,false);lock(v);var r=requiredBrief(version);revision(request.expectedBriefRevision(),db.number(r,"revision"),"STEM_BRIEF");revision(request.expectedScriptRevision(),v.getDraftRevision(),"SCRIPT_DRAFT");phase(request.phase());
++  db.jdbc.update("insert into stem_validation_limits(actor_id,version_id,bucket,requests) values(?,?,floor(extract(epoch from current_timestamp)/60),1) on conflict(actor_id,version_id) do update set requests=case when stem_validation_limits.bucket=excluded.bucket then stem_validation_limits.requests+1 else 1 end,bucket=excluded.bucket",actor,version);
++  int count=db.jdbc.queryForObject("select requests from stem_validation_limits where actor_id=? and version_id=?",Integer.class,actor,version);if(count>10)throw new ApiException(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS,"STEM_RATE_LIMIT","Validation limit10/minute",Map.of("retryAfterSeconds",60));
++  if("VIDEO".equals(request.phase()))compositionRevision(version,request.expectedCompositionRevision());View result=view(version);db.jdbc.update("insert into stem_validation_runs(id,brief_id,phase,brief_revision,script_revision,mode_revision,findings) values(?,?,?,?,?,?,?::jsonb)",db.id(),db.text(r,"id"),request.phase(),result.revision(),v.getDraftRevision(),result.modeRevision(),db.encode(result.findings()));return result;
++ }
++ private void phase(String phase){if(!Set.of("SCRIPT","VIDEO").contains(Objects.toString(phase,"")))throw StemValidator.invalid("phase","Expected SCRIPT/VIDEO");}
++ private void compositionRevision(String version,Integer expected){validator.rev(expected,"expectedCompositionRevision");var r=db.jdbc.queryForList("select revision from compositions where script_version_id=? for update",version);if(r.isEmpty())throw ApiException.conflict("Composition missing");revision(expected,db.number(r.get(0),"revision"),"COMPOSITION");}
++ public void onScriptMutation(String version){if(db.brief(version)!=null)invalidate(version);}
++ private void invalidate(String version){db.jdbc.update("update stem_briefs set readiness='NEEDS_REVIEW' where version_id=?",version);db.jdbc.update("update stem_assessments set freshness='NEEDS_REVIEW' where version_id=?",version);}
++ public void submission(ClipProject project,ScriptVersion version){lock(version);if(db.brief(version.getId())!=null){View v=view(version.getId());validator.transition(v.effectiveMode(),v.findings(),false);}}
++ public record ReviewTicket(String actor,String version,String phase,Assessment request,Set<String> previous,boolean replay,String note) {}
++ public ReviewTicket prepare(ClipProject project,ScriptVersion version,String actor,String phase,Assessment a){return prepare(project,version,actor,phase,a,null);}
++ public ReviewTicket prepare(ClipProject project,ScriptVersion version,String actor,String phase,Assessment a,String note){
++  lock(version);access.requireProjectRole(project.getId(),actor,Set.of(WorkspaceRole.REVIEWER));
++  if(a==null)return null;validator.limits(db.json.valueToTree(a),0);access.requireActiveStemSeat(project.getWorkspace().getId(),actor,WorkspaceRole.REVIEWER);phase(phase);validator.list(a.criteria(),20,"criteria");
++  Set<String> criterionKeys=new HashSet<>();for(Criterion c:a.criteria()){if(!criterionKeys.add(c.key()))throw StemValidator.invalid("criteria.key","Duplicate criterion");validator.key(c.key(),"criteria.key");if(!Set.of("ADEQUATE","NEEDS_CHANGES","NOT_ASSESSED","NOT_APPLICABLE").contains(Objects.toString(c.judgment(),"")))throw StemValidator.invalid("criteria.judgment","Unknown judgment");validator.list(c.evidenceIds(),20,"criteria.evidenceIds");if(c.rationale()==null||c.rationale().isBlank())throw StemValidator.invalid("criteria.rationale","Rationale required");}
++  String replay=receipt(actor,"APPROVE_"+phase,version.getId(),a.idempotencyKey(),Map.of("assessment",a,"note",Objects.toString(note,"")));if(replay!=null)return new ReviewTicket(actor,version.getId(),phase,a,Set.of(),true,note);
++  var r=requiredBrief(version.getId());revision(a.expectedBriefRevision(),db.number(r,"revision"),"STEM_BRIEF");revision(a.expectedScriptRevision(),version.getDraftRevision(),"SCRIPT_DRAFT");revision(a.expectedModeRevision(),db.settings(project.getWorkspace().getId()).revision(),"STEM_MODE");
++  if(phase.equals("VIDEO"))compositionRevision(version.getId(),a.expectedCompositionRevision());
++  Set<String> ids=new HashSet<>();db.evidence(db.text(r,"id")).forEach(e->ids.add(e.id()));for(Criterion c:a.criteria())if(!ids.containsAll(c.evidenceIds()))throw StemValidator.invalid("criteria.evidenceIds","Evidence outside brief");checkKind(a.rubricVersionId(),"RUBRIC");
++  return new ReviewTicket(actor,version.getId(),phase,a,historyIds(project.getId()),false,note);
++ }
++ private Set<String> historyIds(String project){return new HashSet<>(db.jdbc.queryForList("select id from status_histories where project_id=?",String.class,project));}
++ public void finish(ClipProject project,ReviewTicket ticket){if(ticket==null||ticket.replay())return;if(em!=null)em.flush();Set<String> ids=historyIds(project.getId());ids.removeAll(ticket.previous());if(ids.size()!=1)throw ApiException.conflict("Expected exactly one existing review decision");String decision=ids.iterator().next();
++  int linked=db.jdbc.queryForObject("select count(*) from status_histories where id=? and changed_by=? and event_type='REVIEW_DECISION' and decision='APPROVED'",Integer.class,decision,ticket.actor());if(linked!=1)throw ApiException.conflict("Assessment needs matching existing decision");
++  var r=requiredBrief(ticket.version());db.jdbc.update("insert into stem_assessments(id,version_id,brief_id,decision_id,actor_id,phase,brief_revision,script_revision,mode_revision,composition_revision,payload) values(?,?,?,?,?,?,?,?,?,?,?::jsonb)",db.id(),ticket.version(),db.text(r,"id"),decision,ticket.actor(),ticket.phase(),ticket.request().expectedBriefRevision(),ticket.request().expectedScriptRevision(),ticket.request().expectedModeRevision(),ticket.request().expectedCompositionRevision(),db.encode(ticket.request()));
++  remember(ticket.actor(),"APPROVE_"+ticket.phase(),ticket.version(),ticket.request().idempotencyKey(),Map.of("assessment",ticket.request(),"note",Objects.toString(ticket.note(),"")),Map.of("decisionId",decision));
++ }
++ public record ChangeTicket(String actor,String source,ChangeTarget request,String note,String copiedVersion) {}
++ public ChangeTicket beginChange(ClipProject project,String actor,ChangeTarget request,String note){
++  access.requireProjectRole(project.getId(),actor,Set.of(WorkspaceRole.REVIEWER));
++  ScriptVersion source=versions.findFirstByProjectIdAndIsCurrentTrue(project.getId()).orElseThrow();
++  if(request!=null){validator.limits(db.json.valueToTree(request),0);validator.key(request.expectedVersionId(),"expectedVersionId");source=versions.findById(request.expectedVersionId()).orElseThrow(()->ApiException.notFound("ScriptVersion",request.expectedVersionId()));if(!source.getProject().getId().equals(project.getId()))throw ApiException.forbidden("Version outside project");}
++  lock(source);if(request==null)return null;
++  Object payload=Map.of("target",request,"note",note);String cached=receipt(actor,"CHANGE",source.getId(),request.idempotencyKey(),payload);
++  if(cached!=null)return new ChangeTicket(actor,source.getId(),request,note,db.decode(cached,JsonNode.class).path("copiedVersion").asText());
++  if(!Boolean.TRUE.equals(source.getIsCurrent()))throw ApiException.conflict("Change source is no longer current");revision(request.expectedScriptRevision(),source.getDraftRevision(),"SCRIPT_DRAFT");revision(request.expectedBriefRevision(),db.number(requiredBrief(source.getId()),"revision"),"STEM_BRIEF");
++  return new ChangeTicket(actor,source.getId(),request,note,null);
++ }
++ public void finishChange(ChangeTicket t,String next){if(t!=null)remember(t.actor(),"CHANGE",t.source(),t.request().idempotencyKey(),Map.of("target",t.request(),"note",t.note()),Map.of("copiedVersion",next));}
++ public void copy(String oldVersion,String newVersion,Map<String,String> map){
++  if(em!=null)em.flush();var old=db.brief(oldVersion);if(old==null)return;
++  Set<String> source=new HashSet<>(db.jdbc.queryForList("select id from scenes where version_id=?",String.class,oldVersion));Set<String> destination=new HashSet<>(db.jdbc.queryForList("select id from scenes where version_id=?",String.class,newVersion));
++  if(!map.keySet().equals(source)||new HashSet<>(map.values()).size()!=map.size()||!destination.equals(new HashSet<>(map.values())))throw ApiException.conflict("Incomplete/nonbijective copy map");
++  String brief=db.id();db.jdbc.update("insert into stem_briefs(id,version_id,payload,policy_id,topic_id,copied_from,readiness) values(?,?,?::jsonb,?,?,?,'NEEDS_REVIEW')",brief,newVersion,db.text(old,"payload"),db.text(old,"policy_id"),db.text(old,"topic_id"),db.text(old,"id"));
++  for(Evidence e:db.evidence(db.text(old,"id"))){if(e.sceneId()!=null&&!map.containsKey(e.sceneId()))throw ApiException.conflict("Orphan evidence cannot be copied without correction");String scene=e.sceneId()==null?null:map.get(e.sceneId());db.jdbc.update("insert into stem_evidence(id,brief_id,scene_id,original_scene_id,task_key,objective_key,component,explanation,copied_from) values(?,?,?,?,?,?,?,?,?)",db.id(),brief,scene,scene,e.taskKey(),e.objectiveKey(),e.component(),e.explanation(),e.id());}
++ }
++}
+diff --git a/src/main/java/com/stemotion/domain/stem/StemValidator.java b/src/main/java/com/stemotion/domain/stem/StemValidator.java
+new file mode 100644
+--- /dev/null
++++ b/src/main/java/com/stemotion/domain/stem/StemValidator.java
+@@ -0,0 +1,55 @@
++package com.stemotion.domain.stem;
++import com.fasterxml.jackson.databind.*;
++import com.stemotion.core.exception.ApiException;
++import org.springframework.http.HttpStatus;
++import org.springframework.stereotype.Component;
++import java.nio.charset.StandardCharsets;
++import java.util.*;
++import static com.stemotion.domain.stem.StemDtos.*;
++@Component
++public class StemValidator {
++ private final ObjectMapper json;
++ public StemValidator(ObjectMapper json){this.json=json.copy().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);}
++ public static ApiException invalid(String field,String message){return new ApiException(HttpStatus.BAD_REQUEST,"STEM_INVALID_FIELD",message,Map.of("field",field));}
++ public <T>T parse(JsonNode node,Class<T> type){try{if(node==null||!node.isObject())throw invalid("request","Expected JSON object");limits(node,0);return json.treeToValue(node,type);}catch(ApiException e){throw e;}catch(Exception e){throw invalid("request","Malformed or unknown STEM field");}}
++ public void limits(JsonNode n,int depth){if(n==null||depth>16)throw invalid("request","Maximum JSON depth16");if(depth==0&&n.toString().getBytes(StandardCharsets.UTF_8).length>262144)throw invalid("request","Maximum body262144bytes");if(n.isTextual()&&n.textValue().length()>4000)throw invalid("request","Maximum text4000");if(n.isNumber()&&!Double.isFinite(n.doubleValue()))throw invalid("request","Number must be finite");if(n.isArray()&&n.size()>200)throw invalid("request","Maximum array200");if(n.isContainerNode())n.forEach(c->limits(c,depth+1));}
++ public void key(String s,String field){if(s==null||s.isBlank()||s.length()>128)throw invalid(field,"Required key, maximum128");}
++ public void rev(Integer n,String field){if(n==null||n<0)throw invalid(field,"Required nonnegative revision");}
++ public void schema(String s){if(!"stem.v1".equals(s))throw invalid("schemaVersion","Expected stem.v1");}
++ public void idem(String s){if(s==null||!s.matches("[A-Za-z0-9_.:-]{8,128}"))throw invalid("idempotencyKey","Expected8-128 ASCII key");}
++ public <T>void list(List<T> a,int max,String field){if(a==null||a.size()>max||a.stream().anyMatch(Objects::isNull))throw invalid(field,"Required list, maximum"+max);}
++ private final Set<String> contexts=Set.of("IN_CLASS_SCREEN","GROUP_PRACTICE");
++ private final Set<String> components=Set.of("S","T","E","M");
++ public List<Finding> check(Brief b,List<Evidence> evidence){
++  if(b==null||b.context()==null)throw invalid("brief.context","Required context object");
++  list(b.subjectKeys(),20,"subjectKeys");list(b.outcomeIds(),20,"outcomeIds");list(b.context().secondary(),4,"context.secondary");list(b.distributionChannels(),10,"distributionChannels");list(b.objectives(),20,"objectives");list(b.studentTasks(),20,"studentTasks");list(b.contributions(),4,"contributions");list(evidence,200,"evidence");
++  for(String id:b.subjectKeys())key(id,"subjectKeys");for(String id:b.outcomeIds())key(id,"outcomeIds");
++  if(new HashSet<>(b.subjectKeys()).size()!=b.subjectKeys().size()||new HashSet<>(b.outcomeIds()).size()!=b.outcomeIds().size())throw invalid("brief","Duplicate subject/outcome reference");
++  if(b.gradeKey()!=null)key(b.gradeKey(),"gradeKey");
++  for(Evidence e:evidence){if(e.id()!=null)key(e.id(),"evidence.id");if(e.sceneId()!=null)key(e.sceneId(),"evidence.sceneId");}
++  List<Finding> f=new ArrayList<>();
++  if(b.context().primary()==null)f.add(new Finding("TECH-CONTEXT","brief.context.primary","ERROR","Primary context is incomplete"));
++  Set<String> seen=new HashSet<>();if(b.context().primary()!=null){context(b.context().primary());seen.add(b.context().primary().key());}
++  for(ContextEntry c:b.context().secondary()){context(c);if(!seen.add(c.key()))f.add(new Finding("TECH-CONTEXT","brief.context.secondary","ERROR","Duplicate context"));if(c.condition()==null||c.condition().isBlank()||c.adaptations()==null||c.adaptations().isBlank())f.add(new Finding("TECH-CONTEXT","brief.context.secondary","ERROR","Secondary needs condition/adaptations"));}
++  if(b.distributionChannels().stream().anyMatch(c->!"DEPARTMENT_LIBRARY".equals(c)))throw invalid("distributionChannels","Unknown distribution channel");
++  if(new HashSet<>(b.distributionChannels()).size()!=b.distributionChannels().size())throw invalid("distributionChannels","Duplicate channel");
++  Set<String> objectives=new HashSet<>(),tasks=new HashSet<>(),cs=new HashSet<>();
++  for(Objective o:b.objectives()){key(o.key(),"objectives.key");if(!objectives.add(o.key()))throw invalid("objectives","Duplicate objective key");if(o.outcomeId()!=null&&!b.outcomeIds().contains(o.outcomeId()))throw invalid("objectives.outcomeId","Outcome not selected in brief");}
++  for(Task t:b.studentTasks()){key(t.key(),"studentTasks.key");if(!tasks.add(t.key()))throw invalid("studentTasks","Duplicate task key");if(t.executionContextKey()!=null&&!seen.contains(t.executionContextKey()))throw invalid("studentTasks.executionContextKey","Context not in brief");}
++  for(Contribution c:b.contributions()){if(!components.contains(Objects.toString(c.component(),""))||!cs.add(c.component()))throw invalid("contributions","Unknown/duplicate component");list(c.objectiveKeys(),20,"contributions.objectiveKeys");list(c.taskKeys(),20,"contributions.taskKeys");if(!objectives.containsAll(c.objectiveKeys())||!tasks.containsAll(c.taskKeys()))throw invalid("contributions","Unknown task/objective reference");}
++  Set<String> ids=new HashSet<>();
++  for(Evidence e:evidence){if(e==null||e.component()==null||!components.contains(e.component()))throw invalid("evidence.component","Expected S/T/E/M");if(e.id()!=null&&!ids.add(e.id()))throw invalid("evidence.id","Duplicate evidence");if(e.sceneId()==null&&e.taskKey()==null)throw invalid("evidence","Scene or task required");if(e.taskKey()!=null&&!tasks.contains(e.taskKey()))throw invalid("evidence.taskKey","Unknown task");if(e.objectiveKey()!=null&&!objectives.contains(e.objectiveKey()))throw invalid("evidence.objectiveKey","Unknown objective");}
++  if(b.objectives().isEmpty())f.add(new Finding("TECH-OBJECTIVE","brief.objectives","ERROR","Learner objective is incomplete"));
++  for(Objective o:b.objectives())if(blank(o.learnerAction())||blank(o.observableEvidence())||o.outcomeId()==null)f.add(new Finding("TECH-OBJECTIVE","brief.objectives."+o.key(),"ERROR","Objective needs outcome/action/observable evidence"));
++  if(b.studentTasks().isEmpty())f.add(new Finding("TECH-TASK","brief.studentTasks","ERROR","Student task is incomplete"));
++  for(Task task:b.studentTasks())if(blank(task.learnerAction())||blank(task.teacherSupport())||blank(task.materials())||blank(task.safety())||blank(task.assessmentEvidence())||blank(task.executionContextKey()))f.add(new Finding("TECH-TASK","brief.studentTasks."+task.key(),"ERROR","Task/support/materials/safety/assessment/context incomplete"));
++  if(blank(b.scopeOfClip())||blank(b.safetyNotes()))f.add(new Finding("TECH-SCOPE","brief","ERROR","Scope and safety notes incomplete"));
++  if(b.contributions().isEmpty())f.add(new Finding("TECH-CONTRIBUTION","brief.contributions","WARN","Contributions require human review; no subject-count threshold"));
++  if(b.gradeKey()==null||b.policyVersionId()==null||b.outcomeIds().isEmpty())f.add(new Finding("TECH-CATALOG","brief","ERROR","Catalog/grade/outcome incomplete"));
++  f.add(new Finding("TECH-PROVENANCE","brief","WARN","DRAFT/UNVERIFIED: no scientific verification"));return f;
++ }
++ private boolean blank(String s){return s==null||s.isBlank();}
++ private void context(ContextEntry c){if(c.key()==null||!contexts.contains(c.key()))throw invalid("context.key","Unknown learning context; channels are separate");}
++ /** Pure evaluator only. No runtime path persists STRICT or claims scientific correctness. */
++ public void transition(String mode,List<Finding> findings,boolean assessmentCurrent){if("STRICT".equals(mode)&&(findings.stream().anyMatch(f->"ERROR".equals(f.severity()))||!assessmentCurrent))throw new ApiException(HttpStatus.BAD_REQUEST,"STEM_VALIDATION_FAILED","STEM prerequisites not satisfied",Map.of("findings",findings));}
++}
+diff --git a/src/test/java/com/stemotion/domain/stem/StemPostgresTest.java b/src/test/java/com/stemotion/domain/stem/StemPostgresTest.java
+new file mode 100644
+--- /dev/null
++++ b/src/test/java/com/stemotion/domain/stem/StemPostgresTest.java
+@@ -0,0 +1,122 @@
++package com.stemotion.domain.stem;
++import com.fasterxml.jackson.databind.*;
++import com.stemotion.core.enums.StemEnums.*;
++import com.stemotion.core.exception.*;
++import com.stemotion.core.security.WorkspaceAccess;
++import com.stemotion.domain.auth.entity.*;
++import com.stemotion.domain.auth.repository.UserRepository;
++import com.stemotion.domain.auth.service.AuthService;
++import com.stemotion.domain.project.entity.*;
++import com.stemotion.domain.project.repository.*;
++import com.stemotion.domain.project.service.StatusHistoryService;
++import com.stemotion.domain.script.entity.*;
++import com.stemotion.domain.script.repository.*;
++import com.stemotion.domain.script.service.ScriptService;
++import com.stemotion.domain.script.mapper.*;
++import com.stemotion.domain.script.dto.ScriptDtos.*;
++import com.stemotion.domain.workspace.entity.*;
++import com.stemotion.domain.workspace.repository.*;
++import com.stemotion.domain.workspace.service.WorkspaceService;
++import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
++import org.junit.jupiter.api.*;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
++import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
++import org.springframework.boot.test.context.TestConfiguration;
++import org.springframework.context.annotation.*;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.test.context.ActiveProfiles;
++import org.springframework.transaction.*;
++import org.springframework.transaction.annotation.*;
++import org.springframework.transaction.support.TransactionTemplate;
++import org.springframework.test.util.ReflectionTestUtils;
++import org.springframework.test.web.servlet.MockMvc;
++import org.springframework.test.web.servlet.setup.MockMvcBuilders;
++import javax.sql.DataSource;
++import java.util.*;
++import java.util.concurrent.*;
++import static org.assertj.core.api.Assertions.*;
++import static org.mockito.Mockito.*;
++import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
++@DataJpaTest(properties={"app.stem.enabled=true","spring.flyway.enabled=true","spring.jpa.hibernate.ddl-auto=validate","spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect"})
++@ActiveProfiles("stem-p3-test")
++@AutoConfigureTestDatabase(replace=AutoConfigureTestDatabase.Replace.NONE)
++@Import({StemRepository.class,StemValidator.class,StemService.class,WorkspaceAccess.class})
++@Transactional(propagation=Propagation.NOT_SUPPORTED)
++class StemPostgresTest {
++ static EmbeddedPostgres pg;
++ @TestConfiguration static class Config {
++  @Bean DataSource dataSource()throws Exception{pg=EmbeddedPostgres.builder().start();return pg.getDatabase("postgres","postgres",Map.of("stringtype","unspecified"));}
++  @Bean ObjectMapper objectMapper(){return new ObjectMapper();}
++ }
++ @AfterAll static void stop()throws Exception{if(pg!=null)pg.close();}
++ @Autowired StemService stem;@Autowired StemRepository db;@Autowired StemValidator validator;@Autowired WorkspaceAccess access;
++ @Autowired JdbcTemplate jdbc;@Autowired ObjectMapper json;@Autowired PlatformTransactionManager manager;
++ @Autowired UserRepository users;@Autowired WorkspaceRepository workspaces;@Autowired WorkspaceMemberRepository members;@Autowired ClipProjectRepository projects;@Autowired ScriptVersionRepository versions;@Autowired SceneRepository scenes;@Autowired StatusHistoryRepository history;
++ TransactionTemplate tx;String writer,reviewer,admin,workspace,project,version,scene;ScriptService scripts;MockMvc mvc;
++ @BeforeEach void fixture(){tx=new TransactionTemplate(manager);tx.executeWithoutResult(s->{
++  User w=user("WRITER",SystemRole.USER),r=user("REVIEWER",SystemRole.USER),a=user("ADMIN",SystemRole.ADMIN);writer=w.getId();reviewer=r.getId();admin=a.getId();
++  Workspace ws=workspaces.saveAndFlush(Workspace.builder().name("TEST_ONLY "+UUID.randomUUID()).createdBy(a).build());workspace=ws.getId();
++  members.saveAndFlush(WorkspaceMember.builder().workspace(ws).user(w).role(WorkspaceRole.WRITER).build());members.saveAndFlush(WorkspaceMember.builder().workspace(ws).user(r).role(WorkspaceRole.REVIEWER).build());
++  ClipProject cp=projects.saveAndFlush(ClipProject.builder().title("TEST_ONLY not a verified lesson").subject(StemSubject.Math).gradeLevel("TEST_ONLY").owner(w).workspace(ws).build());project=cp.getId();
++  ScriptVersion sv=versions.saveAndFlush(ScriptVersion.builder().project(cp).title("TEST_ONLY").versionNo(1).createdBy(w).build());version=sv.getId();
++  Scene sc=scenes.saveAndFlush(Scene.builder().scriptVersion(sv).sceneType(SceneType.TITLE_HERO).title("TEST_ONLY").narration("TEST_ONLY").props("{}").orderNo(1).build());scene=sc.getId();
++ });
++ AuthService auth=mock(AuthService.class);when(auth.findUserOrThrow(anyString())).thenAnswer(i->users.findById(i.getArgument(0)).orElseThrow());
++ scripts=new ScriptService(projects,versions,scenes,new SceneMapper(json,new ScenePropsValidator()),auth,mock(WorkspaceService.class),new StatusHistoryService(history),access);ReflectionTestUtils.setField(scripts,"stem",stem);
++ mvc=MockMvcBuilders.standaloneSetup(new StemController(stem,validator)).addFilters(new StemRequestLimitFilter(json)).setControllerAdvice(new GlobalExceptionHandler()).build();
++ }
++ User user(String name,SystemRole role){return users.saveAndFlush(User.builder().fullName("TEST_ONLY "+name).username("p3"+UUID.randomUUID().toString().replace("-", "").substring(0,24)).email(UUID.randomUUID()+"@example.invalid").systemRole(role).build());}
++ StemDtos.View create(){return stem.create(project,version,writer,new StemDtos.Create("stem.v1",0,"create-test-01"));}
++ StemDtos.Save save(StemDtos.Brief b,List<StemDtos.Evidence> ev,int rev,String key){return new StemDtos.Save("stem.v1",rev,0,key,b,ev);}
++ StemDtos.Assessment assessment(int br,String key){return new StemDtos.Assessment(br,0,null,0,null,List.of(new StemDtos.Criterion("TEST_ONLY","NOT_ASSESSED","TEST_ONLY no expert feedback",List.of())),key);}
++ @Test void freshSchemaAndRlsHaveNoVerifiedOrStrictContent(){assertThat(jdbc.queryForObject("select count(*) from flyway_schema_history where success",Integer.class)).isEqualTo(25);assertThat(jdbc.queryForObject("select count(*) from pg_class where relname like 'stem_%' and relkind='r' and relrowsecurity",Integer.class)).isEqualTo(9);assertThat(jdbc.queryForObject("select count(*) from stem_settings where mode='STRICT'",Integer.class)).isZero();assertThat(jdbc.queryForObject("select count(*) from stem_catalog where status<>'DRAFT'",Integer.class)).isZero();}
++ @Test void nullDraftReplayCasAndUnknownFieldApi()throws Exception{
++  var a=create();assertThat(create().briefId()).isEqualTo(a.briefId());assertThat(a.brief().context().primary()).isNull();assertThat(a.verificationStatus()).isEqualTo("UNVERIFIED");
++  stem.save(project,version,writer,save(StemDtos.empty(),List.of(),0,"save-test-01"));var again=stem.save(project,version,writer,save(StemDtos.empty(),List.of(),0,"save-test-01"));assertThat(again.revision()).isEqualTo(1);
++  assertThatThrownBy(()->stem.save(project,version,writer,save(StemDtos.empty(),List.of(),0,"save-test-02"))).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getStatus().value()).isEqualTo(409));
++  mvc.perform(put("/api/v1/scripts/{p}/versions/{v}/stem",project,version).principal(()->writer).contentType("application/json").content("{\"verified\":true}")).andExpect(status().isBadRequest()).andExpect(jsonPath("$.details.field").exists());
++ }
++ @Test void wrongActorAndAdminWithoutReviewerCannotAssess(){create();assertThatThrownBy(()->stem.save(project,version,admin,save(StemDtos.empty(),List.of(),0,"save-test-03"))).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getStatus().value()).isEqualTo(403));assertThatThrownBy(()->tx.execute(s->stem.prepare(projects.findById(project).orElseThrow(),versions.findById(version).orElseThrow(),admin,"SCRIPT",assessment(0,"review-test-01")))).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getStatus().value()).isEqualTo(403));}
++ @Test void settingsPinNoBackfillAndStrictRefused(){create();String policy=tx.execute(s->db.createDraft(StemModels.Kind.POLICY,"TEST_ONLY-"+UUID.randomUUID(),1,null,null,json.createObjectNode()));stem.saveSettings(workspace,admin,new StemDtos.Settings(0,"ADVISORY",List.of(policy),policy,"settings-test-01",null));assertThat(stem.get(project,version,writer).brief().policyVersionId()).isNull();assertThat(stem.settings(workspace,writer).mode()).isEqualTo("ADVISORY");assertThatThrownBy(()->stem.saveSettings(workspace,admin,new StemDtos.Settings(1,"STRICT",List.of(policy),policy,"settings-test-02",null))).isInstanceOf(ApiException.class);assertThat(jdbc.queryForObject("select count(*) from stem_settings where mode='STRICT'",Integer.class)).isZero();}
++ @Test void sceneDeletionPreservesOrphanAndExplicitEvidenceRetirement(){create();var e=new StemDtos.Evidence(null,scene,null,null,"S","TEST_ONLY");var saved=stem.save(project,version,writer,save(StemDtos.empty(),List.of(e),0,"save-orphan-01"));jdbc.update("delete from scenes where id=?",scene);var orphan=stem.get(project,version,writer);assertThat(orphan.findings()).anyMatch(f->f.ruleId().equals("TECH-EVIDENCE"));assertThat(orphan.evidence().get(0).sceneId()).isEqualTo(scene);stem.save(project,version,writer,save(StemDtos.empty(),List.of(),1,"save-orphan-02"));assertThat(jdbc.queryForObject("select count(*) from stem_evidence where id=? and retired",Integer.class,saved.evidence().get(0).id())).isEqualTo(1);}
++ @Test void copyMapWrongRollsBackNewVersion(){create();int count=jdbc.queryForObject("select count(*) from script_versions where project_id=?",Integer.class,project);assertThatThrownBy(()->tx.executeWithoutResult(s->{ScriptVersion old=versions.findById(version).orElseThrow();old.setIsCurrent(false);versions.saveAndFlush(old);ScriptVersion next=versions.saveAndFlush(ScriptVersion.builder().project(old.getProject()).title("TEST_ONLY copy").versionNo(2).createdBy(old.getCreatedBy()).build());stem.copy(version,next.getId(),Map.of(scene,"wrong-scene"));})).isInstanceOf(ApiException.class);assertThat(jdbc.queryForObject("select count(*) from script_versions where project_id=?",Integer.class,project)).isEqualTo(count);}
++ @Test void workflowApproveLinksExactlyOneExistingDecisionAndRetry(){create();tx.execute(s->scripts.submitForReview(project,writer));var req=new ReviewDecisionRequest("TEST_ONLY",assessment(0,"approve-test-01"));tx.execute(s->scripts.approve(project,req,reviewer));tx.execute(s->scripts.approve(project,req,reviewer));assertThatThrownBy(()->tx.execute(s->scripts.approve(project,new ReviewDecisionRequest("TEST_ONLY changed note",req.stemAssessment()),reviewer))).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getCode()).isEqualTo("STEM_IDEMPOTENCY_CONFLICT"));assertThat(jdbc.queryForObject("select count(*) from stem_assessments where version_id=?",Integer.class,version)).isEqualTo(1);assertThat(jdbc.queryForObject("select count(*) from status_histories where project_id=? and decision='APPROVED'",Integer.class,project)).isEqualTo(1);assertThat(jdbc.queryForObject("select verification_status from stem_assessments where version_id=?",String.class,version)).isEqualTo("UNVERIFIED");}
++ @Test void requestChangesCopiesEvidenceByIdentityNotOrder(){create();stem.save(project,version,writer,save(StemDtos.empty(),List.of(new StemDtos.Evidence(null,scene,null,null,"E","TEST_ONLY")),0,"copy-setup-01"));tx.execute(s->scripts.submitForReview(project,writer));tx.execute(s->scripts.requestChanges(project,new ReviewDecisionRequest("TEST_ONLY return"),reviewer));String next=jdbc.queryForObject("select id from script_versions where project_id=? and is_current",String.class,project);var copied=stem.get(project,next,writer);assertThat(copied.evidence()).hasSize(1);assertThat(copied.evidence().get(0).sceneId()).isNotEqualTo(scene);assertThat(jdbc.queryForObject("select version_id from scenes where id=?",String.class,copied.evidence().get(0).sceneId())).isEqualTo(next);assertThat(jdbc.queryForObject("select count(*) from stem_assessments where version_id=?",Integer.class,next)).isZero();}
++ @Test void staleApproveWritesNeitherDecisionNorAssessment(){create();tx.execute(s->scripts.submitForReview(project,writer));assertThatThrownBy(()->tx.execute(s->scripts.approve(project,new ReviewDecisionRequest("TEST_ONLY",assessment(3,"approve-stale-01")),reviewer))).isInstanceOf(ApiException.class);assertThat(jdbc.queryForObject("select count(*) from status_histories where project_id=? and decision='APPROVED'",Integer.class,project)).isZero();assertThat(jdbc.queryForObject("select count(*) from stem_assessments where version_id=?",Integer.class,version)).isZero();}
++ @Test void clientsHaveNoRlsReadOrWritePolicy(){String role="stem_p3_test_client";tx.executeWithoutResult(s->{jdbc.execute("create role "+role);jdbc.execute("grant select,insert on stem_catalog to "+role);jdbc.execute("set local role "+role);assertThat(jdbc.queryForObject("select count(*) from stem_catalog",Integer.class)).isZero();jdbc.execute("reset role");});}
++ @Test void validationRateAndRunsAreIsolated(){create();for(int i=0;i<10;i++)stem.validate(project,version,writer,new StemDtos.Validate(0,0,"SCRIPT",null));assertThatThrownBy(()->stem.validate(project,version,writer,new StemDtos.Validate(0,0,"SCRIPT",null))).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getStatus().value()).isEqualTo(429));assertThat(jdbc.queryForObject("select count(*) from stem_validation_runs r join stem_briefs b on b.id=r.brief_id where b.version_id=?",Integer.class,version)).isEqualTo(10);}
++ @Test void sameKeyDifferentPayloadIsConflict(){create();stem.save(project,version,writer,save(StemDtos.empty(),List.of(),0,"same-key-01"));assertThatThrownBy(()->stem.save(project,version,writer,save(StemDtos.empty(),List.of(),1,"same-key-01"))).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getCode()).isEqualTo("STEM_IDEMPOTENCY_CONFLICT"));}
++ @Test void concurrentSavesHaveOneWinner()throws Exception{create();var pool=Executors.newFixedThreadPool(2);try{List<Future<Boolean>> results=pool.invokeAll(List.of(()->attemptSave("race-key-01"),()->attemptSave("race-key-02")));assertThat(results.stream().filter(f->{try{return f.get();}catch(Exception e){throw new RuntimeException(e);}}).count()).isEqualTo(1);assertThat(stem.get(project,version,writer).revision()).isEqualTo(1);}finally{pool.shutdownNow();}}
++
++ @Test void inactiveReviewerCannotWriteAssessment(){create();jdbc.update("update workspace_members set status='INACTIVE' where workspace_id=? and user_id=?",workspace,reviewer);assertThatThrownBy(()->tx.execute(s->stem.prepare(projects.findById(project).orElseThrow(),versions.findById(version).orElseThrow(),reviewer,"SCRIPT",assessment(0,"inactive-test-01")))).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getStatus().value()).isEqualTo(403));}
++ @Test void staleModeAssessmentAndLegacyConflictRequireExplicitSelection(){create();stem.saveSettings(workspace,admin,new StemDtos.Settings(0,"OFF",List.of(),null,"mode-save-01",null));assertThatThrownBy(()->tx.execute(s->stem.prepare(projects.findById(project).orElseThrow(),versions.findById(version).orElseThrow(),reviewer,"SCRIPT",assessment(0,"mode-stale-01")))).isInstanceOf(ApiException.class);jdbc.update("update stem_settings set legacy_modes='[\"OFF\",\"ADVISORY\"]'::jsonb where workspace_id=?",workspace);assertThatThrownBy(()->stem.saveSettings(workspace,admin,new StemDtos.Settings(1,"ADVISORY",List.of(),null,"legacy-mode-01",null))).isInstanceOf(ApiException.class);assertThat(stem.saveSettings(workspace,admin,new StemDtos.Settings(1,"ADVISORY",List.of(),null,"legacy-mode-01","ADVISORY")).mode()).isEqualTo("ADVISORY");}
++ @Test void pinnedOldPolicySurvivesAssignmentChange(){create();String policy=tx.execute(s->db.createDraft(StemModels.Kind.POLICY,"TEST_ONLY-"+UUID.randomUUID(),1,null,null,json.createObjectNode()));stem.saveSettings(workspace,admin,new StemDtos.Settings(0,"ADVISORY",List.of(policy),policy,"pin-mode-01",null));var b=StemDtos.empty();var pinned=new StemDtos.Brief(policy,null,null,b.subjectKeys(),b.outcomeIds(),b.scopeOfClip(),b.context(),b.distributionChannels(),b.objectives(),b.studentTasks(),b.contributions(),b.safetyNotes(),"TEST_ONLY legacy raw");stem.save(project,version,writer,save(pinned,List.of(),0,"pin-save-01"));stem.saveSettings(workspace,admin,new StemDtos.Settings(1,"OFF",List.of(),null,"pin-mode-02",null));assertThat(stem.get(project,version,writer).brief().policyVersionId()).isEqualTo(policy);assertThat(stem.get(project,version,writer).findings()).anyMatch(e->e.ruleId().equals("TECH-POLICY"));stem.save(project,version,writer,save(pinned,List.of(),1,"pin-save-02"));assertThatThrownBy(()->tx.executeWithoutResult(s->db.updateDraft(policy,0,json.createObjectNode()))).isInstanceOf(ApiException.class);}
++ @Test void keyedRequestChangesRetryCannotDuplicateVersion(){create();tx.execute(s->scripts.submitForReview(project,writer));var request=new ReviewDecisionRequest("TEST_ONLY reason",null,new StemDtos.ChangeTarget(version,0,0,"change-test-01"));tx.execute(s->scripts.requestChanges(project,request,reviewer));tx.execute(s->scripts.requestChanges(project,request,reviewer));assertThat(jdbc.queryForObject("select count(*) from script_versions where project_id=?",Integer.class,project)).isEqualTo(2);assertThatThrownBy(()->tx.execute(s->scripts.requestChanges(project,new ReviewDecisionRequest("different reason",null,request.changeTarget()),reviewer))).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getCode()).isEqualTo("STEM_IDEMPOTENCY_CONFLICT"));}
++ @Test void copyFailureRollsBackWorkflowAndKeepsOriginalInReview(){create();stem.save(project,version,writer,save(StemDtos.empty(),List.of(new StemDtos.Evidence(null,scene,null,null,"S","TEST_ONLY")),0,"rollback-copy-01"));tx.execute(s->scripts.submitForReview(project,writer));jdbc.update("delete from scenes where id=?",scene);assertThatThrownBy(()->tx.execute(s->scripts.requestChanges(project,new ReviewDecisionRequest("TEST_ONLY orphan"),reviewer))).isInstanceOf(ApiException.class);assertThat(jdbc.queryForObject("select script_status from clip_projects where id=?",String.class,project)).isEqualTo("IN_REVIEW");assertThat(jdbc.queryForObject("select count(*) from script_versions where project_id=?",Integer.class,project)).isEqualTo(1);}
++ @Test void testMigrationRejectsWrongPrerequisiteType()throws Exception{String sql=new String(new org.springframework.core.io.ClassPathResource("db/stem-p3/V91000__stem_p3_test_only.sql").getInputStream().readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);assertThatThrownBy(()->tx.executeWithoutResult(s->{jdbc.execute("create temporary table users(id uuid)");jdbc.execute(sql);})).isInstanceOf(org.springframework.dao.DataAccessException.class).hasMessageContaining("prerequisite drift");assertThat(jdbc.queryForObject("select count(*) from pg_class where relname='stem_catalog'",Integer.class)).isEqualTo(1);}
++ @Test void rlsRejectsClientInsertionDespiteAnExplicitGrant(){jdbc.execute("create role stem_p3_insert_client");jdbc.execute("grant insert on stem_catalog to stem_p3_insert_client");assertThatThrownBy(()->tx.executeWithoutResult(s->{jdbc.execute("set local role stem_p3_insert_client");jdbc.update("insert into stem_catalog(id,kind,logical_key,version_no,data) values(?, 'TOPIC','TEST_ONLY',1,'{}')",UUID.randomUUID().toString());})).isInstanceOf(org.springframework.dao.DataAccessException.class).rootCause().hasMessageContaining("row-level security");}
++ @org.junit.jupiter.params.ParameterizedTest
++ @org.junit.jupiter.params.provider.ValueSource(booleans={true,false})
++ void bothVideoBranchesUseSameAssessmentGuardAndRetry(boolean hasClip){
++  create();String compId=UUID.randomUUID().toString();jdbc.update("insert into compositions(id,script_version_id,project_id,revision,scenes) values(?::uuid,?,?,1,'[]')",compId,version,project);jdbc.update("update clip_projects set script_status='APPROVED',video_status='IN_QA' where id=?",project);jdbc.update("update script_versions set status='APPROVED' where id=?",version);
++  var cp=mock(com.stemotion.domain.production.service.CompositionService.class);var render=mock(com.stemotion.domain.production.service.RenderService.class);var artifacts=mock(com.stemotion.domain.production.service.ClipArtifactService.class);var notes=mock(com.stemotion.domain.review.repository.FeedbackCommentRepository.class);
++  var composition=com.stemotion.domain.production.entity.Composition.builder().revision(1).build();composition.setId(compId);when(cp.ensure(any(),any(),anyString())).thenReturn(composition);when(cp.renderInput(any())).thenReturn(new com.stemotion.domain.production.service.CompositionService.RenderInput(composition,1,List.of()));
++  if(hasClip){String jobId=UUID.randomUUID().toString(),clipId=UUID.randomUUID().toString();jdbc.update("insert into render_jobs(id,created_at,updated_at,project_id,version_id,requested_by,status,resolution,fps,composition_id,composition_revision) values(?,current_timestamp,current_timestamp,?,?,?,'COMPLETED','RES_1080P',30,?::uuid,1)",jobId,project,version,reviewer,compId);jdbc.update("insert into clips(id,render_job_id,video_url) values(?::uuid,?,?)",clipId,jobId,"http://127.0.0.1/TEST_ONLY-not-real.mp4");var job=com.stemotion.domain.production.entity.RenderJob.builder().compositionRevision(1).build();job.setId(jobId);var clip=com.stemotion.domain.production.entity.Clip.builder().renderJob(job).build();clip.setId(clipId);when(artifacts.findCurrent(any(),anyString())).thenReturn(Optional.of(clip));}else when(artifacts.findCurrent(any(),anyString())).thenReturn(Optional.empty());
++  var auth=mock(AuthService.class);when(auth.findUserOrThrow(anyString())).thenAnswer(i->users.findById(i.getArgument(0)).orElseThrow());var service=new com.stemotion.domain.review.service.FeedbackService(notes,scenes,projects,scripts,auth,artifacts,new StatusHistoryService(history),cp,render);ReflectionTestUtils.setField(service,"stem",stem);
++  var request=new StemDtos.Assessment(0,0,1,0,null,List.of(new StemDtos.Criterion("TEST_ONLY","NOT_ASSESSED","TEST_ONLY",List.of())),"video-approve-01");
++  assertThatThrownBy(()->tx.executeWithoutResult(s->service.approveVideo(project,admin,"TEST_ONLY",request))).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getStatus().value()).isEqualTo(403));
++  tx.executeWithoutResult(s->service.approveVideo(project,reviewer,"TEST_ONLY",request));tx.executeWithoutResult(s->service.approveVideo(project,reviewer,"TEST_ONLY",request));assertThat(jdbc.queryForObject("select count(*) from stem_assessments where version_id=? and phase='VIDEO'",Integer.class,version)).isEqualTo(1);verify(render,times(hasClip?0:1)).renderApproved(project,reviewer);
++ }
++ @Test void actualBodyByteCapCannotBeBypassedWithWhitespace()throws Exception{mvc.perform(post("/api/v1/scripts/{p}/versions/{v}/stem",project,version).principal(()->writer).contentType("application/json").content(" ".repeat(262145))).andExpect(status().isBadRequest()).andExpect(jsonPath("$.details.field").value("request"));}
++ @Test void catalogResponseIsTypedJsonAndUnverified()throws Exception{String entry=tx.execute(s->db.createDraft(StemModels.Kind.SOURCE_EDITION,"TEST_ONLY-source-"+UUID.randomUUID(),1,null,null,json.createObjectNode().put("provenance","TEST_ONLY not official")));mvc.perform(get("/api/v1/stem/catalog").param("kind","SOURCE_EDITION").principal(()->writer)).andExpect(status().isOk()).andExpect(jsonPath("$[?(@.id=='"+entry+"')].verificationStatus").value(org.hamcrest.Matchers.contains("UNVERIFIED"))).andExpect(jsonPath("$[?(@.id=='"+entry+"')].data.provenance").value(org.hamcrest.Matchers.contains("TEST_ONLY not official")));}
++ @Test void legacyDepartmentLibrarySuggestsChannelWithoutInferringPrimary(){create();var b=StemDtos.empty();var legacy=new StemDtos.Brief(null,null,null,b.subjectKeys(),b.outcomeIds(),null,b.context(),b.distributionChannels(),b.objectives(),b.studentTasks(),b.contributions(),null,"DEPARTMENT_LIBRARY");var result=stem.save(project,version,writer,save(legacy,List.of(),0,"legacy-context-01"));assertThat(result.brief().context().primary()).isNull();assertThat(result.brief().distributionChannels()).isEmpty();assertThat(result.legacySuggestion().channelKeys()).containsExactly("DEPARTMENT_LIBRARY");assertThat(result.readiness()).isEqualTo("LEGACY_UNMAPPED");}
++
++ @Test void legacyAdminApprovalWithoutAssessmentStaysLegacy(){create();tx.execute(s->scripts.submitForReview(project,writer));tx.execute(s->scripts.approve(project,new ReviewDecisionRequest("TEST_ONLY legacy decision"),admin));assertThat(jdbc.queryForObject("select count(*) from stem_assessments where version_id=?",Integer.class,version)).isZero();assertThat(stem.get(project,version,writer).verificationStatus()).isEqualTo("UNVERIFIED");}
++ @Test void crossWorkspaceOrVersionCannotBeReadThroughApi()throws Exception{String[] other=tx.execute(s->{var a=users.findById(admin).orElseThrow();var ws=workspaces.saveAndFlush(Workspace.builder().name("TEST_ONLY other").createdBy(a).build());var cp=projects.saveAndFlush(ClipProject.builder().title("TEST_ONLY private").subject(StemSubject.Math).owner(a).workspace(ws).build());var sv=versions.saveAndFlush(ScriptVersion.builder().project(cp).title("TEST_ONLY private").versionNo(1).createdBy(a).build());return new String[]{cp.getId(),sv.getId()};});mvc.perform(get("/api/v1/scripts/{p}/versions/{v}/stem",other[0],other[1]).principal(()->writer)).andExpect(status().isForbidden());mvc.perform(get("/api/v1/scripts/{p}/versions/{v}/stem",project,other[1]).principal(()->writer)).andExpect(status().isForbidden());}
++ @Test void outcomeGradeMismatchIsRejectedWithoutPromotingContent(){create();String source=tx.execute(s->db.createDraft(StemModels.Kind.SOURCE_EDITION,"TEST_ONLY-source-"+UUID.randomUUID(),1,null,null,json.createObjectNode().put("provenance","TEST_ONLY")));String outcome=tx.execute(s->db.createDraft(StemModels.Kind.OUTCOME,"TEST_ONLY-outcome-"+UUID.randomUUID(),1,null,source,json.createObjectNode().put("gradeKey","TEST_ONLY-grade4").put("subjectKey","TEST_ONLY-science")));var b=StemDtos.empty();var wrong=new StemDtos.Brief(null,null,"TEST_ONLY-grade8",List.of("TEST_ONLY-science"),List.of(outcome),null,b.context(),b.distributionChannels(),b.objectives(),b.studentTasks(),b.contributions(),null,null);assertThatThrownBy(()->stem.save(project,version,writer,save(wrong,List.of(),0,"grade-mismatch-01"))).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getDetails()).containsEntry("field","brief.outcomeIds"));assertThat(stem.get(project,version,writer).revision()).isZero();}
++ com.stemotion.domain.script.dto.SceneDtos.SceneRequest requestScene(String id){var x=new com.stemotion.domain.script.dto.SceneDtos.SceneRequest();x.setId(id);x.setType(SceneType.TITLE_HERO);x.setTitle("TEST_ONLY");x.setNarration("TEST_ONLY");x.setDurationInFrames(90);for(String key:List.of("subtitle","subject","gradeLevel","badgeText"))x.putProp(key,"TEST_ONLY");return x;}
++ @Test void reorderInsertAndDeleteNeverRetargetExistingEvidence(){create();String second=tx.execute(s->scenes.saveAndFlush(Scene.builder().scriptVersion(versions.findById(version).orElseThrow()).sceneType(SceneType.TITLE_HERO).title("TEST_ONLY same title").narration("TEST_ONLY").props("{}").orderNo(2).build()).getId());stem.save(project,version,writer,save(StemDtos.empty(),List.of(new StemDtos.Evidence(null,scene,null,null,"M","TEST_ONLY")),0,"reorder-evidence-01"));tx.execute(s->scripts.updateDraft(project,new UpdateScriptRequest(null,null,null,null,null,List.of(requestScene(second),requestScene(scene)),0)));assertThat(stem.get(project,version,writer).evidence().get(0).sceneId()).isEqualTo(scene);assertThat(jdbc.queryForObject("select order_no from scenes where id=?",Integer.class,scene)).isEqualTo(2);tx.execute(s->scripts.updateDraft(project,new UpdateScriptRequest(null,null,null,null,null,List.of(requestScene("local-test-insert"),requestScene(second),requestScene(scene)),1)));String inserted=jdbc.queryForObject("select id from scenes where version_id=? and id<>? and id<>?",String.class,version,scene,second);assertThat(stem.get(project,version,writer).evidence()).noneMatch(e->inserted.equals(e.sceneId()));tx.execute(s->scripts.updateDraft(project,new UpdateScriptRequest(null,null,null,null,null,List.of(requestScene(inserted),requestScene(second)),2)));assertThat(stem.get(project,version,writer).evidence().get(0).sceneId()).isEqualTo(scene);assertThat(stem.get(project,version,writer).findings()).anyMatch(e->e.ruleId().equals("TECH-EVIDENCE"));}
++ boolean attemptSave(String key){try{stem.save(project,version,writer,save(StemDtos.empty(),List.of(),0,key));return true;}catch(ApiException e){assertThat(e.getStatus().value()).isEqualTo(409);return false;}}
++}
+diff --git a/src/test/java/com/stemotion/domain/stem/StemValidatorTest.java b/src/test/java/com/stemotion/domain/stem/StemValidatorTest.java
+new file mode 100644
+--- /dev/null
++++ b/src/test/java/com/stemotion/domain/stem/StemValidatorTest.java
+@@ -0,0 +1,18 @@
++package com.stemotion.domain.stem;
++import org.junit.jupiter.api.Test;
++import com.fasterxml.jackson.databind.ObjectMapper;
++import com.stemotion.core.exception.ApiException;
++import java.util.*;
++import static org.assertj.core.api.Assertions.*;
++class StemValidatorTest {
++ ObjectMapper json=new ObjectMapper();StemValidator validator=new StemValidator(json);
++ @Test void draftNullPrimaryIsAllowedButIncomplete(){var f=validator.check(StemDtos.empty(),List.of());assertThat(f).anyMatch(x->x.ruleId().equals("TECH-CONTEXT"));}
++ @Test void channelCannotBePrimary(){var b=StemDtos.empty();var bad=new StemDtos.Brief(null,null,null,List.of(),List.of(),null,new StemDtos.UsageContext(new StemDtos.ContextEntry("DEPARTMENT_LIBRARY",null,null),List.of()),List.of(),List.of(),List.of(),List.of(),null,null);assertThatThrownBy(()->validator.check(bad,List.of())).isInstanceOf(ApiException.class);}
++ @Test void unknownClaimsAreRejected(){var n=json.createObjectNode().put("schemaVersion","stem.v1").put("expectedScriptRevision",0).put("idempotencyKey","test-key-01").put("verified",true);assertThatThrownBy(()->validator.parse(n,StemDtos.Create.class)).isInstanceOf(ApiException.class);}
++ @Test void strictIsOnlyPureNegativeEvaluator(){assertThatThrownBy(()->validator.transition("STRICT",validator.check(StemDtos.empty(),List.of()),false)).isInstanceOf(ApiException.class);validator.transition("OFF",validator.check(StemDtos.empty(),List.of()),false);validator.transition("ADVISORY",validator.check(StemDtos.empty(),List.of()),false);}
++ @Test void aiWarningAloneIsNotAHardGate(){validator.transition("STRICT",List.of(new StemDtos.Finding("AI","narration","WARN","Synthetic advisory")),true);}
++ @Test void limitsAndMissingRevisionHaveFieldErrors(){assertThatThrownBy(()->validator.rev(null,"baseRevision")).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getDetails()).containsEntry("field","baseRevision"));assertThatThrownBy(()->validator.limits(json.getNodeFactory().textNode("x".repeat(4001)),0)).isInstanceOf(ApiException.class);}
++ @Test void evidenceNeedsATargetAndMatchingTask(){assertThatThrownBy(()->validator.check(StemDtos.empty(),List.of(new StemDtos.Evidence(null,null,null,null,"S","TEST_ONLY")))).isInstanceOf(ApiException.class);assertThatThrownBy(()->validator.check(StemDtos.empty(),List.of(new StemDtos.Evidence(null,null,"wrong",null,"S","TEST_ONLY")))).isInstanceOf(ApiException.class);}
++ @Test void legacyDecisionJsonStillDeserializesAndClaimsDoNot()throws Exception{var d=json.readValue("{\"note\":\"TEST_ONLY\"}",com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest.class);assertThat(d.note()).isEqualTo("TEST_ONLY");assertThat(d.stemAssessment()).isNull();assertThatThrownBy(()->json.readValue("{\"verified\":true}",com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest.class)).isInstanceOf(Exception.class);}
++ @Test void unapprovedHypothesisContextsAreNotAddedFromMaster(){for(String key:List.of("PRE_CLASS","HOME_SELF_STUDY")){var b=StemDtos.empty();var value=new StemDtos.Brief(null,null,null,List.of(),List.of(),null,new StemDtos.UsageContext(new StemDtos.ContextEntry(key,null,null),List.of()),List.of(),List.of(),List.of(),List.of(),null,null);assertThatThrownBy(()->validator.check(value,List.of())).isInstanceOf(ApiException.class);}}
++}
+diff --git a/src/test/resources/application-stem-p3-test.properties b/src/test/resources/application-stem-p3-test.properties
+new file mode 100644
+--- /dev/null
++++ b/src/test/resources/application-stem-p3-test.properties
+@@ -0,0 +1,4 @@
++app.stem.enabled=true
++spring.flyway.locations=classpath:db/migration,classpath:db/auth-v2-e2e,classpath:db/stem-p3
++spring.jpa.hibernate.ddl-auto=validate
++spring.dotenv.enabled=false
+diff --git a/src/test/resources/db/stem-p3/V91000__stem_p3_test_only.sql b/src/test/resources/db/stem-p3/V91000__stem_p3_test_only.sql
+new file mode 100644
+--- /dev/null
++++ b/src/test/resources/db/stem-p3/V91000__stem_p3_test_only.sql
+@@ -0,0 +1,49 @@
++-- TEST ONLY M-B. Never production reservation or production profile.
++DO $$ DECLARE t text; k text; BEGIN
++ FOREACH t IN ARRAY ARRAY['users','workspaces','script_versions','scenes','status_histories'] LOOP
++  SELECT format_type(atttypid,atttypmod) INTO k FROM pg_attribute WHERE attrelid=t::regclass AND attname='id';
++  IF k IS DISTINCT FROM 'character varying(36)' THEN RAISE EXCEPTION 'P3 fresh-test prerequisite drift: %.id type %',t,k; END IF;
++ END LOOP;
++END $$;
++CREATE TABLE stem_catalog (
++ id varchar(36) PRIMARY KEY, kind varchar(30) NOT NULL CHECK(kind IN ('TOPIC','TOPIC_VERSION','SOURCE_EDITION','OUTCOME','PROFILE','POLICY','RUBRIC')),
++ logical_key varchar(128) NOT NULL,version_no integer NOT NULL CHECK(version_no>0),revision integer NOT NULL DEFAULT 0 CHECK(revision>=0),
++ parent_id varchar(36) REFERENCES stem_catalog(id),source_id varchar(36) REFERENCES stem_catalog(id),
++ status varchar(20) NOT NULL DEFAULT 'DRAFT' CHECK(status='DRAFT'),data jsonb NOT NULL CHECK(jsonb_typeof(data)='object'),UNIQUE(kind,logical_key,version_no)
++);
++CREATE TABLE stem_briefs (
++ id varchar(36) PRIMARY KEY,version_id varchar(36) NOT NULL UNIQUE REFERENCES script_versions(id),revision integer NOT NULL DEFAULT 0 CHECK(revision>=0),
++ status varchar(20) NOT NULL DEFAULT 'DRAFT' CHECK(status='DRAFT'),readiness varchar(30) NOT NULL DEFAULT 'INCOMPLETE',payload jsonb NOT NULL CHECK(jsonb_typeof(payload)='object'),
++ policy_id varchar(36) REFERENCES stem_catalog(id),topic_id varchar(36) REFERENCES stem_catalog(id),copied_from varchar(36) REFERENCES stem_briefs(id)
++);
++CREATE TABLE stem_evidence (
++ id varchar(36) PRIMARY KEY,brief_id varchar(36) NOT NULL REFERENCES stem_briefs(id),scene_id varchar(36) REFERENCES scenes(id) ON DELETE SET NULL,
++ original_scene_id varchar(128),task_key varchar(128),objective_key varchar(128),component varchar(1) NOT NULL CHECK(component IN ('S','T','E','M')),
++ retired boolean NOT NULL DEFAULT false,explanation text,copied_from varchar(36),status varchar(20) NOT NULL DEFAULT 'NEEDS_REVIEW' CHECK(status='NEEDS_REVIEW'),CHECK(original_scene_id IS NOT NULL OR task_key IS NOT NULL)
++);
++CREATE TABLE stem_settings (
++ workspace_id varchar(36) PRIMARY KEY REFERENCES workspaces(id),revision integer NOT NULL CHECK(revision>0),mode varchar(12) NOT NULL CHECK(mode IN ('OFF','ADVISORY')),
++ policy_ids jsonb NOT NULL DEFAULT '[]' CHECK(jsonb_typeof(policy_ids)='array'),default_policy_id varchar(36) REFERENCES stem_catalog(id),legacy_modes jsonb NOT NULL DEFAULT '[]'
++);
++CREATE TABLE stem_assessments (
++ id varchar(36) PRIMARY KEY,version_id varchar(36) NOT NULL REFERENCES script_versions(id),brief_id varchar(36) NOT NULL REFERENCES stem_briefs(id),decision_id varchar(36) NOT NULL UNIQUE REFERENCES status_histories(id),
++ actor_id varchar(36) NOT NULL REFERENCES users(id),phase varchar(10) NOT NULL CHECK(phase IN ('SCRIPT','VIDEO')),brief_revision integer NOT NULL,script_revision integer NOT NULL,mode_revision integer NOT NULL,composition_revision integer,
++ payload jsonb NOT NULL,verification_status varchar(20) NOT NULL DEFAULT 'UNVERIFIED' CHECK(verification_status='UNVERIFIED'),freshness varchar(30) NOT NULL DEFAULT 'NEEDS_REVIEW'
++);
++CREATE TABLE stem_validation_runs (
++ id varchar(36) PRIMARY KEY,brief_id varchar(36) NOT NULL REFERENCES stem_briefs(id),phase varchar(10) NOT NULL CHECK(phase IN ('SCRIPT','VIDEO')),
++ brief_revision integer NOT NULL,script_revision integer NOT NULL,mode_revision integer NOT NULL,findings jsonb NOT NULL,created_at timestamp NOT NULL DEFAULT current_timestamp
++);
++CREATE TABLE stem_validation_limits (actor_id varchar(36) REFERENCES users(id),version_id varchar(36) REFERENCES script_versions(id),bucket bigint NOT NULL,requests integer NOT NULL,PRIMARY KEY(actor_id,version_id));
++CREATE TABLE stem_receipts (actor_id varchar(36) REFERENCES users(id),operation varchar(30),target varchar(128) NOT NULL,request_key varchar(128),request_digest varchar(64) NOT NULL,response jsonb NOT NULL,expires_at timestamp NOT NULL,PRIMARY KEY(actor_id,operation,request_key));
++CREATE TABLE stem_audit (id varchar(36) PRIMARY KEY,actor_id varchar(36) REFERENCES users(id),target varchar(128) NOT NULL,event varchar(50) NOT NULL,payload jsonb NOT NULL,created_at timestamp NOT NULL DEFAULT current_timestamp);
++CREATE INDEX stem_evidence_brief_idx ON stem_evidence(brief_id);
++CREATE INDEX stem_assessments_version_idx ON stem_assessments(version_id);
++DO $$ DECLARE t text; r text; BEGIN
++ FOREACH t IN ARRAY ARRAY['stem_catalog','stem_briefs','stem_evidence','stem_settings','stem_assessments','stem_validation_runs','stem_validation_limits','stem_receipts','stem_audit'] LOOP
++  EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY',t);EXECUTE format('REVOKE ALL ON TABLE %I FROM PUBLIC',t);
++  FOREACH r IN ARRAY ARRAY['anon','authenticated'] LOOP
++   IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r) THEN EXECUTE format('REVOKE ALL ON TABLE %I FROM %I',t,r); END IF;
++  END LOOP;
++ END LOOP;
++END $$;

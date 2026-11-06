@@ -1,0 +1,243 @@
+{
+  "repository_type_references": [
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemRepository.java",
+      "line": 10,
+      "text": "public class StemRepository {"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemRepository.java",
+      "line": 13,
+      "text": " public StemRepository(JdbcTemplate jdbc,ObjectMapper json){this.jdbc=jdbc;this.json=json.copy().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);}"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 21,
+      "text": " private final StemRepository db; private final StemValidator validator;private final WorkspaceAccess access;private final ScriptVersionRepository versions;private final ClipProjectRepository projects;"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 23,
+      "text": " public StemService(StemRepository db,StemValidator validator,WorkspaceAccess access,ScriptVersionRepository versions,ClipProjectRepository projects){this.db=db;this.validator=validator;this.access=access;this.versions=versions;this.projects=projects;}"
+    },
+    {
+      "file": "src/test/java/com/stemotion/domain/stem/StemPostgresTest.java",
+      "line": 45,
+      "text": "@Import({StemRepository.class,StemValidator.class,StemService.class,WorkspaceAccess.class})"
+    },
+    {
+      "file": "src/test/java/com/stemotion/domain/stem/StemPostgresTest.java",
+      "line": 54,
+      "text": " @Autowired StemService stem;@Autowired StemRepository db;@Autowired StemValidator validator;@Autowired WorkspaceAccess access;"
+    }
+  ],
+  "direct_field_read_lines": [
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 33,
+      "accesses": 1,
+      "text": "  var row=db.jdbc.queryForList(\"select id from script_versions where id=? for update\",v.getId());if(row.isEmpty())throw ApiException.conflict(\"Version changed\");"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 35,
+      "accesses": 1,
+      "text": "  db.jdbc.queryForList(\"select id from workspaces where id=? for update\",v.getProject().getWorkspace().getId());"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 40,
+      "accesses": 1,
+      "text": "  validator.idem(key);db.jdbc.update(\"delete from stem_receipts where actor_id=? and operation=? and request_key=? and expires_at<=current_timestamp\",actor,op,key);"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 41,
+      "accesses": 1,
+      "text": "  var rows=db.jdbc.queryForList(\"select * from stem_receipts where actor_id=? and operation=? and request_key=?\",actor,op,key);"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 44,
+      "accesses": 1,
+      "text": " private void remember(String actor,String op,String target,String key,Object payload,Object result){db.jdbc.update(\"insert into stem_receipts(actor_id,operation,target,request_key,request_digest,response,expires_at) values(?,?,?,?,?,?::jsonb,current_timestamp+interval '24 hours')\",actor,op,target,key,digest(payload),db.encode(result));}"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 46,
+      "accesses": 1,
+      "text": " public View create(String project,String version,String actor,Create request){validator.limits(db.json.valueToTree(request),0);"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 50,
+      "accesses": 1,
+      "text": "  db.jdbc.update(\"insert into stem_briefs(id,version_id,payload) values(?,?,?::jsonb)\",db.id(),version,db.encode(StemDtos.empty()));"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 53,
+      "accesses": 1,
+      "text": " public View save(String project,String version,String actor,Save request){validator.limits(db.json.valueToTree(request),0);"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 61,
+      "accesses": 2,
+      "text": "   if(e.sceneId()!=null){Integer n=db.jdbc.queryForObject(\"select count(*) from scenes where id=? and version_id=?\",Integer.class,e.sceneId(),version);if(n!=1){boolean oldOrphan=e.id()!=null&&db.jdbc.queryForObject(\"select count(*) from stem_evidence where id=? and brief_id=? and original_scene_id=? and scene_id is null\",Integer.class,e.id(),db.text(row,\"id\"),e.sceneId())==1;if(!oldOrphan)throw StemValidator.invalid(\"evidence.sceneId\",\"Scene outside version\");}}"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 63,
+      "accesses": 1,
+      "text": "  db.jdbc.update(\"update stem_briefs set payload=?::jsonb,policy_id=?,topic_id=?,revision=revision+1,readiness='NEEDS_REVIEW' where id=?\",db.encode(request.brief()),request.brief().policyVersionId(),request.brief().topicVersionId(),db.text(row,\"id\"));"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 65,
+      "accesses": 1,
+      "text": "  db.jdbc.update(\"update stem_evidence set retired=true where brief_id=?\",db.text(row,\"id\"));"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 68,
+      "accesses": 1,
+      "text": "   String live=e.sceneId()!=null&&db.jdbc.queryForObject(\"select count(*) from scenes where id=? and version_id=?\",Integer.class,e.sceneId(),version)==1?e.sceneId():null;"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 69,
+      "accesses": 1,
+      "text": "   db.jdbc.update(\"insert into stem_evidence(id,brief_id,scene_id,original_scene_id,task_key,objective_key,component,explanation) values(?,?,?,?,?,?,?,?) on conflict(id) do update set scene_id=excluded.scene_id,original_scene_id=excluded.original_scene_id,task_key=excluded.task_key,objective_key=excluded.objective_key,component=excluded.component,explanation=excluded.explanation,retired=false\",id,db.text(row,\"id\"),live,e.sceneId(),e.taskKey(),e.objectiveKey(),e.component(),e.explanation());"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 78,
+      "accesses": 1,
+      "text": "   var r=db.jdbc.queryForMap(\"select * from stem_catalog where id=?\",id);JsonNode data=db.decode(db.text(r,\"data\"),JsonNode.class);"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 83,
+      "accesses": 1,
+      "text": " private void checkKind(String id,String kind){if(id!=null){validator.key(id,kind+\"Id\");if(db.jdbc.queryForObject(\"select count(*) from stem_catalog where id=? and kind=?\",Integer.class,id,kind)!=1)throw StemValidator.invalid(\"catalog.\"+kind,\"Missing or wrong catalog kind\");}}"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 86,
+      "accesses": 1,
+      "text": "  for(Evidence e:evidence)if(e.sceneId()!=null&&db.jdbc.queryForObject(\"select count(*) from scenes where id=? and version_id=?\",Integer.class,e.sceneId(),version)!=1)findings.add(new Finding(\"TECH-EVIDENCE\",\"evidence.\"+e.id(),\"ERROR\",\"Orphan scene reference\"));"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 98,
+      "accesses": 2,
+      "text": " private void workspace(String id){if(db.jdbc.queryForObject(\"select count(*) from workspaces where id=?\",Integer.class,id)!=1)throw ApiException.notFound(\"Workspace\",id);db.jdbc.queryForList(\"select id from workspaces where id=? for update\",id);}"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 99,
+      "accesses": 1,
+      "text": " public StemModels.WorkspaceMode saveSettings(String workspace,String actor,Settings request){validator.limits(db.json.valueToTree(request),0);"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 106,
+      "accesses": 1,
+      "text": "  var legacy=db.jdbc.queryForList(\"select legacy_modes from stem_settings where workspace_id=?\",workspace);"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 108,
+      "accesses": 1,
+      "text": "  db.jdbc.update(\"insert into stem_settings(workspace_id,revision,mode,policy_ids,default_policy_id) values(?,?,?,?,?) on conflict(workspace_id) do update set revision=excluded.revision,mode=excluded.mode,policy_ids=excluded.policy_ids,default_policy_id=excluded.default_policy_id,legacy_modes='[]'::jsonb\",workspace,old.revision()+1,request.mode(),db.encode(request.policyVersionIds()),request.defaultPolicyVersionId());"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 112,
+      "accesses": 1,
+      "text": " public View validate(String project,String version,String actor,Validate request){validator.limits(db.json.valueToTree(request),0);"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 114,
+      "accesses": 1,
+      "text": "  db.jdbc.update(\"insert into stem_validation_limits(actor_id,version_id,bucket,requests) values(?,?,floor(extract(epoch from current_timestamp)/60),1) on conflict(actor_id,version_id) do update set requests=case when stem_validation_limits.bucket=excluded.bucket then stem_validation_limits.requests+1 else 1 end,bucket=excluded.bucket\",actor,version);"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 115,
+      "accesses": 1,
+      "text": "  int count=db.jdbc.queryForObject(\"select requests from stem_validation_limits where actor_id=? and version_id=?\",Integer.class,actor,version);if(count>10)throw new ApiException(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS,\"STEM_RATE_LIMIT\",\"Validation limit10/minute\",Map.of(\"retryAfterSeconds\",60));"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 116,
+      "accesses": 1,
+      "text": "  if(\"VIDEO\".equals(request.phase()))compositionRevision(version,request.expectedCompositionRevision());View result=view(version);db.jdbc.update(\"insert into stem_validation_runs(id,brief_id,phase,brief_revision,script_revision,mode_revision,findings) values(?,?,?,?,?,?,?::jsonb)\",db.id(),db.text(r,\"id\"),request.phase(),result.revision(),v.getDraftRevision(),result.modeRevision(),db.encode(result.findings()));return result;"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 119,
+      "accesses": 1,
+      "text": " private void compositionRevision(String version,Integer expected){validator.rev(expected,\"expectedCompositionRevision\");var r=db.jdbc.queryForList(\"select revision from compositions where script_version_id=? for update\",version);if(r.isEmpty())throw ApiException.conflict(\"Composition missing\");revision(expected,db.number(r.get(0),\"revision\"),\"COMPOSITION\");}"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 121,
+      "accesses": 2,
+      "text": " private void invalidate(String version){db.jdbc.update(\"update stem_briefs set readiness='NEEDS_REVIEW' where version_id=?\",version);db.jdbc.update(\"update stem_assessments set freshness='NEEDS_REVIEW' where version_id=?\",version);}"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 127,
+      "accesses": 1,
+      "text": "  if(a==null)return null;validator.limits(db.json.valueToTree(a),0);access.requireActiveStemSeat(project.getWorkspace().getId(),actor,WorkspaceRole.REVIEWER);phase(phase);validator.list(a.criteria(),20,\"criteria\");"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 135,
+      "accesses": 1,
+      "text": " private Set<String> historyIds(String project){return new HashSet<>(db.jdbc.queryForList(\"select id from status_histories where project_id=?\",String.class,project));}"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 137,
+      "accesses": 1,
+      "text": "  int linked=db.jdbc.queryForObject(\"select count(*) from status_histories where id=? and changed_by=? and event_type='REVIEW_DECISION' and decision='APPROVED'\",Integer.class,decision,ticket.actor());if(linked!=1)throw ApiException.conflict(\"Assessment needs matching existing decision\");"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 138,
+      "accesses": 1,
+      "text": "  var r=requiredBrief(ticket.version());db.jdbc.update(\"insert into stem_assessments(id,version_id,brief_id,decision_id,actor_id,phase,brief_revision,script_revision,mode_revision,composition_revision,payload) values(?,?,?,?,?,?,?,?,?,?,?::jsonb)\",db.id(),ticket.version(),db.text(r,\"id\"),decision,ticket.actor(),ticket.phase(),ticket.request().expectedBriefRevision(),ticket.request().expectedScriptRevision(),ticket.request().expectedModeRevision(),ticket.request().expectedCompositionRevision(),db.encode(ticket.request()));"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 145,
+      "accesses": 1,
+      "text": "  if(request!=null){validator.limits(db.json.valueToTree(request),0);validator.key(request.expectedVersionId(),\"expectedVersionId\");source=versions.findById(request.expectedVersionId()).orElseThrow(()->ApiException.notFound(\"ScriptVersion\",request.expectedVersionId()));if(!source.getProject().getId().equals(project.getId()))throw ApiException.forbidden(\"Version outside project\");}"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 155,
+      "accesses": 2,
+      "text": "  Set<String> source=new HashSet<>(db.jdbc.queryForList(\"select id from scenes where version_id=?\",String.class,oldVersion));Set<String> destination=new HashSet<>(db.jdbc.queryForList(\"select id from scenes where version_id=?\",String.class,newVersion));"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 157,
+      "accesses": 1,
+      "text": "  String brief=db.id();db.jdbc.update(\"insert into stem_briefs(id,version_id,payload,policy_id,topic_id,copied_from,readiness) values(?,?,?::jsonb,?,?,?,'NEEDS_REVIEW')\",brief,newVersion,db.text(old,\"payload\"),db.text(old,\"policy_id\"),db.text(old,\"topic_id\"),db.text(old,\"id\"));"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "line": 158,
+      "accesses": 1,
+      "text": "  for(Evidence e:db.evidence(db.text(old,\"id\"))){if(e.sceneId()!=null&&!map.containsKey(e.sceneId()))throw ApiException.conflict(\"Orphan evidence cannot be copied without correction\");String scene=e.sceneId()==null?null:map.get(e.sceneId());db.jdbc.update(\"insert into stem_evidence(id,brief_id,scene_id,original_scene_id,task_key,objective_key,component,explanation,copied_from) values(?,?,?,?,?,?,?,?,?)\",db.id(),brief,scene,scene,e.taskKey(),e.objectiveKey(),e.component(),e.explanation(),e.id());}"
+    }
+  ],
+  "total_direct_field_reads": 38,
+  "external_direct_field_callers": [],
+  "gate": "PASS: normalized paths; all field reads in StemService; existing test injection/method calls do not read fields"
+}
