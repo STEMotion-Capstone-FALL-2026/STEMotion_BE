@@ -1,5 +1,6 @@
 from typing import Any, Literal
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+from .grounding import validate_context
 
 Operation = Literal["generate", "resegment", "grade", "extract", "terms", "storyboard"]
 Subject = Literal["Math", "Physics", "Chemistry", "Biology", "ComputerScience", "CS"]
@@ -26,12 +27,16 @@ class ScriptInput(BaseModel):
     targetDurationSec: int | None = Field(default=None, ge=0, le=300)
     narrativeBrief: str | None = Field(default=None, max_length=500)
     approach: str | None = Field(default=None, max_length=800)
+    stemContext: dict[str, Any] | None = None
+    _context_bounds = field_validator('stemContext')(validate_context)
 
 class AnalysisInput(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
     scriptText: str = Field(min_length=1, max_length=60000)
     subject: Subject | None = None
     gradeLevel: str | None = Field(default=None, max_length=64)
+    stemContext: dict[str, Any] | None = None
+    _context_bounds = field_validator('stemContext')(validate_context)
 
 class ActionInput(AnalysisInput):
     action: Literal["resegment", "grade", "extract", "terms"]

@@ -1,0 +1,13 @@
+## feat/stem-p4-isolated-20261105...origin/feat/stem-p4-isolated-20261105
+ M src/components/views/MediaLibrary/MediaLibraryView.tsx
+ M src/components/views/WriterStudio/WriterStudio.tsx
+ M src/services/apiClient.ts
+ M src/services/libraryService.ts
+ M src/services/scriptService.ts
+ M src/types/stem.ts
+?? docs/stem/phases/phase-04/takeover-codex/build/
+?? docs/stem/phases/phase-06/
+?? src/components/stem/StemFlow.p6-live.test.tsx
+?? src/components/stem/StemGroundedAiPanel.tsx
+?? src/components/stem/StemLearningCard.tsx
+?? src/components/stem/StemP6.test.tsx

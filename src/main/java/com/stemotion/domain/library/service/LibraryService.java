@@ -36,6 +36,26 @@ public class LibraryService {
     private final com.stemotion.domain.production.repository.PublicationRepository publicationRepository;
     @org.springframework.beans.factory.annotation.Autowired(required=false)
     private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private StemLibraryQuery stemLibrary;
+
+    @Transactional(readOnly=true)
+    public List<LibraryItem> search(StemLibraryQuery.Filters filters,com.stemotion.core.web.PageParams page){
+        if(stemLibrary!=null)return stemLibrary.find(filters,page);
+        if(filters.extended())throw ApiException.badRequest("STEM library projection is not enabled");
+        return page==null?findPublished(filters.subject(),filters.grade()):findPublished(filters.subject(),filters.grade(),page).getContent();
+    }
+    @Transactional(readOnly=true)
+    public org.springframework.data.domain.Page<LibraryItem> searchPage(StemLibraryQuery.Filters filters,com.stemotion.core.web.PageParams page){
+        if(stemLibrary!=null)return new org.springframework.data.domain.PageImpl<>(stemLibrary.find(filters,page),page.pageable(),stemLibrary.count(filters));
+        if(filters.extended())throw ApiException.badRequest("STEM library projection is not enabled");return findPublished(filters.subject(),filters.grade(),page);
+    }
+    @Transactional(readOnly=true)
+    public Map<String,List<String>> facets(StemLibraryQuery.Filters filters){
+        if(stemLibrary!=null)return stemLibrary.facets(filters);
+        if(filters.extended())throw ApiException.badRequest("STEM library projection is not enabled");
+        var old=availableFilters();return Map.of("subjects",old.subjects().stream().map(Enum::name).toList(),"gradeLevels",old.gradeLevels());
+    }
 
     /** Subjects and grades present in the library, for the filter dropdowns. */
     public record LibraryFilters(List<StemSubject> subjects, List<String> gradeLevels) {}
@@ -50,6 +70,7 @@ public class LibraryService {
     public List<LibraryItem> findPublished(StemSubject subject, String gradeLevel) {
         String grade = (gradeLevel == null || gradeLevel.isBlank()) ? null : gradeLevel.trim();
 
+        if(stemLibrary!=null)return stemLibrary.find(StemLibraryQuery.Filters.simple(subject,grade),null);
         if(stemArtifacts!=null)return snapshotItems(subject,grade);
         return toItems(library(subject, grade, org.springframework.data.domain.Pageable.unpaged()).getContent());
     }
@@ -62,6 +83,7 @@ public class LibraryService {
     public org.springframework.data.domain.Page<LibraryItem> findPublished(StemSubject subject, String gradeLevel,
             com.stemotion.core.web.PageParams paging) {
         String grade = (gradeLevel == null || gradeLevel.isBlank()) ? null : gradeLevel.trim();
+        if(stemLibrary!=null)return new org.springframework.data.domain.PageImpl<>(stemLibrary.find(StemLibraryQuery.Filters.simple(subject,grade),paging),paging.pageable(),stemLibrary.count(StemLibraryQuery.Filters.simple(subject,grade)));
         if(stemArtifacts!=null){
             var all=snapshotItems(subject,grade);var pageable=paging.pageable();int from=(int)Math.min(pageable.getOffset(),all.size());int to=Math.min(from+pageable.getPageSize(),all.size());
             return new org.springframework.data.domain.PageImpl<>(all.subList(from,to),pageable,all.size());
@@ -89,6 +111,7 @@ public class LibraryService {
         if (project.getVideoStatus() != VideoStatus.PUBLISHED) {
             throw ApiException.badRequest("Clip chưa được xuất bản nên không có trong thư viện");
         }
+        if(stemLibrary!=null)return stemLibrary.findOne(projectId);
         Publication entry = publicationRepository
             .findLibraryEntry(projectId, Publication.Platform.INTERNAL_LIBRARY, VideoStatus.PUBLISHED)
             .orElseThrow(() -> ApiException.conflict("No artifact-backed INTERNAL_LIBRARY publication exists"));
