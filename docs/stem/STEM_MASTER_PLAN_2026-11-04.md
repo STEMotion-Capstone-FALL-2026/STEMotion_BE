@@ -26,7 +26,7 @@ Tài liệu này thay thế bộ plan ngày 03/11 khi hai bên khác nhau. Bộ 
 | 5 | Thêm chế độ `OFF/ADVISORY/STRICT` theo workspace | Rollout an toàn, bộ E2E hiện có không bị vỡ |
 | 6 | Quy định xử lý khi xóa scene và khi tạo version mới | `copyScenes` tạo ID mới, bản đầu chưa định nghĩa |
 | 7 | Lỗi validation dùng **400** + `details`, không dùng 422 | Khớp quy ước API hiện có và form BM |
-| 8 | Đánh số theo Report 3 chính thức: FR-56…, UC-35… | Tránh hai hệ mã song song |
+| 8 | Đánh số theo Report 3 chính thức (09/11/2026): FR-62…73, UC-43…67; FR-56…61 dành cho auth v2 | Tránh hai hệ mã song song |
 | 9 | Chỉ người có ghế REVIEWER mới ghi được quyết định STEM | `WorkspaceAccess` cho Admin qua mọi kiểm tra role |
 
 ## 1. Phạm vi
@@ -353,22 +353,22 @@ T02 → T04 ─────────┘
 
 ## 15. Đồng bộ tài liệu
 
-**Đánh số:** tiếp nối Report 3 chính thức: UC-35…, FR-56…. Giữ `BR-ST` làm nhóm riêng.
+**Đánh số (đã đưa vào Report 3 ngày 09/11/2026):** UC-43…67 theo sơ đồ use case 61 ô; FR-56…61 cho auth v2, FR-62…73 cho STEM; `BR-ST01…15` là nhóm riêng.
 
 | FR | UC | Nội dung |
 |---|---|---|
-| FR-56 | UC-35 | Cấu hình phạm vi STEM của workspace |
-| FR-57 | UC-36 | Chọn chương trình và yêu cầu cần đạt |
-| FR-58 | UC-37 | Soạn hồ sơ STEM và bối cảnh sử dụng |
-| FR-59 | UC-38 | Gắn minh chứng S/T/E/M với scene/nhiệm vụ |
-| FR-60 | UC-39 | Nhận AI gợi ý theo chương trình |
-| FR-61 | UC-40 | Kiểm tra điều kiện nộp script |
-| FR-62 | UC-41 | Thẩm định nội dung STEM |
-| FR-63 | UC-42 | Bảo toàn nội dung khi dựng |
-| FR-64 | UC-43 | Kiểm tra clip theo mục tiêu học |
-| FR-65 | UC-44 | Công bố gói học liệu STEM |
-| FR-66 | UC-45 | Tìm học liệu theo cấp/lớp/outcome/bối cảnh |
-| FR-67 | UC-46 | Chuyển đổi dự án legacy |
+| FR-62 | UC-62, UC-63 | Quản lý phiên bản policy STEM và gán cho workspace |
+| FR-63 | UC-46 | Chọn lớp, môn và yêu cầu cần đạt |
+| FR-64 | UC-43 | Soạn hồ sơ STEM và bối cảnh sử dụng |
+| FR-65 | UC-47 | Gắn minh chứng S/T/E/M với scene/nhiệm vụ |
+| FR-66 | UC-44 | Nhận AI gợi ý theo chương trình |
+| FR-67 | UC-48 | Kiểm tra điều kiện nộp script |
+| FR-68 | UC-52 | Thẩm định nội dung STEM theo rubric |
+| FR-69 | UC-49 | Bảo toàn nội dung khi dựng (fingerprint) |
+| FR-70 | UC-56 | Kiểm tra clip theo mục tiêu học |
+| FR-71 | UC-51 | Công bố thẻ học liệu STEM |
+| FR-72 | UC-67 | Tìm học liệu theo cấp/lớp/outcome/bối cảnh |
+| FR-73 | UC-45 | Chuyển đổi dự án legacy |
 
 | Tài liệu | Việc |
 |---|---|
@@ -377,7 +377,7 @@ T02 → T04 ─────────┘
 | State, activity, sequence | Thêm state STEM và policy; sửa activity WF-02, WF-03, WF-04; thêm sequence submit/approve/publish |
 | Report 1 | Người vận hành/người xem, bối cảnh, phạm vi ba cấp, demo |
 | Report 2 | WBS, rủi ro, phân công |
-| Report 3 | FR-56…67, BR-ST, UC, messages; **đồng bộ FR-01…05, UC-01, UC-24 theo auth v2** (`docs/AUTH_V2_SRS_SDD_CHANGESET_2026-11-02.md`) |
+| Report 3 | Đã cập nhật 09/11/2026: FR-62…73, BR-ST, UC-43…67, messages; **đồng bộ FR-01…05, UC-01, UC-24 theo auth v2** (`docs/AUTH_V2_SRS_SDD_CHANGESET_2026-11-02.md`) |
 | Report 4 | Package `domain/stem`, ERD, class, sequence, state, snapshot; đồng bộ auth v2 |
 | Phiếu v2, BM03 | Đổi "topic" thành "yêu cầu cần đạt và bối cảnh sử dụng" |
 | BM01, BM04 | Tách F-14 thành 4 feature; đổi tên bảng ở G-09; sửa F-01 và G-06 theo auth v2 (username, whitelist); cập nhật hạn theo mục 13 |
