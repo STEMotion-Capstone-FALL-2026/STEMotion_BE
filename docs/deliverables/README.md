@@ -16,12 +16,12 @@ The latest version of every document handed in for the reviews and viva defense.
 
 | File | Content |
 |---|---|
-| `SWP490_FA26SE054_R2_DesignBrief.docx` | BM01 Design Brief with Appendix A (Defense 1.1 targets: 17 features, STEM split into F-14 to F-17, 82 test cases) |
-| `SWP490_FA26SE054_R2_SelfReview.docx` | BM02 SRS/SDD self-review with the team response to each finding |
-| `SWP490_FA26SE054_R2_SelfReview_RAW_2026-11-01.md` | Raw AI output of the self-review, kept unedited (it names the files as they were on 01/11) |
-| `SWP490_FA26SE054_R2_Registration.docx` | Final registration form (03/11/2026): the registered STEM scope made explicit, topic unchanged |
-| `SWP490_FA26SE054_R2_RecordOfChanges.docx` | BM03 Record of Changes (change 1); exported together with the registration form into `SWP490_FA26SE054_R2_Registration.pdf` |
-| `SWP490_FA26SE054_Registration_17-08-2026.docx` | Registration form as approved on 17/08/2026 |
-| `SWP490_FA26SE054_R2_Commitment.docx` | BM04 Commitment after Review 2, committing to RF-01..RF-13; 17 features, 82 test cases (52 automated) |
+| `SEP490_FA26SE054_R2_DesignBrief.docx` | BM01 Design Brief with Appendix A (Defense 1.1 targets: 17 features, STEM split into F-14 to F-17, 82 test cases) |
+| `SEP490_FA26SE054_R2_SelfReview.docx` | BM02 SRS/SDD self-review with the team response to each finding |
+| `SEP490_FA26SE054_R2_SelfReview_RAW_2026-11-01.md` | Raw AI output of the self-review, kept unedited (it names the files as they were on 01/11) |
+| `SEP490_FA26SE054_R2_Registration.docx` | Final registration form (03/11/2026): the registered STEM scope made explicit, topic unchanged |
+| `SEP490_FA26SE054_R2_RecordOfChanges.docx` | BM03 Record of Changes (change 1); exported together with the registration form into `SEP490_FA26SE054_R2_Registration.pdf` |
+| `SEP490_FA26SE054_Registration_17-08-2026.docx` | Registration form as approved on 17/08/2026 |
+| `SEP490_FA26SE054_R2_Commitment.docx` | BM04 Commitment after Review 2, committing to RF-01..RF-13; 17 features, 82 test cases (52 automated) |
 
-Submit as PDF with the template names: `SWP490_FA26SE054_R2_DesignBrief.pdf`, `_R2_SelfReview.pdf`, `_R2_Registration.pdf` (registration form + BM03) and `_R2_Commitment.pdf`.
+Submit as PDF with the template names: `SEP490_FA26SE054_R2_DesignBrief.pdf`, `_R2_SelfReview.pdf`, `_R2_Registration.pdf` (registration form + BM03) and `_R2_Commitment.pdf`.
