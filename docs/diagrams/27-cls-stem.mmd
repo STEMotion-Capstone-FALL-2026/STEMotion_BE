@@ -1,0 +1,81 @@
+classDiagram
+  class StemBrief {
+    +UUID id
+    +UUID scriptVersionId
+    +UUID policyVersionId
+    +Integer gradeNo
+    +UsageContext usageContext
+    +String problem
+    +JsonNode contextDetails
+    +Integer revision
+    +validate()
+  }
+
+  class StemSceneEvidence {
+    +UUID id
+    +UUID briefId
+    +UUID sceneId
+    +StemComponent component
+    +PedagogicalRole pedagogicalRole
+    +String contribution
+    +EvidenceKind evidenceKind
+    +JsonNode evidencePayload
+  }
+
+  class StemValidationRun {
+    +UUID id
+    +UUID briefId
+    +TargetType targetType
+    +String fingerprint
+    +String policyHash
+    +JsonNode report
+    +ValidationStatus status
+  }
+
+  class StemReviewDecision {
+    +UUID id
+    +UUID validationRunId
+    +UUID reviewerId
+    +DecisionType decision
+    +JsonNode criterionResults
+    +String reason
+    +String fingerprint
+    +Instant decidedAt
+  }
+
+  class StemPolicyVersion {
+    +UUID id
+    +String profileCode
+    +Integer versionNo
+    +String levelCode
+    +JsonNode rules
+    +JsonNode rubric
+    +PolicyStatus status
+  }
+
+  class StemValidationService {
+    +validateBriefStructure(briefId)
+    +validateEvidenceInvariants(scriptVersionId)
+    +enforceSubmissionGate(versionId, mode)
+  }
+
+  class StemFingerprintService {
+    +computeScriptFingerprint(brief, scenes, policyHash)
+    +computeCompositionFingerprint(composition, scriptFingerprint)
+    +computeArtifactFingerprint(compositionFingerprint, renderJobId)
+  }
+
+  class StemReviewService {
+    +evaluateRubric(versionId, reviewerId, results, fingerprint)
+    +requireActiveReviewerSeat(workspaceId, reviewerId)
+  }
+
+  StemBrief "1" *-- "many" StemSceneEvidence : anchors
+  StemBrief "1" --> "1" StemPolicyVersion : governed by
+  StemBrief "1" *-- "many" StemValidationRun : evaluates
+  StemValidationRun "1" *-- "0..1" StemReviewDecision : results in
+
+  StemValidationService --> StemBrief : verifies
+  StemValidationService --> StemFingerprintService : delegates hash
+  StemReviewService --> StemValidationService : re-checks
+  StemReviewService --> StemFingerprintService : compares hash

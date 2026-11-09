@@ -26,6 +26,7 @@ Source of every diagram in Report 3 (SRS) and Report 4 (SDD). Render with Mermai
 | `24-cls-production.mmd` | cls production |
 | `25-cls-render.mmd` | cls render |
 | `26-cls-review.mmd` | cls review |
+| `27-cls-stem.mmd` | cls stem domain |
 | `30-seq-provision.mmd` | seq provision |
 | `31-seq-login.mmd` | seq login |
 | `32-seq-workspace.mmd` | seq workspace |
@@ -36,8 +37,10 @@ Source of every diagram in Report 3 (SRS) and Report 4 (SDD). Render with Mermai
 | `37-seq-sync.mmd` | seq sync |
 | `38-seq-render.mmd` | seq render |
 | `39-seq-publish.mmd` | seq publish |
+| `40-seq-stem-review.mmd` | seq stem review & gate |
+| `41-state-stem.mmd` | state stem brief & review |
 
 ## Other sources
 
-- `source/`: draw.io files of the use case diagram and the conceptual ERD (Report 1).
-- `figures/`: exported PNG figures (team use case diagram, ERD, process).
+- `source/`: draw.io files of the use case diagram (61 use cases) and the STEM conceptual ERD (Report 1, Report 3). The team edits them on Google Drive; export the "Bản sao" pages here after each change.
+- `figures/`: exported PNG figures: `fig_usecase.png` (use case), `fig_conceptual_erd.png` (conceptual ERD, Chen notation), `fig_erd.png` (logical ERD from `05-erd.mmd`), `fig_process.png`.

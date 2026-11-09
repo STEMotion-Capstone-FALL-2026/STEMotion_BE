@@ -18,12 +18,37 @@ erDiagram
   USERS ||--o{ AI_REQUESTS : requests
   SCRIPT_VERSIONS ||--o{ AI_REQUESTS : "analysed by"
 
+  %% STEM Extensions
+  GRADE_LEVELS ||--o{ GRADE_SUBJECTS : permits
+  SCHOOL_SUBJECTS ||--o{ GRADE_SUBJECTS : maps
+  GRADE_SUBJECTS ||--o{ CURRICULUM_OUTCOMES : defines
+  REFERENCE_DOCUMENTS ||--o{ CURRICULUM_OUTCOMES : cites
+  STEM_POLICY_VERSIONS ||--o{ POLICY_DOCUMENT_REFS : cites
+  REFERENCE_DOCUMENTS ||--o{ POLICY_DOCUMENT_REFS : supports
+  WORKSPACES ||--o{ WORKSPACE_STEM_POLICIES : allows
+  STEM_POLICY_VERSIONS ||--o{ WORKSPACE_STEM_POLICIES : assigned
+  SCRIPT_VERSIONS ||--o| STEM_BRIEFS : has
+  STEM_POLICY_VERSIONS ||--o{ STEM_BRIEFS : governs
+  GRADE_LEVELS ||--o{ STEM_BRIEFS : targets
+  STEM_BRIEFS ||--o{ STEM_BRIEF_SUBJECTS : integrates
+  GRADE_SUBJECTS ||--o{ STEM_BRIEF_SUBJECTS : contributes
+  STEM_BRIEFS ||--o{ STEM_BRIEF_OUTCOMES : maps
+  CURRICULUM_OUTCOMES ||--o{ STEM_BRIEF_OUTCOMES : fulfills
+  STEM_BRIEFS ||--o{ STEM_SCENE_EVIDENCE : proves
+  SCENES o|--o{ STEM_SCENE_EVIDENCE : anchors
+  REFERENCE_DOCUMENTS o|--o{ STEM_SCENE_EVIDENCE : supports
+  STEM_BRIEFS ||--o{ STEM_VALIDATION_RUNS : validated
+  SCRIPT_VERSIONS ||--o{ STEM_VALIDATION_RUNS : targets
+  STEM_VALIDATION_RUNS ||--o{ STEM_REVIEW_DECISIONS : reviewed
+  USERS ||--o{ STEM_REVIEW_DECISIONS : decides
+
   USERS {
     uuid id PK
     string full_name
+    string username UK
     string email UK
     string password_hash
-    string role
+    string system_role
     string status
     boolean must_change_password
   }
@@ -50,7 +75,7 @@ erDiagram
     string grade_level
     string script_status
     string video_status
-    string video_url
+    string stem_migration_state
     boolean archived
   }
   SCRIPT_VERSIONS {
@@ -98,8 +123,9 @@ erDiagram
     string status
     int progress
     int attempt_count
-    int composition_revision
-    string video_url
+    string stem_fingerprint
+    uuid stem_review_decision_id FK
+    jsonb stem_snapshot
   }
   CLIPS {
     uuid id PK
@@ -107,6 +133,8 @@ erDiagram
     string video_url
     float duration_sec
     string qa_status
+    string stem_fingerprint
+    jsonb stem_snapshot
   }
   FEEDBACK_COMMENTS {
     uuid id PK
@@ -125,6 +153,9 @@ erDiagram
     uuid clip_id FK
     uuid publisher_id FK
     string platform
+    string stem_fingerprint
+    uuid stem_review_decision_id FK
+    jsonb stem_snapshot
   }
   PUBLISH_RECORDS {
     uuid id PK
@@ -152,4 +183,94 @@ erDiagram
     jsonb props_schema
     string default_visual_theme
     boolean is_active
+  }
+  GRADE_LEVELS {
+    int grade_no PK
+    string level_code
+    string label
+  }
+  SCHOOL_SUBJECTS {
+    uuid id PK
+    string code UK
+    string name
+  }
+  GRADE_SUBJECTS {
+    uuid id PK
+    int grade_no FK
+    uuid subject_id FK
+    string program_version
+  }
+  REFERENCE_DOCUMENTS {
+    uuid id PK
+    string number
+    string title
+    string verification_status
+  }
+  CURRICULUM_OUTCOMES {
+    uuid id PK
+    uuid document_id FK
+    uuid grade_subject_id FK
+    string local_code
+    string text
+    string locator
+  }
+  STEM_POLICY_VERSIONS {
+    uuid id PK
+    string profile_code
+    int version_no
+    string level_code
+    string status
+  }
+  WORKSPACE_STEM_POLICIES {
+    uuid id PK
+    uuid workspace_id FK
+    uuid policy_version_id FK
+    string enforcement_mode
+  }
+  STEM_BRIEFS {
+    uuid id PK
+    uuid script_version_id FK
+    uuid policy_version_id FK
+    int grade_no FK
+    string usage_context
+    jsonb context_details
+    string problem
+    int revision
+  }
+  STEM_BRIEF_SUBJECTS {
+    uuid id PK
+    uuid brief_id FK
+    uuid grade_subject_id FK
+    string role
+    string contribution
+  }
+  STEM_BRIEF_OUTCOMES {
+    uuid id PK
+    uuid brief_id FK
+    uuid outcome_id FK
+    string mapping_rationale
+  }
+  STEM_SCENE_EVIDENCE {
+    uuid id PK
+    uuid brief_id FK
+    uuid scene_id FK
+    string component
+    string pedagogical_role
+    string contribution
+  }
+  STEM_VALIDATION_RUNS {
+    uuid id PK
+    uuid brief_id FK
+    string target_type
+    string fingerprint
+    jsonb report
+    string status
+  }
+  STEM_REVIEW_DECISIONS {
+    uuid id PK
+    uuid validation_run_id FK
+    uuid reviewer_id FK
+    string decision
+    jsonb criterion_results
+    string fingerprint
   }

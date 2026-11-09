@@ -1,0 +1,15 @@
+stateDiagram-v2
+  [*] --> INCOMPLETE: Create Script Draft
+
+  INCOMPLETE --> NEEDS_REVIEW: Submit script with complete Brief & Evidence
+  INCOMPLETE --> INCOMPLETE: Autosave draft edits
+
+  NEEDS_REVIEW --> APPROVED: Reviewer approves rubric against valid fingerprint
+  NEEDS_REVIEW --> CHANGES_REQUIRED: Reviewer requests changes with pedagogical reason
+
+  CHANGES_REQUIRED --> INCOMPLETE: Writer opens new draft version (copy Brief & map evidence)
+
+  APPROVED --> STALE: Semantic fields changed in composition (narration, formulas, data)
+  STALE --> NEEDS_REVIEW: Re-validate current composition snapshot
+
+  APPROVED --> [*]: Published with immutable STEM learning card

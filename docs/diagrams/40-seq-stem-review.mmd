@@ -1,0 +1,31 @@
+sequenceDiagram
+  actor W as Writer
+  actor R as Reviewer
+  participant FE as Web Studio
+  participant API as ScriptService
+  participant ST as StemValidationService
+  participant DB as PostgreSQL
+
+  W->>FE: Save STEM Brief & Scene Evidence
+  FE->>API: submitForReview(projectId, versionId, draftRevision)
+  API->>DB: Lock current script version (PESSIMISTIC_WRITE)
+  API->>ST: validateStructureAndInvariants(briefId, scriptVersionId)
+  alt Validation findings exist
+    ST-->>API: List<StemFinding> (400 Bad Request)
+    API-->>FE: 400 with details.findings[]
+  else Structure & Invariants Valid
+    ST->>ST: computeScriptFingerprint(brief, scenes, policyHash)
+    API->>DB: Record StemValidationRun & update status to IN_REVIEW
+    API-->>FE: 200 OK (Status IN_REVIEW + Fingerprint)
+  end
+
+  R->>FE: Inspect Brief, Curriculum Outcomes & Rubric
+  FE->>API: approveScript(versionId, criterionResults, fingerprint)
+  API->>ST: verifyReviewerSeat(workspaceId, reviewerId)
+  API->>ST: recomputeScriptFingerprint(versionId)
+  alt Fingerprint Mismatch (Stale)
+    API-->>FE: 409 Conflict (STEM_REVIEW_STALE)
+  else Fingerprint Matches & Rubric Passed
+    API->>DB: Append StemReviewDecision & transition to APPROVED atomically
+    API-->>FE: 200 OK (Status APPROVED)
+  end
