@@ -19,7 +19,7 @@ The latest version of every document handed in for the reviews and viva defense.
 | `SWP490_FA26SE054_R2_BM01_Design_Brief.docx` | BM01 Design Brief with Appendix A (Defense 1.1 targets: 17 features, STEM split into F-14 to F-17, 82 test cases) |
 | `SWP490_FA26SE054_R2_BM02_Self_Review_Report.docx` | BM02 SRS/SDD self-review with the team response to each finding |
 | `SELF_REVIEW_RAW_2026-11-01.md` | Raw AI output of the self-review, kept unedited |
-| `SWP490_FA26SE054_R2_BM03_Record_of_Changes.docx` | BM03 Record of Changes: change 1 (STEM curriculum framework) requested at Review 2 |
+| `SWP490_FA26SE054_R2_BM03_Record_of_Changes.docx` | BM03 Record of Changes: change 1 makes the registered STEM scope explicit after the Review 2 feedback (topic unchanged) |
 | `SWP490_FA26SE054_R2_Registration_v2.docx` | Registration form version 2 (03/11/2026), the final version: version 1 plus change 1 |
 | `SWP490_FA26SE054_R2_Registration_v1.docx` | Registration form version 1 (17/08/2026) |
 | `SWP490_FA26SE054_R2_BM04_Review2_Commitment.docx` | BM04 Commitment filled after Review 2 (03/11/2026) committing to RF-01..RF-13; version 1.1 (09/11/2026) splits STEM into F-14 to F-17, 82 test cases (52 automated) |
