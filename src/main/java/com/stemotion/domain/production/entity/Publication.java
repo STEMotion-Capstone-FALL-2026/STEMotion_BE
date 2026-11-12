@@ -25,4 +25,20 @@ public class Publication extends BaseEntity {
     private String metadata;
     @Column(name="published_at")
     private LocalDateTime publishedAt;
+
+    @Column(name="external_id", length=128)
+    private String externalId;
+
+    @Column(name="external_url", columnDefinition="text")
+    private String externalUrl;
+
+    @Column(name="upload_status", length=32)
+    private String uploadStatus;
+
+    @Column(name="upload_error", columnDefinition="text")
+    private String uploadError;
+
+    @Column(name="attempts", nullable=false)
+    @Builder.Default
+    private Integer attempts = 0;
 }

@@ -142,6 +142,7 @@ public class E2eServer {
 
         /** The one account the tests start from; everything else is provisioned through the API. */
         @Bean
+        @org.springframework.core.annotation.Order(10)
         ApplicationRunner seedAdmin(UserRepository users, PasswordEncoder encoder, DataSource dataSource,
             @org.springframework.beans.factory.annotation.Value("${e2e.restore-snapshot:}") String snapshot) {
             return args -> {
@@ -170,32 +171,18 @@ public class E2eServer {
         @Bean
         @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
             name = "app.stem.enabled", havingValue = "true")
-        ApplicationRunner seedStemCatalog(DataSource dataSource) {
+        @org.springframework.core.annotation.Order(20)
+        ApplicationRunner seedStemCatalog(com.stemotion.domain.stem.StemService stemService, UserRepository users) {
             return args -> {
-                try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
-                    var rs = statement.executeQuery("SELECT count(*) FROM stem_catalog WHERE id='00000000-0000-0000-0000-000000000001'");
-                    if (rs.next() && rs.getInt(1) > 0) return;
-
-                    statement.execute("INSERT INTO stem_catalog(id,kind,logical_key,version_no,data) VALUES (" +
-                        "'00000000-0000-0000-0000-000000000001','SOURCE_EDITION','stem-source-gdpt2018',1," +
-                        "'{\"name\":\"CT GDPT 2018 (DRAFT TEST_ONLY)\",\"gradeLevel\":\"GRADE_4\"}'::jsonb) ON CONFLICT DO NOTHING");
-
-                    statement.execute("INSERT INTO stem_catalog(id,kind,logical_key,version_no,source_id,data) VALUES (" +
-                        "'00000000-0000-0000-0000-000000000002','PROFILE','stem-profile-grade4-math',1,'00000000-0000-0000-0000-000000000001'," +
-                        "'{\"gradeLevel\":\"GRADE_4\",\"subject\":\"Math\"}'::jsonb) ON CONFLICT DO NOTHING");
-
-                    statement.execute("INSERT INTO stem_catalog(id,kind,logical_key,version_no,data) VALUES (" +
-                        "'00000000-0000-0000-0000-000000000004','RUBRIC','stem-rubric-standard',1," +
-                        "'{\"name\":\"Standard STEM Rubric (DRAFT TEST_ONLY)\"}'::jsonb) ON CONFLICT DO NOTHING");
-
-                    statement.execute("INSERT INTO stem_catalog(id,kind,logical_key,version_no,data) VALUES (" +
-                        "'00000000-0000-0000-0000-000000000005','POLICY','stem-policy-grade4-math',1," +
-                        "'{\"name\":\"STEM Grade 4 Math Policy (DRAFT TEST_ONLY)\",\"rubricVersionId\":\"00000000-0000-0000-0000-000000000004\"}'::jsonb) ON CONFLICT DO NOTHING");
-
-                    statement.execute("INSERT INTO stem_catalog(id,kind,logical_key,version_no,parent_id,source_id,data) VALUES (" +
-                        "'00000000-0000-0000-0000-000000000003','OUTCOME','stem-outcome-math-g4-01',1," +
-                        "'00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001'," +
-                        "'{\"gradeKey\":\"GRADE_4\",\"subjectKey\":\"Math\",\"title\":\"Nhan biet goc nhon, goc tu (DRAFT TEST_ONLY)\"}'::jsonb) ON CONFLICT DO NOTHING");
+                var admin = users.findByUsername(ADMIN_USERNAME).orElse(null);
+                if (admin == null) return;
+                var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                var req = mapper.createObjectNode()
+                    .put("pack", "stem-demo-pack.v1")
+                    .put("idempotencyKey", "e2e-seed-demo-pack-v1");
+                try {
+                    stemService.importCatalog(admin.getId(), req);
+                } catch (Exception ignored) {
                 }
             };
         }

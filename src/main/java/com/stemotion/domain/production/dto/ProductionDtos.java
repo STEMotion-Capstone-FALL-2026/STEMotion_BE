@@ -154,10 +154,17 @@ public final class ProductionDtos {
         String description,
         Boolean legacyUnverifiedAcknowledged,
         ArtifactExpectation artifactExpectation,
-        String idempotencyKey
+        String idempotencyKey,
+        List<String> tags,
+        String privacyStatus,
+        Boolean selfDeclaredMadeForKids
     ) {
-        public PublishRequest(List<PublishTarget> targets,String title,String description) {
-            this(targets,title,description,null,null,null);
+        public PublishRequest(List<PublishTarget> targets, String title, String description) {
+            this(targets, title, description, null, null, null, null, null, null);
+        }
+        public PublishRequest(List<PublishTarget> targets, String title, String description,
+                              Boolean legacyUnverifiedAcknowledged, ArtifactExpectation artifactExpectation, String idempotencyKey) {
+            this(targets, title, description, legacyUnverifiedAcknowledged, artifactExpectation, idempotencyKey, null, null, null);
         }
     }
     public record ArtifactExpectation(String clipId,String jobId,String snapshotId,String inputHash) {}
@@ -167,15 +174,44 @@ public final class ProductionDtos {
         String projectId,
         String lmsEmbedCode,
         String youtubeUrl,
-        LocalDateTime publishedAt
+        LocalDateTime publishedAt,
+        String uploadStatus,
+        String uploadError,
+        String externalId
     ) {
         public static PublishResponse from(PublishRecord record) {
+            return from(record, null);
+        }
+
+        public static PublishResponse from(PublishRecord record, com.stemotion.domain.production.entity.Publication youtubePub) {
+            String uploadStatus = youtubePub != null ? youtubePub.getUploadStatus() : null;
+            String uploadError = youtubePub != null ? youtubePub.getUploadError() : null;
+            String externalId = youtubePub != null ? youtubePub.getExternalId() : null;
+            String ytUrl = (youtubePub != null && youtubePub.getExternalUrl() != null)
+                    ? youtubePub.getExternalUrl() : record.getYoutubeUrl();
+
             return new PublishResponse(
                 record.getId(),
                 record.getProject().getId(),
                 record.getLmsEmbedCode(),
-                record.getYoutubeUrl(),
-                record.getCreatedAt()
+                ytUrl,
+                record.getCreatedAt(),
+                uploadStatus,
+                uploadError,
+                externalId
+            );
+        }
+
+        public static PublishResponse from(com.stemotion.domain.production.entity.Publication pub) {
+            return new PublishResponse(
+                pub.getId(),
+                pub.getProject().getId(),
+                null,
+                pub.getExternalUrl(),
+                pub.getPublishedAt(),
+                pub.getUploadStatus(),
+                pub.getUploadError(),
+                pub.getExternalId()
             );
         }
     }

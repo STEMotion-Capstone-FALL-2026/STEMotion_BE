@@ -53,4 +53,10 @@ public interface PublicationRepository extends JpaRepository<Publication,String>
     Optional<Publication> findLibraryEntry(@org.springframework.data.repository.query.Param("projectId") String projectId,
         @org.springframework.data.repository.query.Param("platform") Publication.Platform platform,
         @org.springframework.data.repository.query.Param("published") com.stemotion.core.enums.StemEnums.VideoStatus published);
+
+    @org.springframework.data.jpa.repository.Query("select pub from Publication pub where pub.platform = :platform "
+        + "and pub.uploadStatus in ('PENDING', 'UPLOADING') and pub.updatedAt < :cutoff")
+    java.util.List<Publication> findStaleUploads(
+        @org.springframework.data.repository.query.Param("platform") Publication.Platform platform,
+        @org.springframework.data.repository.query.Param("cutoff") java.time.LocalDateTime cutoff);
 }

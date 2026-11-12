@@ -33,6 +33,12 @@ Thư mục này chứa script và schema phục vụ diễn tập cục bộ b�
      5. Kiểm tra tính idempotent/rollback: Chạy lại `V23` lần 2 sẽ văng lỗi và rollback nguyên trạng.
    - Tự động hủy và dọn dẹp container khi kết thúc.
 
+3. `rehearse-from-dump.sh`:
+   - Diễn tập R3 từ file dump **schema-only** thật của production do chủ sở hữu repo xuất (`pg_dump --schema-only --no-owner --no-privileges`).
+   - File dump được lưu trữ an toàn bên ngoài repository, tuyệt đối không chứa dữ liệu thật hay đưa vào git.
+   - Nhận cờ `--dump <path>` bắt buộc; nạp dump vào container Docker `postgres:17`, kiểm tra tiền đề và áp dụng V23–V26 trong 1 transaction.
+   - Tùy chọn `--with-app` cho phép khởi động ứng dụng backend (profile `cloud`, tắt Flyway, bật STEM) và chạy `smoke-stem.py` để chứng minh toàn bộ luồng hoạt động trên schema UUID thật.
+
 ## Yêu cầu
 
 - Docker Engine / Docker Desktop (chạy image `postgres:17`).
@@ -41,13 +47,23 @@ Thư mục này chứa script và schema phục vụ diễn tập cục bộ b�
 
 ## Cách chạy
 
+### Diễn tập với schema giả lập:
 ```bash
 cd D:/CapstoneFall2026/STEMotion_BE
 bash deploy/stem-bridge-rehearsal/rehearse.sh
 ```
 
+### Diễn tập với bản dump schema-only từ Production (Gate R3):
+```bash
+cd D:/CapstoneFall2026/STEMotion_BE
+bash deploy/stem-bridge-rehearsal/rehearse-from-dump.sh --dump /path/to/prod-schema-only.sql
+# Hoặc chạy kèm ứng dụng backend và kịch bản smoke:
+bash deploy/stem-bridge-rehearsal/rehearse-from-dump.sh --dump /path/to/prod-schema-only.sql --with-app
+```
+
 ## Lưu ý bảo mật
 
-- Script chỉ giao tiếp với container Docker cục bộ trên cổng `15433` do chính nó tạo ra.
+- Script chỉ giao tiếp với container Docker cục bộ do chính nó tạo ra.
 - Không nhận tham số host từ ngoài; không đọc biến môi trường kết nối DB ngoài.
+- File dump schema-only KHÔNG được để trong repo git hay commit lên git.
 - Tuyệt đối không chứa chuỗi kết nối hay secret thật.

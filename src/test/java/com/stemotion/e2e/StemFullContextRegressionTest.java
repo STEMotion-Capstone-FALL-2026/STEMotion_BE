@@ -81,7 +81,7 @@ class StemFullContextRegressionTest {
         jdbc = context.getBean(JdbcTemplate.class);
         assertThat(jdbc.queryForObject("select 1", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject("select count(*) from flyway_schema_history where success", Integer.class))
-            .isEqualTo(26);
+            .isEqualTo(27);
         assertThat(context.getBeansOfType(PersistenceExceptionTranslationPostProcessor.class)).isNotEmpty();
         StemRepository repository = context.getBean(StemRepository.class);
         assertThat(AopUtils.isAopProxy(repository)).isTrue();
