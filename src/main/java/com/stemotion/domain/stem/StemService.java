@@ -306,8 +306,10 @@ public class StemService {
    if(expected==null||expected.isBlank())expected=payload.path("expectedFingerprint").asText(null);
   }
   if(expected==null&&artifacts!=null){
-   var snap=db.jdbc().queryForList("select semantic_hash from stem_p5_snapshots where version_id=? and stage='APPROVAL' order by id desc limit 1",version.getId());
-   if(!snap.isEmpty())expected=db.text(snap.get(0),"semantic_hash");
+   try{
+    var snap=db.jdbc().queryForList("select semantic_hash from stem_p5_snapshots where version_id=? and stage='APPROVAL' order by id desc limit 1",version.getId());
+    if(!snap.isEmpty())expected=db.text(snap.get(0),"semantic_hash");
+   }catch(Exception ignored){}
   }
   if("STRICT".equals(mode.mode())){
    if(expected==null||expected.isBlank()||!actual.equals(expected)){
@@ -358,8 +360,10 @@ public class StemService {
    if(expected==null||expected.isBlank())expected=payload.path("expectedFingerprint").asText(null);
   }
   if(expected==null&&artifacts!=null){
-   var snap=db.jdbc().queryForList("select contract_hash from stem_p5_snapshots where version_id=? and stage='APPROVAL' and clip_id is not null order by id desc limit 1",version.getId());
-   if(!snap.isEmpty())expected=db.text(snap.get(0),"contract_hash");
+   try{
+    var snap=db.jdbc().queryForList("select contract_hash from stem_p5_snapshots where version_id=? and stage='APPROVAL' and clip_id is not null order by id desc limit 1",version.getId());
+    if(!snap.isEmpty())expected=db.text(snap.get(0),"contract_hash");
+   }catch(Exception ignored){}
   }
   if("STRICT".equals(mode.mode())){
    if(expected==null||expected.isBlank()||!actual.equals(expected)){
@@ -380,8 +384,12 @@ public class StemService {
  public String getCompositionSnapshot(String project,String version){
   var rows=db.jdbc().queryForList("select request_digest from stem_receipts where target=? and operation='COMPOSITION_SNAPSHOT' and request_key=?",project,version);
   if(!rows.isEmpty())return db.text(rows.get(0),"request_digest");
-  var snap=db.jdbc().queryForList("select contract_hash from stem_p5_snapshots where project_id=? and version_id=? and stage in ('SUBMISSION','RENDER_INPUT') order by id desc limit 1",project,version);
-  if(!snap.isEmpty())return db.text(snap.get(0),"contract_hash");
+  if(artifacts!=null){
+   try{
+    var snap=db.jdbc().queryForList("select contract_hash from stem_p5_snapshots where project_id=? and version_id=? and stage in ('SUBMISSION','RENDER_INPUT') order by id desc limit 1",project,version);
+    if(!snap.isEmpty())return db.text(snap.get(0),"contract_hash");
+   }catch(Exception ignored){}
+  }
   return null;
  }
 }
