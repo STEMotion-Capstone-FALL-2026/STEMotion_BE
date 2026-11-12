@@ -1,0 +1,96 @@
+{
+  "policyVersionId": "00000000-0000-0000-0000-000000000005",
+  "topicVersionId": null,
+  "gradeKey": "GRADE_4",
+  "subjectKeys": [
+    "Math",
+    "Science"
+  ],
+  "outcomeIds": [
+    "00000000-0000-0000-0000-000000000003",
+    "00000000-0000-0000-0000-000000000013"
+  ],
+  "scopeOfClip": "Clip minh hoa hoat dong giu am binh nuoc, do va tinh toan chenh lech nhiet do",
+  "context": {
+    "primary": {
+      "key": "IN_CLASS_SCREEN",
+      "condition": "Lop hoc co may chieu hoac tivi",
+      "adaptations": "Giao vien tam dung o phut 1:30 de hoc sinh thao luan"
+    },
+    "secondary": []
+  },
+  "distributionChannels": [
+    "DEPARTMENT_LIBRARY"
+  ],
+  "objectives": [
+    {
+      "key": "obj-1",
+      "outcomeId": "00000000-0000-0000-0000-000000000003",
+      "learnerAction": "Doc va ghi lai nhiet do bang nhiet ke",
+      "observableEvidence": "Bang so lieu ghi nhiet do truoc va sau 30 phut"
+    },
+    {
+      "key": "obj-2",
+      "outcomeId": "00000000-0000-0000-0000-000000000013",
+      "learnerAction": "So sanh vat lieu giu nhiet khac nhau",
+      "observableEvidence": "Ket luan ve vat lieu bong va xop giu nhiet tot hon vai mong"
+    }
+  ],
+  "studentTasks": [
+    {
+      "key": "task-1",
+      "learnerAction": "Thuc hien boc binh nuoc bang vat lieu xop/bong va do nhiet do sau 30 phut",
+      "teacherSupport": "Giao vien ho tro rot nuoc am va bam gio",
+      "materials": "Binh thuy tinh, nhiet ke, bong gon, vai, xop",
+      "safety": "Khong dung nuoc soi tren 50 do C",
+      "assessmentEvidence": "Phieu hoc tap ghi chenh lech nhiet do",
+      "executionContextKey": "IN_CLASS_SCREEN"
+    }
+  ],
+  "contributions": [
+    {
+      "component": "S",
+      "explanation": "Kien thuc ve su truyen nhiet va vat lieu dan nhiet",
+      "objectiveKeys": [
+        "obj-2"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    },
+    {
+      "component": "M",
+      "explanation": "Do luong va tinh toan chenh lech nhiet do giua cac lan do",
+      "objectiveKeys": [
+        "obj-1"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    }
+  ],
+  "safetyNotes": "Giao vien kiem soat nuoc am duoi 45 do C, khong dung nuoc soi, dung binh nhua hoac thuy tinh day chiu nhiet",
+  "rawLegacy": null,
+  "steps": [
+    {
+      "stepKey": "BACKGROUND_KNOWLEDGE",
+      "activityKey": "act-bg"
+    },
+    {
+      "stepKey": "PROPOSE_SOLUTION",
+      "activityKey": "act-prop"
+    },
+    {
+      "stepKey": "SELECT_SOLUTION",
+      "activityKey": "act-sel"
+    },
+    {
+      "stepKey": "BUILD_TEST",
+      "activityKey": "act-build"
+    },
+    {
+      "stepKey": "CLOSING_SHARE_REFLECT",
+      "activityKey": "act-close"
+    }
+  ]
+}

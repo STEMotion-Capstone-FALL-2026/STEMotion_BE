@@ -1,0 +1,486 @@
+{
+  "schemaVersion": "stem.v1",
+  "pack": "stem-demo-pack.v1",
+  "version": 1,
+  "description": "Goi du lieu danh muc STEM demo cho 3 cap hoc (Tieu hoc, THCS, THPT) theo truc nang luong trong doi song - Ban DRAFT",
+  "items": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "kind": "SOURCE_EDITION",
+      "logicalKey": "stem-source-gdpt2018",
+      "versionNo": 1,
+      "data": {
+        "title": "Chuong trinh Giao duc pho thong 2018",
+        "issuer": "Bo Giao duc va Dao tao",
+        "docNumber": "32/2018/TT-BGDDT",
+        "issuedDate": "2018-12-26",
+        "url": "https://vbpl.moj.gov.vn/bogiaoducdaotao/Pages/vbpq-toanvan.aspx?ItemID=146721",
+        "sha256": null,
+        "retrievedAt": "2026-11-03T00:00:00Z",
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000012",
+      "kind": "SOURCE_EDITION",
+      "logicalKey": "stem-source-cv909-2023",
+      "versionNo": 1,
+      "data": {
+        "title": "Huong dan to chuc hoat dong giao duc STEM trong giao duc tieu hoc",
+        "issuer": "Bo Giao duc va Dao tao",
+        "docNumber": "909/BGDDT-GDTH",
+        "issuedDate": "2023-03-08",
+        "url": "https://thuvienphapluat.vn/cong-van/Giao-duc/Cong-van-909-BGDDT-GDTH-2023-to-chuc-hoat-dong-giao-duc-STEM-trong-giao-duc-Tieu-hoc-575007.aspx",
+        "sha256": null,
+        "retrievedAt": "2026-11-03T00:00:00Z",
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000006",
+      "kind": "SOURCE_EDITION",
+      "logicalKey": "stem-source-cv3089-2020",
+      "versionNo": 1,
+      "data": {
+        "title": "Huong dan trien khai thuc hien giao duc STEM trong giao duc trung hoc",
+        "issuer": "Bo Giao duc va Dao tao",
+        "docNumber": "3089/BGDDT-GDTrH",
+        "issuedDate": "2020-08-14",
+        "url": "https://www.thptthanhda.edu.vn/download/vanban/2020/2020102106002852_3089_BGDDT-GDTrH_GiaoDucSTEM.pdf",
+        "sha256": null,
+        "retrievedAt": "2026-11-03T00:00:00Z",
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000011",
+      "kind": "SOURCE_EDITION",
+      "logicalKey": "stem-source-tt86-2026",
+      "versionNo": 1,
+      "data": {
+        "title": "Quy dinh ve to chuc giao duc tich hop STEM trong giao duc pho thong",
+        "issuer": "Bo Giao duc va Dao tao",
+        "docNumber": "86/2026/TT-BGDDT",
+        "issuedDate": "2026-09-30",
+        "url": "https://chinhphu.vn/?docid=219902&orggroupid=4&pageid=27160",
+        "sha256": null,
+        "retrievedAt": "2026-11-03T00:00:00Z",
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "kind": "PROFILE",
+      "logicalKey": "stem-profile-primary",
+      "versionNo": 1,
+      "sourceId": "00000000-0000-0000-0000-000000000012",
+      "data": {
+        "levelCode": "PRIMARY",
+        "name": "Giao duc STEM cap Tieu hoc (Lop 1-5)",
+        "gradeKey": "GRADE_4",
+        "subject": "Math",
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000007",
+      "kind": "PROFILE",
+      "logicalKey": "stem-profile-lower-secondary",
+      "versionNo": 1,
+      "sourceId": "00000000-0000-0000-0000-000000000006",
+      "data": {
+        "levelCode": "LOWER_SECONDARY",
+        "name": "Giao duc STEM cap THCS (Lop 6-9)",
+        "gradeKey": "GRADE_8",
+        "subject": "Physics",
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000014",
+      "kind": "PROFILE",
+      "logicalKey": "stem-profile-upper-secondary",
+      "versionNo": 1,
+      "sourceId": "00000000-0000-0000-0000-000000000011",
+      "data": {
+        "levelCode": "UPPER_SECONDARY",
+        "name": "Giao duc STEM cap THPT (Lop 10-12)",
+        "gradeKey": "GRADE_11",
+        "subject": "Physics",
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "kind": "OUTCOME",
+      "logicalKey": "stem-outcome-primary-math-01",
+      "versionNo": 1,
+      "parentId": "00000000-0000-0000-0000-000000000002",
+      "sourceId": "00000000-0000-0000-0000-000000000001",
+      "data": {
+        "subjectKey": "Math",
+        "gradeKey": "GRADE_4",
+        "code": "M4-MEAS-01",
+        "text": "Thuc hien duoc viec do, doc so do thoi gian va nhiet do bang dung cu do thong dung; thuc hien uoc luong va so sanh cac so do trong giai quyet van de thuc tien.",
+        "locator": {
+          "sourceLogicalKey": "stem-source-gdpt2018",
+          "section": "Mon Toan Tieu hoc, mach Do luong",
+          "page": "Trang 48"
+        },
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000013",
+      "kind": "OUTCOME",
+      "logicalKey": "stem-outcome-primary-science-01",
+      "versionNo": 1,
+      "parentId": "00000000-0000-0000-0000-000000000002",
+      "sourceId": "00000000-0000-0000-0000-000000000001",
+      "data": {
+        "subjectKey": "Science",
+        "gradeKey": "GRADE_4",
+        "code": "SCI4-ENG-01",
+        "text": "Neu duoc vat dan nhiet tot, vat dan nhiet kem; giai thich duoc mot so hien tuong don gian lien quan den su truyen nhiet trong doi song va de xuat cach lam vat giu nhiet don gian.",
+        "locator": {
+          "sourceLogicalKey": "stem-source-gdpt2018",
+          "section": "Mon Khoa hoc Lop 4, Chu de Nang luong - Nhiet",
+          "page": "Trang 22"
+        },
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000008",
+      "kind": "OUTCOME",
+      "logicalKey": "stem-outcome-lower-sec-khtn-01",
+      "versionNo": 1,
+      "parentId": "00000000-0000-0000-0000-000000000007",
+      "sourceId": "00000000-0000-0000-0000-000000000001",
+      "data": {
+        "subjectKey": "Physics",
+        "gradeKey": "GRADE_8",
+        "code": "KHTN8-THERM-01",
+        "text": "Mo ta duoc su truyen nang luong nhiet bang dan nhiet, doi luu, buc xa; so sanh duoc tinh dan nhiet cua cac vat lieu va giai thich duoc nguyen li hoat dong cua mot so dung cu giu nhiet trong thuc te.",
+        "locator": {
+          "sourceLogicalKey": "stem-source-gdpt2018",
+          "section": "Mon KHTN Lop 8, Mach Nang luong nhiet",
+          "page": "Trang 65"
+        },
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000018",
+      "kind": "OUTCOME",
+      "logicalKey": "stem-outcome-lower-sec-math-01",
+      "versionNo": 1,
+      "parentId": "00000000-0000-0000-0000-000000000007",
+      "sourceId": "00000000-0000-0000-0000-000000000001",
+      "data": {
+        "subjectKey": "Math",
+        "gradeKey": "GRADE_8",
+        "code": "M8-STAT-01",
+        "text": "Thu thap, to chuc du lieu thuc nghiem vao bang va bieu dien bang bieu do thich hop; phan tich xu the bien thien cua dai luong do de rut ra ket luan.",
+        "locator": {
+          "sourceLogicalKey": "stem-source-gdpt2018",
+          "section": "Mon Toan Lop 8, Mach Thong ke va Xac suat",
+          "page": "Trang 72"
+        },
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000015",
+      "kind": "OUTCOME",
+      "logicalKey": "stem-outcome-upper-sec-physics-01",
+      "versionNo": 1,
+      "parentId": "00000000-0000-0000-0000-000000000014",
+      "sourceId": "00000000-0000-0000-0000-000000000001",
+      "data": {
+        "subjectKey": "Physics",
+        "gradeKey": "GRADE_11",
+        "code": "PHY11-ELEC-01",
+        "text": "Van dung duoc dinh luat Ohm cho toan mach va cong thuc tinh nang luong, cong suat dien cua doan mach de thiet ke, tinh toan cac thong so cua mach dien mot chieu don gian dap ung yeu cau ky thuat va an toan.",
+        "locator": {
+          "sourceLogicalKey": "stem-source-gdpt2018",
+          "section": "Mon Vat li Lop 11, Chuyen de Dong dien khong doi - Nang luong dien",
+          "page": "Trang 38"
+        },
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000025",
+      "kind": "OUTCOME",
+      "logicalKey": "stem-outcome-upper-sec-math-01",
+      "versionNo": 1,
+      "parentId": "00000000-0000-0000-0000-000000000014",
+      "sourceId": "00000000-0000-0000-0000-000000000001",
+      "data": {
+        "subjectKey": "Math",
+        "gradeKey": "GRADE_11",
+        "code": "M11-FUNCT-01",
+        "text": "Mo hinh hoa cac moi quan he dai luong vat li bang ham so; giai bai toan toi uu don gian va bien luan su phu thuoc giua cac thong so mach dien.",
+        "locator": {
+          "sourceLogicalKey": "stem-source-gdpt2018",
+          "section": "Mon Toan Lop 11, Mach Ham so va Ung dung",
+          "page": "Trang 84"
+        },
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000004",
+      "kind": "RUBRIC",
+      "logicalKey": "stem-rubric-primary",
+      "versionNo": 1,
+      "data": {
+        "name": "Tieu chi danh gia STEM cap Tieu hoc (DRAFT TEST_ONLY)",
+        "levelCode": "PRIMARY",
+        "criteria": [
+          {
+            "key": "CRIT_OUTCOME_ALIGNMENT",
+            "label": "Bam sat Yeu cau can dat",
+            "description": "Noi dung va hoat dong trong clip bam sat yeu cau can dat cua chuong trinh mon hoc cap Tieu hoc."
+          },
+          {
+            "key": "CRIT_STEM_CONTRIBUTION",
+            "label": "Dong gop STEM thuc chat",
+            "description": "Khai bao va the hien ro rang su tham gia cua cac thanh to S, T, E, M phu hop kha nang hoc sinh."
+          },
+          {
+            "key": "CRIT_SAFETY_FEASIBILITY",
+            "label": "An toan va kha thi",
+            "description": "Vat lieu, thao tac an toan, co su huong dan giam sat va phu hop lua tuoi."
+          },
+          {
+            "key": "CRIT_SCIENTIFIC_ACCURACY",
+            "label": "Chinh xac khoa hoc",
+            "description": "Khong co loi sai lech kien thuc khoa hoc, ngon ngu trong sang de hieu."
+          }
+        ],
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000009",
+      "kind": "RUBRIC",
+      "logicalKey": "stem-rubric-lower-secondary",
+      "versionNo": 1,
+      "data": {
+        "name": "Tieu chi danh gia STEM cap THCS (DRAFT TEST_ONLY)",
+        "levelCode": "LOWER_SECONDARY",
+        "criteria": [
+          {
+            "key": "CRIT_OUTCOME_ALIGNMENT",
+            "label": "Bam sat Yeu cau can dat",
+            "description": "Hoat dong tich hop KHTN va Toan bam sat tien trinh giai quyet van de thuc tien."
+          },
+          {
+            "key": "CRIT_ENGINEERING_DESIGN",
+            "label": "Tien trinh thiet ke ky thuat",
+            "description": "Co ke hoach do dac, kiem soat bien va danh gia phuong an tren co so du lieu."
+          },
+          {
+            "key": "CRIT_SAFETY_PROTOCOL",
+            "label": "Quy trinh an toan thuc nghiem",
+            "description": "Khai bao danh gia rui ro ve nhiet, hoa chat hoac dung cu co huong dan phong ngua."
+          },
+          {
+            "key": "CRIT_EVIDENCE_BASED",
+            "label": "Minh chung danh gia quan sat duoc",
+            "description": "Cac hoat dong va tieu chi san pham duoc gan voi minh chung ro rang trong canh quay."
+          }
+        ],
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000016",
+      "kind": "RUBRIC",
+      "logicalKey": "stem-rubric-upper-secondary",
+      "versionNo": 1,
+      "data": {
+        "name": "Tieu chi danh gia STEM cap THPT (DRAFT TEST_ONLY)",
+        "levelCode": "UPPER_SECONDARY",
+        "criteria": [
+          {
+            "key": "CRIT_OUTCOME_ALIGNMENT",
+            "label": "Bam sat Yeu cau can dat",
+            "description": "Giai quyet van de ky thuat/thiet ke nang cao gan voi kien thuc chuyen de Vat li/Toan 11."
+          },
+          {
+            "key": "CRIT_OPTIMIZATION_CONSTRAINTS",
+            "label": "Toi uu hoa duoi rang buoc",
+            "description": "Phan tich, tinh toan va lua chon linh kien/phuong an dua tren mo hinh toan va gioi han ky thuat."
+          },
+          {
+            "key": "CRIT_ELECTRICAL_SAFETY",
+            "label": "An toan dien va dieu kien gioi han",
+            "description": "Gioi han nghiem ngat o nguon mot chieu an toan (DC), khong su dung dien luoi truc tiep."
+          },
+          {
+            "key": "CRIT_APPLICATION_RELEVANCE",
+            "label": "Y nghia thuc tien va dinh huong",
+            "description": "Lien he sau voi he thong thuc te, dinh huong nghe nghiep ky thuat va bao ve moi truong."
+          }
+        ],
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000005",
+      "kind": "POLICY",
+      "logicalKey": "stem-policy-primary",
+      "versionNo": 1,
+      "data": {
+        "name": "Chinh sach STEM cap Tieu hoc (DRAFT TEST_ONLY)",
+        "levelCode": "PRIMARY",
+        "gradeKey": "GRADE_4",
+        "rubricVersionId": "00000000-0000-0000-0000-000000000004",
+        "lessonTemplate": [
+          {
+            "stepKey": "OPENING_PROBLEM",
+            "label": "Xac dinh van de thuc tien",
+            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.1",
+            "mappingNote": "Hoat dong 1: Xac dinh van de hoac nhu cau thuc tien"
+          },
+          {
+            "stepKey": "BACKGROUND_KNOWLEDGE",
+            "label": "Nghien cuu kien thuc nen",
+            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.2",
+            "mappingNote": "Hoat dong 2: Nghien cuu kien thuc nen va de xuat giai phap"
+          },
+          {
+            "stepKey": "PROPOSE_SOLUTION",
+            "label": "De xuat phuong an thiet ke",
+            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.2",
+            "mappingNote": "Hoat dong 2b: Lua chon y tuong va phuong an don gian"
+          },
+          {
+            "stepKey": "SELECT_SOLUTION",
+            "label": "Lua chon tieu chi va vat lieu",
+            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.3",
+            "mappingNote": "Hoat dong 3: Lap ke hoach va lua chon vat lieu de tim"
+          },
+          {
+            "stepKey": "BUILD_TEST",
+            "label": "Che tao va thu nghiem mau",
+            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.4",
+            "mappingNote": "Hoat dong 4: Che tao mau va thu nghiem danh gia"
+          },
+          {
+            "stepKey": "CLOSING_SHARE_REFLECT",
+            "label": "Chia se, danh gia va cai tien",
+            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.5",
+            "mappingNote": "Hoat dong 5: Chia se ket qua va de xuat dieu chinh"
+          }
+        ],
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000010",
+      "kind": "POLICY",
+      "logicalKey": "stem-policy-lower-secondary",
+      "versionNo": 1,
+      "data": {
+        "name": "Chinh sach STEM cap THCS (DRAFT TEST_ONLY)",
+        "levelCode": "LOWER_SECONDARY",
+        "gradeKey": "GRADE_8",
+        "rubricVersionId": "00000000-0000-0000-0000-000000000009",
+        "lessonTemplate": [
+          {
+            "stepKey": "OPENING_PROBLEM",
+            "label": "Xac dinh van de hoac yeu cau ky thuat",
+            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.1",
+            "mappingNote": "Hoat dong 1: Xac dinh van de hoac yeu cau che tao thiet bi"
+          },
+          {
+            "stepKey": "BACKGROUND_KNOWLEDGE",
+            "label": "Nghien cuu kien thuc nen va de xuat giai phap",
+            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.2",
+            "mappingNote": "Hoat dong 2: Nghien cuu kien thuc nen va de xuat phuong an thiet ke"
+          },
+          {
+            "stepKey": "PROPOSE_SOLUTION",
+            "label": "Xay dung ban thiet ke so bo",
+            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.2b",
+            "mappingNote": "Phan tich cac phuong an thiet ke tren nguyen li khoa hoc"
+          },
+          {
+            "stepKey": "SELECT_SOLUTION",
+            "label": "Lua chon phuong an va lap thiet ke chi tiet",
+            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.3",
+            "mappingNote": "Hoat dong 3: Trinh bay va bao ve phuong an thiet ke"
+          },
+          {
+            "stepKey": "BUILD_TEST",
+            "label": "Che tao mau thu va thu nghiem kiem chung",
+            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.4",
+            "mappingNote": "Hoat dong 4: Che tao mau thu theo thiet ke va thu nghiem"
+          },
+          {
+            "stepKey": "CLOSING_SHARE_REFLECT",
+            "label": "Bao cao ket qua, danh gia va cai tien",
+            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.5",
+            "mappingNote": "Hoat dong 5: Trinh bay san pham va danh gia cai tien"
+          }
+        ],
+        "verificationStatus": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000017",
+      "kind": "POLICY",
+      "logicalKey": "stem-policy-upper-secondary",
+      "versionNo": 1,
+      "data": {
+        "name": "Chinh sach STEM cap THPT (DRAFT TEST_ONLY)",
+        "levelCode": "UPPER_SECONDARY",
+        "gradeKey": "GRADE_11",
+        "rubricVersionId": "00000000-0000-0000-0000-000000000016",
+        "lessonTemplate": [
+          {
+            "stepKey": "OPENING_PROBLEM",
+            "label": "Phat hien van de va xac dinh muc tieu ky thuat",
+            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 5",
+            "mappingNote": "Xac dinh van de thuc tien can giai quyet va gioi han thiet ke"
+          },
+          {
+            "stepKey": "BACKGROUND_KNOWLEDGE",
+            "label": "Nghien cuu kien thuc chuyen sau va khao sat linh kien",
+            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 5",
+            "mappingNote": "Mo hinh hoa toan hoc va nguyen li vat li lien quan"
+          },
+          {
+            "stepKey": "PROPOSE_SOLUTION",
+            "label": "Thiet ke mo hinh va tinh toan thong so",
+            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 6",
+            "mappingNote": "Xay dung so do mach va phuong an bo tri linh kien"
+          },
+          {
+            "stepKey": "SELECT_SOLUTION",
+            "label": "Danh gia, lua chon phuong an toi uu duoi rang buoc",
+            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 6",
+            "mappingNote": "Bien luan thong so, tieu chi an toan va hieu qua nang luong"
+          },
+          {
+            "stepKey": "BUILD_TEST",
+            "label": "Lap rap mach, do dac thu nghiem va thu thap du lieu",
+            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 7",
+            "mappingNote": "Lap rap mach DC, do dong/ap/nhiet do va danh gia sai so"
+          },
+          {
+            "stepKey": "CLOSING_SHARE_REFLECT",
+            "label": "Bao cao bao ve giai phap va dinh huong ung dung",
+            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 7",
+            "mappingNote": "Danh gia ket qua, de xuat nang cap he thong va lien he thuc te"
+          }
+        ],
+        "verificationStatus": "UNVERIFIED"
+      }
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "policyVersionId": "00000000-0000-0000-0000-000000000010",
+  "topicVersionId": null,
+  "gradeKey": "GRADE_8",
+  "subjectKeys": [
+    "Physics",
+    "Math"
+  ],
+  "outcomeIds": [
+    "00000000-0000-0000-0000-000000000008",
+    "00000000-0000-0000-0000-000000000018"
+  ],
+  "scopeOfClip": "Mo hinh xe chay bang nang luong gio va tinh toan hieu suat co nang",
+  "context": {
+    "primary": {
+      "key": "GROUP_PRACTICE",
+      "condition": "Phong thuc hanh KHTN co ban nhom",
+      "adaptations": "Chia nhom 4-5 hoc sinh, moi nhom 1 bo dung cu"
+    },
+    "secondary": []
+  },
+  "distributionChannels": [
+    "DEPARTMENT_LIBRARY"
+  ],
+  "objectives": [
+    {
+      "key": "obj-1",
+      "outcomeId": "00000000-0000-0000-0000-000000000008",
+      "learnerAction": "Che tao va do toc do xe gio",
+      "observableEvidence": "Mo hinh xe hoat dong va bang do toc do"
+    },
+    {
+      "key": "obj-2",
+      "outcomeId": "00000000-0000-0000-0000-000000000018",
+      "learnerAction": "Ve do thi quang duong thoi gian va tinh van toc",
+      "observableEvidence": "Bieu do quang duong thoi gian tren giay ke o"
+    }
+  ],
+  "studentTasks": [
+    {
+      "key": "task-1",
+      "learnerAction": "Lap rap khung xe va canh quat, thu nghiem voi quat gio",
+      "teacherSupport": "Huong dan cach can chinh truc banh xe",
+      "materials": "Bia carton, nap chai, que go, quat gio",
+      "safety": "De phong canh quat quet vao tay khi quay nhanh",
+      "assessmentEvidence": "Bao cao thu nghiem xe gio cua nhom",
+      "executionContextKey": "GROUP_PRACTICE"
+    }
+  ],
+  "contributions": [
+    {
+      "component": "S",
+      "explanation": "Chuyen hoa dong nang cua gio thanh dong nang cua xe",
+      "objectiveKeys": [
+        "obj-1"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    },
+    {
+      "component": "M",
+      "explanation": "Tinh van toc trung binh v=s/t tu ket qua thuc nghiem",
+      "objectiveKeys": [
+        "obj-2"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    }
+  ],
+  "safetyNotes": "Luu y can than voi keo cat va dao roc giay khi che tao canh quat",
+  "rawLegacy": null,
+  "steps": [
+    {
+      "stepKey": "OPENING_PROBLEM",
+      "activityKey": "act-open"
+    },
+    {
+      "stepKey": "BACKGROUND_KNOWLEDGE",
+      "activityKey": "act-bg"
+    },
+    {
+      "stepKey": "PROPOSE_SOLUTION",
+      "activityKey": "act-prop"
+    },
+    {
+      "stepKey": "SELECT_SOLUTION",
+      "activityKey": "act-sel"
+    },
+    {
+      "stepKey": "BUILD_TEST",
+      "activityKey": "act-build"
+    }
+  ]
+}

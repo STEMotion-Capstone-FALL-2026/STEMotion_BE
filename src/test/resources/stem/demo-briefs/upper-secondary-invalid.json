@@ -1,0 +1,100 @@
+{
+  "policyVersionId": "00000000-0000-0000-0000-000000000017",
+  "topicVersionId": null,
+  "gradeKey": "GRADE_11",
+  "subjectKeys": [
+    "Physics",
+    "Math"
+  ],
+  "outcomeIds": [
+    "00000000-0000-0000-0000-000000000015",
+    "00000000-0000-0000-0000-000000000025"
+  ],
+  "scopeOfClip": "Khao sat hieu suat pin quang dien va thiet ke mach nap pin mat troi mini",
+  "context": {
+    "primary": {
+      "key": "IN_CLASS_SCREEN",
+      "condition": "Phong hoc vat ly co nguon sang chieu",
+      "adaptations": "Co the dung den soi cong suat lon thay cho anh sang mat troi truc tiep"
+    },
+    "secondary": []
+  },
+  "distributionChannels": [
+    "DEPARTMENT_LIBRARY"
+  ],
+  "objectives": [
+    {
+      "key": "obj-1",
+      "outcomeId": "00000000-0000-0000-0000-000000000015",
+      "learnerAction": "Do dien ap va dong dien cua tam pin quang dien duoi cuong do sang khac nhau",
+      "observableEvidence": "Bang so lieu V-I va duong dac trung von-ampe"
+    },
+    {
+      "key": "obj-2",
+      "outcomeId": "00000000-0000-0000-0000-000000000025",
+      "learnerAction": "Xay dung ham so cong suat P(R) va xac dinh gia tri cuc dai",
+      "observableEvidence": "Do thi cong suat va diem lam viec toi uu Pmax"
+    }
+  ],
+  "studentTasks": [
+    {
+      "key": "task-1",
+      "learnerAction": "Noi mach do gom pin mat troi, bien tro, ampe ke va von ke",
+      "teacherSupport": "Kiem tra so do mach truoc khi bat nguon sang",
+      "materials": "Tam pin solar 5V, bien tro 100 ohm, dong ho VOM, day noi",
+      "safety": "Khong de tam pin gan nguon nhiet qua 60 do C",
+      "assessmentEvidence": "Bang so lieu do va bao cao tinh Pmax",
+      "executionContextKey": "IN_CLASS_SCREEN"
+    }
+  ],
+  "contributions": [
+    {
+      "component": "S",
+      "explanation": "Hieu ung quang dien trong va chuyen hoa quang nang thanh dien nang",
+      "objectiveKeys": [
+        "obj-1"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    },
+    {
+      "component": "M",
+      "explanation": "Khao sat ham so va tim cuc tri cua cong suat P=I^2*R",
+      "objectiveKeys": [
+        "obj-2"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    }
+  ],
+  "safetyNotes": "",
+  "rawLegacy": null,
+  "steps": [
+    {
+      "stepKey": "OPENING_PROBLEM",
+      "activityKey": "act-open"
+    },
+    {
+      "stepKey": "BACKGROUND_KNOWLEDGE",
+      "activityKey": "act-bg"
+    },
+    {
+      "stepKey": "PROPOSE_SOLUTION",
+      "activityKey": "act-prop"
+    },
+    {
+      "stepKey": "SELECT_SOLUTION",
+      "activityKey": "act-sel"
+    },
+    {
+      "stepKey": "BUILD_TEST",
+      "activityKey": "act-build"
+    },
+    {
+      "stepKey": "CLOSING_SHARE_REFLECT",
+      "activityKey": "act-close"
+    }
+  ]
+}
