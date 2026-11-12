@@ -41,7 +41,7 @@ class StemArtifactP5Test {
             "--logging.level.root=WARN","--logging.level.com.stemotion=WARN","--logging.level.org.hibernate.SQL=WARN",
             "--logging.level.io.zonky.test.db.postgres.embedded.EmbeddedPostgres=INFO"));
         base="http://127.0.0.1:"+((ServletWebServerApplicationContext)context).getWebServer().getPort()+"/api/v1";db=context.getBean(JdbcTemplate.class);
-        assertThat(db.queryForObject("select count(*) from flyway_schema_history where success",Integer.class)).isEqualTo(26);
+        assertThat(db.queryForObject("select count(*) from flyway_schema_history where success",Integer.class)).isEqualTo(27);
         var tx=new TransactionTemplate(context.getBean(PlatformTransactionManager.class));
         List<String> ids=tx.execute(s->{List<String> result=new ArrayList<>();for(String role:List.of("writer","reviewer","producer"))result.add(context.getBean(UserRepository.class).saveAndFlush(User.builder().fullName("TEST_ONLY "+role).username("p5-"+role).passwordHash(context.getBean(PasswordEncoder.class).encode("P5-fixture-only-123")).systemRole(SystemRole.USER).status(User.UserStatus.ACTIVE).mustChangePassword(false).build()).getId());return result;});
         writerId=ids.get(0);reviewerId=ids.get(1);producerId=ids.get(2);
@@ -215,7 +215,7 @@ class StemArtifactP5Test {
         String schema="p5_wrong_"+UUID.randomUUID().toString().replace("-","");db.execute("create schema "+schema);db.execute("create table "+schema+".users(id uuid primary key)");
         String sql=java.nio.file.Files.readString(java.nio.file.Path.of("src/test/resources/db/stem-p5/V92000__stem_p5_artifact_snapshots_test_only.sql"));
         assertThatThrownBy(()->new TransactionTemplate(context.getBean(PlatformTransactionManager.class)).execute(s->{db.execute("set local search_path="+schema+",pg_catalog");db.execute(sql);return null;})).isInstanceOf(org.springframework.dao.DataAccessException.class).hasMessageContaining("P5 prerequisite drift");
-        assertThat(db.queryForObject("select to_regclass(?)::text",String.class,schema+".stem_p5_snapshots")).isNull();assertThat(db.queryForObject("select count(*) from flyway_schema_history where success",Integer.class)).isEqualTo(26);
+        assertThat(db.queryForObject("select to_regclass(?)::text",String.class,schema+".stem_p5_snapshots")).isNull();assertThat(db.queryForObject("select count(*) from flyway_schema_history where success",Integer.class)).isEqualTo(27);
     }
     @Test void B03RetryHasNewAttemptAndOldCompletionCannotWin()throws Exception{
         String old=compositionApproved();JsonNode oldManifest=manifest(old);

@@ -99,7 +99,7 @@ public class StemService {
  private void workspace(String id){if(db.jdbc().queryForObject("select count(*) from workspaces where id=?",Integer.class,id)!=1)throw ApiException.notFound("Workspace",id);db.jdbc().queryForList("select id from workspaces where id=? for update",id);}
  public StemModels.WorkspaceMode saveSettings(String workspace,String actor,Settings request){validator.limits(db.json().valueToTree(request),0);
   if(!access.isAdmin(actor))throw ApiException.forbidden("Only Admin assigns STEM framework");workspace(workspace);validator.rev(request.baseRevision(),"baseRevision");validator.list(request.policyVersionIds(),100,"policyVersionIds");
-  if(!Set.of("OFF","ADVISORY").contains(Objects.toString(request.mode(),"")))throw StemValidator.invalid("mode","Only OFF/ADVISORY in P3");
+  if(!Set.of("OFF","ADVISORY","STRICT").contains(Objects.toString(request.mode(),"")))throw StemValidator.invalid("mode","Expected OFF/ADVISORY/STRICT");
   String replay=receipt(actor,"SETTINGS",workspace,request.idempotencyKey(),request);if(replay!=null)return db.decode(replay,StemModels.WorkspaceMode.class);
   var old=db.settings(workspace);revision(request.baseRevision(),old.revision(),"STEM_MODE");for(String policy:request.policyVersionIds())checkKind(policy,"POLICY");
   if(new HashSet<>(request.policyVersionIds()).size()!=request.policyVersionIds().size())throw StemValidator.invalid("policyVersionIds","Duplicate policy");
