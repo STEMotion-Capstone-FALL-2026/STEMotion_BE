@@ -1,0 +1,1212 @@
+{
+  "schema": "stem-close-p0-p6-verification.v1",
+  "date": "2026-11-10",
+  "gate1_user_text": "duyệt Gate 1",
+  "stage": "C.1",
+  "stop": "GATE_2_PENDING",
+  "remote_observation": {
+    "be_backup": "9c7fdf53195aeb8fcc4d05676a7180870504e409",
+    "fe_backup": "4ddba1da34e4f403b0c13c8733cc1621a0f9a2ed",
+    "be_main": "837c20002f92890a96b691576f4f47159982f0fa",
+    "fe_main": "88570f278375624f9c6bdf7579f71acb1a32564c",
+    "be_main_ancestry": "UNKNOWN_OBJECT_UNAVAILABLE_LOCALLY",
+    "fe_main_backup_ancestry": false
+  },
+  "inspections": {
+    "one": [
+      {
+        "path": "BRIEF_LOWER_SECONDARY_DRAFT.md",
+        "expected": "edf1ea863261aa9f81a76d81b7580d786ddef2d2cef821ca3a7315ee27898273",
+        "actual": "edf1ea863261aa9f81a76d81b7580d786ddef2d2cef821ca3a7315ee27898273"
+      },
+      {
+        "path": "BRIEF_PRIMARY_DRAFT.md",
+        "expected": "65592c273f87c83202133ed0277889ec6231b510454e8257a15d28ceb666b693",
+        "actual": "65592c273f87c83202133ed0277889ec6231b510454e8257a15d28ceb666b693"
+      },
+      {
+        "path": "BRIEF_UPPER_SECONDARY_DRAFT.md",
+        "expected": "d01ae9981067afa40fb8809664617ceef59656694e9ffae4dff2e4b5e8e78fbd",
+        "actual": "d01ae9981067afa40fb8809664617ceef59656694e9ffae4dff2e4b5e8e78fbd"
+      },
+      {
+        "path": "CONTEXT_AND_PERSONAS.md",
+        "expected": "fe106b280b466bbe8a6cb56abcbf37661f9a5b03a82900abf1b670faf475f3da",
+        "actual": "fe106b280b466bbe8a6cb56abcbf37661f9a5b03a82900abf1b670faf475f3da"
+      },
+      {
+        "path": "EXPERT_QUESTIONS.md",
+        "expected": "f0bb41d83250c34e762165e0625941df8ec51801a71de686ea959c17e2e627cc",
+        "actual": "f0bb41d83250c34e762165e0625941df8ec51801a71de686ea959c17e2e627cc"
+      },
+      {
+        "path": "LEVEL_PROFILES_DRAFT.md",
+        "expected": "4a1461baf4ad587b1a6819294a014ee2a431dbc600c589729ed859e4398d9016",
+        "actual": "4a1461baf4ad587b1a6819294a014ee2a431dbc600c589729ed859e4398d9016"
+      },
+      {
+        "path": "OUTCOME_MAPPING.md",
+        "expected": "85a4ac063786a19cec042c1d224f89817ad7a509e6d6a50c02a5cf1800dbae0c",
+        "actual": "85a4ac063786a19cec042c1d224f89817ad7a509e6d6a50c02a5cf1800dbae0c"
+      },
+      {
+        "path": "P1_HANDOFF.md",
+        "expected": "59e38a19e959a52e6ba82afb95f8853e6ee6d5aaf801071ea2c7bb44420f145c",
+        "actual": "59e38a19e959a52e6ba82afb95f8853e6ee6d5aaf801071ea2c7bb44420f145c"
+      },
+      {
+        "path": "SOURCE_REGISTER.md",
+        "expected": "e24fd1858affb98666abd4f457f2bf72c2658c0912d3f611855f86e5abc1df54",
+        "actual": "e24fd1858affb98666abd4f457f2bf72c2658c0912d3f611855f86e5abc1df54"
+      },
+      {
+        "path": "sources/CT_KhoaHoc_2018.pdf",
+        "expected": "bdcf1384bc385b48e74f3d203ac3e3862de3c66a0b6be50df02f7cd414fa3554",
+        "actual": "bdcf1384bc385b48e74f3d203ac3e3862de3c66a0b6be50df02f7cd414fa3554"
+      },
+      {
+        "path": "sources/CT_KHTN_2018.pdf",
+        "expected": "4d8098825841e7de430c298cd76b9e93310682949d92b21d1440c54b75ffa14a",
+        "actual": "4d8098825841e7de430c298cd76b9e93310682949d92b21d1440c54b75ffa14a"
+      },
+      {
+        "path": "sources/CT_Toan_2018.pdf",
+        "expected": "f35d34ff84da2ca3f9ab72d5d67482ada414684b611deea98c4b329801b661ab",
+        "actual": "f35d34ff84da2ca3f9ab72d5d67482ada414684b611deea98c4b329801b661ab"
+      },
+      {
+        "path": "sources/CT_VatLi_2018.pdf",
+        "expected": "0a8754c7823eaaa242b40f902c15dbb0dcedeff25206f2c8e3ecf60163ac371e",
+        "actual": "0a8754c7823eaaa242b40f902c15dbb0dcedeff25206f2c8e3ecf60163ac371e"
+      },
+      {
+        "path": "sources/CV3089_2020_scan.pdf",
+        "expected": "a12bb3708a166296b7720fc7e68a38d5862890d7b179437531ea7f68dfac3cb8",
+        "actual": "a12bb3708a166296b7720fc7e68a38d5862890d7b179437531ea7f68dfac3cb8"
+      },
+      {
+        "path": "sources/CV5208_2026.pdf",
+        "expected": "3f19d36f1e7c82d275d8f8432e7fb6e085dee77ebd65d758063c22a25870e9bb",
+        "actual": "3f19d36f1e7c82d275d8f8432e7fb6e085dee77ebd65d758063c22a25870e9bb"
+      },
+      {
+        "path": "sources/CV909_2023_scan.pdf",
+        "expected": "3f1cc709e909c9ff05c65b35f56752f78f81ad9acc596c88ec2f903065b53bc7",
+        "actual": "3f1cc709e909c9ff05c65b35f56752f78f81ad9acc596c88ec2f903065b53bc7"
+      },
+      {
+        "path": "sources/download_inventory.json",
+        "expected": "fb66c67cc79aeaad59f7104fccb36e8c129a596f20d001bc570b353b4719f9ea",
+        "actual": "fb66c67cc79aeaad59f7104fccb36e8c129a596f20d001bc570b353b4719f9ea"
+      },
+      {
+        "path": "sources/download_inventory_2.json",
+        "expected": "5dbc769bbfbf3cc708d9ed0fbff6ecf297e0c8e65a43ff2a857363cca834b13d",
+        "actual": "5dbc769bbfbf3cc708d9ed0fbff6ecf297e0c8e65a43ff2a857363cca834b13d"
+      },
+      {
+        "path": "sources/download_inventory_3.json",
+        "expected": "9ddd45a8345cd3521cb8a2d31a19a9f569d7dd3c217d1b2da3af7599b1084ceb",
+        "actual": "9ddd45a8345cd3521cb8a2d31a19a9f569d7dd3c217d1b2da3af7599b1084ceb"
+      },
+      {
+        "path": "sources/download_inventory_4.json",
+        "expected": "8fdcc1a0a6581a060d8a12260ca7e4db397f511da561c53f67def2380895201c",
+        "actual": "8fdcc1a0a6581a060d8a12260ca7e4db397f511da561c53f67def2380895201c"
+      },
+      {
+        "path": "sources/download_inventory_5.json",
+        "expected": "d56fca81c9e6cb8c2c74b4e7b82509056b8941e2f076e3dac36ba1315d8061c8",
+        "actual": "d56fca81c9e6cb8c2c74b4e7b82509056b8941e2f076e3dac36ba1315d8061c8"
+      },
+      {
+        "path": "sources/download_inventory_6.json",
+        "expected": "a52fb136871cde4c0bc7225523cd02968b5c021d733ae2f768540580d112a47e",
+        "actual": "a52fb136871cde4c0bc7225523cd02968b5c021d733ae2f768540580d112a47e"
+      },
+      {
+        "path": "sources/download_inventory_7.json",
+        "expected": "4fc83c96a3323be173f637b47c18ac28db59d45d120cb4125d3e2c35a3ced9cb",
+        "actual": "4fc83c96a3323be173f637b47c18ac28db59d45d120cb4125d3e2c35a3ced9cb"
+      },
+      {
+        "path": "sources/P1_DOCUMENT_REVIEW.json",
+        "expected": "46751c2bd4f0cfb0273ee5201d683b2fe866489f481a47f3aa5b47ab948212f8",
+        "actual": "46751c2bd4f0cfb0273ee5201d683b2fe866489f481a47f3aa5b47ab948212f8"
+      },
+      {
+        "path": "sources/P1_INPUT_BASELINE.json",
+        "expected": "9aa47a512451897398a8f1352793b9656b5828802ff4ca57b145d01b0656248e",
+        "actual": "9aa47a512451897398a8f1352793b9656b5828802ff4ca57b145d01b0656248e"
+      },
+      {
+        "path": "sources/review/CT_KhoaHoc_2018_01.png",
+        "expected": "56d5774e0b1a1a9af4807849417c039e2c97151b9a34e35837512802ef4b23ff",
+        "actual": "56d5774e0b1a1a9af4807849417c039e2c97151b9a34e35837512802ef4b23ff"
+      },
+      {
+        "path": "sources/review/CT_KhoaHoc_2018_07.png",
+        "expected": "61da0c666b9fc9c8119ad9ff944fb8c0b47e915abcb3428d1fbd342e839b6b60",
+        "actual": "61da0c666b9fc9c8119ad9ff944fb8c0b47e915abcb3428d1fbd342e839b6b60"
+      },
+      {
+        "path": "sources/review/CT_KhoaHoc_2018_08.png",
+        "expected": "be88e8e164a1c290b74acec0f23d3cb2e4229436845b5bf0a4806981ece35828",
+        "actual": "be88e8e164a1c290b74acec0f23d3cb2e4229436845b5bf0a4806981ece35828"
+      },
+      {
+        "path": "sources/review/CT_KhoaHoc_2018_10.png",
+        "expected": "ade1f8ed440a46b826942717785087bfacf08a5915bd51bf3b945244a9d2ca73",
+        "actual": "ade1f8ed440a46b826942717785087bfacf08a5915bd51bf3b945244a9d2ca73"
+      },
+      {
+        "path": "sources/review/CT_KhoaHoc_2018_11.png",
+        "expected": "e42927bb0774e0563f319567eb92af6cca7abeaeaf81a16374f8aa570af6fb73",
+        "actual": "e42927bb0774e0563f319567eb92af6cca7abeaeaf81a16374f8aa570af6fb73"
+      },
+      {
+        "path": "sources/review/CT_KHTN_2018_01.png",
+        "expected": "97d4c9fc77d91018bc4bc17745a5260360df205211762e6f173d5ca03c400fb3",
+        "actual": "97d4c9fc77d91018bc4bc17745a5260360df205211762e6f173d5ca03c400fb3"
+      },
+      {
+        "path": "sources/review/CT_KHTN_2018_42.png",
+        "expected": "4ba5cc006824c517eea8c7555c4a04580aa3868534613d88db9db29e6106e4f0",
+        "actual": "4ba5cc006824c517eea8c7555c4a04580aa3868534613d88db9db29e6106e4f0"
+      },
+      {
+        "path": "sources/review/CT_KHTN_2018_43.png",
+        "expected": "7fd4eeaf36dec3dcb88243329937577e2f624dc192d0dcb8f45190970b205b7b",
+        "actual": "7fd4eeaf36dec3dcb88243329937577e2f624dc192d0dcb8f45190970b205b7b"
+      },
+      {
+        "path": "sources/review/CT_KHTN_2018_49.png",
+        "expected": "37a7ce4de1687f99d296e9065d2fddb0d146cf5063bc95d57adb9273a16bf2f4",
+        "actual": "37a7ce4de1687f99d296e9065d2fddb0d146cf5063bc95d57adb9273a16bf2f4"
+      },
+      {
+        "path": "sources/review/CT_Toan_001.png",
+        "expected": "aff9b88d3f5cda5f46fdbe41c7b567f4819eaea312aa57ba8091e91f5afe6e6d",
+        "actual": "aff9b88d3f5cda5f46fdbe41c7b567f4819eaea312aa57ba8091e91f5afe6e6d"
+      },
+      {
+        "path": "sources/review/CT_Toan_034.png",
+        "expected": "49ae7d36bd44fc9291baaa470fcf2dd0bfaad176ea681cdb16bfb18fb9c45478",
+        "actual": "49ae7d36bd44fc9291baaa470fcf2dd0bfaad176ea681cdb16bfb18fb9c45478"
+      },
+      {
+        "path": "sources/review/CT_Toan_038.png",
+        "expected": "14ad5ed4d423f120527cab3ea170c410fe7d6fd2169b9d95d111955473fd13dd",
+        "actual": "14ad5ed4d423f120527cab3ea170c410fe7d6fd2169b9d95d111955473fd13dd"
+      },
+      {
+        "path": "sources/review/CT_Toan_039.png",
+        "expected": "ca48edebaa7bdb291d8e19aeea5114e296ec27cddcc60b145edb9c54fa5db570",
+        "actual": "ca48edebaa7bdb291d8e19aeea5114e296ec27cddcc60b145edb9c54fa5db570"
+      },
+      {
+        "path": "sources/review/CT_Toan_063.png",
+        "expected": "8d42737532e3e0690577fc1097ba11657acc8982c1f9e1bad0f39130d2c169c2",
+        "actual": "8d42737532e3e0690577fc1097ba11657acc8982c1f9e1bad0f39130d2c169c2"
+      },
+      {
+        "path": "sources/review/CT_Toan_068.png",
+        "expected": "e908d6578f457e7912ae65660f46621ecddbe456a94b3460943737d4982b1512",
+        "actual": "e908d6578f457e7912ae65660f46621ecddbe456a94b3460943737d4982b1512"
+      },
+      {
+        "path": "sources/review/CT_Toan_069.png",
+        "expected": "71335f6263edee56707129e04cdd6f1b5e758fdb920b61647093d59a233d7ee2",
+        "actual": "71335f6263edee56707129e04cdd6f1b5e758fdb920b61647093d59a233d7ee2"
+      },
+      {
+        "path": "sources/review/CT_Toan_089.png",
+        "expected": "a4e6385e5081a4655788d498f3d6d34c30fb6fad29367faac300325e8bf5befd",
+        "actual": "a4e6385e5081a4655788d498f3d6d34c30fb6fad29367faac300325e8bf5befd"
+      },
+      {
+        "path": "sources/review/CT_Toan_103.png",
+        "expected": "e1189fc7024273db352f45cdd81351ea41f6e4c219f3e1efae07054a5f6fd2dd",
+        "actual": "e1189fc7024273db352f45cdd81351ea41f6e4c219f3e1efae07054a5f6fd2dd"
+      },
+      {
+        "path": "sources/review/CT_VatLi_2018_01.png",
+        "expected": "a11f06f92996217a83f350d1e83bd3d82f2a601a388d44e48ce09a3d49c52caf",
+        "actual": "a11f06f92996217a83f350d1e83bd3d82f2a601a388d44e48ce09a3d49c52caf"
+      },
+      {
+        "path": "sources/review/CT_VatLi_2018_17.png",
+        "expected": "e1e7f465ea4c3db2f6202b7c4592083f9026fc6d392f8d7cda98a5df9cf534b6",
+        "actual": "e1e7f465ea4c3db2f6202b7c4592083f9026fc6d392f8d7cda98a5df9cf534b6"
+      },
+      {
+        "path": "sources/review/CT_VatLi_2018_21.png",
+        "expected": "b2c2eabba754a840534cd416311189b2164622192e14338bace73e2c070a6ce7",
+        "actual": "b2c2eabba754a840534cd416311189b2164622192e14338bace73e2c070a6ce7"
+      },
+      {
+        "path": "sources/review/CV3089_sheet1.jpg",
+        "expected": "57ee58a81cd7180f670859f6a9853e8da9d0a310824096e0535acabd75c1da2b",
+        "actual": "57ee58a81cd7180f670859f6a9853e8da9d0a310824096e0535acabd75c1da2b"
+      },
+      {
+        "path": "sources/review/CV3089_sheet5.jpg",
+        "expected": "31e33d3dea81dcc00347e17583712f2fd3072cb0b5185ff6a92f41bb1fdf8b03",
+        "actual": "31e33d3dea81dcc00347e17583712f2fd3072cb0b5185ff6a92f41bb1fdf8b03"
+      },
+      {
+        "path": "sources/review/CV5208_2026_01.png",
+        "expected": "549db19c1e112fbaf9ebc910da746c999a39dda2f1246fae16ab7259324f2113",
+        "actual": "549db19c1e112fbaf9ebc910da746c999a39dda2f1246fae16ab7259324f2113"
+      },
+      {
+        "path": "sources/review/CV5208_2026_10.png",
+        "expected": "c81416eef3446246425e342e3c419907fa282f0a146d667471d225ae12b78f41",
+        "actual": "c81416eef3446246425e342e3c419907fa282f0a146d667471d225ae12b78f41"
+      },
+      {
+        "path": "sources/review/CV5208_2026_sheet1.jpg",
+        "expected": "23c339f500bdae1d5c68e671e2970d126d1eeca8007f090ff31221eb485eb92c",
+        "actual": "23c339f500bdae1d5c68e671e2970d126d1eeca8007f090ff31221eb485eb92c"
+      },
+      {
+        "path": "sources/review/CV5208_2026_sheet6.jpg",
+        "expected": "571efadb84b25727fb2b0671acf355da09e4ccc0e44b857719c36d11542a3636",
+        "actual": "571efadb84b25727fb2b0671acf355da09e4ccc0e44b857719c36d11542a3636"
+      },
+      {
+        "path": "sources/review/CV909_2023_scan_01.png",
+        "expected": "aa13e7bc5c6a878e40b6539f7b83317d44858b23e3dcab078fb804b1bb9b19d4",
+        "actual": "aa13e7bc5c6a878e40b6539f7b83317d44858b23e3dcab078fb804b1bb9b19d4"
+      },
+      {
+        "path": "sources/review/CV909_2023_scan_02.png",
+        "expected": "99724c25162094d2faef16b5c0ad870a2e17292f755c6e4397ff5f0b1fc32a7e",
+        "actual": "99724c25162094d2faef16b5c0ad870a2e17292f755c6e4397ff5f0b1fc32a7e"
+      },
+      {
+        "path": "sources/review/CV909_2023_scan_03.png",
+        "expected": "26329346c291243b17946d4f898aabf16ec1115c0e150be5f2028b6d6e6b70a2",
+        "actual": "26329346c291243b17946d4f898aabf16ec1115c0e150be5f2028b6d6e6b70a2"
+      },
+      {
+        "path": "sources/review/CV909_2023_scan_04.png",
+        "expected": "e1a62c75730ef2973a020ff60c83830c8594b48cccebcaf17d8e0c1eb9a606fa",
+        "actual": "e1a62c75730ef2973a020ff60c83830c8594b48cccebcaf17d8e0c1eb9a606fa"
+      },
+      {
+        "path": "sources/review/CV909_2023_scan_05.png",
+        "expected": "d0fc82c9cc1a285380da7286392a6ae66e331b839b4f83705e1451dfa37d7735",
+        "actual": "d0fc82c9cc1a285380da7286392a6ae66e331b839b4f83705e1451dfa37d7735"
+      },
+      {
+        "path": "sources/review/CV909_2023_scan_sheet4.jpg",
+        "expected": "9fb33e8a9b6bd726a51c3ca19cd0740a3ca6228f348fecee0e0aa69c1cfed7e4",
+        "actual": "9fb33e8a9b6bd726a51c3ca19cd0740a3ca6228f348fecee0e0aa69c1cfed7e4"
+      },
+      {
+        "path": "sources/review/TT13_01.png",
+        "expected": "3e3e7f46b5ef37fd24153a0e4aa1618d74b25a283e19d21591fa3c07f6358c20",
+        "actual": "3e3e7f46b5ef37fd24153a0e4aa1618d74b25a283e19d21591fa3c07f6358c20"
+      },
+      {
+        "path": "sources/review/TT13_02.png",
+        "expected": "5671db6c06253a8cb506f33aab36e2e87d5aac5212672423fbdf5d851fd718a6",
+        "actual": "5671db6c06253a8cb506f33aab36e2e87d5aac5212672423fbdf5d851fd718a6"
+      },
+      {
+        "path": "sources/review/TT13_03.png",
+        "expected": "5474deba7427ef9a703a93a6f62967477e23bcd3d168e6776e41b90f427416bf",
+        "actual": "5474deba7427ef9a703a93a6f62967477e23bcd3d168e6776e41b90f427416bf"
+      },
+      {
+        "path": "sources/review/TT13_04.png",
+        "expected": "957cc8604c88eb17b39d38544ad3d173e7e5a6d4c110dceaf4cc7824e76e1c39",
+        "actual": "957cc8604c88eb17b39d38544ad3d173e7e5a6d4c110dceaf4cc7824e76e1c39"
+      },
+      {
+        "path": "sources/review/TT17_2025_01.png",
+        "expected": "21c57ca2a232cab65e88662a6a7c292acfb9e82e2a7ed28c63cce00a862b7d26",
+        "actual": "21c57ca2a232cab65e88662a6a7c292acfb9e82e2a7ed28c63cce00a862b7d26"
+      },
+      {
+        "path": "sources/review/TT17_2025_22.png",
+        "expected": "2762bf684b22d723e7ea10a06dbdeefc5ccbd216b943f3c49fbef98cd1a9e60b",
+        "actual": "2762bf684b22d723e7ea10a06dbdeefc5ccbd216b943f3c49fbef98cd1a9e60b"
+      },
+      {
+        "path": "sources/review/TT17_2025_CongBao_sheet1.jpg",
+        "expected": "4447ff6fb884581345195a73c9eb081c87bd38e66f37891b9d30fca46abb8c85",
+        "actual": "4447ff6fb884581345195a73c9eb081c87bd38e66f37891b9d30fca46abb8c85"
+      },
+      {
+        "path": "sources/review/TT32_01.png",
+        "expected": "47a5aee596376d3db4a1af4f4d180786161021cca6063680a577a63a3cc26dd8",
+        "actual": "47a5aee596376d3db4a1af4f4d180786161021cca6063680a577a63a3cc26dd8"
+      },
+      {
+        "path": "sources/review/TT32_02.png",
+        "expected": "f47030bbb3ebf95311ae2e41ae209bfd428e67c0480bcacbad0dbe18c72d618c",
+        "actual": "f47030bbb3ebf95311ae2e41ae209bfd428e67c0480bcacbad0dbe18c72d618c"
+      },
+      {
+        "path": "sources/review/TT32_03.png",
+        "expected": "cef8a5de00198dd7bdd7686ca7791aa491e074ab93baf5dc38854b9355884304",
+        "actual": "cef8a5de00198dd7bdd7686ca7791aa491e074ab93baf5dc38854b9355884304"
+      },
+      {
+        "path": "sources/review/TT86_01.jpg",
+        "expected": "9ad857edca612006f93e05929e29da5954c7569271c7b50e995597b305db0f19",
+        "actual": "9ad857edca612006f93e05929e29da5954c7569271c7b50e995597b305db0f19"
+      },
+      {
+        "path": "sources/review/TT86_05.jpg",
+        "expected": "fa6636d44f85cca1777c36bc72582a6ba45f80cf9388527003f0f2be21787719",
+        "actual": "fa6636d44f85cca1777c36bc72582a6ba45f80cf9388527003f0f2be21787719"
+      },
+      {
+        "path": "sources/review/TT86_09.jpg",
+        "expected": "442337b97b4d41f8c3478d7425741a79e0ca0269d9250695acef6b84e69f4335",
+        "actual": "442337b97b4d41f8c3478d7425741a79e0ca0269d9250695acef6b84e69f4335"
+      },
+      {
+        "path": "sources/review/TT86_13.jpg",
+        "expected": "e547400664648bb487d6ee0700f360ed2e02f45a4b030379b3aa9fafc677c3c6",
+        "actual": "e547400664648bb487d6ee0700f360ed2e02f45a4b030379b3aa9fafc677c3c6"
+      },
+      {
+        "path": "sources/review/TT86_17.jpg",
+        "expected": "fb7be3a2422e3a68c78f5d5a846d927d1af10947e0002415264bdf79fa5a8a96",
+        "actual": "fb7be3a2422e3a68c78f5d5a846d927d1af10947e0002415264bdf79fa5a8a96"
+      },
+      {
+        "path": "sources/review/TT86_21.jpg",
+        "expected": "9aeadf5a2a12d017f2b07f5cc15faffd5cce87177fa78d151d4807ba034ba917",
+        "actual": "9aeadf5a2a12d017f2b07f5cc15faffd5cce87177fa78d151d4807ba034ba917"
+      },
+      {
+        "path": "sources/review/TT86_25.jpg",
+        "expected": "b2a8bb0cc0888777a31af984f488808a918635848094911b092f82b5c43affad",
+        "actual": "b2a8bb0cc0888777a31af984f488808a918635848094911b092f82b5c43affad"
+      },
+      {
+        "path": "sources/review/TT86_29.jpg",
+        "expected": "8d4725b24737b727ba32edf33e3e0e873842e2f7ce49fba89b174b3fd365b50f",
+        "actual": "8d4725b24737b727ba32edf33e3e0e873842e2f7ce49fba89b174b3fd365b50f"
+      },
+      {
+        "path": "sources/review/TT86_33.jpg",
+        "expected": "a57300070fb43cc8d9815391f193f07570a69cb35e35312f8692f09fc8c33c2b",
+        "actual": "a57300070fb43cc8d9815391f193f07570a69cb35e35312f8692f09fc8c33c2b"
+      },
+      {
+        "path": "sources/review/TT86_37.jpg",
+        "expected": "6f25316eecba665bd671144d358da5d5bebe28a687755542fb91cb65695bd204",
+        "actual": "6f25316eecba665bd671144d358da5d5bebe28a687755542fb91cb65695bd204"
+      },
+      {
+        "path": "sources/review/TT86_41.jpg",
+        "expected": "5229b35cd57540271509563f5f2f09bf2ef14f4e61bc97cf0fc59ad7ea352a39",
+        "actual": "5229b35cd57540271509563f5f2f09bf2ef14f4e61bc97cf0fc59ad7ea352a39"
+      },
+      {
+        "path": "sources/SOURCE_METADATA.json",
+        "expected": "31db3bd839f01da9eabcd21fe0bc0e085bfa0445ccb761e8e30a16eb6acffbd4",
+        "actual": "31db3bd839f01da9eabcd21fe0bc0e085bfa0445ccb761e8e30a16eb6acffbd4"
+      },
+      {
+        "path": "sources/TT13_2022_signed.pdf",
+        "expected": "62ceeae5c15897470d4c949bd9c532650fe9d7013f90a0503d5cbbcad50f575c",
+        "actual": "62ceeae5c15897470d4c949bd9c532650fe9d7013f90a0503d5cbbcad50f575c"
+      },
+      {
+        "path": "sources/TT17_2025.pdf",
+        "expected": "1d40c0513a1fdff35245c633ffc382122a18d2d5c0fbc96fcb426a51a8f9fea6",
+        "actual": "1d40c0513a1fdff35245c633ffc382122a18d2d5c0fbc96fcb426a51a8f9fea6"
+      },
+      {
+        "path": "sources/TT17_2025_CongBao.pdf",
+        "expected": "738f57161dce06b57bb26a6928f4c9b7f51f87ce2d3c00bd7a24c40c09785ab5",
+        "actual": "738f57161dce06b57bb26a6928f4c9b7f51f87ce2d3c00bd7a24c40c09785ab5"
+      },
+      {
+        "path": "sources/TT20_2021_CongBao.pdf",
+        "expected": "46bcdf4d970d849ab3dd5b1b98edcd95d6c57082ca1f6878c4db1223e00fe4e0",
+        "actual": "46bcdf4d970d849ab3dd5b1b98edcd95d6c57082ca1f6878c4db1223e00fe4e0"
+      },
+      {
+        "path": "sources/TT32_2018_scan.pdf",
+        "expected": "fc2c7f5345db34a1e516920f1f298693e5dbd57365f88adeb4edc662645a0ea0",
+        "actual": "fc2c7f5345db34a1e516920f1f298693e5dbd57365f88adeb4edc662645a0ea0"
+      },
+      {
+        "path": "sources/TT86_2026_signed.pdf",
+        "expected": "1ba3754becabb63349baac42442e8f1034e0906b031036c5474aea2780c2eb01",
+        "actual": "1ba3754becabb63349baac42442e8f1034e0906b031036c5474aea2780c2eb01"
+      }
+    ],
+    "two": [
+      {
+        "path": "CONTRACT_REVIEW_CASES.md",
+        "expected": "45a662f5588a175f59e6a8b378d28bf7268db6ff5c2b608aeff4c53b5a646a6b",
+        "actual": "45a662f5588a175f59e6a8b378d28bf7268db6ff5c2b608aeff4c53b5a646a6b"
+      },
+      {
+        "path": "CONTRACT_SPEC.md",
+        "expected": "6350803794fcaa9e984527173b04f43ae986e4c4e2a47feb48bd890989f5176d",
+        "actual": "6350803794fcaa9e984527173b04f43ae986e4c4e2a47feb48bd890989f5176d"
+      },
+      {
+        "path": "DECISION_LOG.md",
+        "expected": "68a13ddb93b5e03b949628fe7df5cd997c5d35375cbb3dee262d02771b4cb64c",
+        "actual": "68a13ddb93b5e03b949628fe7df5cd997c5d35375cbb3dee262d02771b4cb64c"
+      },
+      {
+        "path": "DIAGRAM_RECONCILIATION.md",
+        "expected": "b885dbe5db9f9870c30656394ec59346c6b2252445a0c2fbcd9127f1a2bebbb4",
+        "actual": "b885dbe5db9f9870c30656394ec59346c6b2252445a0c2fbcd9127f1a2bebbb4"
+      },
+      {
+        "path": "diagrams/01-usecases.mmd",
+        "expected": "b4c31a71827c10146ccade81f55480cdeb82d100b94b20041f3779c0ba7ee4bc",
+        "actual": "b4c31a71827c10146ccade81f55480cdeb82d100b94b20041f3779c0ba7ee4bc"
+      },
+      {
+        "path": "diagrams/01-usecases.png",
+        "expected": "df55696ba013e7be1e3e2725655be84d68760e587235c835a8544e9d5ac6066e",
+        "actual": "df55696ba013e7be1e3e2725655be84d68760e587235c835a8544e9d5ac6066e"
+      },
+      {
+        "path": "diagrams/01-usecases.puml",
+        "expected": "84cc153327a4c2a49d1ae000acc74a6c429160492c9bf7552832de6bf4ed2db7",
+        "actual": "84cc153327a4c2a49d1ae000acc74a6c429160492c9bf7552832de6bf4ed2db7"
+      },
+      {
+        "path": "diagrams/01-usecases.svg",
+        "expected": "4ddcaf3322276107a699e6d6b505f58db1900b8f3b0819004ea8bba17418dc94",
+        "actual": "4ddcaf3322276107a699e6d6b505f58db1900b8f3b0819004ea8bba17418dc94"
+      },
+      {
+        "path": "diagrams/02-conceptual.mmd",
+        "expected": "8055dca758c72f35480d7463aeea3e4d38b6a9aea5b9a20f1224ce6b31d346e7",
+        "actual": "8055dca758c72f35480d7463aeea3e4d38b6a9aea5b9a20f1224ce6b31d346e7"
+      },
+      {
+        "path": "diagrams/02-conceptual.png",
+        "expected": "7517f3b29d671a7f970cf9ac7f7ab94f4d535ca936d3703a8586c7db56111515",
+        "actual": "7517f3b29d671a7f970cf9ac7f7ab94f4d535ca936d3703a8586c7db56111515"
+      },
+      {
+        "path": "diagrams/02-conceptual.svg",
+        "expected": "511550532a5a28528ee334e4621a64d9a11fa9657ae572529ee22aecacf8a9fb",
+        "actual": "511550532a5a28528ee334e4621a64d9a11fa9657ae572529ee22aecacf8a9fb"
+      },
+      {
+        "path": "diagrams/03-erd.mmd",
+        "expected": "41474176d5b2abc770ccefe4adbb5c8de97b5a153b1368ca58b840a41fa48a55",
+        "actual": "41474176d5b2abc770ccefe4adbb5c8de97b5a153b1368ca58b840a41fa48a55"
+      },
+      {
+        "path": "diagrams/03-erd.png",
+        "expected": "d64636798cac4b650ed8c8c4ba3aa9291a8e44d958d567e3deaddfdfc060407c",
+        "actual": "d64636798cac4b650ed8c8c4ba3aa9291a8e44d958d567e3deaddfdfc060407c"
+      },
+      {
+        "path": "diagrams/03-erd.svg",
+        "expected": "ae023387cf8c34ec0adfe920ee17229e8a653e0dc80ea6e3922471d0b8e14c5d",
+        "actual": "ae023387cf8c34ec0adfe920ee17229e8a653e0dc80ea6e3922471d0b8e14c5d"
+      },
+      {
+        "path": "diagrams/04-script-sequence.mmd",
+        "expected": "3a35e28bfe35372396ed2bdfc9f9edf926dc0f5cb06eb32ded4c669359bf12bd",
+        "actual": "3a35e28bfe35372396ed2bdfc9f9edf926dc0f5cb06eb32ded4c669359bf12bd"
+      },
+      {
+        "path": "diagrams/04-script-sequence.png",
+        "expected": "60a243a22d229f1af2499f593d182311fae78c5c9eba4baa346e96b8447765b8",
+        "actual": "60a243a22d229f1af2499f593d182311fae78c5c9eba4baa346e96b8447765b8"
+      },
+      {
+        "path": "diagrams/04-script-sequence.svg",
+        "expected": "b769d957e1d0da4b711eba8b519593f4dfe8e3c944849b7c5282ff2bf53e85d0",
+        "actual": "b769d957e1d0da4b711eba8b519593f4dfe8e3c944849b7c5282ff2bf53e85d0"
+      },
+      {
+        "path": "diagrams/05-video-sequence.mmd",
+        "expected": "53a40391ca77e31310fda7a07f0e33c074ab942985ba11a1c2f797071e3f7747",
+        "actual": "53a40391ca77e31310fda7a07f0e33c074ab942985ba11a1c2f797071e3f7747"
+      },
+      {
+        "path": "diagrams/05-video-sequence.png",
+        "expected": "2fe7ddaad1fd864a9a5637e6ece35940002738f55f57ed824073fbfdf829daba",
+        "actual": "2fe7ddaad1fd864a9a5637e6ece35940002738f55f57ed824073fbfdf829daba"
+      },
+      {
+        "path": "diagrams/05-video-sequence.svg",
+        "expected": "93cb10caae5f783b94426e4a5bef3680857b0c6872e663b457168ca132208ab3",
+        "actual": "93cb10caae5f783b94426e4a5bef3680857b0c6872e663b457168ca132208ab3"
+      },
+      {
+        "path": "diagrams/06-publish-sequence.mmd",
+        "expected": "4b7c457f3e1ca3ea74fac0491b849ffa256c6deb886af7b1bb124587387fbd26",
+        "actual": "4b7c457f3e1ca3ea74fac0491b849ffa256c6deb886af7b1bb124587387fbd26"
+      },
+      {
+        "path": "diagrams/06-publish-sequence.png",
+        "expected": "be5955ef16d8a18e2f878464038205b622cc703672c9df4d20cc7f789d2e9ac6",
+        "actual": "be5955ef16d8a18e2f878464038205b622cc703672c9df4d20cc7f789d2e9ac6"
+      },
+      {
+        "path": "diagrams/06-publish-sequence.svg",
+        "expected": "cb78dbd038583c40c1b82d233999243ff865c41476470fa04b92cee9e02bf0eb",
+        "actual": "cb78dbd038583c40c1b82d233999243ff865c41476470fa04b92cee9e02bf0eb"
+      },
+      {
+        "path": "diagrams/DIAGRAM_SOURCE.json",
+        "expected": "408129dc8c10f3debbee8985619469e19babcd6f48e580d0d32bc4467b1f363e",
+        "actual": "408129dc8c10f3debbee8985619469e19babcd6f48e580d0d32bc4467b1f363e"
+      },
+      {
+        "path": "diagrams/README.md",
+        "expected": "f7beb844b44a9e5953dc82be3535059b949e61656bcb63e433b31ccf53fc4407",
+        "actual": "f7beb844b44a9e5953dc82be3535059b949e61656bcb63e433b31ccf53fc4407"
+      },
+      {
+        "path": "DOMAIN_AND_MAPPING.md",
+        "expected": "1c449dc768825ecb52c33d8fe4c2bd3549e3477972daaddfb75faa7f4a76dff0",
+        "actual": "1c449dc768825ecb52c33d8fe4c2bd3549e3477972daaddfb75faa7f4a76dff0"
+      },
+      {
+        "path": "evidence/INPUT_BASELINE.json",
+        "expected": "0affeafbba42539914ebb8d334280e4fcb6a7942613b0f06eb9379e1a35a6ceb",
+        "actual": "0affeafbba42539914ebb8d334280e4fcb6a7942613b0f06eb9379e1a35a6ceb"
+      },
+      {
+        "path": "evidence/PRESERVATION_REVIEW.json",
+        "expected": "2b07202ce4017f104c8bf374580931245afe2721f4a4e3c3343b01780ac303c4",
+        "actual": "2b07202ce4017f104c8bf374580931245afe2721f4a4e3c3343b01780ac303c4"
+      },
+      {
+        "path": "evidence/preview_STEMotion_Report1_Project_Introduction__00_image1.jpg",
+        "expected": "e95c7d0f05053ec2e8c1cd467be0b3f3fc6d7ed7d399803eaea22d5993af7487",
+        "actual": "e95c7d0f05053ec2e8c1cd467be0b3f3fc6d7ed7d399803eaea22d5993af7487"
+      },
+      {
+        "path": "evidence/preview_STEMotion_Report1_Project_Introduction__01_image2.jpg",
+        "expected": "52e194f357ee37ca1a50651e5c5cf27c69f05d311560092153ea64e246f30731",
+        "actual": "52e194f357ee37ca1a50651e5c5cf27c69f05d311560092153ea64e246f30731"
+      },
+      {
+        "path": "evidence/preview_STEMotion_Report1_Project_Introduction__02_image3.jpg",
+        "expected": "266618321eb75e3ecefbb8865913e36ed649a88dd52932e7774146493798dcc7",
+        "actual": "266618321eb75e3ecefbb8865913e36ed649a88dd52932e7774146493798dcc7"
+      },
+      {
+        "path": "evidence/preview_STEMotion_Report3_Software_Requirement_Specification__00_image1.jpg",
+        "expected": "83dd4c086a5f71e2962d8dac5cbb43cb9196de951da8b18c87a02f94d7d14cf4",
+        "actual": "83dd4c086a5f71e2962d8dac5cbb43cb9196de951da8b18c87a02f94d7d14cf4"
+      },
+      {
+        "path": "evidence/preview_STEMotion_Report3_Software_Requirement_Specification__01_image2.jpg",
+        "expected": "ac09ce5925b17d149e08c1321b8c49dfd468868cb0dc0d7e21ed415a53d19494",
+        "actual": "ac09ce5925b17d149e08c1321b8c49dfd468868cb0dc0d7e21ed415a53d19494"
+      },
+      {
+        "path": "evidence/preview_STEMotion_Report3_Software_Requirement_Specification__02_image3.jpg",
+        "expected": "e382650156b4edf26ad882ae25e273b218a2306afa5fe2368165f711e86354aa",
+        "actual": "e382650156b4edf26ad882ae25e273b218a2306afa5fe2368165f711e86354aa"
+      },
+      {
+        "path": "evidence/preview_STEMotion_Report3_Software_Requirement_Specification__03_image4.jpg",
+        "expected": "3fd25f90ae72b9d1e38ae77f2d62fec1a05c0bd0edb8367d0833595c60e84221",
+        "actual": "3fd25f90ae72b9d1e38ae77f2d62fec1a05c0bd0edb8367d0833595c60e84221"
+      },
+      {
+        "path": "evidence/recovered-page-1-geometry-preview.png",
+        "expected": "b650b6cdb5f8e64c427907f0652cf4e8dfb6c5107c699aaed5b2b5c7af187b7f",
+        "actual": "b650b6cdb5f8e64c427907f0652cf4e8dfb6c5107c699aaed5b2b5c7af187b7f"
+      },
+      {
+        "path": "evidence/recovered-page-1.puml",
+        "expected": "229de54af3f4b5cded36821046685fe1a1d478ae2bf9c77a5a77fa4df42bd49a",
+        "actual": "229de54af3f4b5cded36821046685fe1a1d478ae2bf9c77a5a77fa4df42bd49a"
+      },
+      {
+        "path": "evidence/recovered-page-2-geometry-preview.png",
+        "expected": "f784b8bd7773d05989c24c41525fd953d0a16068b5e94de9f3f3b169feff94e2",
+        "actual": "f784b8bd7773d05989c24c41525fd953d0a16068b5e94de9f3f3b169feff94e2"
+      },
+      {
+        "path": "evidence/recovered-page-2.puml",
+        "expected": "229de54af3f4b5cded36821046685fe1a1d478ae2bf9c77a5a77fa4df42bd49a",
+        "actual": "229de54af3f4b5cded36821046685fe1a1d478ae2bf9c77a5a77fa4df42bd49a"
+      },
+      {
+        "path": "evidence/RECOVERED_PAGE_REVIEW.json",
+        "expected": "8c412839fc6cc99a452c82d5716041116dcca997e9e7b1fa14a04e6a746761e2",
+        "actual": "8c412839fc6cc99a452c82d5716041116dcca997e9e7b1fa14a04e6a746761e2"
+      },
+      {
+        "path": "evidence/REPORTS_BASELINE.json",
+        "expected": "55d538c5254a7580ad8be1382c442cc3d3a2ec883087dda81ce25152492d533b",
+        "actual": "55d538c5254a7580ad8be1382c442cc3d3a2ec883087dda81ce25152492d533b"
+      },
+      {
+        "path": "evidence/STEMotion_Report1_Project_Introduction.txt",
+        "expected": "af8e47bbd2e2348036c12e22ab6d29bda35670b468f14e24667281c8a6dd0351",
+        "actual": "af8e47bbd2e2348036c12e22ab6d29bda35670b468f14e24667281c8a6dd0351"
+      },
+      {
+        "path": "evidence/STEMotion_Report1_Project_Introduction__00_image1.png",
+        "expected": "f213d7a0c14006c0b6cd904722b81b801a6b3e7cde67f1011f8b3a5468ddaaa4",
+        "actual": "f213d7a0c14006c0b6cd904722b81b801a6b3e7cde67f1011f8b3a5468ddaaa4"
+      },
+      {
+        "path": "evidence/STEMotion_Report1_Project_Introduction__01_image2.png",
+        "expected": "08eec97e1b749830c95d51084fba9afe2a5adbf4fdc9747af87d24cfb11a96f6",
+        "actual": "08eec97e1b749830c95d51084fba9afe2a5adbf4fdc9747af87d24cfb11a96f6"
+      },
+      {
+        "path": "evidence/STEMotion_Report1_Project_Introduction__02_image3.png",
+        "expected": "2e84a835b6a82e74227bf6b4bee69549b07acce55eb9c74b2ecd645bc0e962dc",
+        "actual": "2e84a835b6a82e74227bf6b4bee69549b07acce55eb9c74b2ecd645bc0e962dc"
+      },
+      {
+        "path": "evidence/STEMotion_Report2_Project_Management_Plan.txt",
+        "expected": "abedeeb5668b29d538a695f5ba832c8a03295737ff36117ad4c56280d3b0fdf7",
+        "actual": "abedeeb5668b29d538a695f5ba832c8a03295737ff36117ad4c56280d3b0fdf7"
+      },
+      {
+        "path": "evidence/STEMotion_Report2_Project_Management_Plan__00_image1.png",
+        "expected": "f213d7a0c14006c0b6cd904722b81b801a6b3e7cde67f1011f8b3a5468ddaaa4",
+        "actual": "f213d7a0c14006c0b6cd904722b81b801a6b3e7cde67f1011f8b3a5468ddaaa4"
+      },
+      {
+        "path": "evidence/STEMotion_Report2_Project_Management_Plan__01_fig_process.png",
+        "expected": "55c7fe6d1ffae91e19a4b08687f5197ca120375ac5d5c301ce6034d1c24bac64",
+        "actual": "55c7fe6d1ffae91e19a4b08687f5197ca120375ac5d5c301ce6034d1c24bac64"
+      },
+      {
+        "path": "evidence/STEMotion_Report3_Software_Requirement_Specification.txt",
+        "expected": "ffdb3450165914140143af149d9973aed14e45078f068e6a98e78aa4638c1375",
+        "actual": "ffdb3450165914140143af149d9973aed14e45078f068e6a98e78aa4638c1375"
+      },
+      {
+        "path": "evidence/STEMotion_Report3_Software_Requirement_Specification__00_image1.png",
+        "expected": "89eafd65db1276d8a072d9451eec9c5b44940859e3660a9c075942c3e3c79409",
+        "actual": "89eafd65db1276d8a072d9451eec9c5b44940859e3660a9c075942c3e3c79409"
+      },
+      {
+        "path": "evidence/STEMotion_Report3_Software_Requirement_Specification__01_image2.png",
+        "expected": "006b1ba839d00e1858c801b2c415a91bfa082669c8e3e3a8d8a1de303c70f4d3",
+        "actual": "006b1ba839d00e1858c801b2c415a91bfa082669c8e3e3a8d8a1de303c70f4d3"
+      },
+      {
+        "path": "evidence/STEMotion_Report3_Software_Requirement_Specification__02_image3.png",
+        "expected": "8d919cc397fcb5c5518a79b323f4b48c5d9c6140975108f11e2f0c96e96b6d5a",
+        "actual": "8d919cc397fcb5c5518a79b323f4b48c5d9c6140975108f11e2f0c96e96b6d5a"
+      },
+      {
+        "path": "evidence/STEMotion_Report3_Software_Requirement_Specification__03_image4.png",
+        "expected": "8b83c18d4108dfd7b03a375cd720cc664352a1d57c194666f3f3116c5fbe8764",
+        "actual": "8b83c18d4108dfd7b03a375cd720cc664352a1d57c194666f3f3116c5fbe8764"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document.txt",
+        "expected": "6cea1ba842ec1fdc312c8122eaa7d6fe5dc15a3e54547a38d6342856491ae805",
+        "actual": "6cea1ba842ec1fdc312c8122eaa7d6fe5dc15a3e54547a38d6342856491ae805"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__01_image101.png",
+        "expected": "e65a85350000f1b3dcafb7db6fe7fa9459163e3fc91a35953fd9c7db61b28f52",
+        "actual": "e65a85350000f1b3dcafb7db6fe7fa9459163e3fc91a35953fd9c7db61b28f52"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__02_image102.png",
+        "expected": "b406a14304cddf179efa6a15c464c3ad619d7b97075ff5d69196876ecd3db1b0",
+        "actual": "b406a14304cddf179efa6a15c464c3ad619d7b97075ff5d69196876ecd3db1b0"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__03_image103.png",
+        "expected": "73cb7cae754c0f253732caba01e88ec413e5de4030b2edc7fad16033eb35dfe5",
+        "actual": "73cb7cae754c0f253732caba01e88ec413e5de4030b2edc7fad16033eb35dfe5"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__04_image104.png",
+        "expected": "3193df4b79db1abbcf129ce047a33edb81217f3416bee5b404fe4359ea8bd837",
+        "actual": "3193df4b79db1abbcf129ce047a33edb81217f3416bee5b404fe4359ea8bd837"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__05_image105.png",
+        "expected": "acc4dc0260911b82883d2a9b2a7b4e9c058e1e232342aadde704382962d9553b",
+        "actual": "acc4dc0260911b82883d2a9b2a7b4e9c058e1e232342aadde704382962d9553b"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__06_image106.png",
+        "expected": "c09867a9a18d7921dccb34c15f68abd07373df2e5c19b32be0353a97c431ddb2",
+        "actual": "c09867a9a18d7921dccb34c15f68abd07373df2e5c19b32be0353a97c431ddb2"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__07_image107.png",
+        "expected": "775c82944db0576a5381c082bdc5514abf9978ef94716769aa6c0aa6cefa9707",
+        "actual": "775c82944db0576a5381c082bdc5514abf9978ef94716769aa6c0aa6cefa9707"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__08_image108.png",
+        "expected": "80e0fdd2fa55feab3f77265df2c56ffc27c53212ab49b7156f3ba6eb2ab009d1",
+        "actual": "80e0fdd2fa55feab3f77265df2c56ffc27c53212ab49b7156f3ba6eb2ab009d1"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__09_image109.png",
+        "expected": "a99bd8a7d544c972f87b04e10ec9b6d1b4196dc2daf00a452a30000949e25f58",
+        "actual": "a99bd8a7d544c972f87b04e10ec9b6d1b4196dc2daf00a452a30000949e25f58"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__10_image110.png",
+        "expected": "bf9e44c67d92a6d5cacea553a6e2ea3d643779019800085737ab8e7f26c36e05",
+        "actual": "bf9e44c67d92a6d5cacea553a6e2ea3d643779019800085737ab8e7f26c36e05"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__11_image111.png",
+        "expected": "8cc22f5a6ef7ba753553e0096ede2b8465b6ed406e309262921f9b7ffa16ff3c",
+        "actual": "8cc22f5a6ef7ba753553e0096ede2b8465b6ed406e309262921f9b7ffa16ff3c"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__12_image112.png",
+        "expected": "754535ad22f203a8f4443af2ee5d387c82cc686750fe0ad7b43fc8461781323b",
+        "actual": "754535ad22f203a8f4443af2ee5d387c82cc686750fe0ad7b43fc8461781323b"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__13_image113.png",
+        "expected": "acce0c61079a255b025b9818e9e71d2e85502e1f3c2ce14140a01777d5206b6d",
+        "actual": "acce0c61079a255b025b9818e9e71d2e85502e1f3c2ce14140a01777d5206b6d"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__14_image114.png",
+        "expected": "72f399906a683f4f2d46dd54b382cfe20adf0a2533b992fc78c5e8ba9bc4e9d5",
+        "actual": "72f399906a683f4f2d46dd54b382cfe20adf0a2533b992fc78c5e8ba9bc4e9d5"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__15_image115.png",
+        "expected": "196dab3ce92ab5e0e51bf6eb83f983d7f315e168b7d75bd9186ade03ef4676e1",
+        "actual": "196dab3ce92ab5e0e51bf6eb83f983d7f315e168b7d75bd9186ade03ef4676e1"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__16_image116.png",
+        "expected": "bad230c5f0673945b5840a1ba0c6c2fd80d44004e267a46638986d9d505f34d0",
+        "actual": "bad230c5f0673945b5840a1ba0c6c2fd80d44004e267a46638986d9d505f34d0"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__17_image117.png",
+        "expected": "b66f5b08580c0ae6fcc8f43f8a412dcaba4a091a6a008b2fe76e7bdbbdeba4f0",
+        "actual": "b66f5b08580c0ae6fcc8f43f8a412dcaba4a091a6a008b2fe76e7bdbbdeba4f0"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__18_image118.png",
+        "expected": "5b3f49ab3a900cd8593e32af8d2aebba9d87b4a3dddc0a2fff01d5a1dd62e4ca",
+        "actual": "5b3f49ab3a900cd8593e32af8d2aebba9d87b4a3dddc0a2fff01d5a1dd62e4ca"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__19_image119.png",
+        "expected": "f4206383e9a841a8665a0291baa0953a09eff0532b593141986b5930f3016ceb",
+        "actual": "f4206383e9a841a8665a0291baa0953a09eff0532b593141986b5930f3016ceb"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__20_image120.png",
+        "expected": "d3d75710323b3505b423f619c6148bf14db5fcd8e5934a5ae46989829c2cf274",
+        "actual": "d3d75710323b3505b423f619c6148bf14db5fcd8e5934a5ae46989829c2cf274"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__21_image121.png",
+        "expected": "4d75228dd1abb355ff352ba42ec3cf2da4d0175bc046fae6d3c7f081d1324008",
+        "actual": "4d75228dd1abb355ff352ba42ec3cf2da4d0175bc046fae6d3c7f081d1324008"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__22_image122.png",
+        "expected": "031ea9d2b15b4d49af0052636004667d53021ae74e8a12eca17398fa96425046",
+        "actual": "031ea9d2b15b4d49af0052636004667d53021ae74e8a12eca17398fa96425046"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__23_image123.png",
+        "expected": "221f4172d3a94f176f75c6937d1e2de1a5b7d197c83cb1a9d3bbe13ea86453ef",
+        "actual": "221f4172d3a94f176f75c6937d1e2de1a5b7d197c83cb1a9d3bbe13ea86453ef"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__24_image124.png",
+        "expected": "25b009472606e58d648022245961405e66997e8d5d612f0dda79dca9f0862ce7",
+        "actual": "25b009472606e58d648022245961405e66997e8d5d612f0dda79dca9f0862ce7"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__25_image125.png",
+        "expected": "f3806e2b3ab4d7ba0bfc4dc03b13ea61704dff21d7c5c96095338fe771d01077",
+        "actual": "f3806e2b3ab4d7ba0bfc4dc03b13ea61704dff21d7c5c96095338fe771d01077"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__26_image126.png",
+        "expected": "2923d1252cf8f8c1d7422e7221f3a65256924e59867aa71f0f1a0a1928aec162",
+        "actual": "2923d1252cf8f8c1d7422e7221f3a65256924e59867aa71f0f1a0a1928aec162"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__27_image127.png",
+        "expected": "636a2fde7b2d8e398217f4a41b187ba7a2844c78d765b33ae3287c365fe1b0f2",
+        "actual": "636a2fde7b2d8e398217f4a41b187ba7a2844c78d765b33ae3287c365fe1b0f2"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__28_image128.png",
+        "expected": "55f19102ab98e18edbc2b7e88a840ecba226b96bfbeaf0c86371de61dce59b49",
+        "actual": "55f19102ab98e18edbc2b7e88a840ecba226b96bfbeaf0c86371de61dce59b49"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__29_image129.png",
+        "expected": "5ef4743bab5a266282e2e7109a37370ea5f7a699a1c4b0a14e5248e5d7eb1a35",
+        "actual": "5ef4743bab5a266282e2e7109a37370ea5f7a699a1c4b0a14e5248e5d7eb1a35"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__30_image130.png",
+        "expected": "765f71a68f13f20b07215af4dabf4710e87730c292afdf3296efaf6e975f3ce2",
+        "actual": "765f71a68f13f20b07215af4dabf4710e87730c292afdf3296efaf6e975f3ce2"
+      },
+      {
+        "path": "evidence/STEMotion_Report4_Software_Design_Document__31_image131.png",
+        "expected": "2d1fed2ee8bbe6ff863888da1d28a7b1dc835a5b81d33dd5f5f0554dfb081a90",
+        "actual": "2d1fed2ee8bbe6ff863888da1d28a7b1dc835a5b81d33dd5f5f0554dfb081a90"
+      },
+      {
+        "path": "evidence/STEMotion_Review1_Minutes.txt",
+        "expected": "9bbdce0a6cbe9c946a96783e55ddf6417ef847e18e8983022195c682b05df407",
+        "actual": "9bbdce0a6cbe9c946a96783e55ddf6417ef847e18e8983022195c682b05df407"
+      },
+      {
+        "path": "FIELD_CLASSIFICATION_AND_FRESHNESS.md",
+        "expected": "38c93b8c17d24b03efe41855ac0745625fbfd62d177dc0fe3372ded4a11c816d",
+        "actual": "38c93b8c17d24b03efe41855ac0745625fbfd62d177dc0fe3372ded4a11c816d"
+      },
+      {
+        "path": "ID_REGISTRY.md",
+        "expected": "cba898db1eb9b54396d59469c9b5775cd05ce5ba845beb778eedcc3bd3940d87",
+        "actual": "cba898db1eb9b54396d59469c9b5775cd05ce5ba845beb778eedcc3bd3940d87"
+      },
+      {
+        "path": "MIGRATION_BRIDGE_SCOPE.md",
+        "expected": "1140e6466434db013a5d8e9db79deafe1beee19f5e2be1bde06276cd5d326784",
+        "actual": "1140e6466434db013a5d8e9db79deafe1beee19f5e2be1bde06276cd5d326784"
+      },
+      {
+        "path": "P2_HANDOFF.md",
+        "expected": "7a0a0fdd79dbc9b6f5eb582bbc5b6385937662593fc83bd8a6d37e8d1e045dcb",
+        "actual": "7a0a0fdd79dbc9b6f5eb582bbc5b6385937662593fc83bd8a6d37e8d1e045dcb"
+      },
+      {
+        "path": "RULE_RUBRIC_DRAFT.md",
+        "expected": "ce593260e838f2358b8514685da07f8a8d796d4cf2295cbe8495cc9f19ce2fa9",
+        "actual": "ce593260e838f2358b8514685da07f8a8d796d4cf2295cbe8495cc9f19ce2fa9"
+      }
+    ],
+    "case0": [
+      "I01",
+      "R01",
+      "C01",
+      "C02",
+      "C03",
+      "C04",
+      "C05",
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "G05",
+      "G06",
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "V01",
+      "V02",
+      "V03",
+      "V04",
+      "V05",
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "F06",
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "P01",
+      "P02",
+      "P03",
+      "AI01",
+      "AI02",
+      "L01",
+      "L02",
+      "M01",
+      "M02",
+      "M03",
+      "D01",
+      "E01"
+    ],
+    "case7": [
+      "I01",
+      "R01",
+      "C01",
+      "C02",
+      "C03",
+      "C04",
+      "C05",
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "G05",
+      "G06",
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "V01",
+      "V02",
+      "V03",
+      "V04",
+      "V05",
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "F06",
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "P01",
+      "P02",
+      "P03",
+      "AI01",
+      "AI02",
+      "L01",
+      "L02",
+      "M01",
+      "M02",
+      "M03",
+      "D01",
+      "E01"
+    ],
+    "ats": [
+      "AT01",
+      "AT02",
+      "AT03",
+      "AT04",
+      "AT05",
+      "AT06",
+      "AT07",
+      "AT08",
+      "AT09",
+      "AT10",
+      "AT11",
+      "AT12",
+      "AT13",
+      "AT14",
+      "AT15",
+      "AT16",
+      "AT17",
+      "AT18",
+      "AT19",
+      "AT20",
+      "AT21",
+      "AT22",
+      "AT23",
+      "AT24"
+    ],
+    "locks": [
+      {
+        "path": ".audit/stem-phase-2026-11-04/phase-00/isolated/STEMotion_BE/services/ai/requirements.lock",
+        "sha256": "58dddea67399405402933de681ca71e1be33bd5420e97d3bde03c4d7bf95b5ed"
+      },
+      {
+        "path": ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/services/ai/requirements.lock",
+        "sha256": "58dddea67399405402933de681ca71e1be33bd5420e97d3bde03c4d7bf95b5ed"
+      }
+    ],
+    "pin_lines": [
+      77,
+      77
+    ],
+    "pre_ai_change_paths": [],
+    "p0_xml": [],
+    "pre_ai_xml": {
+      "tests": 69,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "p6_ai_xml": {
+      "tests": 85,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "legacy_ids_in_final": true,
+    "p3": {
+      "tests": 439,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 17,
+      "passed": 422
+    },
+    "p4_after": {
+      "tests": 41,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "p5": {
+      "be": {
+        "tests": 268,
+        "failures": 0,
+        "skips": 0
+      },
+      "fe": {
+        "tests": 227,
+        "passed": 227,
+        "failed": 0
+      },
+      "p4_live": {
+        "tests": 2,
+        "passed": 2,
+        "failed": 0
+      }
+    },
+    "p6": {
+      "be": {
+        "tests": 360,
+        "failures": 0
+      },
+      "fe": {
+        "tests": 258,
+        "failures": 0
+      },
+      "ai": {
+        "tests": 85,
+        "failures": 0
+      },
+      "p4_live": {
+        "tests": 2,
+        "failures": 0
+      },
+      "p6_live": {
+        "tests": 2,
+        "failures": 0
+      }
+    },
+    "backup_p5": [
+      [
+        "STEMotion_BE",
+        "4fd7089fa3b2c0851487625517f6fdfe2a9cc64c"
+      ],
+      [
+        "STEMotion_FE",
+        "4dfa65e210ba7bef38fd418943dd19e491743883"
+      ]
+    ],
+    "local_main_ancestry": [
+      [
+        "STEMotion_BE",
+        1,
+        1
+      ],
+      [
+        "STEMotion_FE",
+        1,
+        1
+      ]
+    ]
+  },
+  "evidence_sha256": {
+    "STEMotion_BE/docs/stem/phases/phase-00/SETUP_REPORT.md": "abe6b09022171ce23e9061ce701828865ea42bcddc2159c71599364cebabdaa7",
+    "STEMotion_BE/docs/stem/phases/phase-00/TEST_BASELINE.md": "0a9d7d285f0e2d754047f16e38e1bef53d132df687b266c00c4ec4b1f1782f8e",
+    "STEMotion_BE/docs/stem/phases/phase-00/BASELINE_MANIFEST.json": "1860a8848391b946688e1899844c783e30f4075fc1654e0550dee587c4285528",
+    ".audit/stem-phase-2026-11-04/phase-00/be-tests-native.log": "afc084ae4025ce079e8677cb63913dcfb35017d86c6e8457f9be6edf147a9c84",
+    ".audit/stem-phase-2026-11-04/phase-00/fe-tests.log": "726f891e8d79f2fe96e8ab1e2509dc8fd704dbed00e5503f6234d78ced81ffbd",
+    ".audit/stem-phase-2026-11-04/phase-00/worker-tests-native.log": "1b3922ebff89bb913584780cb61363038806a1e25a08e312cbc48071d2956a46",
+    ".audit/stem-phase-2026-11-04/phase-00/e2e-playwright.log": "495ba0499198a0dd13d16bcccdeb799216d104aba955e27b0504675c3dee1ff8",
+    ".audit/stem-phase-2026-11-04/phase-00/ai-tests-native.log": "36ea930c2683566d191e4c29085c6684017e9419e4ddca79112095123187bc99",
+    ".audit/stem-phase-2026-11-04/phase-00/ai-dependency-check.json": "259734191ecb009151f2b62b603d420c8011b3e28139a518b21cf990742fc761",
+    ".audit/stem-phase-2026-11-04/phase-00/render-live-readonly.json": "bbcb40b4bd152207fddc65fa319262e8f370852545e661257a992b8806155712",
+    ".audit/stem-phase-2026-11-04/phase-00/isolated/STEMotion_BE/services/ai/requirements.lock": "58dddea67399405402933de681ca71e1be33bd5420e97d3bde03c4d7bf95b5ed",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-06/EXACT_LOCK_PREFLIGHT.json": "2b0f93e66bd361483cf1b8b56364c9a5d7160f5d52e4e27c4e06dbe3beb0a28b",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-06/EXACT_LOCK_INVENTORY.json": "06d4be9fe69f9b22bbd300062218f8b44196638c20e94a40328c300149478cd8",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/.audit/stem-p6/ai-exact-baseline-native/results.xml": "3a8aef972e36a06be48dfa94d309979907b2311ecfda9a680c8df465974ef15e",
+    ".audit/stem-phase-2026-11-05/rollout-gate-01/TARGET_CONFIRMATION_R1.md": "56f7de6e2468ccb0218898dc8a3c438f826a8ac005969cf77600db1675b74560",
+    "STEMotion_BE/docs/stem/phases/phase-01/P1_HANDOFF.md": "59e38a19e959a52e6ba82afb95f8853e6ee6d5aaf801071ea2c7bb44420f145c",
+    "STEMotion_BE/docs/stem/phases/phase-01/sources/ARTIFACT_MANIFEST.json": "b676bfcc3f2a91a0b39e9edcac3fab723ae3180309ef4f96994ddf4e0b966de7",
+    "STEMotion_BE/docs/stem/phases/phase-01/SOURCE_REGISTER.md": "e24fd1858affb98666abd4f457f2bf72c2658c0912d3f611855f86e5abc1df54",
+    "STEMotion_BE/docs/stem/phases/phase-01/OUTCOME_MAPPING.md": "85a4ac063786a19cec042c1d224f89817ad7a509e6d6a50c02a5cf1800dbae0c",
+    ".audit/stem-phase-2026-11-05/phase-07/READINESS_HANDOFF.md": "3e1026f244bf04cae305c78b071f8dd24e68424b615d220a7c186cd45d500920",
+    "STEMotion_BE/docs/stem/phases/phase-02/P2_HANDOFF.md": "7a0a0fdd79dbc9b6f5eb582bbc5b6385937662593fc83bd8a6d37e8d1e045dcb",
+    "STEMotion_BE/docs/stem/phases/phase-02/DECISION_LOG.md": "68a13ddb93b5e03b949628fe7df5cd997c5d35375cbb3dee262d02771b4cb64c",
+    "STEMotion_BE/docs/stem/phases/phase-02/CONTRACT_REVIEW_CASES.md": "45a662f5588a175f59e6a8b378d28bf7268db6ff5c2b608aeff4c53b5a646a6b",
+    "STEMotion_BE/docs/stem/phases/phase-02/evidence/OUTPUT_MANIFEST.json": "69dc93ed0a133367ad28047a4200d3b539dbc8f9917a12f044b5998c522a2381",
+    "STEMotion_BE/docs/stem/phases/PHASE_03_SCOPE.md": "ed92cfcbc53bf9aec45193efb37a360d8eb4ca4ce9641d82b475c9e36de63100",
+    "C:/Users/LeTran/.codex/attachments/a25c31e8-38f3-4c27-a7ab-8db7a8ef5258/Pasted text.txt": "0f9dfccad6e7ab9d2631945d5fc7d79c6fc549f4b655dc696cfda830593caca9",
+    ".audit/stem-phase-2026-11-05/phase-07/CASE_COVERAGE_P7.md": "12595a3d587faefd81996615f80e646033a117c8cd6c454d1eb4169810321557",
+    ".audit/stem-phase-2026-11-05/phase-07/PHASE_07_SCOPE_DRAFT.md": "6e46b4386ab8a125a5de7d6aca47a1f59806d95051775163bd1357ce83c057f2",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-03/P3_HANDOFF.md": "e2260959fff6f8a7cf92ca8f87ff8bd0ec9d7aff745d2b4bc5dc795af20ef13a",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-03/HANDOFF_REGRESSION_SUMMARY.json": "d0c911f5cb3c68f1471a0f74f704aed51a4d759ccb70667f263469d6e19f8b19",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-03/SCHEMA_TEST_MANIFEST.json": "be687fe13c76ece629647dbd463805afa54a1fde8d6705bd6fbe3ff70b824c0b",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-03/CONTRACT_DELTA.md": "bb3a7b85e95badea9f10dcac227ab15802330adb8e0a96584767764e0bbf0674",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/src/test/resources/db/stem-p3/V91000__stem_p3_test_only.sql": "013f9998e636eb4fb98d294888c498420a74780eeed138f1fdd34285df4b33cd",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-06/FIELD_MAPPING_P6.md": "c2bc80cc347860439fc1f3804a0fa7371ddc18b218cb144c9f69d40738abd1fd",
+    ".audit/stem-phase-2026-11-05/phase-04/STEMotion_FE/docs/stem/phases/phase-04/takeover-codex/P4_HANDOFF.md": "96d48854911ae9deb66dcabe9072e5809b4e257afbd93d3c8e52f62b42bbb2d0",
+    ".audit/stem-phase-2026-11-05/phase-04/STEMotion_FE/docs/stem/phases/phase-04/takeover-codex/TEST_BASELINE.md": "7a993e9bf4e0aa4216fdf5e8128cd6065e485a39f5608caebb8da1ae772691f8",
+    ".audit/stem-phase-2026-11-05/phase-04/STEMotion_FE/docs/stem/phases/phase-04/takeover-codex/G06_CONTRACT_CONFLICT.md": "01cd3689c702c26be3f6753edb08e77e314f6db7d59e4497ec58f23f2df6d441",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-04/be-blocker-fix/BE_BLOCKER_FIX_HANDOFF.md": "e6187c882f26df75afb0deb4f18fed318fecdc2bdaf1cb238d94bd6d9b712584",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-04/be-blocker-fix/after.json": "d61d0185c4b65f5d91f6d52101fb114b3d843ebb50e7a5bd7279118e15658743",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-04/be-blocker-fix/P4_RUN_RESULT.json": "bc477c462c5fde2200b23c9e2e516c7fce9a95251596a2bd7106ad4537ac8c7c",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-04/be-blocker-fix/p4-q10-results.json": "9d5f62dfc9edf97eeaec526d8b0f46ec66100be273e92f3fda919df27902e2dd",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-04/be-blocker-fix/p4-http-audit.json": "c7233ebc2e15a97649dd6b9c52ee2f8de33bf44127863cbe0e143648ede33508",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-05/P5_HANDOFF.md": "0c0fa20a7066002701e221870ffcab641f81e0deb6f286a6cc9a17553a091a8e",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-05/TEST_SUMMARY_P5.json": "8b5ac142f9c63175c284fc9ae5e8ed4c1c95af79a1c9a858534d19a64b3c61dd",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-05/CONTRACT_ACTUAL_P5.md": "87e0c1395b49afdb42368004a498d031d6e031b3d611c0448924c6a648554c64",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/src/test/resources/db/stem-p5/V92000__stem_p5_artifact_snapshots_test_only.sql": "c3146f168a51e8581597e7a2d14cb799b10df0af2ae43977e05c420a3178642f",
+    ".audit/stem-branch-backup-2026-11-06/BACKUP_HANDOFF.md": "94f6b2b90ced1d3db6a9cdc5dd7c93c03bf60875bac46b03d2c46760785a2b1b",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-06/P6_HANDOFF.md": "6bfee19f66de9f5ef7b9ff9af456dd03a46f662b4f4792c70b13d1623e660331",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-06/TEST_BASELINE_P6.md": "55aca1cc9706a4abc1defabe025a0fb1c05440b9cc9a4fb4e561020fc44080da",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-06/TEST_SUMMARY_P6.json": "2de8017e317f587e529e8d6ecb58a6f2c1165d713521c0860ff435fb8397f48c",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/docs/stem/phases/phase-06/CONTRACT_P6.md": "4139b1fdbe938d78f129d9e4ef28bfa4ce7eae83653d3264ab5deb486a815445",
+    ".audit/stem-phase-2026-11-05/phase-06/PHASE_06_SCOPE_DRAFT.md": "5dfc852ee17fe4d26fb5e9a44ae0f1b62de2de8085095dddac42f5feeb80addf",
+    ".audit/stem-p6-backup-2026-11-07/BACKUP_HANDOFF.md": "756aa56a0691267d9feff61927ff158bb17229c2ae5172ff79f81bbebd983c3d",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/.audit/stem-p6/be-final-complete/maven.log": "a3d9c84617c80a39ca69fa26fc052adfb9412f62e2ac55448fa755a7349ec6cc",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/.audit/stem-p6/fe-handoff-final/unit-results.json": "689684da145b14a4d13b88590f42c32c053d460c8c2120dc171da87c6cd70c93",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/.audit/stem-p6/ai-final-complete/results.xml": "48877dbce7d45fc33798c3ee0522b6d27a3ded5d626c297b9e77853e975050fb",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/.audit/stem-p6/p4-live-final-complete/live-results.json": "eec2ceac1177404c6c13f8c2ea34bb1023d90904f710813a0b5db20038a2444b",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/.audit/stem-p6/p4-live-final-complete/DB_AUDIT.json": "0360227c645ca3171b4aff053330b13ffb028ca3696e142a1a9d4d9ea2e426cb",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/.audit/stem-p6/p4-live-final-complete/http-audit.json": "d7df278ad228b8ba74677d0cb47cd1328f0e159e532cd71d1a7d07bf40c28636",
+    ".audit/stem-phase-2026-11-05/phase-03/STEMotion_BE/.audit/stem-p6/fe-live-be-final-complete/results.json": "6df3321513d8648fd84be832912613f28ae7961f8770e871c19d3062bfed7619",
+    ".audit/stem-phase-2026-11-05/phase-07/GATE_2_REVIEW.md": "aa57c3d7e3bc8df131068698900160633183c0a8ae772b039be3025304435b6f",
+    ".audit/stem-phase-2026-11-05/phase-07/TEST_BASELINE_P7.md": "014fec17395912f2b49abe7ae6c251af1a1e9937b66d7c54f09d947a68a4c251",
+    ".audit/stem-phase-2026-11-05/phase-07/AT_RESULTS.md": "0e3e302db8e2cc995f5fc881fef4e255a32b20ba4b89fe782e1f1334dc8a2667",
+    ".audit/stem-phase-2026-11-05/rollout-gate-01/R1_HANDOFF.md": "2b6ac76859e18bb82a0fccc6656c6d87a86909c3280f56dde4bcb036ef20e47c",
+    ".audit/stem-phase-2026-11-05/rollout-gate-01/PREFLIGHT_READINESS_R1.md": "c32b78ad5e38d7287784ed5eb2fa9bb7c900bac6052cac8709fb5d502bb3e847",
+    ".audit/stem-phase-2026-11-05/phase-08/P8_HANDOFF.md": "0a79b0f8d19c614d9b99629ab325911126ad7bc20695be9e0d797d4e82ddb43e",
+    ".audit/stem-phase-2026-11-05/phase-08/RELEASE_READINESS_P8.md": "d0850f932fd2809643be116e4e3d32cfc9140467bbed7b6b2119ee9a0f10daa8"
+  }
+}

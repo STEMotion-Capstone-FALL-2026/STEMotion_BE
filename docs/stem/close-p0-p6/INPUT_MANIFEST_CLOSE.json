@@ -1,0 +1,466 @@
+{
+  "schema": "stem-close-p0-p6-inventory.v1",
+  "date": "2026-11-10",
+  "timezone": "Asia/Saigon",
+  "stage": "C.0",
+  "gate": "GATE_1_PENDING",
+  "authorization": {
+    "user_text": "cứ chọn phương án tốt nhất cho mỗi Q",
+    "source": "Prompt §0 explicitly accepts this wording. C.0 only before Gate 1.",
+    "decisions": [
+      {
+        "id": "C-Q01",
+        "choice": "A",
+        "reason": "So deps/pins và phạm vi chạy P6 với P0. Giữ gap nếu thiếu bằng chứng tương đương."
+      },
+      {
+        "id": "C-Q02",
+        "choice": "A",
+        "reason": "Xét đóng phần tài liệu P1 ở mức DRAFT/UNVERIFIED. Chuyển chuyên môn sang scope riêng."
+      },
+      {
+        "id": "C-Q03",
+        "choice": "A",
+        "reason": "Đối chiếu 52 ca theo coverage P7.1. Giữ D01/E01 PARTIAL trong P7."
+      },
+      {
+        "id": "C-Q04",
+        "choice": "A",
+        "reason": "Xét P3/P4 ở mức implementation cô lập. Dời merge sang R4."
+      },
+      {
+        "id": "C-Q05",
+        "choice": "B",
+        "reason": "Giữ F09/F10 UNKNOWN. Đề xuất kiểm chứng media ở R3 với scope riêng."
+      },
+      {
+        "id": "C-Q06",
+        "choice": "B",
+        "reason": "Ghi log/audit P6 local-only và đường dẫn khi verify. Giữ nguyên backup HEAD."
+      },
+      {
+        "id": "C-Q07",
+        "choice": "A",
+        "reason": "Một handoff riêng cho từng phase P0 đến P6, tổng cộng 7 file."
+      },
+      {
+        "id": "C-Q08",
+        "choice": "A",
+        "reason": "Ghi BLOCKER và dừng phần phụ thuộc khi gặp drift. Các phase độc lập tiếp tục sau Gate 1."
+      },
+      {
+        "id": "C-Q09",
+        "choice": "A",
+        "reason": "Chỉ xác minh kỹ thuật độc lập."
+      },
+      {
+        "id": "C-Q10",
+        "choice": "A",
+        "reason": "Người dùng quyết từng phase sau khi xem handoff."
+      }
+    ]
+  },
+  "scope": {
+    "path": "C:/Users/LeTran/Downloads/CLOSE_P0_P6_SCOPE_DRAFT.md",
+    "sha256": "88d71bf2fd3bc861850be2154a617b218e325b8ee1adf7dbe39e25ded308aa7e",
+    "bytes": 25743
+  },
+  "prompt": {
+    "path": "C:/Users/LeTran/Downloads/codex-prompt-close-p0-p6.md",
+    "sha256": "0ad1dd1dbe842f3b582cdcb47900f7329c7a8041879c75906f8030a70525bc42"
+  },
+  "comparison": {
+    "match": 18,
+    "drift": 2,
+    "missing": 0
+  },
+  "inputs": [
+    {
+      "name": "P1_HANDOFF.md",
+      "scope_sha256": "59e38a19e959a52e6ba82afb95f8853e6ee6d5aaf801071ea2c7bb44420f145c",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\STEMotion_BE\\docs\\stem\\phases\\phase-01\\P1_HANDOFF.md",
+          "sha256": "59e38a19e959a52e6ba82afb95f8853e6ee6d5aaf801071ea2c7bb44420f145c"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\STEMotion_BE\\docs\\stem\\phases\\phase-01\\P1_HANDOFF.md"
+      ]
+    },
+    {
+      "name": "P2_HANDOFF.md",
+      "scope_sha256": "7a0a0fdd79dbc9b6f5eb582bbc5b6385937662593fc83bd8a6d37e8d1e045dcb",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\STEMotion_BE\\docs\\stem\\phases\\phase-02\\P2_HANDOFF.md",
+          "sha256": "7a0a0fdd79dbc9b6f5eb582bbc5b6385937662593fc83bd8a6d37e8d1e045dcb"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\STEMotion_BE\\docs\\stem\\phases\\phase-02\\P2_HANDOFF.md"
+      ]
+    },
+    {
+      "name": "P3_HANDOFF.md",
+      "scope_sha256": "e2260959fff6f8a7cf92ca8f87ff8bd0ec9d7aff745d2b4bc5dc795af20ef13a",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-03\\P3_HANDOFF.md",
+          "sha256": "e2260959fff6f8a7cf92ca8f87ff8bd0ec9d7aff745d2b4bc5dc795af20ef13a"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-03\\P3_HANDOFF.md"
+      ]
+    },
+    {
+      "name": "P4_HANDOFF.md",
+      "scope_sha256": "96d48854911ae9deb66dcabe9072e5809b4e257afbd93d3c8e52f62b42bbb2d0",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\docs\\stem\\phases\\phase-04\\takeover-codex\\P4_HANDOFF.md",
+          "sha256": "96d48854911ae9deb66dcabe9072e5809b4e257afbd93d3c8e52f62b42bbb2d0"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\docs\\stem\\phases\\phase-04\\takeover-codex\\P4_HANDOFF.md"
+      ]
+    },
+    {
+      "name": "P5_HANDOFF.md",
+      "scope_sha256": "0c0fa20a7066002701e221870ffcab641f81e0deb6f286a6cc9a17553a091a8e",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-05\\P5_HANDOFF.md",
+          "sha256": "0c0fa20a7066002701e221870ffcab641f81e0deb6f286a6cc9a17553a091a8e"
+        },
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\docs\\stem\\phases\\phase-05\\P5_HANDOFF.md",
+          "sha256": "dbe8006cf7dd56fdfa0a5783225fcd8ccb8d0b9d0efbe95b77f74b25fa47ad4c"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-05\\P5_HANDOFF.md"
+      ]
+    },
+    {
+      "name": "P6_HANDOFF.md",
+      "scope_sha256": "6bfee19f66de9f5ef7b9ff9af456dd03a46f662b4f4792c70b13d1623e660331",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-06\\P6_HANDOFF.md",
+          "sha256": "6bfee19f66de9f5ef7b9ff9af456dd03a46f662b4f4792c70b13d1623e660331"
+        },
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\docs\\stem\\phases\\phase-06\\P6_HANDOFF.md",
+          "sha256": "c1dbd5880b1960ce690db2a95e3bc28cc89dbd17c0cdf04f17429f21a7880b36"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-06\\P6_HANDOFF.md"
+      ]
+    },
+    {
+      "name": "P7_HANDOFF.md",
+      "scope_sha256": "f706fe79c7aaebf1cda3a94fad900f9a6c81318e04fdfd2324b8570f8c934b95",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\P7_HANDOFF.md",
+          "sha256": "f706fe79c7aaebf1cda3a94fad900f9a6c81318e04fdfd2324b8570f8c934b95"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\P7_HANDOFF.md"
+      ]
+    },
+    {
+      "name": "READINESS_HANDOFF.md",
+      "scope_sha256": "3e1026f244bf04cae305c78b071f8dd24e68424b615d220a7c186cd45d500920",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\READINESS_HANDOFF.md",
+          "sha256": "3e1026f244bf04cae305c78b071f8dd24e68424b615d220a7c186cd45d500920"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\READINESS_HANDOFF.md"
+      ]
+    },
+    {
+      "name": "GATE_2_REVIEW.md",
+      "scope_sha256": "aa57c3d7e3bc8df131068698900160633183c0a8ae772b039be3025304435b6f",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\GATE_2_REVIEW.md",
+          "sha256": "aa57c3d7e3bc8df131068698900160633183c0a8ae772b039be3025304435b6f"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\GATE_2_REVIEW.md"
+      ]
+    },
+    {
+      "name": "REVIEW_INDEX.md",
+      "scope_sha256": "38beab2798636fb6d86c9cd77df04eadd634c04e5b074591431e4866c16d26bc",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\review-copies\\REVIEW_INDEX.md",
+          "sha256": "38beab2798636fb6d86c9cd77df04eadd634c04e5b074591431e4866c16d26bc"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\review-copies\\REVIEW_INDEX.md"
+      ]
+    },
+    {
+      "name": "PHASE_07_SCOPE_DRAFT.md",
+      "scope_sha256": "d5ff25a9306bad542dda7124dca6e8fe0a35852806d1d23e3c276dfdee62422b",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\PHASE_07_SCOPE_DRAFT.md",
+          "sha256": "6e46b4386ab8a125a5de7d6aca47a1f59806d95051775163bd1357ce83c057f2"
+        }
+      ],
+      "status": "DRIFT",
+      "p7_approved_snapshot_sha256": "6e46b4386ab8a125a5de7d6aca47a1f59806d95051775163bd1357ce83c057f2",
+      "p7_approved_snapshot_match": true
+    },
+    {
+      "name": "PHASE_06_SCOPE_DRAFT.md",
+      "scope_sha256": "b03138f2c104263c24084cbbbb31e92dbf2483ddf85dd8c087e3d3fbf819cf6f",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-06\\PHASE_06_SCOPE_DRAFT.md",
+          "sha256": "5dfc852ee17fe4d26fb5e9a44ae0f1b62de2de8085095dddac42f5feeb80addf"
+        }
+      ],
+      "status": "DRIFT"
+    },
+    {
+      "name": "BACKUP_HANDOFF.md",
+      "scope_sha256": "94f6b2b90ced1d3db6a9cdc5dd7c93c03bf60875bac46b03d2c46760785a2b1b",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-branch-backup-2026-11-06\\BACKUP_HANDOFF.md",
+          "sha256": "94f6b2b90ced1d3db6a9cdc5dd7c93c03bf60875bac46b03d2c46760785a2b1b"
+        },
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-p6-backup-2026-11-07\\BACKUP_HANDOFF.md",
+          "sha256": "756aa56a0691267d9feff61927ff158bb17229c2ae5172ff79f81bbebd983c3d"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-branch-backup-2026-11-06\\BACKUP_HANDOFF.md"
+      ]
+    },
+    {
+      "name": "P8_HANDOFF.md",
+      "scope_sha256": "0a79b0f8d19c614d9b99629ab325911126ad7bc20695be9e0d797d4e82ddb43e",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-08\\P8_HANDOFF.md",
+          "sha256": "0a79b0f8d19c614d9b99629ab325911126ad7bc20695be9e0d797d4e82ddb43e"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-08\\P8_HANDOFF.md"
+      ]
+    },
+    {
+      "name": "RELEASE_READINESS_P8.md",
+      "scope_sha256": "d0850f932fd2809643be116e4e3d32cfc9140467bbed7b6b2119ee9a0f10daa8",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-08\\RELEASE_READINESS_P8.md",
+          "sha256": "d0850f932fd2809643be116e4e3d32cfc9140467bbed7b6b2119ee9a0f10daa8"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-08\\RELEASE_READINESS_P8.md"
+      ]
+    },
+    {
+      "name": "R1_HANDOFF.md",
+      "scope_sha256": "2b6ac76859e18bb82a0fccc6656c6d87a86909c3280f56dde4bcb036ef20e47c",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\rollout-gate-01\\R1_HANDOFF.md",
+          "sha256": "2b6ac76859e18bb82a0fccc6656c6d87a86909c3280f56dde4bcb036ef20e47c"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\rollout-gate-01\\R1_HANDOFF.md"
+      ]
+    },
+    {
+      "name": "PREFLIGHT_READINESS_R1.md",
+      "scope_sha256": "c32b78ad5e38d7287784ed5eb2fa9bb7c900bac6052cac8709fb5d502bb3e847",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\rollout-gate-01\\PREFLIGHT_READINESS_R1.md",
+          "sha256": "c32b78ad5e38d7287784ed5eb2fa9bb7c900bac6052cac8709fb5d502bb3e847"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\rollout-gate-01\\PREFLIGHT_READINESS_R1.md"
+      ]
+    },
+    {
+      "name": "CONTRACT_P6.md",
+      "scope_sha256": "4139b1fdbe938d78f129d9e4ef28bfa4ce7eae83653d3264ab5deb486a815445",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-06\\CONTRACT_P6.md",
+          "sha256": "4139b1fdbe938d78f129d9e4ef28bfa4ce7eae83653d3264ab5deb486a815445"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-06\\CONTRACT_P6.md"
+      ]
+    },
+    {
+      "name": "FIELD_MAPPING_P6.md",
+      "scope_sha256": "c2bc80cc347860439fc1f3804a0fa7371ddc18b218cb144c9f69d40738abd1fd",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-06\\FIELD_MAPPING_P6.md",
+          "sha256": "c2bc80cc347860439fc1f3804a0fa7371ddc18b218cb144c9f69d40738abd1fd"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\docs\\stem\\phases\\phase-06\\FIELD_MAPPING_P6.md"
+      ]
+    },
+    {
+      "name": "PHASE_08_SCOPE_DRAFT.md",
+      "scope_sha256": "11ef87bd999f68d607027396080ceeb09c1dd84768b5f5956b8a344c671f288b",
+      "candidates": [
+        {
+          "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-08\\PHASE_08_SCOPE_DRAFT.md",
+          "sha256": "11ef87bd999f68d607027396080ceeb09c1dd84768b5f5956b8a344c671f288b"
+        }
+      ],
+      "status": "MATCH",
+      "matching_paths": [
+        "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-08\\PHASE_08_SCOPE_DRAFT.md"
+      ]
+    }
+  ],
+  "repositories": [
+    {
+      "name": "BE",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE",
+      "head": "9c7fdf53195aeb8fcc4d05676a7180870504e409",
+      "parent": "4fd7089fa3b2c0851487625517f6fdfe2a9cc64c",
+      "branch": "feat/stem-p3-isolated-20261105",
+      "log": [
+        "9c7fdf53195aeb8fcc4d05676a7180870504e409",
+        "4fd7089fa3b2c0851487625517f6fdfe2a9cc64c",
+        "f6c6f0bdcdcc6bbaf1f1246f86678d3249dea8e1"
+      ],
+      "tracked_delta": [],
+      "untracked_count": 193,
+      "tracked_file_count": 672,
+      "tracked_hash_mismatches": [],
+      "tracked_path_set_delta": [],
+      "baseline_matches": true
+    },
+    {
+      "name": "FE",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE",
+      "head": "4ddba1da34e4f403b0c13c8733cc1621a0f9a2ed",
+      "parent": "4dfa65e210ba7bef38fd418943dd19e491743883",
+      "branch": "feat/stem-p4-isolated-20261105",
+      "log": [
+        "4ddba1da34e4f403b0c13c8733cc1621a0f9a2ed",
+        "4dfa65e210ba7bef38fd418943dd19e491743883",
+        "9fe67cf7801b3e971b3c852c80f68214fd13bba7"
+      ],
+      "tracked_delta": [],
+      "untracked_count": 66,
+      "tracked_file_count": 268,
+      "tracked_hash_mismatches": [],
+      "tracked_path_set_delta": [],
+      "baseline_matches": true
+    }
+  ],
+  "originals": [
+    {
+      "name": "STEMotion_BE",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\STEMotion_BE",
+      "branch": "main",
+      "head": "f6c6f0bdcdcc6bbaf1f1246f86678d3249dea8e1",
+      "tracked_delta": [
+        " M .gitignore"
+      ],
+      "untracked_count": 190
+    },
+    {
+      "name": "STEMotion_FE",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\STEMotion_FE",
+      "branch": "main",
+      "head": "9fe67cf7801b3e971b3c852c80f68214fd13bba7",
+      "tracked_delta": [
+        " M src/remotion/director/CinematicScene.tsx",
+        " M src/remotion/lego/catalog.ts"
+      ],
+      "untracked_count": 5
+    }
+  ],
+  "supplemental": [
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\STEMotion_BE\\docs\\stem\\phases\\phase-00\\SETUP_REPORT.md",
+      "sha256": "abe6b09022171ce23e9061ce701828865ea42bcddc2159c71599364cebabdaa7"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\CASE_COVERAGE_P7.md",
+      "sha256": "12595a3d587faefd81996615f80e646033a117c8cd6c454d1eb4169810321557"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\AT_RESULTS.md",
+      "sha256": "0e3e302db8e2cc995f5fc881fef4e255a32b20ba4b89fe782e1f1334dc8a2667"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-07\\INPUT_MANIFEST_P7.json",
+      "sha256": "ba16ce87c8bf426003d6be2eec5d4b710df12ab8c19ba097f2754167cb3da2de"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\rollout-gate-01\\SOURCE_MANIFEST_R1_HANDOFF.json",
+      "sha256": "537d859e1bf94377e79b5d11ccd38a14aa97a66093d7ff71607f650ec2f482d1"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\STEMotion_BE\\docs\\stem\\PHASE_EXECUTION_PLAN_2026-11-04.md",
+      "sha256": "78de965b8dd44c40845eee15a470aa804dd86c9d85dd474330cd018ea111d22e"
+    },
+    {
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\STEMotion_BE\\docs\\stem\\STEM_MASTER_PLAN_2026-11-04.md",
+      "sha256": "04484527a25247ff1d85b4775a9231bc87d1f262d3425a58ca5b595a0fd6ed33"
+    }
+  ],
+  "provenance_notes": [
+    "P7: file local 6e46b438… khớp snapshot được khóa trong INPUT_MANIFEST_P7 và P7_HANDOFF, có header duyệt 10 A. Chưa tìm thấy bản Bond d5ff25a9… để diff. Chặn phần xác minh phụ thuộc thẻ này, gồm phần đối chiếu scope P7 cho P2.",
+    "P6: file local 5dfc852e… khớp INPUT_MANIFEST_P7, có header duyệt có điều kiện và bảng hash §9. Chưa tìm thấy bản Bond b03138f2… để diff. Chặn phần xác minh scope và đề nghị đóng P6 phụ thuộc thẻ này.",
+    "R1: prompt/thẻ mới ghi R1 đóng 09/11/2026 20:17. Hai handoff local khớp SHA và ghi R1_NOT_CLOSED ở thời điểm bàn giao 08/11. Chưa tìm được quyết định đóng riêng trong workspace đã rà. Giữ hai mốc theo nguồn. Kết quả kỹ thuật vẫn PARTIAL_WITH_BLOCKERS, R2 BLOCKED.",
+    "BACKUP_HANDOFF ngày 06/11 khớp §9. Bản backup P6 ngày 07/11 là evidence bổ sung. Chưa kiểm remote trong C.0.",
+    "Ba alias prompt P7, một alias P8 và một alias R1 giữ ALIAS_UNCONFIRMED theo tài liệu. Hai hash thẻ scope lệch là vấn đề riêng."
+  ],
+  "stop": "Gate 1 pending. C.1/C.2 not started."
+}
