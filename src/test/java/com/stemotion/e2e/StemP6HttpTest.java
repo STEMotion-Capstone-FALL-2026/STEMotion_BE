@@ -34,11 +34,24 @@ import java.util.concurrent.TimeUnit;
 /** P6 owns its context/processes; reuses P5 fixture helpers read-only, never inherits its test methods. */
 class StemP6HttpTest {
     static Process python;static String pythonUrl;StemArtifactP5Test fixture;String outcome;
-    static void startPython()throws Exception{
+    static Path resolvePythonBinary() {
+        String p6 = System.getenv("P6_PYTHON");
+        if (p6 != null && !p6.isBlank()) {
+            Path p = Path.of(p6);
+            if (Files.isRegularFile(p)) return p;
+        }
+        Path repo = Path.of(System.getProperty("user.dir"));
+        Path win = repo.resolve(".audit/stem-p6/exact-lock/venv/Scripts/python.exe");
+        if (Files.isRegularFile(win)) return win;
+        Path unix = repo.resolve(".audit/stem-p6/exact-lock/venv/bin/python");
+        if (Files.isRegularFile(unix)) return unix;
+        return null;
+    }
+    static void startPython(Path pythonBinary)throws Exception{
         Path repo=Path.of(System.getProperty("user.dir")),audit=repo.resolve(".audit/stem-p6/http-ai-"+System.getenv().getOrDefault("P6_RUN_NAME","new"));Files.createDirectories(audit);
         int port;try(var socket=new java.net.ServerSocket(0,0,InetAddress.getByName("127.0.0.1"))){port=socket.getLocalPort();}
         pythonUrl="http://127.0.0.1:"+port;
-        var builder=new ProcessBuilder(repo.resolve(".audit/stem-p6/exact-lock/venv/Scripts/python.exe").toString(),"-m","uvicorn","p6_fake_server:app","--host","127.0.0.1","--port",Integer.toString(port),"--no-access-log");
+        var builder=new ProcessBuilder(pythonBinary.toString(),"-m","uvicorn","p6_fake_server:app","--host","127.0.0.1","--port",Integer.toString(port),"--no-access-log");
         builder.directory(repo.resolve("services/ai").toFile());var env=builder.environment();env.keySet().removeIf(k->!Set.of("SYSTEMROOT","WINDIR","COMSPEC","PATHEXT","USERPROFILE","APPDATA","LOCALAPPDATA","TEMP","TMP","PATH","HOMEDRIVE","HOMEPATH").contains(k.toUpperCase()));
         env.put("AI_SERVICE_KEY","TEST_ONLY-p6-transport");env.put("HF_HUB_OFFLINE","1");env.put("PYTHONNOUSERSITE","1");env.put("PYTHONPATH",repo.resolve("services/ai")+java.io.File.pathSeparator+repo.resolve("services/ai/tests"));
         builder.redirectErrorStream(true).redirectOutput(audit.resolve("python.log").toFile());python=builder.start();Files.writeString(audit.resolve("owned-pid.json"),"{\"pid\":"+python.pid()+",\"port\":"+port+"}");
@@ -47,7 +60,9 @@ class StemP6HttpTest {
         if(!ready){python.destroy();throw new IllegalStateException("Owned Python fake server did not become ready");}
     }
     @BeforeAll static void boot() throws Exception {
-        startPython();
+        Path pythonBinary = resolvePythonBinary();
+        org.junit.jupiter.api.Assumptions.assumeTrue(pythonBinary != null, "P6 virtualenv not found; skipping StemP6HttpTest");
+        startPython(pythonBinary);
         System.setProperty("spring.devtools.restart.enabled","false");
         context=new SpringApplication(StemotionApplication.class,E2eServer.Config.class).run(E2eServer.launchArguments(
             "--server.port=0","--server.address=127.0.0.1","--spring.profiles.active=stem-p5-test","--spring.dotenv.enabled=false",
