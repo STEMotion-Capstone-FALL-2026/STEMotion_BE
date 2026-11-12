@@ -715,4 +715,145 @@ public class StemRf11AcceptanceTest {
     // Video review check succeeds in STRICT mode
     assertThatCode(() -> stem.checkVideoReviewFingerprint(p, v, reviewer, "APPROVE_VIDEO")).doesNotThrowAnyException();
   }
+
+  /**
+   * FE01_VIEW_RETURNS_FINGERPRINTS:
+   * GET brief trả scriptFingerprint không rỗng; trả compositionFingerprint khi đã có composition.
+   */
+  @Test
+  void FE01_VIEW_RETURNS_FINGERPRINTS() {
+    createBriefWithSubmission();
+    var v1 = stem.get(project, version, writer);
+    assertThat(v1.scriptFingerprint()).isNotNull().isNotBlank();
+    assertThat(v1.compositionFingerprint()).isNull();
+
+    // Add composition row
+    String compId = UUID.randomUUID().toString();
+    jdbc.update("insert into compositions(id,script_version_id,project_id,revision,scenes) values(?::uuid,?,?,1,'[]')", compId, version, project);
+
+    var v2 = stem.get(project, version, writer);
+    assertThat(v2.scriptFingerprint()).isEqualTo(v1.scriptFingerprint());
+    assertThat(v2.compositionFingerprint()).isNotNull().isNotBlank();
+  }
+
+  /**
+   * FE02_STRICT_APPROVE_WITH_VIEW_FINGERPRINT:
+   * workspace STRICT, lấy scriptFingerprint từ GET rồi gửi vào expectedFingerprint khi duyệt script → thành công.
+   */
+  @Test
+  void FE02_STRICT_APPROVE_WITH_VIEW_FINGERPRINT() {
+    createBriefWithSubmission();
+    stem.saveSettings(workspace, admin, new StemDtos.Settings(0, "STRICT", List.of(), null, "fe02-strict", null));
+
+    // Client reads brief view
+    var view = stem.get(project, version, reviewer);
+    assertThat(view.scriptFingerprint()).isNotNull().isNotBlank();
+
+    // Client sends approval using view.scriptFingerprint()
+    var assessment = new StemDtos.Assessment(
+        view.revision(), 0, null, 1, testRubric,
+        List.of(new StemDtos.Criterion("TEST_ONLY", "ADEQUATE", "FE Approved", List.of())),
+        "fe02-approve",
+        view.scriptFingerprint());
+
+    tx.execute(s -> scripts.approve(project, new ReviewDecisionRequest("FE Approved", assessment), reviewer));
+
+    assertThat(jdbc.queryForObject("select status from script_versions where id=?", String.class, version)).isEqualTo("APPROVED");
+    assertThat(jdbc.queryForObject("select count(*) from stem_assessments where version_id=? and phase='SCRIPT'", Integer.class, version)).isEqualTo(1);
+  }
+
+  /**
+   * FE03_STALE_AFTER_EDIT:
+   * lấy fingerprint, sửa script, gửi fingerprint cũ → 409 STEM_FINGERPRINT_STALE; GET lại có fingerprint mới khác cũ.
+   */
+  @Test
+  void FE03_STALE_AFTER_EDIT() {
+    createBriefWithSubmission();
+    var v1 = stem.get(project, version, writer);
+    String oldFp = v1.scriptFingerprint();
+    assertThat(oldFp).isNotNull().isNotBlank();
+
+    stem.saveSettings(workspace, admin, new StemDtos.Settings(0, "STRICT", List.of(), null, "fe03-strict", null));
+
+    // Mutate script
+    jdbc.update("update scenes set narration='MODIFIED narration for FE03' where id=?", scene);
+    stem.onScriptMutation(version);
+
+    // GET view again -> new fingerprint
+    var v2 = stem.get(project, version, writer);
+    String newFp = v2.scriptFingerprint();
+    assertThat(newFp).isNotNull().isNotBlank();
+    assertThat(newFp).isNotEqualTo(oldFp);
+
+    // Sending old fingerprint in STRICT approval -> 409 STEM_FINGERPRINT_STALE
+    var staleAssessment = new StemDtos.Assessment(
+        v1.revision(), 0, null, 1, testRubric,
+        List.of(new StemDtos.Criterion("TEST_ONLY", "ADEQUATE", "Stale check", List.of())),
+        "fe03-stale",
+        oldFp);
+
+    assertThatThrownBy(() -> tx.execute(s -> {
+      var p = projects.findById(project).orElseThrow();
+      var v = versions.findById(version).orElseThrow();
+      return stem.prepare(p, v, reviewer, "SCRIPT", staleAssessment);
+    }))
+        .isInstanceOfSatisfying(ApiException.class, e -> {
+          assertThat(e.getStatus().value()).isEqualTo(409);
+          assertThat(e.getCode()).isEqualTo("STEM_FINGERPRINT_STALE");
+        });
+  }
+
+  /**
+   * FE04_VIDEO_APPROVE_WITH_COMPOSITION_FINGERPRINT:
+   * luồng duyệt video ở STRICT dùng compositionFingerprint từ GET → thành công.
+   */
+  @Test
+  void FE04_VIDEO_APPROVE_WITH_COMPOSITION_FINGERPRINT() {
+    createBriefWithSubmission();
+    // Approve script in OFF mode
+    tx.execute(s -> scripts.approve(project, new ReviewDecisionRequest("Approved", null), reviewer));
+
+    // Transition to video QA with composition
+    String compId = UUID.randomUUID().toString();
+    jdbc.update("insert into compositions(id,script_version_id,project_id,revision,scenes) values(?::uuid,?,?,1,'[]')", compId, version, project);
+    jdbc.update("update clip_projects set script_status='APPROVED',video_status='IN_QA' where id=?", project);
+
+    // Switch to STRICT
+    stem.saveSettings(workspace, admin, new StemDtos.Settings(0, "STRICT", List.of(), null, "fe04-strict", null));
+
+    // Submit video review saves initial snapshot
+    tx.executeWithoutResult(s -> {
+      var p = projects.findById(project).orElseThrow();
+      var v = versions.findById(version).orElseThrow();
+      stem.checkSubmitVideoReview(p, v, writer);
+    });
+
+    // FE reads view to get compositionFingerprint
+    var view = stem.get(project, version, reviewer);
+    assertThat(view.compositionFingerprint()).isNotNull().isNotBlank();
+    String compFp = view.compositionFingerprint();
+
+    // Reviewer sends video approval with compFp
+    var videoAssessment = new StemDtos.Assessment(
+        view.revision(), 0, 1, 1, testRubric,
+        List.of(new StemDtos.Criterion("TEST_ONLY", "ADEQUATE", "Video looks good", List.of())),
+        "fe04-video-approve",
+        compFp);
+
+    // Video review check succeeds
+    tx.executeWithoutResult(s -> {
+      var p = projects.findById(project).orElseThrow();
+      var v = versions.findById(version).orElseThrow();
+      stem.checkVideoReviewFingerprint(p, v, reviewer, "APPROVE_VIDEO");
+    });
+
+    // Prepare video approval succeeds
+    var ticket = tx.execute(s -> {
+      var p = projects.findById(project).orElseThrow();
+      var v = versions.findById(version).orElseThrow();
+      return stem.prepare(p, v, reviewer, "VIDEO", videoAssessment);
+    });
+    assertThat(ticket).isNotNull();
+    assertThat(ticket.phase()).isEqualTo("VIDEO");
+  }
 }

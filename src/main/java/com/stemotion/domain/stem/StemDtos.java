@@ -45,6 +45,6 @@ public final class StemDtos {
   public Finding(String ruleId,String field,String severity,String message){this(ruleId,field,severity,message,"PRODUCT_RULE");}
  }
  public record LegacySuggestion(String primaryKey,List<String> channelKeys,boolean requiresConfirmation,String reason) {}
- public record View(String schemaVersion,String briefId,String scriptVersionId,int revision,String verificationStatus,String readiness,String effectiveMode,int modeRevision,Brief brief,List<Evidence> evidence,List<Finding> findings,LegacySuggestion legacySuggestion) {}
+ public record View(String schemaVersion,String briefId,String scriptVersionId,int revision,String verificationStatus,String readiness,String effectiveMode,int modeRevision,Brief brief,List<Evidence> evidence,List<Finding> findings,LegacySuggestion legacySuggestion,String scriptFingerprint,String compositionFingerprint) {}
  public static Brief empty() { return new Brief(null,null,null,List.of(),List.of(),null,new UsageContext(null,List.of()),List.of(),List.of(),List.of(),List.of(),null,null,List.of()); }
 }
