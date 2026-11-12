@@ -40,6 +40,8 @@ public class PublishService {
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
     @org.springframework.beans.factory.annotation.Autowired(required=false)
     private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.stemotion.domain.stem.StemService stem;
 
 
     @Transactional(readOnly = true)
@@ -81,6 +83,7 @@ public class PublishService {
             throw ApiException.badRequest("The project has no rendered video to publish");
         }
         var clip = clipArtifactService.requireCurrent(project, scriptService.currentVersion(project).getId());
+        if(stem!=null)stem.checkPublishFingerprint(project,scriptService.currentVersion(project),currentUserId);
         var artifactPublish=stemArtifacts==null?null:stemArtifacts.beforePublish(project,clip,request);
         // Library exports must also produce a usable, safely escaped LMS iframe.
         VideoEmbed.build(clip.getVideoUrl());

@@ -239,6 +239,7 @@ public class FeedbackService {
         ScriptVersion version = scriptService.currentVersion(project);
         Composition composition = compositionService.ensure(project, version, producerId);
         if(stem!=null)stem.submission(project,version);
+        if(stem!=null)stem.checkSubmitVideoReview(project,version,producerId);
         if(stemArtifacts!=null)stemArtifacts.submission(project,producerId);
         var from = project.getPipelineStatus();
         project.setVideoStatus(VideoStatus.IN_QA);
@@ -263,6 +264,7 @@ public class FeedbackService {
         ClipProject project = scriptService.getOrThrow(projectId);
         scriptService.requireActive(project);
         var stemTicket=stem==null?null:stem.prepare(project,scriptService.currentVersion(project),reviewerId,"VIDEO",assessment,reason);
+        if(stem!=null)stem.checkVideoReviewFingerprint(project,scriptService.currentVersion(project),reviewerId,"APPROVE_VIDEO");
         if(stemTicket!=null && stemTicket.replay())return;
 
         if (project.getVideoStatus() != VideoStatus.IN_QA) {
@@ -307,6 +309,7 @@ public class FeedbackService {
         String reason = ScriptService.requireReason(note);
         ClipProject project = scriptService.getOrThrow(projectId);
         scriptService.requireActive(project);
+        if(stem!=null)stem.checkVideoReviewFingerprint(project,scriptService.currentVersion(project),reviewerId,"SEND_BACK");
         if (project.getVideoStatus() != VideoStatus.IN_QA) {
             throw ApiException.badRequest("Only a clip in QA can be sent back to production");
         }

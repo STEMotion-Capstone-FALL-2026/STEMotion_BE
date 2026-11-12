@@ -55,6 +55,8 @@ public class RenderService {
     private final ClipArtifactService clipArtifactService;
     @org.springframework.beans.factory.annotation.Autowired(required=false)
     private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.stemotion.domain.stem.StemService stemService;
 
 
     /**
@@ -73,6 +75,7 @@ public class RenderService {
         ClipProject project = requireRenderable(projectId);
         if(stemArtifacts!=null)stemArtifacts.lock(project);
         ScriptVersion version = scriptService.currentVersion(project);
+        if(stemService!=null)stemService.checkRenderFingerprint(project,version,currentUserId);
         CompositionService.RenderInput input = compositionService.renderInput(version);
         if (input.scenes().isEmpty()) {
             throw ApiException.badRequest("The approved script has no scenes to render");

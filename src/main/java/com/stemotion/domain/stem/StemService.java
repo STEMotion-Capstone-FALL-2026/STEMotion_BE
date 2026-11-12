@@ -1,5 +1,6 @@
 package com.stemotion.domain.stem;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
 import com.stemotion.core.exception.ApiException;
 import com.stemotion.core.security.WorkspaceAccess;
 import com.stemotion.domain.workspace.entity.WorkspaceRole;
@@ -10,6 +11,7 @@ import com.stemotion.domain.project.repository.ClipProjectRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
 import java.util.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -19,9 +21,10 @@ import static com.stemotion.domain.stem.StemDtos.*;
 @Transactional
 public class StemService {
  private final StemRepository db; private final StemValidator validator;private final WorkspaceAccess access;private final ScriptVersionRepository versions;private final ClipProjectRepository projects;
+ private final StemFingerprint fingerprint;
  @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager em;
  @org.springframework.beans.factory.annotation.Autowired(required=false) private StemArtifactService artifacts;
- public StemService(StemRepository db,StemValidator validator,WorkspaceAccess access,ScriptVersionRepository versions,ClipProjectRepository projects){this.db=db;this.validator=validator;this.access=access;this.versions=versions;this.projects=projects;}
+ public StemService(StemRepository db,StemValidator validator,WorkspaceAccess access,ScriptVersionRepository versions,ClipProjectRepository projects){this.db=db;this.validator=validator;this.access=access;this.versions=versions;this.projects=projects;this.fingerprint=new StemFingerprint(db.json());}
  private void revision(Integer expected,int actual,String field){validator.rev(expected,field);if(expected!=actual)throw ApiException.staleRevision(field,actual,expected,"STEM target changed; reload");}
  private ScriptVersion target(String project,String version,String actor,boolean write){
   access.requireProject(project,actor,false);
@@ -99,7 +102,7 @@ public class StemService {
  private void workspace(String id){if(db.jdbc().queryForObject("select count(*) from workspaces where id=?",Integer.class,id)!=1)throw ApiException.notFound("Workspace",id);db.jdbc().queryForList("select id from workspaces where id=? for update",id);}
  public StemModels.WorkspaceMode saveSettings(String workspace,String actor,Settings request){validator.limits(db.json().valueToTree(request),0);
   if(!access.isAdmin(actor))throw ApiException.forbidden("Only Admin assigns STEM framework");workspace(workspace);validator.rev(request.baseRevision(),"baseRevision");validator.list(request.policyVersionIds(),100,"policyVersionIds");
-  if(!Set.of("OFF","ADVISORY").contains(Objects.toString(request.mode(),"")))throw StemValidator.invalid("mode","Only OFF/ADVISORY in P3");
+  if(!Set.of("OFF","ADVISORY","STRICT").contains(Objects.toString(request.mode(),"")))throw StemValidator.invalid("mode","Expected OFF/ADVISORY/STRICT");
   String replay=receipt(actor,"SETTINGS",workspace,request.idempotencyKey(),request);if(replay!=null)return db.decode(replay,StemModels.WorkspaceMode.class);
   var old=db.settings(workspace);revision(request.baseRevision(),old.revision(),"STEM_MODE");for(String policy:request.policyVersionIds())checkKind(policy,"POLICY");
   if(new HashSet<>(request.policyVersionIds()).size()!=request.policyVersionIds().size())throw StemValidator.invalid("policyVersionIds","Duplicate policy");
@@ -120,25 +123,96 @@ public class StemService {
  private void compositionRevision(String version,Integer expected){validator.rev(expected,"expectedCompositionRevision");var r=db.jdbc().queryForList("select revision from compositions where script_version_id=? for update",version);if(r.isEmpty())throw ApiException.conflict("Composition missing");revision(expected,db.number(r.get(0),"revision"),"COMPOSITION");}
  public void onScriptMutation(String version){if(db.brief(version)!=null)invalidate(version);}
  private void invalidate(String version){db.jdbc().update("update stem_briefs set readiness='NEEDS_REVIEW' where version_id=?",version);db.jdbc().update("update stem_assessments set freshness='NEEDS_REVIEW' where version_id=?",version);}
- public void submission(ClipProject project,ScriptVersion version){lock(version);if(db.brief(version.getId())!=null){View v=view(version.getId());validator.transition(v.effectiveMode(),v.findings(),false);}}
+ public void submission(ClipProject project,ScriptVersion version){
+  lock(version);
+  var mode=db.settings(project.getWorkspace().getId());
+  if("OFF".equals(mode.mode()))return;
+  var r=db.brief(version.getId());
+  if(r==null){
+   if("STRICT".equals(mode.mode()))validator.transition("STRICT",List.of(new Finding("TECH-BRIEF","brief","ERROR","STEM brief is required in STRICT mode")),true);
+   return;
+  }
+  View v=view(version.getId());
+  validator.transition(v.effectiveMode(),v.findings(),true);
+ }
  public record ReviewTicket(String actor,String version,String phase,Assessment request,Set<String> previous,boolean replay,String note) {}
  public ReviewTicket prepare(ClipProject project,ScriptVersion version,String actor,String phase,Assessment a){return prepare(project,version,actor,phase,a,null);}
  public ReviewTicket prepare(ClipProject project,ScriptVersion version,String actor,String phase,Assessment a,String note){
   lock(version);access.requireProjectRole(project.getId(),actor,Set.of(WorkspaceRole.REVIEWER));
-  if(a==null)return null;validator.limits(db.json().valueToTree(a),0);access.requireActiveStemSeat(project.getWorkspace().getId(),actor,WorkspaceRole.REVIEWER);phase(phase);validator.list(a.criteria(),20,"criteria");
-  Set<String> criterionKeys=new HashSet<>();for(Criterion c:a.criteria()){if(!criterionKeys.add(c.key()))throw StemValidator.invalid("criteria.key","Duplicate criterion");validator.key(c.key(),"criteria.key");if(!Set.of("ADEQUATE","NEEDS_CHANGES","NOT_ASSESSED","NOT_APPLICABLE").contains(Objects.toString(c.judgment(),"")))throw StemValidator.invalid("criteria.judgment","Unknown judgment");validator.list(c.evidenceIds(),20,"criteria.evidenceIds");if(c.rationale()==null||c.rationale().isBlank())throw StemValidator.invalid("criteria.rationale","Rationale required");}
-  String replay=receipt(actor,"APPROVE_"+phase,version.getId(),a.idempotencyKey(),Map.of("assessment",a,"note",Objects.toString(note,"")));if(replay!=null)return new ReviewTicket(actor,version.getId(),phase,a,Set.of(),true,note);
-  var r=requiredBrief(version.getId());revision(a.expectedBriefRevision(),db.number(r,"revision"),"STEM_BRIEF");revision(a.expectedScriptRevision(),version.getDraftRevision(),"SCRIPT_DRAFT");revision(a.expectedModeRevision(),db.settings(project.getWorkspace().getId()).revision(),"STEM_MODE");
+  var mode=db.settings(project.getWorkspace().getId());
+  if("STRICT".equals(mode.mode())){
+   access.requireActiveStemSeat(project.getWorkspace().getId(),actor,WorkspaceRole.REVIEWER);
+   if(a==null)throw new ApiException(HttpStatus.BAD_REQUEST,"STEM_RUBRIC_REQUIRED","Rubric assessment required in STRICT mode");
+   if(a.rubricVersionId()==null||a.rubricVersionId().isBlank())throw StemValidator.invalid("rubricVersionId","Rubric required in STRICT mode");
+  }
+  if(a==null)return null;
+  validator.limits(db.json().valueToTree(a),0);
+  access.requireActiveStemSeat(project.getWorkspace().getId(),actor,WorkspaceRole.REVIEWER);
+  phase(phase);
+  validator.list(a.criteria(),20,"criteria");
+  Set<String> criterionKeys=new HashSet<>();
+  for(Criterion c:a.criteria()){
+   if(!criterionKeys.add(c.key()))throw StemValidator.invalid("criteria.key","Duplicate criterion");
+   validator.key(c.key(),"criteria.key");
+   if(!Set.of("ADEQUATE","NEEDS_CHANGES","NOT_ASSESSED","NOT_APPLICABLE").contains(Objects.toString(c.judgment(),"")))throw StemValidator.invalid("criteria.judgment","Unknown judgment");
+   validator.list(c.evidenceIds(),20,"criteria.evidenceIds");
+   if(c.rationale()==null||c.rationale().isBlank())throw StemValidator.invalid("criteria.rationale","Rationale required");
+  }
+  String replay=receipt(actor,"APPROVE_"+phase,version.getId(),a.idempotencyKey(),Map.of("assessment",a,"note",Objects.toString(note,"")));
+  if(replay!=null)return new ReviewTicket(actor,version.getId(),phase,a,Set.of(),true,note);
+  var r=requiredBrief(version.getId());
+  revision(a.expectedBriefRevision(),db.number(r,"revision"),"STEM_BRIEF");
+  revision(a.expectedScriptRevision(),version.getDraftRevision(),"SCRIPT_DRAFT");
+  revision(a.expectedModeRevision(),mode.revision(),"STEM_MODE");
   if(phase.equals("VIDEO"))compositionRevision(version.getId(),a.expectedCompositionRevision());
-  Set<String> ids=new HashSet<>();db.evidence(db.text(r,"id")).forEach(e->ids.add(e.id()));for(Criterion c:a.criteria())if(!ids.containsAll(c.evidenceIds()))throw StemValidator.invalid("criteria.evidenceIds","Evidence outside brief");checkKind(a.rubricVersionId(),"RUBRIC");
+  Set<String> ids=new HashSet<>();db.evidence(db.text(r,"id")).forEach(e->ids.add(e.id()));
+  for(Criterion c:a.criteria())if(!ids.containsAll(c.evidenceIds()))throw StemValidator.invalid("criteria.evidenceIds","Evidence outside brief");
+  checkKind(a.rubricVersionId(),"RUBRIC");
+  if(r.get("policy_id")!=null){
+   var pRows=db.jdbc().queryForList("select data from stem_catalog where id=?",db.text(r,"policy_id"));
+   if(!pRows.isEmpty()){
+    JsonNode pData=db.decode(db.text(pRows.get(0),"data"),JsonNode.class);
+    if(pData.hasNonNull("rubricVersionId")&&!Objects.equals(pData.path("rubricVersionId").asText(),a.rubricVersionId()))
+     throw StemValidator.invalid("rubricVersionId","Rubric does not match pinned policy");
+   }
+  }
+  String currentFp=phase.equals("SCRIPT")?computeScriptFingerprint(project,version):computeCompositionFingerprint(project,version);
+  if("STRICT".equals(mode.mode())){
+   if(a.expectedFingerprint()==null||a.expectedFingerprint().isBlank()||!a.expectedFingerprint().equals(currentFp)){
+    throw new ApiException(HttpStatus.CONFLICT,"STEM_FINGERPRINT_STALE","Rubric assessment fingerprint does not match target "+phase+": expected="+currentFp+", actual="+a.expectedFingerprint(),Map.of("expected",currentFp,"actual",Objects.toString(a.expectedFingerprint(),"")));
+   }
+  }else if(a.expectedFingerprint()!=null&&!a.expectedFingerprint().equals(currentFp)){
+   if("ADVISORY".equals(mode.mode()))
+    db.audit(actor,project.getId(),"STEM_FINGERPRINT_MISMATCH",Map.of("phase",phase,"expected",currentFp,"actual",a.expectedFingerprint()));
+  }
   return new ReviewTicket(actor,version.getId(),phase,a,historyIds(project.getId()),false,note);
  }
  private Set<String> historyIds(String project){return new HashSet<>(db.jdbc().queryForList("select id from status_histories where project_id=?",String.class,project));}
- public void finish(ClipProject project,ReviewTicket ticket){if(ticket==null||ticket.replay())return;if(em!=null)em.flush();Set<String> ids=historyIds(project.getId());ids.removeAll(ticket.previous());if(ids.size()!=1)throw ApiException.conflict("Expected exactly one existing review decision");String decision=ids.iterator().next();
-  int linked=db.jdbc().queryForObject("select count(*) from status_histories where id=? and changed_by=? and event_type='REVIEW_DECISION' and decision='APPROVED'",Integer.class,decision,ticket.actor());if(linked!=1)throw ApiException.conflict("Assessment needs matching existing decision");
-  var r=requiredBrief(ticket.version());db.jdbc().update("insert into stem_assessments(id,version_id,brief_id,decision_id,actor_id,phase,brief_revision,script_revision,mode_revision,composition_revision,payload) values(?,?,?,?,?,?,?,?,?,?,?::jsonb)",db.id(),ticket.version(),db.text(r,"id"),decision,ticket.actor(),ticket.phase(),ticket.request().expectedBriefRevision(),ticket.request().expectedScriptRevision(),ticket.request().expectedModeRevision(),ticket.request().expectedCompositionRevision(),db.encode(ticket.request()));
+ public void finish(ClipProject project,ReviewTicket ticket){
+  if(ticket==null||ticket.replay())return;
+  if(em!=null)em.flush();
+  Set<String> ids=historyIds(project.getId());
+  ids.removeAll(ticket.previous());
+  if(ids.size()!=1)throw ApiException.conflict("Expected exactly one existing review decision");
+  String decision=ids.iterator().next();
+  int linked=db.jdbc().queryForObject("select count(*) from status_histories where id=? and changed_by=? and event_type='REVIEW_DECISION' and decision='APPROVED'",Integer.class,decision,ticket.actor());
+  if(linked!=1)throw ApiException.conflict("Assessment needs matching existing decision");
+  var r=requiredBrief(ticket.version());
+  ScriptVersion v=versions.findById(ticket.version()).orElseThrow();
+  String currentFp=ticket.phase().equals("SCRIPT")?computeScriptFingerprint(project,v):computeCompositionFingerprint(project,v);
+  ObjectNode storedPayload=(ObjectNode)db.json().valueToTree(ticket.request());
+  storedPayload.put("fingerprint",currentFp);
+  storedPayload.put("phase",ticket.phase());
+  storedPayload.put("actorId",ticket.actor());
+  db.jdbc().update("insert into stem_assessments(id,version_id,brief_id,decision_id,actor_id,phase,brief_revision,script_revision,mode_revision,composition_revision,payload) values(?,?,?,?,?,?,?,?,?,?,?::jsonb)",
+   db.id(),ticket.version(),db.text(r,"id"),decision,ticket.actor(),ticket.phase(),
+   ticket.request().expectedBriefRevision(),ticket.request().expectedScriptRevision(),ticket.request().expectedModeRevision(),ticket.request().expectedCompositionRevision(),
+   db.encode(storedPayload));
   remember(ticket.actor(),"APPROVE_"+ticket.phase(),ticket.version(),ticket.request().idempotencyKey(),Map.of("assessment",ticket.request(),"note",Objects.toString(ticket.note(),"")),Map.of("decisionId",decision));
-  if(artifacts!=null&&ticket.phase().equals("SCRIPT")){String assessment=db.jdbc().queryForObject("select id from stem_assessments where decision_id=?",String.class,decision);artifacts.scriptApproved(project,ticket.actor(),decision,assessment);}
+  if(artifacts!=null&&ticket.phase().equals("SCRIPT")){
+   String assessment=db.jdbc().queryForObject("select id from stem_assessments where decision_id=?",String.class,decision);
+   artifacts.scriptApproved(project,ticket.actor(),decision,assessment);
+  }
  }
  public record ChangeTicket(String actor,String source,ChangeTarget request,String note,String copiedVersion) {}
  public ChangeTicket beginChange(ClipProject project,String actor,ChangeTarget request,String note){
@@ -158,5 +232,154 @@ public class StemService {
   if(!map.keySet().equals(source)||new HashSet<>(map.values()).size()!=map.size()||!destination.equals(new HashSet<>(map.values())))throw ApiException.conflict("Incomplete/nonbijective copy map");
   String brief=db.id();db.jdbc().update("insert into stem_briefs(id,version_id,payload,policy_id,topic_id,copied_from,readiness) values(?,?,?::jsonb,?,?,?,'NEEDS_REVIEW')",brief,newVersion,db.text(old,"payload"),db.text(old,"policy_id"),db.text(old,"topic_id"),db.text(old,"id"));
   for(Evidence e:db.evidence(db.text(old,"id"))){if(e.sceneId()!=null&&!map.containsKey(e.sceneId()))throw ApiException.conflict("Orphan evidence cannot be copied without correction");String scene=e.sceneId()==null?null:map.get(e.sceneId());db.jdbc().update("insert into stem_evidence(id,brief_id,scene_id,original_scene_id,task_key,objective_key,component,explanation,copied_from) values(?,?,?,?,?,?,?,?,?)",db.id(),brief,scene,scene,e.taskKey(),e.objectiveKey(),e.component(),e.explanation(),e.id());}
+ }
+ public String computeScriptFingerprint(ClipProject project,ScriptVersion version){
+  ArrayNode scenes=db.json().createArrayNode();
+  for(var row:db.jdbc().queryForList("select * from scenes where version_id=? order by order_no",version.getId())){
+   ObjectNode scene=(ObjectNode)db.decode(db.text(row,"props"),JsonNode.class);
+   scene.put("id",db.text(row,"id"));
+   scene.put("type",db.text(row,"scene_type"));
+   scene.put("title",db.text(row,"title"));
+   scene.put("narration",db.text(row,"narration"));
+   scene.put("durationInFrames",db.number(row,"duration_in_frames"));
+   scenes.add(scene);
+  }
+  var brief=db.brief(version.getId());
+  ObjectNode briefData=db.json().createObjectNode();
+  ArrayNode editions=db.json().createArrayNode();
+  if(brief!=null){
+   briefData.set("brief",db.decode(db.text(brief,"payload"),JsonNode.class));
+   briefData.set("evidence",db.json().valueToTree(db.evidence(db.text(brief,"id"))));
+  }
+  ObjectNode metadata=db.json().createObjectNode()
+   .put("title",project.getTitle())
+   .put("subject",project.getSubject().name())
+   .put("gradeLevel",project.getGradeLevel());
+  briefData.set("publicMetadata",metadata);
+  var projected=fingerprint.project(scenes,briefData,editions);
+  return projected.semanticHash();
+ }
+ public String computeCompositionFingerprint(ClipProject project,ScriptVersion version){
+  var compRows=db.jdbc().queryForList("select * from compositions where script_version_id=?",version.getId());
+  Map<String,Object> composition=compRows.isEmpty()?null:compRows.get(0);
+  ArrayNode scenes=db.json().createArrayNode();
+  if(composition!=null&&composition.get("scenes")!=null){
+   scenes=(ArrayNode)db.decode(db.text(composition,"scenes"),JsonNode.class);
+  }else{
+   for(var row:db.jdbc().queryForList("select * from scenes where version_id=? order by order_no",version.getId())){
+    ObjectNode scene=(ObjectNode)db.decode(db.text(row,"props"),JsonNode.class);
+    scene.put("id",db.text(row,"id"));
+    scene.put("type",db.text(row,"scene_type"));
+    scene.put("title",db.text(row,"title"));
+    scene.put("narration",db.text(row,"narration"));
+    scene.put("durationInFrames",db.number(row,"duration_in_frames"));
+    scenes.add(scene);
+   }
+  }
+  var brief=db.brief(version.getId());
+  ObjectNode briefData=db.json().createObjectNode();
+  ArrayNode editions=db.json().createArrayNode();
+  if(brief!=null){
+   briefData.set("brief",db.decode(db.text(brief,"payload"),JsonNode.class));
+   briefData.set("evidence",db.json().valueToTree(db.evidence(db.text(brief,"id"))));
+  }
+  ObjectNode metadata=db.json().createObjectNode()
+   .put("title",project.getTitle())
+   .put("subject",project.getSubject().name())
+   .put("gradeLevel",project.getGradeLevel());
+  briefData.set("publicMetadata",metadata);
+  var projected=fingerprint.project(scenes,briefData,editions);
+  String visualTheme=composition==null?"default":Objects.toString(composition.get("visual_theme"),"default");
+  ObjectNode presentation=projected.presentation().deepCopy();
+  presentation.put("visualTheme",visualTheme);
+  return fingerprint.hash("presentationContract",presentation);
+ }
+ public void checkRenderFingerprint(ClipProject project,ScriptVersion version,String actor){
+  var mode=db.settings(project.getWorkspace().getId());
+  if("OFF".equals(mode.mode())||db.brief(version.getId())==null)return;
+  String actual=computeScriptFingerprint(project,version);
+  String expected=null;
+  var rows=db.jdbc().queryForList("select a.payload from stem_assessments a join status_histories h on h.id=a.decision_id where a.version_id=? and a.phase='SCRIPT' order by h.created_at desc, a.id desc limit 1",version.getId());
+  if(!rows.isEmpty()){
+   JsonNode payload=db.decode(db.text(rows.get(0),"payload"),JsonNode.class);
+   expected=payload.path("fingerprint").asText(null);
+   if(expected==null||expected.isBlank())expected=payload.path("expectedFingerprint").asText(null);
+  }
+  if("STRICT".equals(mode.mode())){
+   if(expected==null||expected.isBlank()||!actual.equals(expected)){
+    throw new ApiException(HttpStatus.CONFLICT,"STEM_FINGERPRINT_STALE","Script fingerprint is stale at render",Map.of("expected",Objects.toString(expected,""),"actual",actual));
+   }
+  }else if(expected!=null&&!expected.isBlank()&&!actual.equals(expected)){
+   if("ADVISORY".equals(mode.mode())){
+    db.audit(actor,project.getId(),"STEM_FINGERPRINT_MISMATCH",Map.of("stage","RENDER","expected",expected,"actual",actual));
+   }
+  }
+ }
+ public void checkSubmitVideoReview(ClipProject project,ScriptVersion version,String actor){
+  var mode=db.settings(project.getWorkspace().getId());
+  if("OFF".equals(mode.mode())||db.brief(version.getId())==null)return;
+  String currentFp=computeCompositionFingerprint(project,version);
+  String expected=getCompositionSnapshot(project.getId(),version.getId());
+  if(expected!=null&&!expected.isBlank()&&!currentFp.equals(expected)){
+   if("STRICT".equals(mode.mode())){
+    throw new ApiException(HttpStatus.CONFLICT,"STEM_FINGERPRINT_STALE","Composition fingerprint does not match snapshot",Map.of("expected",expected,"actual",currentFp));
+   }else if("ADVISORY".equals(mode.mode())){
+    db.audit(actor,project.getId(),"STEM_FINGERPRINT_MISMATCH",Map.of("stage","SUBMIT_VIDEO_REVIEW","expected",expected,"actual",currentFp));
+   }
+  }
+  saveCompositionSnapshot(project.getId(),version.getId(),currentFp,actor);
+ }
+ public void checkVideoReviewFingerprint(ClipProject project,ScriptVersion version,String actor,String stage){
+  var mode=db.settings(project.getWorkspace().getId());
+  if("OFF".equals(mode.mode())||db.brief(version.getId())==null)return;
+  String actual=computeCompositionFingerprint(project,version);
+  String expected=getCompositionSnapshot(project.getId(),version.getId());
+  if("SEND_BACK".equals(stage)){
+   if(expected!=null&&!expected.isBlank()&&!actual.equals(expected)){
+    db.audit(actor,project.getId(),"STEM_FINGERPRINT_MISMATCH",Map.of("stage","SEND_BACK","expected",expected,"actual",actual));
+   }
+   return;
+  }
+  if("STRICT".equals(mode.mode())){
+   if(expected==null||expected.isBlank()||!actual.equals(expected)){
+    throw new ApiException(HttpStatus.CONFLICT,"STEM_FINGERPRINT_STALE","Composition fingerprint does not match review snapshot",Map.of("expected",Objects.toString(expected,""),"actual",actual));
+   }
+  }else if(expected!=null&&!expected.isBlank()&&!actual.equals(expected)){
+   if("ADVISORY".equals(mode.mode())){
+    db.audit(actor,project.getId(),"STEM_FINGERPRINT_MISMATCH",Map.of("stage",stage,"expected",expected,"actual",actual));
+   }
+  }
+ }
+ public void checkPublishFingerprint(ClipProject project,ScriptVersion version,String actor){
+  var mode=db.settings(project.getWorkspace().getId());
+  if("OFF".equals(mode.mode())||db.brief(version.getId())==null)return;
+  String actual=computeCompositionFingerprint(project,version);
+  String expected=null;
+  var rows=db.jdbc().queryForList("select a.payload from stem_assessments a join status_histories h on h.id=a.decision_id where a.version_id=? and a.phase='VIDEO' order by h.created_at desc, a.id desc limit 1",version.getId());
+  if(!rows.isEmpty()){
+   JsonNode payload=db.decode(db.text(rows.get(0),"payload"),JsonNode.class);
+   expected=payload.path("fingerprint").asText(null);
+   if(expected==null||expected.isBlank())expected=payload.path("expectedFingerprint").asText(null);
+  }
+  if("STRICT".equals(mode.mode())){
+   if(expected==null||expected.isBlank()||!actual.equals(expected)){
+    throw new ApiException(HttpStatus.CONFLICT,"STEM_FINGERPRINT_STALE","Clip/composition fingerprint does not match video approval",Map.of("expected",Objects.toString(expected,""),"actual",actual));
+   }
+  }else if(expected!=null&&!expected.isBlank()&&!actual.equals(expected)){
+   if("ADVISORY".equals(mode.mode())){
+    db.audit(actor,project.getId(),"STEM_FINGERPRINT_MISMATCH",Map.of("stage","PUBLISH","expected",expected,"actual",actual));
+   }
+  }
+ }
+ public void saveCompositionSnapshot(String project,String version,String fp,String actor){
+  db.audit(actor,project,"COMPOSITION_SNAPSHOT",Map.of("fingerprint",fp,"versionId",version));
+ }
+ public String getCompositionSnapshot(String project,String version){
+  var rows=db.jdbc().queryForList("select payload from stem_audit where target=? and event='COMPOSITION_SNAPSHOT' and payload->>'versionId'=? order by created_at desc, id desc limit 1",project,version);
+  if(!rows.isEmpty()){
+   JsonNode payload=db.decode(db.text(rows.get(0),"payload"),JsonNode.class);
+   return payload.path("fingerprint").asText(null);
+  }
+  return null;
  }
 }

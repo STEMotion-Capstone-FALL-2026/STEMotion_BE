@@ -74,7 +74,7 @@ class StemP6HttpTest {
             "--logging.level.root=WARN","--logging.level.com.stemotion=WARN","--logging.level.org.hibernate.SQL=WARN",
             "--logging.level.io.zonky.test.db.postgres.embedded.EmbeddedPostgres=INFO"));
         base="http://127.0.0.1:"+((ServletWebServerApplicationContext)context).getWebServer().getPort()+"/api/v1";db=context.getBean(JdbcTemplate.class);
-        assertThat(db.queryForObject("select count(*) from flyway_schema_history where success",Integer.class)).isEqualTo(26);
+        assertThat(db.queryForObject("select count(*) from flyway_schema_history where success",Integer.class)).isEqualTo(27);
         var tx=new TransactionTemplate(context.getBean(PlatformTransactionManager.class));
         List<String> ids=tx.execute(s->{List<String> result=new ArrayList<>();for(String role:List.of("writer","reviewer","producer"))result.add(context.getBean(UserRepository.class).saveAndFlush(User.builder().fullName("TEST_ONLY "+role).username("p5-"+role).passwordHash(context.getBean(PasswordEncoder.class).encode("P5-fixture-only-123")).systemRole(SystemRole.USER).status(User.UserStatus.ACTIVE).mustChangePassword(false).build()).getId());return result;});
         writerId=ids.get(0);reviewerId=ids.get(1);producerId=ids.get(2);
