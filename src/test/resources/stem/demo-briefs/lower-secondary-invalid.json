@@ -1,0 +1,96 @@
+{
+  "policyVersionId": "00000000-0000-0000-0000-000000000010",
+  "topicVersionId": null,
+  "gradeKey": "GRADE_8",
+  "subjectKeys": [
+    "Physics",
+    "Math"
+  ],
+  "outcomeIds": [
+    "00000000-0000-0000-0000-000000000008",
+    "00000000-0000-0000-0000-000000000018"
+  ],
+  "scopeOfClip": "Mô hình xe chạy bằng năng lượng gió và tính toán hiệu suất cơ năng",
+  "context": {
+    "primary": {
+      "key": "GROUP_PRACTICE",
+      "condition": "Phòng thực hành KHTN có bàn nhóm",
+      "adaptations": "Chia nhóm 4-5 học sinh, mỗi nhóm 1 bộ dụng cụ"
+    },
+    "secondary": []
+  },
+  "distributionChannels": [
+    "DEPARTMENT_LIBRARY"
+  ],
+  "objectives": [
+    {
+      "key": "obj-1",
+      "outcomeId": "00000000-0000-0000-0000-000000000008",
+      "learnerAction": "Chế tạo và đo tốc độ xe gió",
+      "observableEvidence": "Mô hình xe hoạt động và bảng đo tốc độ"
+    },
+    {
+      "key": "obj-2",
+      "outcomeId": "00000000-0000-0000-0000-000000000018",
+      "learnerAction": "Vẽ đồ thị quãng đường thời gian và tính vận tốc",
+      "observableEvidence": "Biểu đồ quãng đường thời gian trên giấy kẻ ô"
+    }
+  ],
+  "studentTasks": [
+    {
+      "key": "task-1",
+      "learnerAction": "Lắp ráp khung xe và cánh quạt, thử nghiệm với quạt gió",
+      "teacherSupport": "Hướng dẫn cách căn chỉnh trục bánh xe",
+      "materials": "Bìa các-tông, nắp chai, que gỗ, quạt gió",
+      "safety": "Đề phòng cánh quạt quẹt vào tay khi quay nhanh",
+      "assessmentEvidence": "Báo cáo thử nghiệm xe gió của nhóm",
+      "executionContextKey": "GROUP_PRACTICE"
+    }
+  ],
+  "contributions": [
+    {
+      "component": "S",
+      "explanation": "Chuyển hoá động năng của gió thành động năng của xe",
+      "objectiveKeys": [
+        "obj-1"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    },
+    {
+      "component": "M",
+      "explanation": "Tính vận tốc trung bình v = s / t từ kết quả thực nghiệm",
+      "objectiveKeys": [
+        "obj-2"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    }
+  ],
+  "safetyNotes": "Lưu ý cẩn thận với kéo cắt và dao rọc giấy khi chế tạo cánh quạt",
+  "rawLegacy": null,
+  "steps": [
+    {
+      "stepKey": "OPENING_PROBLEM",
+      "activityKey": "act-open"
+    },
+    {
+      "stepKey": "BACKGROUND_KNOWLEDGE",
+      "activityKey": "act-bg"
+    },
+    {
+      "stepKey": "PROPOSE_SOLUTION",
+      "activityKey": "act-prop"
+    },
+    {
+      "stepKey": "SELECT_SOLUTION",
+      "activityKey": "act-sel"
+    },
+    {
+      "stepKey": "BUILD_TEST",
+      "activityKey": "act-build"
+    }
+  ]
+}

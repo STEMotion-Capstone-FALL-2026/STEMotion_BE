@@ -1,0 +1,96 @@
+{
+  "policyVersionId": "00000000-0000-0000-0000-000000000005",
+  "topicVersionId": null,
+  "gradeKey": "GRADE_4",
+  "subjectKeys": [
+    "Math",
+    "Science"
+  ],
+  "outcomeIds": [
+    "00000000-0000-0000-0000-000000000003",
+    "00000000-0000-0000-0000-000000000013"
+  ],
+  "scopeOfClip": "Clip minh hoạ hoạt động giữ ấm bình nước, đo và tính toán chênh lệch nhiệt độ",
+  "context": {
+    "primary": {
+      "key": "IN_CLASS_SCREEN",
+      "condition": "Lớp học có máy chiếu hoặc tivi",
+      "adaptations": "Giáo viên tạm dừng ở phút 1:30 để học sinh thảo luận"
+    },
+    "secondary": []
+  },
+  "distributionChannels": [
+    "DEPARTMENT_LIBRARY"
+  ],
+  "objectives": [
+    {
+      "key": "obj-1",
+      "outcomeId": "00000000-0000-0000-0000-000000000003",
+      "learnerAction": "Đọc và ghi lại nhiệt độ bằng nhiệt kế",
+      "observableEvidence": "Bảng số liệu ghi nhiệt độ trước và sau 30 phút"
+    },
+    {
+      "key": "obj-2",
+      "outcomeId": "00000000-0000-0000-0000-000000000013",
+      "learnerAction": "So sánh vật liệu giữ nhiệt khác nhau",
+      "observableEvidence": "Kết luận về vật liệu bông và xốp giữ nhiệt tốt hơn vải mỏng"
+    }
+  ],
+  "studentTasks": [
+    {
+      "key": "task-1",
+      "learnerAction": "Thực hiện bọc bình nước bằng vật liệu xốp/bông và đo nhiệt độ sau 30 phút",
+      "teacherSupport": "Giáo viên hỗ trợ rót nước ấm và bấm giờ",
+      "materials": "Bình thuỷ tinh, nhiệt kế, bông gòn, vải, xốp",
+      "safety": "Không dùng nước sôi trên 50 độ C",
+      "assessmentEvidence": "Phiếu học tập ghi chênh lệch nhiệt độ",
+      "executionContextKey": "IN_CLASS_SCREEN"
+    }
+  ],
+  "contributions": [
+    {
+      "component": "S",
+      "explanation": "Kiến thức về sự truyền nhiệt và vật liệu dẫn nhiệt",
+      "objectiveKeys": [
+        "obj-2"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    },
+    {
+      "component": "M",
+      "explanation": "Đo lường và tính toán chênh lệch nhiệt độ giữa các lần đo",
+      "objectiveKeys": [
+        "obj-1"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    }
+  ],
+  "safetyNotes": "Giáo viên kiểm soát nước ấm dưới 45 độ C, không dùng nước sôi, dùng bình nhựa hoặc thuỷ tinh dày chịu nhiệt",
+  "rawLegacy": null,
+  "steps": [
+    {
+      "stepKey": "BACKGROUND_KNOWLEDGE",
+      "activityKey": "act-bg"
+    },
+    {
+      "stepKey": "PROPOSE_SOLUTION",
+      "activityKey": "act-prop"
+    },
+    {
+      "stepKey": "SELECT_SOLUTION",
+      "activityKey": "act-sel"
+    },
+    {
+      "stepKey": "BUILD_TEST",
+      "activityKey": "act-build"
+    },
+    {
+      "stepKey": "CLOSING_SHARE_REFLECT",
+      "activityKey": "act-close"
+    }
+  ]
+}

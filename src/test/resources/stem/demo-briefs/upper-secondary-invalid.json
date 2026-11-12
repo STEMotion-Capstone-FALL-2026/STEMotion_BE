@@ -1,0 +1,100 @@
+{
+  "policyVersionId": "00000000-0000-0000-0000-000000000017",
+  "topicVersionId": null,
+  "gradeKey": "GRADE_11",
+  "subjectKeys": [
+    "Physics",
+    "Math"
+  ],
+  "outcomeIds": [
+    "00000000-0000-0000-0000-000000000015",
+    "00000000-0000-0000-0000-000000000025"
+  ],
+  "scopeOfClip": "",
+  "context": {
+    "primary": {
+      "key": "IN_CLASS_SCREEN",
+      "condition": "Phòng học vật lý có nguồn sáng chiếu",
+      "adaptations": "Có thể dùng đèn soi công suất lớn thay cho ánh sáng mặt trời trực tiếp"
+    },
+    "secondary": []
+  },
+  "distributionChannels": [
+    "DEPARTMENT_LIBRARY"
+  ],
+  "objectives": [
+    {
+      "key": "obj-1",
+      "outcomeId": "00000000-0000-0000-0000-000000000015",
+      "learnerAction": "Đo điện áp và dòng điện của tấm pin quang điện dưới cường độ sáng khác nhau",
+      "observableEvidence": "Bảng số liệu V-I và đường đặc trưng vôn-ampe"
+    },
+    {
+      "key": "obj-2",
+      "outcomeId": "00000000-0000-0000-0000-000000000025",
+      "learnerAction": "Xây dựng hàm số công suất P(R) và xác định giá trị cực đại",
+      "observableEvidence": "Đồ thị công suất và điểm làm việc tối ưu Pmax"
+    }
+  ],
+  "studentTasks": [
+    {
+      "key": "task-1",
+      "learnerAction": "Nối mạch đo gồm pin mặt trời, biến trở, ampe kế và vôn kế",
+      "teacherSupport": "Kiểm tra sơ đồ mạch trước khi bật nguồn sáng",
+      "materials": "Tấm pin solar 5V, biến trở 100 ohm, đồng hồ VOM, dây nối",
+      "safety": "Không để tấm pin gần nguồn nhiệt quá 60 độ C",
+      "assessmentEvidence": "Bảng số liệu đo và báo cáo tính Pmax",
+      "executionContextKey": "IN_CLASS_SCREEN"
+    }
+  ],
+  "contributions": [
+    {
+      "component": "S",
+      "explanation": "Hiệu ứng quang điện trong và chuyển hoá quang năng thành điện năng",
+      "objectiveKeys": [
+        "obj-1"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    },
+    {
+      "component": "M",
+      "explanation": "Khảo sát hàm số và tìm cực trị của công suất P = I^2 * R",
+      "objectiveKeys": [
+        "obj-2"
+      ],
+      "taskKeys": [
+        "task-1"
+      ]
+    }
+  ],
+  "safetyNotes": "Sử dụng đồng hồ đo điện đa năng đúng thang đo, không chập mạch acquy/pin lithium",
+  "rawLegacy": null,
+  "steps": [
+    {
+      "stepKey": "OPENING_PROBLEM",
+      "activityKey": "act-open"
+    },
+    {
+      "stepKey": "BACKGROUND_KNOWLEDGE",
+      "activityKey": "act-bg"
+    },
+    {
+      "stepKey": "PROPOSE_SOLUTION",
+      "activityKey": "act-prop"
+    },
+    {
+      "stepKey": "SELECT_SOLUTION",
+      "activityKey": "act-sel"
+    },
+    {
+      "stepKey": "BUILD_TEST",
+      "activityKey": "act-build"
+    },
+    {
+      "stepKey": "CLOSING_SHARE_REFLECT",
+      "activityKey": "act-close"
+    }
+  ]
+}

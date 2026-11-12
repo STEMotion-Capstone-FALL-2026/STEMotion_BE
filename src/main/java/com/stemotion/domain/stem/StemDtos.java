@@ -41,6 +41,7 @@ public final class StemDtos {
    this(expectedBriefRevision,expectedScriptRevision,expectedCompositionRevision,expectedModeRevision,rubricVersionId,criteria,idempotencyKey,null);
   }
  }
+ public record ImportResult(int created, int skipped) {}
  public record Finding(String ruleId,String field,String severity,String message,String basis) {
   public Finding(String ruleId,String field,String severity,String message){this(ruleId,field,severity,message,"PRODUCT_RULE");}
  }

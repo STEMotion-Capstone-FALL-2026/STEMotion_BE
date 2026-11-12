@@ -385,4 +385,81 @@ public class StemService {
   }
   return null;
  }
+ public StemDtos.ImportResult importCatalog(String actor, com.fasterxml.jackson.databind.JsonNode body){
+  if(!access.isAdmin(actor))throw ApiException.forbidden("Only System Admin can import STEM catalog");
+  if(body==null||!body.isObject())throw StemValidator.invalid("request","Expected JSON object");
+  validator.limits(body,0);
+  String idempotencyKey=body.path("idempotencyKey").asText(null);
+  validator.idem(idempotencyKey);
+  if(body.hasNonNull("schemaVersion"))validator.schema(body.path("schemaVersion").asText());
+  String packName=body.hasNonNull("pack")?body.path("pack").asText():null;
+  com.fasterxml.jackson.databind.JsonNode itemsNode=body.path("items");
+  if((itemsNode.isMissingNode()||itemsNode.isNull()||itemsNode.isEmpty())&&packName!=null){
+   String resourcePath="/stem/demo-pack/"+packName+(packName.endsWith(".json")?"":".json");
+   try(var is=getClass().getResourceAsStream(resourcePath)){
+    if(is==null)throw StemValidator.invalid("pack","Unknown demo pack: "+packName);
+    com.fasterxml.jackson.databind.JsonNode packNode=db.json().readTree(is);
+    validator.limits(packNode,0);
+    if(packNode.hasNonNull("schemaVersion"))validator.schema(packNode.path("schemaVersion").asText());
+    itemsNode=packNode.path("items");
+   }catch(ApiException e){throw e;}catch(Exception e){throw StemValidator.invalid("pack","Malformed demo pack: "+e.getMessage());}
+  }
+  if(itemsNode==null||!itemsNode.isArray())throw StemValidator.invalid("items","Expected items array");
+  List<com.fasterxml.jackson.databind.JsonNode> items=new ArrayList<>();
+  itemsNode.forEach(items::add);
+  List<String> order=List.of("SOURCE_EDITION","PROFILE","OUTCOME","RUBRIC","POLICY","TOPIC","TOPIC_VERSION");
+  items.sort(Comparator.comparingInt(item->{
+   int idx=order.indexOf(item.path("kind").asText(""));
+   return idx>=0?idx:999;
+  }));
+  int created=0,skipped=0;
+  for(com.fasterxml.jackson.databind.JsonNode item:items){
+   if(!item.isObject())throw StemValidator.invalid("items","Expected item object");
+   String kindStr=item.path("kind").asText(null);
+   if(kindStr==null)throw StemValidator.invalid("item.kind","Kind is required");
+   StemModels.Kind kind;
+   try{kind=StemModels.Kind.valueOf(kindStr);}catch(Exception e){throw StemValidator.invalid("item.kind","Invalid catalog kind: "+kindStr);}
+   String logicalKey=item.hasNonNull("logicalKey")?item.path("logicalKey").asText():item.path("logical_key").asText(null);
+   validator.key(logicalKey,"item.logicalKey");
+   int versionNo=item.hasNonNull("versionNo")?item.path("versionNo").asInt(0):item.path("version_no").asInt(0);
+   if(versionNo<1)throw StemValidator.invalid("item.versionNo","Expected positive versionNo");
+   String id=item.path("id").asText(null);
+   if(id!=null)validator.key(id,"item.id");
+   String parentId=item.hasNonNull("parentId")?item.path("parentId").asText():item.path("parent_id").asText(null);
+   String sourceId=item.hasNonNull("sourceId")?item.path("sourceId").asText():item.path("source_id").asText(null);
+   if(item.hasNonNull("status")&&!"DRAFT".equals(item.path("status").asText()))throw StemValidator.invalid("item.status","Only DRAFT status is supported");
+   com.fasterxml.jackson.databind.JsonNode data=item.path("data");
+   if(data==null||!data.isObject())throw StemValidator.invalid("item.data","Expected object data");
+   if(data.hasNonNull("verificationStatus")&&!"UNVERIFIED".equals(data.path("verificationStatus").asText()))throw StemValidator.invalid("item.data.verificationStatus","Only UNVERIFIED status is supported");
+   var existingList=db.jdbc().queryForList("select id, kind, logical_key, version_no, parent_id, source_id, status, data from stem_catalog where kind=? and logical_key=? and version_no=?",kind.name(),logicalKey,versionNo);
+   if(!existingList.isEmpty()){
+    var existing=existingList.get(0);
+    String exId=db.text(existing,"id");
+    String exParent=db.text(existing,"parent_id");
+    String exSource=db.text(existing,"source_id");
+    String exStatus=db.text(existing,"status");
+    com.fasterxml.jackson.databind.JsonNode exData=db.decode(db.text(existing,"data"),com.fasterxml.jackson.databind.JsonNode.class);
+    boolean idMatch=(id==null||Objects.equals(id,exId));
+    boolean parentMatch=Objects.equals(parentId,exParent);
+    boolean sourceMatch=Objects.equals(sourceId,exSource);
+    boolean statusMatch="DRAFT".equals(exStatus);
+    boolean dataMatch=Objects.equals(exData,data);
+    if(idMatch&&parentMatch&&sourceMatch&&statusMatch&&dataMatch){skipped++;continue;}
+    else throw ApiException.conflict("Catalog item conflicts with existing record: "+kind+" "+logicalKey+" v"+versionNo);
+   }
+   if(parentId!=null){
+    int cnt=db.jdbc().queryForObject("select count(*) from stem_catalog where id=?",Integer.class,parentId);
+    if(cnt!=1)throw StemValidator.invalid("item.parentId","Parent catalog item does not exist: "+parentId);
+   }
+   if(sourceId!=null){
+    int cnt=db.jdbc().queryForObject("select count(*) from stem_catalog where id=? and kind='SOURCE_EDITION'",Integer.class,sourceId);
+    if(cnt!=1)throw StemValidator.invalid("item.sourceId","Source edition catalog item does not exist: "+sourceId);
+   }
+   String insertId=(id!=null&&!id.isBlank())?id:UUID.randomUUID().toString();
+   db.jdbc().update("insert into stem_catalog(id,kind,logical_key,version_no,revision,parent_id,source_id,status,data) values(?,?,?,?,0,?,?,'DRAFT',?::jsonb)",insertId,kind.name(),logicalKey,versionNo,parentId,sourceId,db.encode(data));
+   created++;
+  }
+  db.audit(actor,"stem_catalog","CATALOG_IMPORT",Map.of("pack",packName!=null?packName:"custom","idempotencyKey",idempotencyKey,"created",created,"skipped",skipped));
+  return new StemDtos.ImportResult(created,skipped);
+ }
 }
