@@ -1,0 +1,313 @@
+{
+  "status": "STAGE1_SPEC_FIXTURES_ONLY_NOT_RUN",
+  "purpose": "Canonical encoding vectors for small projected payloads; not complete scene DTO or end-to-end projector fixtures. Expected digests calculated from explicitly recorded canonical bytes only. No implementation/test suite executed.",
+  "vectors": [
+    {
+      "id": "CV01",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"b\":2,\"a\":1}",
+      "projectionStageNote": "Object key sort; equals CV02",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"a\":1,\"b\":2}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "d155e6b62cd42adff83ab6d1ee5b36e53de5c76bd945571b1f65570bebe8c3a7"
+    },
+    {
+      "id": "CV02",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"a\":1.0,\"b\":2e0}",
+      "projectionStageNote": "Numeric lexical equivalence; equals CV01",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"a\":1,\"b\":2}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "d155e6b62cd42adff83ab6d1ee5b36e53de5c76bd945571b1f65570bebe8c3a7"
+    },
+    {
+      "id": "CV03",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"text\":\"e\\u0301\"}",
+      "projectionStageNote": "NFC; equals CV04",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"text\":\"\u00e9\"}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "df9b8bc193e8b343bbd5a9c3da9c1107d10d611bfab6e36b724e1c9187a241d0"
+    },
+    {
+      "id": "CV04",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"text\":\"\\u00e9\"}",
+      "projectionStageNote": "NFC literal; equals CV03",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"text\":\"\u00e9\"}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "df9b8bc193e8b343bbd5a9c3da9c1107d10d611bfab6e36b724e1c9187a241d0"
+    },
+    {
+      "id": "CV05",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"subjectKeys\":[\"b\",\"a\"]}",
+      "projectionStageNote": "Declared set projector sort, not generic array sort; equals CV06",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"subjectKeys\":[\"a\",\"b\"]}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "d4d29921f950e292db35b0a6c571bf0f12a7fa7e84fb1cb1488aaa56e3a0b388"
+    },
+    {
+      "id": "CV06",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"subjectKeys\":[\"a\",\"b\"]}",
+      "projectionStageNote": "Declared set; equals CV05",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"subjectKeys\":[\"a\",\"b\"]}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "d4d29921f950e292db35b0a6c571bf0f12a7fa7e84fb1cb1488aaa56e3a0b388"
+    },
+    {
+      "id": "CV07",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"steps\":[\"a\",\"b\"]}",
+      "projectionStageNote": "Ordered array; differs CV08",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"steps\":[\"a\",\"b\"]}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "adc587326351f29ae7c3fec3de94621eb0e3b9a04623da796e784eb3ec0d6386"
+    },
+    {
+      "id": "CV08",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"steps\":[\"b\",\"a\"]}",
+      "projectionStageNote": "Ordered array changed; differs CV07",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"steps\":[\"b\",\"a\"]}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "c90de2cbc6e248a48178b73846c2417813deaa2f4375089daf3589cbaa6d3857"
+    },
+    {
+      "id": "CV09",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"value\":-0.0}",
+      "projectionStageNote": "Negative zero; equals CV10",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"value\":0}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "82e6f7be9dae69b7c6ee308c81cb2404b9f0b80e1d154fdc0d49e8ee0ae9cdcc"
+    },
+    {
+      "id": "CV10",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"value\":0e10}",
+      "projectionStageNote": "Zero lexical form; equals CV09",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"value\":0}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "82e6f7be9dae69b7c6ee308c81cb2404b9f0b80e1d154fdc0d49e8ee0ae9cdcc"
+    },
+    {
+      "id": "CV11",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"unit\":\"mA\"}",
+      "projectionStageNote": "Units retained; differs CV12",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"unit\":\"mA\"}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "3d79757eb8b9eab6705be1dc86951a897fef7e1ff6a97a2107c60de1d4ffa80b"
+    },
+    {
+      "id": "CV12",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"unit\":\"A\"}",
+      "projectionStageNote": "Units retained; differs CV11",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"unit\":\"A\"}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "e88e645aafa0f6d72df7d429c3072221d77e43cac227847ca9bb2b217ca0c412"
+    },
+    {
+      "id": "CV13",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"latex\":\"x-y\"}",
+      "projectionStageNote": "Minus retained; differs CV14",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"latex\":\"x-y\"}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "568de56627b523a7419500380b994716c4bc4ab79b5cea8e26974b38ba86bb2e"
+    },
+    {
+      "id": "CV14",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"latex\":\"x+y\"}",
+      "projectionStageNote": "Plus retained; differs CV13",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"latex\":\"x+y\"}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "49a171b4cc796b1e8364f67838b585310f1cedc2fe0c9c1b6e4096940e98fbf5"
+    },
+    {
+      "id": "CV15",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"value\":1.2300e3}",
+      "projectionStageNote": "Plain decimal, no rounding",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"value\":1230}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "228074127a371a08e8cb5e064b6b055a301578fcae708aa8fef1d3f67d7cea93"
+    },
+    {
+      "id": "CV16",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"value\":0.123456789012345678901234567890}",
+      "projectionStageNote": "Decimal precision retained, no binary double parse of original JSON",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"value\":0.12345678901234567890123456789}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "3754ddc5234a9a1154dfeacd43e4891129ccc6365f974f1769a6ea587f6d512d"
+    },
+    {
+      "id": "CV17",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{}",
+      "projectionStageNote": "Missing unknown field differs CV18",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "1b01c413c0df1a579aba4aa29fcfa24fd34f7a3394aa7211f32c9a88d74998db"
+    },
+    {
+      "id": "CV18",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"unknown\":null}",
+      "projectionStageNote": "Explicit null retained in unknown subtree",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"unknown\":null}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "4e075783ba3bb0d76839128b2428a961f20ac6ba0c9f373192c094839a03ae78"
+    },
+    {
+      "id": "CV19",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"a\":1,\"b\":2}",
+      "projectionStageNote": "Domain separation: same canonical bytes, differs CV01",
+      "projection": "renderInput",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"a\":1,\"b\":2}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350072656e646572496e707574007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "e1349f5d8a0f4ba6399f2d470857254783853fd2034dc66e11681db40aa83280"
+    },
+    {
+      "id": "CV20",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"a\":1,\"b\":2}",
+      "projectionStageNote": "Hash version changes, differs CV01; new transitions NEEDS_REVIEW, no rewrite history",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v2",
+      "canonicalUtf8Literal": "{\"a\":1,\"b\":2}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7632007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "5815952b65cb7e19df0f6c98522a527d3592c2d435373eddc52e7dcf513fb946"
+    },
+    {
+      "id": "CV21",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"text\":\"A\"}",
+      "projectionStageNote": "Case preserved, differs CV22",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"text\":\"A\"}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "c4a700358fdf937026a6430afab2edfbeb3211290b09f9819ebe998ee9829a70"
+    },
+    {
+      "id": "CV22",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"text\":\"a\"}",
+      "projectionStageNote": "Case preserved, differs CV21",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"text\":\"a\"}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "326d40c96d8adaf2a72f1f3f876ead25cfeca4f1f1285a4ae6f1f01b45eb0082"
+    },
+    {
+      "id": "CV23",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"text\":\"x\\ny\"}",
+      "projectionStageNote": "Control code canonical escape uses lowercase unicode escape",
+      "projection": "semantic",
+      "hashVersion": "stem-hash.v1",
+      "canonicalUtf8Literal": "{\"text\":\"x\\u000ay\"}",
+      "prefixUtf8Hex": "5354454d6f74696f6e2f50350073656d616e746963007374656d2d686173682e7631007374656d2d63616e6f6e6963616c2e7631007374656d2d70726f6a6563746f722e7631007374656d2d636c61737369666965722e763100",
+      "expectedSha256": "003e629ae61bf6295dfcc037aa6e723232924ea86ab411f4d73ba05ded14f28f"
+    },
+    {
+      "id": "CV24",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"value\":NaN}",
+      "expectedStatus": 400,
+      "reason": "Non-finite invalid JSON/value",
+      "canonicalUtf8Literal": null,
+      "expectedSha256": null
+    },
+    {
+      "id": "CV25",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"value\":Infinity}",
+      "expectedStatus": 400,
+      "reason": "Non-finite invalid JSON/value",
+      "canonicalUtf8Literal": null,
+      "expectedSha256": null
+    },
+    {
+      "id": "CV26",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"a\":1,\"a\":2}",
+      "expectedStatus": 400,
+      "reason": "Duplicate JSON keys",
+      "canonicalUtf8Literal": null,
+      "expectedSha256": null
+    },
+    {
+      "id": "CV27",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"e\\u0301\":1,\"\\u00e9\":2}",
+      "expectedStatus": 400,
+      "reason": "Key collision after NFC",
+      "canonicalUtf8Literal": null,
+      "expectedSha256": null
+    },
+    {
+      "id": "CV28",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"text\":\"\\ud800\"}",
+      "expectedStatus": 400,
+      "reason": "Unpaired surrogate",
+      "canonicalUtf8Literal": null,
+      "expectedSha256": null
+    },
+    {
+      "id": "CV29",
+      "stage": "SPECIFICATION_NOT_IMPLEMENTATION_TEST",
+      "inputLiteral": "{\"subjectKeys\":[\"a\",\"a\"]}",
+      "expectedStatus": 400,
+      "reason": "Declared reference set duplicate must reject, not dedup",
+      "canonicalUtf8Literal": null,
+      "expectedSha256": null
+    }
+  ]
+}

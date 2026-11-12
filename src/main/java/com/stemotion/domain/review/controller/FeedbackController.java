@@ -136,7 +136,8 @@ public class FeedbackController {
     public ResponseEntity<Void> approveVideo(@PathVariable String projectId,
             @AuthenticationPrincipal UserDetails principal,
             @RequestBody(required = false) com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest request) {
-        feedbackService.approveVideo(projectId, principal.getUsername(), request == null ? null : request.note());
+        if(request!=null && request.changeTarget()!=null)throw com.stemotion.core.exception.ApiException.badRequest("changeTarget only allowed on request-changes");
+        feedbackService.approveVideo(projectId, principal.getUsername(), request == null ? null : request.note(), request == null ? null : request.stemAssessment());
         return ResponseEntity.noContent().build();
     }
 
@@ -146,6 +147,7 @@ public class FeedbackController {
     public ResponseEntity<Void> sendBack(@PathVariable String projectId,
             @AuthenticationPrincipal UserDetails principal,
             @RequestBody(required = false) com.stemotion.domain.script.dto.ScriptDtos.ReviewDecisionRequest request) {
+        if(request!=null && (request.stemAssessment()!=null || request.changeTarget()!=null))throw com.stemotion.core.exception.ApiException.badRequest("Send-back accepts note only");
         feedbackService.sendBackToProduction(projectId, principal.getUsername(), request == null ? null : request.note());
         return ResponseEntity.noContent().build();
     }

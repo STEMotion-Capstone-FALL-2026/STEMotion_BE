@@ -49,8 +49,10 @@ public final class AiDtos {
          * the AI choose.
          */
         @Size(max = 800, message = "approach must be at most 800 characters")
-        String approach
+        String approach,
+        JsonNode stemContext
     ) {
+        public GenerateScriptRequest(String topic,StemSubject subject,String gradeLevel,Integer targetDurationSec,String narrativeBrief,String approach){this(topic,subject,gradeLevel,targetDurationSec,narrativeBrief,approach,null);}
         public GenerateScriptRequest(String topic, StemSubject subject, String gradeLevel, Integer targetDurationSec) {
             this(topic, subject, gradeLevel, targetDurationSec, null, null);
         }
@@ -77,8 +79,11 @@ public final class AiDtos {
 
         StemSubject subject,
 
-        String gradeLevel
-    ) {}
+        String gradeLevel,
+        JsonNode stemContext
+    ) {
+        public ScriptActionRequest(AiAction action,String scriptText,StemSubject subject,String gradeLevel){this(action,scriptText,subject,gradeLevel,null);}
+    }
 
     /**
      * Raw model output plus the metadata the UI shows next to each suggestion.
@@ -96,7 +101,9 @@ public final class AiDtos {
         }
     }
 
-    public record AiDecisionRequest(@NotNull com.stemotion.domain.ai.entity.AiRequest.Decision decision) {}
+    public record AiDecisionRequest(@NotNull com.stemotion.domain.ai.entity.AiRequest.Decision decision,JsonNode grounding) {
+        public AiDecisionRequest(com.stemotion.domain.ai.entity.AiRequest.Decision decision){this(decision,null);}
+    }
 
     /** Suggestions returned by {@code resegment}, ready to become scenes. */
     public record SuggestedScene(

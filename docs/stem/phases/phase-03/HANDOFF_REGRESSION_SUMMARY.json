@@ -1,0 +1,1402 @@
+{
+  "log": "p3-handoff-regression-native.log",
+  "result": {
+    "name": "p3-handoff-regression-native",
+    "exit_code": 0,
+    "elapsed_seconds": 105.37,
+    "repo": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE",
+    "tests": "",
+    "external_providers": "disabled/local placeholders; environment allow-list"
+  },
+  "counts": {
+    "tests": 439,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 17,
+    "passed": 422
+  },
+  "suite_count": 80,
+  "stem_suites": [
+    {
+      "suite": "com.stemotion.domain.stem.StemPostgresTest",
+      "counts": {
+        "tests": 29,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "inactiveReviewerCannotWriteAssessment",
+        "reorderInsertAndDeleteNeverRetargetExistingEvidence",
+        "testMigrationRejectsWrongPrerequisiteType",
+        "wrongActorAndAdminWithoutReviewerCannotAssess",
+        "workflowApproveLinksExactlyOneExistingDecisionAndRetry",
+        "outcomeGradeMismatchIsRejectedWithoutPromotingContent",
+        "nullDraftReplayCasAndUnknownFieldApi",
+        "staleApproveWritesNeitherDecisionNorAssessment",
+        "validationRateAndRunsAreIsolated",
+        "concurrentSavesHaveOneWinner",
+        "requestChangesCopiesEvidenceByIdentityNotOrder",
+        "sameKeyDifferentPayloadIsConflict",
+        "bothVideoBranchesUseSameAssessmentGuardAndRetry(boolean)[1]",
+        "bothVideoBranchesUseSameAssessmentGuardAndRetry(boolean)[2]",
+        "sceneDeletionPreservesOrphanAndExplicitEvidenceRetirement",
+        "copyMapWrongRollsBackNewVersion",
+        "actualBodyByteCapCannotBeBypassedWithWhitespace",
+        "keyedRequestChangesRetryCannotDuplicateVersion",
+        "catalogResponseIsTypedJsonAndUnverified",
+        "legacyAdminApprovalWithoutAssessmentStaysLegacy",
+        "freshSchemaAndRlsHaveNoVerifiedOrStrictContent",
+        "rlsRejectsClientInsertionDespiteAnExplicitGrant",
+        "pinnedOldPolicySurvivesAssignmentChange",
+        "crossWorkspaceOrVersionCannotBeReadThroughApi",
+        "clientsHaveNoRlsReadOrWritePolicy",
+        "staleModeAssessmentAndLegacyConflictRequireExplicitSelection",
+        "legacyDepartmentLibrarySuggestsChannelWithoutInferringPrimary",
+        "copyFailureRollsBackWorkflowAndKeepsOriginalInReview",
+        "settingsPinNoBackfillAndStrictRefused"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.stem.StemValidatorTest",
+      "counts": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "unapprovedHypothesisContextsAreNotAddedFromMaster",
+        "aiWarningAloneIsNotAHardGate",
+        "draftNullPrimaryIsAllowedButIncomplete",
+        "legacyDecisionJsonStillDeserializesAndClaimsDoNot",
+        "unknownClaimsAreRejected",
+        "strictIsOnlyPureNegativeEvaluator",
+        "limitsAndMissingRevisionHaveFieldErrors",
+        "channelCannotBePrimary",
+        "evidenceNeedsATargetAndMatchingTask"
+      ]
+    }
+  ],
+  "suites": [
+    {
+      "suite": "com.stemotion.core.enums.RenderResolutionTest",
+      "counts": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "everyPresetIsSixteenByNine(RenderResolution)[1]",
+        "everyPresetIsSixteenByNine(RenderResolution)[2]",
+        "everyPresetIsSixteenByNine(RenderResolution)[3]",
+        "everyPresetIsSixteenByNine(RenderResolution)[4]",
+        "resolves1440p",
+        "defaultsTo1080p",
+        "rejectsUnknown"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.enums.StemSubjectConverterTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "readsBothSchemasAndWritesSupabaseLabel"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.exception.GlobalExceptionHandlerTest",
+      "counts": {
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "badEnumInQueryIs400",
+        "wrongContentTypeIs415",
+        "wrongMethodIs405",
+        "staleRevisionCarriesDetails",
+        "envelopeIsComplete",
+        "unexpectedStays500",
+        "unknownUrlIs404",
+        "unreadableBodyIs400",
+        "apiExceptionPassesThrough",
+        "accessDeniedIs403",
+        "missingParameterIs400",
+        "badEnumInBodyListsAllowedValues",
+        "missingHeaderIs400",
+        "concurrentUpdateIs409"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.AuthRateLimiterTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "independentKeysDoNotResetTheAccountBucket"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.AuthSessionVersionTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "credentialMutationInvalidatesPreviouslyIssuedTokens"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.JwtServiceTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsForeignSignature",
+        "rejectsTamperedToken",
+        "rejectsExpiredToken",
+        "rejectsGarbage",
+        "roundTripsUserId"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.ProjectAndNoteGuardsTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "noteRolesFollowTheProject",
+        "archiveIsKeptToOwnerLeaderAndAdmin",
+        "notesAreDeletedByTheirAuthorOnly",
+        "leaderFlagAcceptsBothNames"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.ResourceAccessInterceptorTest",
+      "counts": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "draftingAndApproachesRequireActiveWriterMembership",
+        "archivingNeedsMembershipOnlySoALeaderOfAnyRoleReachesTheArchiveCheck",
+        "guardsDraftWritesAsEdits",
+        "pollingJobChecksItsWorkspaceThroughProject",
+        "guardsNestedVideoActionsAsProjectAccess",
+        "guardsWorkspaceMemberManagement",
+        "alignmentRetainsItsOwnControllerGuards",
+        "listingWorkspaceMembersRequiresMembershipOnly",
+        "creationRequiresMembershipButNotWorkspaceAdmin"
+      ]
+    },
+    {
+      "suite": "com.stemotion.core.security.WorkspaceAccessTest",
+      "counts": {
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "nonWriterCannotEditDraft",
+        "requireAiAccessPassesForWriterOrAdmin",
+        "inactiveMemberIsNotActiveAccess",
+        "anyWorkspaceWriterCanEditDraftEvenIfNotOriginalOwner",
+        "oneRequestReadsTheUserMembershipsAndProjectOnce",
+        "globalAdminCanAccessWorkspace",
+        "workspaceLeaderCanManageWithoutGlobalAdminRole",
+        "producersUseAiForNarrationAndCaptionsButReviewersDoNot",
+        "membersCannotReadAnotherWorkspace",
+        "ordinaryMemberCannotManageSeats",
+        "roleAnywhereIgnoresTheAccountRoleAndInactiveSeats"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.admin.controller.AdminPortalAccessTest",
+      "counts": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "ordinaryRolesCannotReadAdminMetricsOrManageUsers(String)[1]",
+        "ordinaryRolesCannotReadAdminMetricsOrManageUsers(String)[2]",
+        "ordinaryRolesCannotReadAdminMetricsOrManageUsers(String)[3]",
+        "adminCanReadAllOverviewEndpoints",
+        "guestCannotReadAdminMetrics(String)[1]",
+        "guestCannotReadAdminMetrics(String)[2]",
+        "guestCannotReadAdminMetrics(String)[3]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.admin.controller.AiUsageAccessTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "onlyAdminReadsAiUsage"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.admin.service.AdminMetricsServiceTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "contentCountsDoNotInventProviderUsageOrCost",
+        "historicalJobsDoNotBecomeTodaysCompletions"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.controller.AiAlignmentAccessTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "workerMustHaveSeparateConfiguredKey",
+        "onlyAuthorizedRolesUsePublicAlignment"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.AiApproachTest",
+      "counts": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "draftSchemaOffersComposedScenes",
+        "refusesOffTopicApproaches",
+        "draftInventsAnApproachWhenNoneIsGiven",
+        "replacesUnknownIconsInBlocks",
+        "suggestsThreeApproaches",
+        "draftFollowsTheChosenApproach"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.AiConfiguredPricingTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "missingPricingEnvKeepsEstimatesUnknown",
+        "configuredSnapshotRatesCalculateMockTokensWithoutAnyApi"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.AiCostCalculatorTest",
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "auditStampsRateVersionAndUnknownCostsRemainNull",
+        "invalidPricesFailConfigurationInsteadOfGuessing",
+        "estimatesOnlyKnownActualModelAndCompleteTokenCounts"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.AiMetaphorTest",
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "metaphorSchemaDescribesAStagedScene",
+        "metaphorPromptCarriesSceneAndIcons",
+        "generatedScriptOffersStorytellingLayouts"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.AiScriptServiceTest",
+      "counts": {
+        "tests": 19,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "missingOrBlankBriefLetsAiChoose(String)[1]",
+        "missingOrBlankBriefLetsAiChoose(String)[2]",
+        "missingOrBlankBriefLetsAiChoose(String)[3]",
+        "rejectsOverlongBriefAtHttpValidationBeforeCallingGemini",
+        "preservesInvalidTopicGuardrail",
+        "remoteMetaphorUsesGenericGatewayInsteadOfUnsupportedActionEndpoint",
+        "preservesArcAndSegmentsInResultAndKeepsArcOptionalInSchema",
+        "olderJsonRequestsWithoutBriefRemainCompatible",
+        "replacesUnknownGeneratedIconBeforeReturningToFrontend",
+        "keepsBothWriterInputsAndApproachMetadata",
+        "includesWriterBriefBetweenGuardrailAndGenerationWithoutChangingConstraints",
+        "approachesRemainAvailableAlongsideNarrativeDrafting",
+        "preservesAllDynamicPacingBranches(int)[1]",
+        "preservesAllDynamicPacingBranches(int)[2]",
+        "preservesAllDynamicPacingBranches(int)[3]",
+        "preservesAllDynamicPacingBranches(int)[4]",
+        "invalidTopicStillThrowsBadRequestWithoutArcEvenWhenWriterProvidesBrief",
+        "replacesUnknownResegmentedIconSuggestionsToo",
+        "suppliesCatalogInInstructionAndPreservesSceneContract"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.ProposalAlignmentTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "draftOffersTheRegisteredTemplates",
+        "promptFavoursTheTemplateSetAndThePhases"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.VideoStoryboardAccessTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "wrongProjectRoleDoesNotConsumeAi",
+        "scopedProducerMayRequestSuggestion"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.ai.service.VideoStoryboardServiceTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "staleInputIsRefusedBeforeProvider",
+        "disabledDoesNotCallProvider",
+        "returnsSuggestionBoundToSourceAndFlagsNewerEditsWithoutSaving",
+        "changedSceneIdentityIsRejected"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.controller.AccountProvisioningAccessTest",
+      "counts": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "legacyRegisterIsDisabledForGuestAndAdmin",
+        "adminCreatesAccountWithoutReceivingItsSession",
+        "invalidProvisioningRequestIsRejectedBeforePersistence",
+        "ordinaryRoleCannotProvision(String)[1]",
+        "ordinaryRoleCannotProvision(String)[2]",
+        "ordinaryRoleCannotProvision(String)[3]",
+        "guestCannotProvisionAnAccount"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.controller.AuthControllerTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "messageAsksForANewSession",
+        "nullPrincipalIsUnauthorized"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.AuthMigrationRehearsalTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "approvedLegacyEmailMappingSeparatesCaseDuplicatesWithoutChangingOwners",
+        "reviewedBackfillPreservesUsersAndRejectsMissingMappings"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.GoogleAuthPolicyTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "identityOwnedByAnotherUserCannotBeMergedDuringLink",
+        "outsideWhitelistNeverCreatesOrLinksAUser",
+        "approvedGoogleOnlyUserHasNoPasswordOrForcedPasswordChange",
+        "consumedOrWrongPurposeChallengeCannotMutateAccounts"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.RegistrationPolicyTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "publicSignupCannotProvisionAnyRoleOrTouchPersistence(SystemRole)[1]",
+        "publicSignupCannotProvisionAnyRoleOrTouchPersistence(SystemRole)[2]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.RoleContractTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rolesCannotCrossSystemAndWorkspaceBoundaries"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.RolesAndNotificationsPostgresTest",
+      "counts": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "retryFailureAndUnknownOutcomeNeverRevokeWhitelist",
+        "googleOnlyAdminCannotLoseTheLastUsableAdministratorLogin",
+        "concurrentDispatchersAcceptEachEventOnce",
+        "demotionInvalidatesSessionsAndCannotRemoveLastAdmin",
+        "expiredLeaseRequiresExplicitResendAndResendIsRateLimited",
+        "whitelistAndOutboxRollbackTogetherAndRevokeCancelsOldGrant",
+        "twoAdminsCannotDemoteEachOtherConcurrently"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.RolesMigrationRehearsalTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "nativeEnumIsSplitWithoutChangingMembershipsOrCredentials"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.SupabaseRegistrationTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "cases": [
+        "registrationAndLoginPersistNativeEnumsAndUuid(SystemRole)"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.SupabaseSchemaValidationTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "cases": [
+        "contextAndReadOnlySchemaValidationSucceed"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.SupabaseScriptFlowTest",
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      "cases": [
+        "scriptSceneAndBothFeedbackTargetsRoundTrip",
+        "artifactReviewPublicationAndFailedAiRoundTrip",
+        "directMemberAssignmentBecomesActiveImmediately"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.UsernameLoginTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "migratedEmailShapedUsernameUsesOnlyUsernameLookup",
+        "temporaryPasswordOnlyRestrictsPasswordSessions",
+        "googleOnlyCannotUsePasswordLogin",
+        "usernameIsCanonicalAndEmailIsNotQueried"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.auth.service.UserProvisioningTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "duplicateEmailDoesNotOverwriteExistingAccount",
+        "storesOnlyPasswordHashAndPreservesExistingUsers"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.notification.ConfiguredNotificationSenderTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "brevoPayloadUsesBackendCredentialsAndProviderAcceptanceIsReturned",
+        "realEmailCannotStartWithMissingCredentialsOrInsecurePublicUrl",
+        "providerRateLimitRetriesButConfigurationFailureIsTerminal",
+        "brevoAllowsLocalFrontendLinksButRejectsPublicHttpAndLookalikeHosts",
+        "localPreviewNeverUsesTransportAndDoesNotPutRecipientInFilename"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.controller.CompositionAccessTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "membersMayOpenTheDraft",
+        "producerOfTheWorkspaceSavesTheDraft",
+        "aSaveWithoutBaseRevisionIsRejected",
+        "writerOfTheWorkspaceCannotEditTheProductionDraft"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.ClipArtifactServiceTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsRebindingExistingArtifact",
+        "createsArtifactWithoutInventingQaOrDuration",
+        "replayPreservesOriginalArtifactAndQa",
+        "incompleteAndMissingUrlCannotCreateArtifact",
+        "keepsTheWorkersCaptionSyncForQa"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.CompositionServiceTest",
+      "counts": {
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "savesTheVisualTheme",
+        "opensTheApprovedScriptAsDraft",
+        "concurrentFirstSaveIsAConflict",
+        "approvalChangedBeforeVersionLockRefusesMeasurement",
+        "onlyApprovedScripts",
+        "renderScenesForQa",
+        "lockedOutsideProduction",
+        "appliesMeasuredDurations",
+        "validatesProps",
+        "replacementApprovedVersionWithTheSameCompositionRevisionRefusesOldAudio",
+        "keepsTheApprovedStructure",
+        "renderUsesTheComposition",
+        "savesEditsAsNextRevision",
+        "refusesStaleRevision"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.FrozenCompositionRenderTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "completionKeepsApproval",
+        "publishedIsFinal",
+        "renderAfterApprovalKeepsApproval",
+        "noSecondJob"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.NarrationToolsServiceTest",
+      "counts": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "theDraftRevisionReadBeforeMeasuringIsTheOneTheWriteMustStillMatch",
+        "aStaleBaseRevisionIsRefusedBeforeAnyTtsIsPaidFor",
+        "anApprovedScriptsCompositionGetsANewRevisionWithCaptionWords",
+        "aPreviewReadsTheSceneNarrationAndRefusesLongText",
+        "aDraftHasItsSceneRowsTimedByTheWriter",
+        "versionIdentityIsCapturedBeforeWorkerForBothDraftAndComposition"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.PublicationFlowTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "embedRejectsExecutableAndInsecureUrls",
+        "failedQaCannotPublish",
+        "duplicatePlatformCannotProduceAnotherLegacyRecord",
+        "internalLibraryCreatesCanonicalAndLegacyRecords",
+        "lmsUsesActualArtifactUrl"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.PublishAvailabilityTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "unsupportedTargetCannotMarkProjectPublished(PublishTarget)[1]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.RenderContractTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "theWorkerHearsAboutAJobOnlyAfterItsRowIsCommitted",
+        "legacy4k60RequestProduces1080p30WithoutChangingTimelineAndUsesVoice"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.RenderRetryTest",
+      "counts": {
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "labelsTheAttempt",
+        "releasesProjectAfterFinalFailure",
+        "rejectsMissingApiKey",
+        "cancelledJobIgnoresLateWorkerCompletion",
+        "keepsProjectRenderingBetweenAttempts",
+        "requeuesOnFirstFailure",
+        "completionReplayCannotUndoVideoApproval",
+        "retrySendsTheSameCompositionVersion",
+        "completedRenderIsNotRetried",
+        "doesNotSpinWhenRequeueFails",
+        "rejectsWrongApiKey",
+        "rebuildsLegacyPayloadOnRetry",
+        "stopsAtTheAttemptBudget"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.production.service.TemplateMetadataTest",
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "invalidMetadataFailsBeforePersistence",
+        "recommendedSubjectsAndDefaultThemeAreValidatedAndKept",
+        "oldPayloadPreservesExistingDirectorMetadata"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.project.entity.ClipProjectPipelineStatusTest",
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "archivedWins",
+        "inReview",
+        "draft",
+        "approvedBeforeRender",
+        "published",
+        "clipReview",
+        "rendering",
+        "changeRequestedFallsBackToDraft"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.project.service.ReviewDecisionEventTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "unchangedAggregateStillRecordsArtifactDecision"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.project.service.StatusHistoryServiceTest",
+      "counts": {
+        "tests": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[1]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[2]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[3]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[4]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[5]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[6]",
+        "rejectsSkippedStages(ProjectStatus, ProjectStatus)[7]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[1]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[2]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[3]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[4]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[5]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[6]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[7]",
+        "allowsValidTransitions(ProjectStatus, ProjectStatus)[8]",
+        "draftCannotJumpToApproved",
+        "archivingIsAlwaysAllowed"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.review.service.ClipQaServiceTest",
+      "counts": {
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "missingCaptionsOnlyWarn",
+        "catchesTooShortClip",
+        "structureIssuesOnlyWarn",
+        "renderedAlignmentReplacesTheEstimate",
+        "catchesLowContrastColour",
+        "catchesTitleOverflow",
+        "measuredNarrationOverridesTheEstimate",
+        "emptyScriptFails",
+        "checksTheRenderedComposition",
+        "acceptsHighContrastColour",
+        "requiresRenderedVideo",
+        "catchesTooShortScene",
+        "captionsPastTheSceneFail",
+        "alignedCaptionsPass",
+        "healthyClipPasses",
+        "catchesNarrationOverrun"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.review.service.ReviewHistoryServiceTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "decisionsOnScriptsClipsAndCompositionsReadBackWithReasonAndVersion"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.review.service.WebFirstReviewTest",
+      "counts": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "sendBackTheComposition",
+        "approveTheMatchingClip",
+        "gateCountsTheCurrentClipOnly",
+        "newPinsAreScopedToTheCurrentClip",
+        "pagedNotesKeepTheirThreads",
+        "approveTheCompositionThenRender",
+        "repliesAndResolveAudit",
+        "staleClipDoesNotCount",
+        "submitWithoutRendering"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.controller.ScriptDraftAccessTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "guestCannotSaveDraft",
+        "writerAndAdminReachDraftService(String)[1]",
+        "writerAndAdminReachDraftService(String)[2]",
+        "nonWriterCannotSaveDraftEvenWhenResourceScopeAllowsIt(String)[1]",
+        "nonWriterCannotSaveDraftEvenWhenResourceScopeAllowsIt(String)[2]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.mapper.ComposedSceneValidatorTest",
+      "counts": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsOverlongText",
+        "rejectsAnswerOutsideOptions",
+        "requiresFrameAndBlocks",
+        "rejectsUnknownBlockIcon",
+        "rejectsBlocksWithoutContent",
+        "rejectsDuplicateIdsAndTooManyBlocks",
+        "rejectsDanglingReferences",
+        "acceptsMixedBlocks",
+        "rejectsUnknownEnums"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.mapper.DirectorPlanValidatorTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsUnverifiedChemistryPresets",
+        "rejectsWrongTypesAndFrameBasedDirectorInput",
+        "acceptsKnownPlanAndRejectsUnknownOrExecutableInput",
+        "phaseBAssetsAndVariantsMatchAllowlist"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.mapper.SceneMapperTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "mapsRequestToEntity",
+        "serialisesFlattened",
+        "explicitOrderNoWins",
+        "roundTripsProps",
+        "emptyPropsAreNeverNull"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.mapper.ScenePropsValidatorTest",
+      "counts": {
+        "tests": 29,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "rejectsNamelessIcon",
+        "rejectsIncompleteGeometryDimensions",
+        "acceptsIllustratedWithoutOptionalProps",
+        "acceptsValidIllustrated",
+        "rejectsUnknownIcon",
+        "acceptsNewFlatOptions",
+        "rejectsEmptyOrOversizedIconList",
+        "rejectsIncompleteComparisonSide",
+        "rejectsOutOfRangeCorrectIndex",
+        "everySceneTypeHasRules(SceneType)[1]",
+        "everySceneTypeHasRules(SceneType)[2]",
+        "everySceneTypeHasRules(SceneType)[3]",
+        "everySceneTypeHasRules(SceneType)[4]",
+        "everySceneTypeHasRules(SceneType)[5]",
+        "everySceneTypeHasRules(SceneType)[6]",
+        "everySceneTypeHasRules(SceneType)[7]",
+        "everySceneTypeHasRules(SceneType)[8]",
+        "everySceneTypeHasRules(SceneType)[9]",
+        "everySceneTypeHasRules(SceneType)[10]",
+        "everySceneTypeHasRules(SceneType)[11]",
+        "everySceneTypeHasRules(SceneType)[12]",
+        "everySceneTypeHasRules(SceneType)[13]",
+        "rejectsUnknownAmbienceOrLayout",
+        "rejectsUnknownGeometryShape",
+        "rejectsSingleOptionQuiz",
+        "rejectsNullType",
+        "acceptsStorytellingLayouts",
+        "namesEveryMissingProp",
+        "acceptsValidQuiz"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.DraftRevisionTest",
+      "counts": {
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "replacementVersionWithTheSameRevisionRejectsOldDurations",
+        "durationsOfAnOlderDraftAreRefused",
+        "requiredRevisionFlagRefusesLegacySaveBeforeMutation",
+        "measuredDurationsBumpTheRevision",
+        "aVersionSwitchDuringLockAcquisitionNeverFallsBackToAnUnlockedVersion",
+        "staleSaveCarriesDetails",
+        "staleRevisionIsAConflict",
+        "submittedVersionCannotBeTimedEvenWhenProjectReadWasStillDraft",
+        "currentRevisionSaves",
+        "missingBaseRevisionKeepsWorking"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.ProjectArchiveTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "runningRenderMustBeCancelledFirst",
+        "deleteArchivesAndRetainsRowsAndAudit"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.ReviewQueueScopeTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "listsOnlyWorkspacesWhereTheUserReviews",
+        "leavingAWorkspaceHidesOwnScripts"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.ReviewReasonTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "returningAScriptOrClipWithoutAReasonIsRefused(String)[1]",
+        "returningAScriptOrClipWithoutAReasonIsRefused(String)[2]",
+        "returningAScriptOrClipWithoutAReasonIsRefused(String)[3]",
+        "theReasonIsKeptTrimmed"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.SceneIdentityTest",
+      "counts": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "legacyPropIdIsRecoveredAndCannotShadowCanonicalId",
+        "addingSceneDoesNotRecreateExistingScenes",
+        "feedbackPreventsDeletionEvenIfFeedbackIsResolved",
+        "deletionWithoutFeedbackRemovesOnlyOmittedScene",
+        "editingAndReorderingKeepOriginalRowsAndFeedbackIdentity",
+        "foreignVersionIdAndDuplicatesAreRejectedBeforeWrites"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.script.service.SubmittedScriptTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "reviewSnapshotCannotBeReplaced(ScriptStatus)[1]",
+        "reviewSnapshotCannotBeReplaced(ScriptStatus)[2]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.stem.StemPostgresTest",
+      "counts": {
+        "tests": 29,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "inactiveReviewerCannotWriteAssessment",
+        "reorderInsertAndDeleteNeverRetargetExistingEvidence",
+        "testMigrationRejectsWrongPrerequisiteType",
+        "wrongActorAndAdminWithoutReviewerCannotAssess",
+        "workflowApproveLinksExactlyOneExistingDecisionAndRetry",
+        "outcomeGradeMismatchIsRejectedWithoutPromotingContent",
+        "nullDraftReplayCasAndUnknownFieldApi",
+        "staleApproveWritesNeitherDecisionNorAssessment",
+        "validationRateAndRunsAreIsolated",
+        "concurrentSavesHaveOneWinner",
+        "requestChangesCopiesEvidenceByIdentityNotOrder",
+        "sameKeyDifferentPayloadIsConflict",
+        "bothVideoBranchesUseSameAssessmentGuardAndRetry(boolean)[1]",
+        "bothVideoBranchesUseSameAssessmentGuardAndRetry(boolean)[2]",
+        "sceneDeletionPreservesOrphanAndExplicitEvidenceRetirement",
+        "copyMapWrongRollsBackNewVersion",
+        "actualBodyByteCapCannotBeBypassedWithWhitespace",
+        "keyedRequestChangesRetryCannotDuplicateVersion",
+        "catalogResponseIsTypedJsonAndUnverified",
+        "legacyAdminApprovalWithoutAssessmentStaysLegacy",
+        "freshSchemaAndRlsHaveNoVerifiedOrStrictContent",
+        "rlsRejectsClientInsertionDespiteAnExplicitGrant",
+        "pinnedOldPolicySurvivesAssignmentChange",
+        "crossWorkspaceOrVersionCannotBeReadThroughApi",
+        "clientsHaveNoRlsReadOrWritePolicy",
+        "staleModeAssessmentAndLegacyConflictRequireExplicitSelection",
+        "legacyDepartmentLibrarySuggestsChannelWithoutInferringPrimary",
+        "copyFailureRollsBackWorkflowAndKeepsOriginalInReview",
+        "settingsPinNoBackfillAndStrictRefused"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.stem.StemValidatorTest",
+      "counts": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "unapprovedHypothesisContextsAreNotAddedFromMaster",
+        "aiWarningAloneIsNotAHardGate",
+        "draftNullPrimaryIsAllowedButIncomplete",
+        "legacyDecisionJsonStillDeserializesAndClaimsDoNot",
+        "unknownClaimsAreRejected",
+        "strictIsOnlyPureNegativeEvaluator",
+        "limitsAndMissingRevisionHaveFieldErrors",
+        "channelCannotBePrimary",
+        "evidenceNeedsATargetAndMatchingTask"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.workspace.controller.WorkspaceMemberAccessTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "anAdministratorAddsAndRemoves",
+        "aLeaderReachesTheRoleChangeWithTheirIdentity",
+        "aLeaderCannotAddRemoveOrListCandidates(String)[1]",
+        "aLeaderCannotAddRemoveOrListCandidates(String)[2]",
+        "aLeaderCannotAddRemoveOrListCandidates(String)[3]"
+      ]
+    },
+    {
+      "suite": "com.stemotion.domain.workspace.service.WorkspaceServiceTest",
+      "counts": {
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "anAdministratorListsEveryWorkspaceAndOthersOnlyTheirOwn",
+        "createWorkspaceSeatsTheWholeTeamAsActive",
+        "createRefusesATeamThatIsNotThreePeopleCoveringEveryRole",
+        "aSecondMemberOfARoleCanLeaveAndAnIncompleteLegacyWorkspaceCanStillBeChanged",
+        "findCandidatesReturnsOnlyActiveUsersNotInWorkspace",
+        "aLeaderAssignsRolesButCannotChangeStatusOrLeadership",
+        "addMemberRefusesTheAdminRoleInsteadOfTurningItIntoWriter",
+        "removeLastActiveLeaderThrowsBadRequest",
+        "addMemberDirectlyCreatesActiveMember",
+        "noChangeMayLeaveACoveredRoleWithoutAnActiveMember",
+        "addExistingMemberThrowsConflict",
+        "demoteLastActiveLeaderThrowsBadRequest"
+      ]
+    },
+    {
+      "suite": "com.stemotion.e2e.E2eServerArgumentsTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "realGoogleClientOverridesTheEmptyFixtureDefaultWithoutCommaJoining"
+      ]
+    },
+    {
+      "suite": "com.stemotion.e2e.LocalAiDecisionE2eTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      "cases": [
+        "ignorePersistsAndAdminCanDecide",
+        "missingUsageStaysUnknown",
+        "acceptsOwnedSuggestionWithRealUsageAndIdempotency",
+        "failureSurvivesCallerErrorAndCannotBeAccepted"
+      ]
+    },
+    {
+      "suite": "com.stemotion.e2e.LocalAiUsageE2eTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      "cases": [
+        "rejectsUnboundedOrInvalidPaging",
+        "separatesUsersAndAppliesUserFilter",
+        "groupsRealUsageWithTimezoneAndNeverTurnsUnknownCostsIntoZero",
+        "persistsCostAndPricingProvenanceThroughM01Transactions"
+      ]
+    },
+    {
+      "suite": "com.stemotion.e2e.LocalStudioE2eTest",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      "cases": [
+        "authAndRoleGates",
+        "adminProvisionTemplateCrudAndQueue",
+        "aiStubAnalysisBaseline",
+        "writerReviewerProducerQaLibraryRoundTrip"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.client.AiAlignmentClientTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "forwardsAudioKnownTextAndAuditsWordTiming",
+        "emptyAudioFailsBeforeNetworkAndAudit"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.client.AiGatewayTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "scriptBoundarySendsStructuredInputRatherThanJavaPrompt",
+        "missingRemoteConfigurationNeverFallsBackToEmbeddedGemini",
+        "remoteBoundaryUsesServiceKeyAndReturnsActualProviderModel",
+        "embeddedUsageAndFailureBothReachPersistentAuditBoundary",
+        "remoteErrorsKeepTheirMeaningInsteadOfAllBecomingUnavailable"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.client.GoogleSignatureVerifierTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "signatureAndAudienceMustBothBeValid"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.client.GoogleSignInTest",
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "refusesBadClaims",
+        "acceptsValidClaims",
+        "unknownEmailIsRefused",
+        "inactiveAccountIsRefused",
+        "legacyEntryNeverLinksByEmail"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.client.RenderServiceClientTest",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "undeployedWorkerReturnsServiceUnavailableWithoutSubmittingAJob",
+        "incompleteWorkerConfigurationFailsBeforeNetworkSubmission"
+      ]
+    },
+    {
+      "suite": "com.stemotion.integration.config.AiSharedKeyConfigurationTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "bothProfilesPreferSharedKeyAndPreserveLegacyFallback"
+      ]
+    },
+    {
+      "suite": "com.stemotion.perf.PageParamsTest",
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "aPageCarriesItsTotalsInHeaders",
+        "invalidPagingIsRefused",
+        "noPagingKeepsTheWholeList"
+      ]
+    },
+    {
+      "suite": "com.stemotion.perf.PostgresConcurrencyTest",
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "staleMeasurementAndRollback",
+        "measurementOfOldApprovedVersionCannotWriteReplacementComposition",
+        "whitelistPagingSupportsDefaultAndFilteredStatus",
+        "concurrentRemovalsKeepTheLastReviewer",
+        "concurrentDeactivateAndRoleChangeKeepCoverage",
+        "migrationsBuildAValidSchema",
+        "measurementOfVersionOneCannotWriteVersionTwoAtTheSameRevision",
+        "concurrentDraftSavesFromOneRevision"
+      ]
+    },
+    {
+      "suite": "com.stemotion.perf.QueryShapeJpaTest",
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "projectSummaries",
+        "libraryQueries",
+        "authenticationProjectionLoadsGoogleAuthorizationInOneStatement",
+        "accessAndWorkspaceCounts",
+        "pagedQueries",
+        "historyCommentsAndJobs",
+        "latestPublishRecord",
+        "commentPages"
+      ]
+    },
+    {
+      "suite": "com.stemotion.perf.WriteTransactionsTest",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "cases": [
+        "everyWritingServiceMethodIsTransactional"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "be_clone": {
+    "baseline_files_checked": 757,
+    "changed": [],
+    "missing": [],
+    "head_unchanged": true,
+    "source_files_changed": 0
+  },
+  "fe_p4": {
+    "baseline_files_checked": 319,
+    "changed": [],
+    "missing": [],
+    "head_unchanged": true,
+    "source_files_changed": 0
+  },
+  "runtime": {
+    "tests": "NOT_RUN",
+    "build": "NOT_RUN",
+    "app": "NOT_RUN",
+    "database": "NOT_RUN",
+    "migration_sql_written": false,
+    "processes_created": 0,
+    "cleanup": "N/A - no runtime created",
+    "commits": 0,
+    "pushes": 0,
+    "merges": 0,
+    "deployments": 0
+  },
+  "scope": "Stage1 documentation only; stop before migration confirmation; all pre-existing captured files preserved"
+}

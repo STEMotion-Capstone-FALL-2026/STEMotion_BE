@@ -1,0 +1,17 @@
+[
+  {
+    "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\stem\\StemRepository.java",
+    "relative": "src/main/java/com/stemotion/domain/stem/StemRepository.java",
+    "sha256": "87a5233c651b0c73c944ead44ac15ef7c84bce7c3004d043ba2c0e24211956f9"
+  },
+  {
+    "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\stem\\StemService.java",
+    "relative": "src/main/java/com/stemotion/domain/stem/StemService.java",
+    "sha256": "28b9d9f3026f6983acfb33bc4b830a96b12fe94034bee3ac5b633cb71f8dadcc"
+  },
+  {
+    "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\test\\java\\com\\stemotion\\e2e\\StemFullContextRegressionTest.java",
+    "relative": "src/test/java/com/stemotion/e2e/StemFullContextRegressionTest.java",
+    "sha256": "95763fb4234d062043de978fef23df1a9245b463b8f53e897bd45ecfa3c6cfa3"
+  }
+]

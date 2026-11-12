@@ -1,0 +1,62 @@
+[
+  {
+    "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p5\\be-final\\maven.log",
+    "postmaster_starts": 3,
+    "postmaster_shutdowns": 3,
+    "data_directories": [
+      "C:/Users/LeTran/AppData/Local/Temp/epg11102171539711664512",
+      "C:/Users/LeTran/AppData/Local/Temp/epg14256686406815441105",
+      "C:/Users/LeTran/AppData/Local/Temp/epg16598153587837732049"
+    ]
+  },
+  {
+    "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p5\\be-handoff\\maven.log",
+    "postmaster_starts": 3,
+    "postmaster_shutdowns": 3,
+    "data_directories": [
+      "C:/Users/LeTran/AppData/Local/Temp/epg1448058990032714798",
+      "C:/Users/LeTran/AppData/Local/Temp/epg15465007035665995599",
+      "C:/Users/LeTran/AppData/Local/Temp/epg5962111874873987612"
+    ]
+  },
+  {
+    "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p5\\be-regression-01\\maven.log",
+    "postmaster_starts": 3,
+    "postmaster_shutdowns": 3,
+    "data_directories": [
+      "C:/Users/LeTran/AppData/Local/Temp/epg13015396750212100084",
+      "C:/Users/LeTran/AppData/Local/Temp/epg17564103331140411014",
+      "C:/Users/LeTran/AppData/Local/Temp/epg5580489622851413511"
+    ]
+  },
+  {
+    "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p5\\p5-first\\maven.log",
+    "postmaster_starts": 0,
+    "postmaster_shutdowns": 0,
+    "data_directories": []
+  },
+  {
+    "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p5\\p5-localhost\\maven.log",
+    "postmaster_starts": 1,
+    "postmaster_shutdowns": 1,
+    "data_directories": [
+      "C:/Users/LeTran/AppData/Local/Temp/epg9962069933655873091"
+    ]
+  },
+  {
+    "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p5\\p5-second\\maven.log",
+    "postmaster_starts": 1,
+    "postmaster_shutdowns": 1,
+    "data_directories": [
+      "C:/Users/LeTran/AppData/Local/Temp/epg12617207301945204441"
+    ]
+  },
+  {
+    "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p5\\p4-live-final\\backend.log",
+    "postmaster_starts": 1,
+    "postmaster_shutdowns": 1,
+    "data_directories": [
+      "C:/Users/LeTran/AppData/Local/Temp/epg11076098776148430979"
+    ]
+  }
+]

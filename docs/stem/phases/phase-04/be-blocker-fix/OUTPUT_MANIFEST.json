@@ -1,0 +1,134 @@
+[
+  {
+    "path": "after.json",
+    "sha256": "d61d0185c4b65f5d91f6d52101fb114b3d843ebb50e7a5bd7279118e15658743"
+  },
+  {
+    "path": "after.log",
+    "sha256": "a66e0d1671b01052d16cd084efdb6481d41c689d94ea186167f05eb738a69d84"
+  },
+  {
+    "path": "BE_BLOCKER_FIX_HANDOFF.md",
+    "sha256": "e6187c882f26df75afb0deb4f18fed318fecdc2bdaf1cb238d94bd6d9b712584"
+  },
+  {
+    "path": "before.json",
+    "sha256": "2a227371049f90e4d8e88d53e2862e01382226671bd5c8dfa10ffa6dbcc2c4b7"
+  },
+  {
+    "path": "before.log",
+    "sha256": "cace15b147c71222c9ff1f91894e464fe480e06005214bb17a2fb30a38fbff90"
+  },
+  {
+    "path": "BEFORE_GATE.json",
+    "sha256": "fc748f98a06bec16342e742c8a93074456a2acdc2d9364cb14b69531bef5aa36"
+  },
+  {
+    "path": "CALLSITE_INVENTORY.json",
+    "sha256": "4a84c34c821922e4785ef0e16e0207e9d458c667cc101d558d4b52fd87ef1770"
+  },
+  {
+    "path": "CALLSITE_INVENTORY.md",
+    "sha256": "7c8bf553a8b4ac28777633e50c2e5a4a840147dd5f2a7531c8835507c9cefea3"
+  },
+  {
+    "path": "CLEANUP_CHECK.json",
+    "sha256": "a2518979b12b0fdc01a0698054695ef394d6f2ff1bb86f03d0341a66e026b57f"
+  },
+  {
+    "path": "EXECUTION_SOURCE.json",
+    "sha256": "4cbdee91f9b51b4c4e4bdee37ecfaf67fbdf0c477da31da64b24af90f40da27d"
+  },
+  {
+    "path": "INPUT_BASELINE.json",
+    "sha256": "da0b4d7b120f4ed344230753737ff79eadb9db812b42ee8f910fa5a8ce614c6d"
+  },
+  {
+    "path": "LOG_HYGIENE_CHECK.json",
+    "sha256": "cd3dff01da7eda2a67ad68eb44cf7c3329cff3337aa9d84f15c95b1ab3b694e4"
+  },
+  {
+    "path": "observe-live-http.mjs",
+    "sha256": "a64366a48c2f710bdff9c4eb9b4002f33e822229df1d4fcfb67cbc5954dfd9ec"
+  },
+  {
+    "path": "ORCHESTRATION_REVIEW.md",
+    "sha256": "f7593bd22b65a1d235d5a890a5a35131e8a35e6b973a37ada39db367580da40d"
+  },
+  {
+    "path": "p4-backend.log",
+    "sha256": "aedf6a1501ab054e4671a378b9713b0f507cd6225095707157ffef0a0c575747"
+  },
+  {
+    "path": "p4-http-audit.json",
+    "sha256": "c7233ebc2e15a97649dd6b9c52ee2f8de33bf44127863cbe0e143648ede33508"
+  },
+  {
+    "path": "p4-q10-results.json",
+    "sha256": "9d5f62dfc9edf97eeaec526d8b0f46ec66100be273e92f3fda919df27902e2dd"
+  },
+  {
+    "path": "p4-q10.log",
+    "sha256": "e84373bc62c145e6d43d70edc28eb4acd3d5b45c5ad6d69adc38b0004c248f17"
+  },
+  {
+    "path": "P4_DB_AUDIT.json",
+    "sha256": "47f06046ccc7c20b54e4cd0e29f36bc56ccb117796ebd6864779f109fa3643e4"
+  },
+  {
+    "path": "P4_RUN_RESULT.json",
+    "sha256": "bc477c462c5fde2200b23c9e2e516c7fce9a95251596a2bd7106ad4537ac8c7c"
+  },
+  {
+    "path": "PATCH_BE_BLOCKER_FIX.diff",
+    "sha256": "5c243ec1348219f2ae746de747e9f281353d4bc1ad25c347b415e0572ed6a927"
+  },
+  {
+    "path": "PATCH_CHECK.json",
+    "sha256": "929924dca84d3c6163e7132ad55256395cd1484e11dc76292ca228a37f5926ce"
+  },
+  {
+    "path": "PRESERVATION_CHECK.json",
+    "sha256": "5d3c891f67e606f1bee4a6dfb85070ca43f00e67f030d1a8c4ee18558f3b68e0"
+  },
+  {
+    "path": "REGRESSION_SOURCE_BEFORE.json",
+    "sha256": "c34de6adc467e276d31452b11fc54174d6e6419b9104d1722233c37040b38726"
+  },
+  {
+    "path": "run_be_tests.py",
+    "sha256": "6852cdca6629c5fdd7eedfafc89a44c0e2af66b98dddbec0c8d52e35d5d769b0"
+  },
+  {
+    "path": "run_p4_readonly.py",
+    "sha256": "2a8ab4ba44e3be5842bf3849d3d4793350471996b7e4b50fddfe648838d7b60a"
+  },
+  {
+    "path": "SOURCE_MANIFEST.json",
+    "sha256": "bf1ec9338bdb3275f6187d702d87bdd0ba58316f7022144e8b19f6aa2e404bdf"
+  },
+  {
+    "path": "StemRepository.java.before",
+    "sha256": "23c9ef07bea65f7fa53478d2aea695d01f780dfcc40020fd35811ccbfbe249ee"
+  },
+  {
+    "path": "StemService.java.before",
+    "sha256": "4168f71de20705202e8404719bf829fdecd81c5273c2e918179ff39633351bfa"
+  },
+  {
+    "path": "TEST_GATE_RESULTS.json",
+    "sha256": "7e8d468657cc95e655b14947bb8a874dec50ecc74a3438971b6dfe5f4375c228"
+  },
+  {
+    "path": "TEST_RESULTS.md",
+    "sha256": "8f1f60f3ff0bcc531289cd321325ab9482a1cc20d7af030ac23ce30e65d92773"
+  },
+  {
+    "path": "vitest-p4-readonly.config.mjs",
+    "sha256": "e62081ebfc57fedea0762540636da34253c2ead05fa1ba411cb554b48fe18cab"
+  },
+  {
+    "path": "WHITESPACE_CHECK.json",
+    "sha256": "3dc780fa66ae233be600f7ca2f270bcd79a7b446be0a551373e7b2dbd3ef85a0"
+  }
+]

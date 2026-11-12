@@ -60,6 +60,15 @@ public class WorkspaceAccess {
         return Arrays.stream(roleNames).map(WorkspaceRole::valueOf).collect(Collectors.toSet());
     }
 
+    /** A real active seat is required for STEM; deliberately no system-admin bypass. */
+    public void requireActiveStemSeat(String workspaceId, String userId, WorkspaceRole role) {
+        if(users.findById(userId).filter(u->u.getStatus()==User.UserStatus.ACTIVE).isEmpty())
+            throw ApiException.forbidden("Active user required for STEM");
+        boolean allowed=members.findMembershipsByUserId(userId).stream()
+            .anyMatch(m -> m.active() && m.workspaceId().equals(workspaceId) && m.role()==role);
+        if(!allowed)throw ApiException.forbidden("Active "+role+" seat required for STEM");
+    }
+
     public boolean isAdmin(String userId) {
         return user(userId).map(u -> u.getSystemRole() == SystemRole.ADMIN).orElse(false);
     }

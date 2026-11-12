@@ -25,12 +25,15 @@ public class AiController {
 
     private final AiScriptService aiScriptService;
     private final com.stemotion.domain.ai.service.AiRequestLogService requestLog;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.stemotion.domain.ai.service.StemGroundedAiService groundedAi;
 
     @org.springframework.web.bind.annotation.PutMapping("/requests/{requestId}/decision")
     @Operation(summary = "Accept or ignore an owned AI suggestion (does not save script content)")
     public ResponseEntity<Map<String,Object>> decision(@org.springframework.web.bind.annotation.PathVariable String requestId,
         @Valid @RequestBody com.stemotion.domain.ai.dto.AiDtos.AiDecisionRequest request,
         @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails principal) {
+        if(groundedAi!=null)groundedAi.checkDecision(requestId,principal.getUsername(),request.grounding());
         return ResponseEntity.ok(Map.of("requestId",requestId,"decision",requestLog.decide(requestId,request.decision(),principal.getUsername())));
     }
 
@@ -43,6 +46,7 @@ public class AiController {
     @PostMapping("/script/generate")
     @Operation(summary = "Draft a full STEM script from a topic")
     public ResponseEntity<AiActionResponse> generate(@Valid @RequestBody GenerateScriptRequest request) {
+        if(request.stemContext()!=null)throw com.stemotion.core.exception.ApiException.badRequest("Client grounding is not accepted; use the project grounded route");
         return ResponseEntity.ok(aiScriptService.generateScript(request));
     }
 
@@ -56,6 +60,7 @@ public class AiController {
     @PostMapping("/script/action")
     @Operation(summary = "Run resegment, grade, extract or terms over a script")
     public ResponseEntity<AiActionResponse> action(@Valid @RequestBody ScriptActionRequest request) {
+        if(request.stemContext()!=null)throw com.stemotion.core.exception.ApiException.badRequest("Client grounding is not accepted; use the project grounded route");
         return ResponseEntity.ok(aiScriptService.runAction(request));
     }
 }

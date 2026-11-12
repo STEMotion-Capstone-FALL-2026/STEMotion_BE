@@ -1,0 +1,74 @@
+[
+  {
+    "path": "BE_BLOCKER_FIX_SCOPE_DRAFT.md",
+    "sha256": "63b398c174d8833e3dc4b28897c67b9448f2ab08f613e39cc4fb8b5042768b10"
+  },
+  {
+    "path": "BE_BLOCKER_INVESTIGATION.md",
+    "sha256": "675211290dfb1926d4bf5f9741e8cb9e804202c81c032a17e441a8230418dce5"
+  },
+  {
+    "path": "evidence\\CLEANUP_CHECK.json",
+    "sha256": "11116378a83921820eddf5822f5684d514f2459e54d703f412a0d25a7ec84468"
+  },
+  {
+    "path": "evidence\\DATA_JPA_IMPORTS.txt",
+    "sha256": "bcbf2ee3b8a7a81652653e1ed160581e9c29c9b4d939e5686b95bfc06b7cfc68"
+  },
+  {
+    "path": "evidence\\INPUT_BASELINE.json",
+    "sha256": "e38ac244d267daadc9b4846bdc1fb5786598c354b3d5d6c6242ef098adc21eb4"
+  },
+  {
+    "path": "evidence\\LOG_HYGIENE_CHECK.json",
+    "sha256": "46c325518e5f6ce376fe2169f9790a4d8a1b68cf0ade183de61d7fbf9b0a7733"
+  },
+  {
+    "path": "evidence\\PRESERVATION_CHECK.json",
+    "sha256": "5e0fed5a46398bf752f8b64403d0c3bf937e9e8086e32d803c2b920570a7c779"
+  },
+  {
+    "path": "evidence\\probe-r0-compile.log",
+    "sha256": "e0df20b70974f67a4e85a51d9defa0e4c474a55df9e4863ce9a13c074d571fd9"
+  },
+  {
+    "path": "evidence\\PROBE_LINES.txt",
+    "sha256": "5747d88052e62435f8fa97376bd814f85a8c7cf5a8bbb7c2a31397db156351ef"
+  },
+  {
+    "path": "evidence\\RUN_RESULT.json",
+    "sha256": "3b918e271bf747a75953900671e67b2132aac5a9ff05512782c8e781bb03b205"
+  },
+  {
+    "path": "evidence\\runtime-probe.log",
+    "sha256": "25653d722e248d17a05f0f58da6d16318da00326a6eeecf4d9dfaa4f4a9590de"
+  },
+  {
+    "path": "evidence\\RUNTIME_OBSERVATIONS.json",
+    "sha256": "8afc62ac63d76b5fdfd0f4a1565673e8b8ad4ba0546646d4168e2c882b40e6ca"
+  },
+  {
+    "path": "evidence\\SOURCE_HASHES.json",
+    "sha256": "81ac5657cdabbb5285961e4b46061a3d7448af22b105525deb5b71cf4e166f84"
+  },
+  {
+    "path": "evidence\\SOURCE_LOCATORS.txt",
+    "sha256": "d86d433a66770dc72dce47931aaac24e39a2625e6515bfba6b6b96aca6f51683"
+  },
+  {
+    "path": "evidence\\SPRING_DAO_AUTOCONFIG.txt",
+    "sha256": "ee2396112581c088221246394a4e471261f0dce877e90e20ae89605ec377851e"
+  },
+  {
+    "path": "evidence\\SPRING_PROXY_BYTECODE.txt",
+    "sha256": "fd9537bd1a7f1160de4eeba67f71279967eb1610b9bd87f2768c7208983bab7f"
+  },
+  {
+    "path": "evidence\\STACK_EXCERPTS.json",
+    "sha256": "2adb93f110f7b646754d61add53ef19c106cb921eacddde95308ec89975d1572"
+  },
+  {
+    "path": "evidence\\STEM_SERVICE_BYTECODE.txt",
+    "sha256": "19b1b6c8976fe37b9259c0ef198e0235b2939618dad3eb95a574d60cfb812ac0"
+  }
+]

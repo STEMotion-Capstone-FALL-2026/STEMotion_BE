@@ -1,0 +1,29 @@
+{
+  "kind": "executed test-DDL + observed assertions, not shared schema dump",
+  "test_migration": "src\\test\\resources\\db\\stem-p3\\V91000__stem_p3_test_only.sql",
+  "sha256": "013f9998e636eb4fb98d294888c498420a74780eeed138f1fdd34285df4b33cd",
+  "prerequisite_assertion": "users/workspaces/script_versions/scenes/status_histories.id must be varchar36; mismatch raises before any new table",
+  "tables": [
+    "stem_catalog",
+    "stem_briefs",
+    "stem_evidence",
+    "stem_settings",
+    "stem_assessments",
+    "stem_validation_runs",
+    "stem_validation_limits",
+    "stem_receipts",
+    "stem_audit"
+  ],
+  "observed_checks": [
+    "25 migrations applied incl unchanged9000/9001 once +91000",
+    "9 table RLS flags enabled",
+    "client SELECT sees no rows with explicit SELECT grant",
+    "client INSERT rejected by RLS despite INSERT grant",
+    "existing Hibernate baseline schema validate",
+    "wrong prerequisite type rejects test migration",
+    "real decision target FK/trigger validates CLIP metadata in fixture"
+  ],
+  "runtime_dump_taken": false,
+  "shared_preflight": false,
+  "production_reservation": false
+}

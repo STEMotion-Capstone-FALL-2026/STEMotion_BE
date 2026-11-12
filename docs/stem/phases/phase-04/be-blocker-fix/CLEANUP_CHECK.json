@@ -1,0 +1,17 @@
+{
+  "data_dirs": [
+    "C:/Users/LeTran/AppData/Local/Temp/epg11105534610432113313",
+    "C:/Users/LeTran/AppData/Local/Temp/epg11464523443316284153",
+    "C:/Users/LeTran/AppData/Local/Temp/epg13353088876903538373",
+    "C:/Users/LeTran/AppData/Local/Temp/epg6483446974319782716"
+  ],
+  "java_ids": [
+    49856,
+    50136,
+    50172
+  ],
+  "remaining_owned_processes": [],
+  "remaining_java": [],
+  "graceful_pg_shutdown_markers": 4,
+  "action": "read-only verification; all test contexts closed their own DB; no user process killed"
+}

@@ -1,0 +1,79 @@
+{
+  "be": {
+    "head": "4fd7089fa3b2c0851487625517f6fdfe2a9cc64c",
+    "head_unchanged": true,
+    "baseline_files_checked": 635,
+    "modified_existing": [
+      "services/ai/app/main.py",
+      "services/ai/app/models.py",
+      "services/ai/app/prompting.py",
+      "src/main/java/com/stemotion/domain/ai/controller/AiController.java",
+      "src/main/java/com/stemotion/domain/ai/dto/AiDtos.java",
+      "src/main/java/com/stemotion/domain/library/controller/LibraryController.java",
+      "src/main/java/com/stemotion/domain/library/dto/LibraryDtos.java",
+      "src/main/java/com/stemotion/domain/library/service/LibraryService.java"
+    ],
+    "new_source": [
+      "services/ai/app/grounding.py",
+      "services/ai/tests/p6_fake_server.py",
+      "services/ai/tests/test_grounding_p6.py",
+      "src/main/java/com/stemotion/domain/ai/controller/StemGroundedAiController.java",
+      "src/main/java/com/stemotion/domain/ai/controller/StemGroundedAiLimitFilter.java",
+      "src/main/java/com/stemotion/domain/ai/service/StemAiContextResolver.java",
+      "src/main/java/com/stemotion/domain/ai/service/StemGroundedAiService.java",
+      "src/main/java/com/stemotion/domain/library/service/StemLibraryQuery.java",
+      "src/test/java/com/stemotion/domain/ai/service/StemGroundedOutputP6Test.java",
+      "src/test/java/com/stemotion/domain/stem/StemSpecimensP6Test.java",
+      "src/test/java/com/stemotion/e2e/StemP6HttpTest.java",
+      "src/test/resources/stem-p6/contract-specimens.json"
+    ],
+    "unexpected": [],
+    "missing": [],
+    "old_test_source_config_runner_unchanged": true,
+    "old_migration_lock_package_files_unchanged": true
+  },
+  "fe": {
+    "head": "4dfa65e210ba7bef38fd418943dd19e491743883",
+    "head_unchanged": true,
+    "baseline_files_checked": 261,
+    "modified_existing": [
+      "src/components/views/MediaLibrary/MediaLibraryView.tsx",
+      "src/components/views/WriterStudio/WriterStudio.tsx",
+      "src/services/apiClient.ts",
+      "src/services/libraryService.ts",
+      "src/services/scriptService.ts",
+      "src/types/stem.ts"
+    ],
+    "new_source": [
+      "src/components/stem/StemFlow.p6-live.test.tsx",
+      "src/components/stem/StemGroundedAiPanel.tsx",
+      "src/components/stem/StemLearningCard.tsx",
+      "src/components/stem/StemP6.test.tsx"
+    ],
+    "unexpected": [],
+    "missing": [],
+    "old_test_source_config_runner_unchanged": true,
+    "old_migration_lock_package_files_unchanged": true
+  },
+  "be_original": {
+    "files_checked": 695,
+    "changed_since_start": [],
+    "head_unchanged": true,
+    "working_tree_status_unchanged": true
+  },
+  "fe_original": {
+    "files_checked": 201,
+    "changed_since_start": [],
+    "head_unchanged": true,
+    "working_tree_status_unchanged": true
+  },
+  "actions": {
+    "commits": 0,
+    "pushes": 0,
+    "merges": 0,
+    "deploys": 0,
+    "shared_db_access": 0,
+    "real_provider_calls": 0,
+    "new_migrations": 0
+  }
+}

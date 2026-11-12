@@ -1,0 +1,66 @@
+{
+  "date": "2026-11-06",
+  "phase_status": "PARTIAL_UNCOMMITTED_NOT_CLOSED",
+  "be": {
+    "selection": "19 suites; full439 NOT_RUN",
+    "tests": 268,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "p5_new": 113,
+    "mandatory_p3_plus_blocker": 41,
+    "existing_affected_regression": 114,
+    "result": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p5\\be-handoff\\result.json"
+  },
+  "fe": {
+    "tests": 227,
+    "passed": 227,
+    "failed": 0,
+    "pending": 0,
+    "files": 40,
+    "pre_existing": 216,
+    "new_p5": 11,
+    "static": [
+      {
+        "name": "typecheck",
+        "exit_code": 0,
+        "seconds": 12.88,
+        "owned_pid": 22368
+      },
+      {
+        "name": "unit",
+        "exit_code": 0,
+        "seconds": 190.17,
+        "owned_pid": 33164
+      },
+      {
+        "name": "build",
+        "exit_code": 0,
+        "seconds": 2.84,
+        "owned_pid": 20772
+      }
+    ]
+  },
+  "p4_live": {
+    "tests": 2,
+    "passed": 2,
+    "failed": 0,
+    "runtime": {
+      "ready": true,
+      "test_exit_code": 0,
+      "server_closed": true,
+      "original_p4_source_config_runner_modified": false,
+      "owned_server_pid": 34204,
+      "owned_port": 52601,
+      "server_exit_code": 0
+    }
+  },
+  "not_run": [
+    "real_MP4_pixel_audio_attestation",
+    "browser_E2E",
+    "AI_exact_lock_real_providers",
+    "shared_production_release",
+    "expert_curriculum_verification"
+  ],
+  "source_manifest_hash": "aba03df1366bbe4527dcb62244e9119bba7e72cf59bb4d8b7bfa7add53a7e236"
+}

@@ -1,0 +1,452 @@
+[
+  {
+    "kind": "BEAN",
+    "log_line": 59,
+    "data": {
+      "context": "FULL_UNMODIFIED",
+      "profiles": [
+        "stem-p3-test"
+      ],
+      "stemEnabled": "true",
+      "repoClass": "com.stemotion.domain.stem.StemRepository$$SpringCGLIB$$0",
+      "targetClass": "com.stemotion.domain.stem.StemRepository",
+      "isAopProxy": true,
+      "repoJdbcNull": true,
+      "repoJsonNull": true,
+      "targetJdbcNull": false,
+      "targetJsonNull": false,
+      "serviceDbIsRepoBean": true,
+      "translatorPostProcessors": [
+        "persistenceExceptionTranslationPostProcessor"
+      ],
+      "advisors": [
+        "org.springframework.dao.annotation.PersistenceExceptionTranslationAdvisor"
+      ],
+      "selectOne": 1,
+      "migrations": 25,
+      "repoEncodeViaMethod": "{\"TEST_ONLY\":true}"
+    }
+  },
+  {
+    "kind": "OWNED_SERVER",
+    "log_line": 60,
+    "data": {
+      "fixture": "TEST_ONLY disposable database",
+      "base": "http://127.0.0.1:54742/api/v1"
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 224,
+    "data": {
+      "case": "STEM_SETTINGS_GET",
+      "method": "GET",
+      "path": "/workspaces/4057d63b-ace4-4b93-812c-70ae2d2b9456/stem-settings",
+      "request": null,
+      "status": 500,
+      "response": {
+        "status": 500,
+        "code": "INTERNAL_ERROR",
+        "message": "An unexpected error occurred",
+        "timestamp": "2026-11-05T18:49:20.6814605"
+      }
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 387,
+    "data": {
+      "case": "STEM_CREATE_POST",
+      "method": "POST",
+      "path": "/scripts/a04b5262-ec98-453c-8ec8-3e02add40c86/versions/d80ea6b3-ec74-44f4-aca9-175dbdb87fc7/stem",
+      "request": {
+        "schemaVersion": "stem.v1",
+        "expectedScriptRevision": 0,
+        "idempotencyKey": "blocker-create-0001"
+      },
+      "status": 500,
+      "response": {
+        "status": 500,
+        "code": "INTERNAL_ERROR",
+        "message": "An unexpected error occurred",
+        "timestamp": "2026-11-05T18:49:20.722463"
+      }
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 388,
+    "data": {
+      "case": "STEM_GET",
+      "method": "GET",
+      "path": "/scripts/a04b5262-ec98-453c-8ec8-3e02add40c86/versions/d80ea6b3-ec74-44f4-aca9-175dbdb87fc7/stem",
+      "request": null,
+      "status": 200,
+      "response": {
+        "schemaVersion": "stem.v1",
+        "briefId": null,
+        "scriptVersionId": "d80ea6b3-ec74-44f4-aca9-175dbdb87fc7",
+        "revision": 0,
+        "verificationStatus": "UNVERIFIED",
+        "readiness": "LEGACY_UNMAPPED",
+        "effectiveMode": "OFF",
+        "modeRevision": 0,
+        "brief": null,
+        "evidence": [],
+        "findings": [],
+        "legacySuggestion": null
+      }
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 389,
+    "data": {
+      "case": "STEM_CATALOG",
+      "method": "GET",
+      "path": "/stem/catalog",
+      "request": null,
+      "status": 200,
+      "response": [
+        {
+          "id": "54040978-1d6a-43f9-abf8-deafdbc7d384",
+          "kind": "POLICY",
+          "logicalKey": "TEST_ONLY_DIAGNOSIS",
+          "version": 1,
+          "parentId": null,
+          "sourceId": null,
+          "status": "DRAFT",
+          "data": {},
+          "revision": 0,
+          "verificationStatus": "UNVERIFIED"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 390,
+    "data": {
+      "case": "STEM_FRAMEWORKS",
+      "method": "GET",
+      "path": "/stem/frameworks",
+      "request": null,
+      "status": 200,
+      "response": [
+        {
+          "id": "54040978-1d6a-43f9-abf8-deafdbc7d384",
+          "kind": "POLICY",
+          "logicalKey": "TEST_ONLY_DIAGNOSIS",
+          "version": 1,
+          "parentId": null,
+          "sourceId": null,
+          "status": "DRAFT",
+          "data": {},
+          "revision": 0,
+          "verificationStatus": "UNVERIFIED"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 553,
+    "data": {
+      "case": "STEM_SAVE_PUT",
+      "method": "PUT",
+      "path": "/scripts/a04b5262-ec98-453c-8ec8-3e02add40c86/versions/d80ea6b3-ec74-44f4-aca9-175dbdb87fc7/stem",
+      "request": {
+        "brief": {
+          "policyVersionId": null,
+          "topicVersionId": null,
+          "gradeKey": null,
+          "subjectKeys": [],
+          "outcomeIds": [],
+          "scopeOfClip": null,
+          "context": {
+            "primary": null,
+            "secondary": []
+          },
+          "distributionChannels": [],
+          "objectives": [],
+          "studentTasks": [],
+          "contributions": [],
+          "safetyNotes": null,
+          "rawLegacy": null
+        },
+        "evidence": [],
+        "idempotencyKey": "blocker-save-0001",
+        "baseRevision": 0,
+        "schemaVersion": "stem.v1",
+        "expectedScriptRevision": 0
+      },
+      "status": 500,
+      "response": {
+        "status": 500,
+        "code": "INTERNAL_ERROR",
+        "message": "An unexpected error occurred",
+        "timestamp": "2026-11-05T18:49:20.9215035"
+      }
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 716,
+    "data": {
+      "case": "STEM_VALIDATE_POST",
+      "method": "POST",
+      "path": "/scripts/a04b5262-ec98-453c-8ec8-3e02add40c86/versions/d80ea6b3-ec74-44f4-aca9-175dbdb87fc7/stem/validate",
+      "request": {
+        "expectedScriptRevision": 0,
+        "phase": "SCRIPT",
+        "expectedBriefRevision": 0
+      },
+      "status": 500,
+      "response": {
+        "status": 500,
+        "code": "INTERNAL_ERROR",
+        "message": "An unexpected error occurred",
+        "timestamp": "2026-11-05T18:49:20.9433553"
+      }
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 879,
+    "data": {
+      "case": "STEM_SETTINGS_PUT",
+      "method": "PUT",
+      "path": "/workspaces/4057d63b-ace4-4b93-812c-70ae2d2b9456/stem-settings",
+      "request": {
+        "idempotencyKey": "blocker-settings-0001",
+        "baseRevision": 0,
+        "mode": "OFF",
+        "policyVersionIds": []
+      },
+      "status": 500,
+      "response": {
+        "status": 500,
+        "code": "INTERNAL_ERROR",
+        "message": "An unexpected error occurred",
+        "timestamp": "2026-11-05T18:49:20.9619006"
+      }
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 880,
+    "data": {
+      "case": "NON_STEM_ME",
+      "method": "GET",
+      "path": "/auth/me",
+      "request": null,
+      "status": 200,
+      "response": {
+        "user": {
+          "id": "d62ac02f-0829-4987-b9ac-870e2c79bc4b",
+          "fullName": "TEST_ONLY BLOCKER WRITER",
+          "email": null,
+          "systemRole": "USER",
+          "status": "ACTIVE",
+          "mustChangePassword": false,
+          "createdAt": "2026-11-05T18:49:19.650464",
+          "username": "blocker-writer",
+          "hasLocalPassword": true,
+          "googleLinked": false,
+          "googleEmail": null,
+          "version": 0
+        },
+        "session": {
+          "authMethod": "PASSWORD",
+          "requiresPasswordChange": false
+        }
+      }
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 881,
+    "data": {
+      "case": "NON_STEM_WORKSPACES",
+      "method": "GET",
+      "path": "/workspaces",
+      "request": null,
+      "status": 200,
+      "response": [
+        {
+          "id": "4057d63b-ace4-4b93-812c-70ae2d2b9456",
+          "name": "TEST_ONLY blocker diagnosis",
+          "department": null,
+          "membersCount": 1,
+          "activeProjects": 1,
+          "myRole": null,
+          "isLeader": null
+        }
+      ]
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 882,
+    "data": {
+      "case": "NON_STEM_SCRIPT_GET",
+      "method": "GET",
+      "path": "/scripts/a04b5262-ec98-453c-8ec8-3e02add40c86",
+      "request": null,
+      "status": 200,
+      "response": {
+        "id": "a04b5262-ec98-453c-8ec8-3e02add40c86",
+        "title": "TEST_ONLY blocker diagnosis",
+        "subject": "Math",
+        "gradeLevel": "4",
+        "totalDurationSeconds": 0,
+        "scriptStatus": "DRAFT",
+        "videoStatus": "NOT_RENDERED",
+        "fps": 30,
+        "scenes": [
+          {
+            "id": "22ea02d2-5f64-4dc0-b9de-bb92f66b3c5c",
+            "type": "TITLE_HERO",
+            "title": "TEST_ONLY",
+            "narration": "TEST_ONLY",
+            "durationInFrames": 90,
+            "subject": "Math",
+            "subtitle": "TEST_ONLY",
+            "badgeText": "TEST_ONLY",
+            "gradeLevel": "4"
+          }
+        ],
+        "workspaceId": "4057d63b-ace4-4b93-812c-70ae2d2b9456",
+        "ownerId": "d62ac02f-0829-4987-b9ac-870e2c79bc4b",
+        "ownerName": "TEST_ONLY BLOCKER WRITER",
+        "currentVersionNo": 1,
+        "videoUrl": null,
+        "createdAt": "2026-11-05T18:49:19.670356",
+        "visualTheme": "default",
+        "draftRevision": 0
+      }
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 883,
+    "data": {
+      "case": "NON_STEM_DRAFT_PUT",
+      "method": "PUT",
+      "path": "/scripts/a04b5262-ec98-453c-8ec8-3e02add40c86",
+      "request": {
+        "baseRevision": 0,
+        "scenes": [
+          {
+            "gradeLevel": "4",
+            "subtitle": "TEST_ONLY",
+            "narration": "TEST_ONLY",
+            "badgeText": "TEST_ONLY",
+            "id": "22ea02d2-5f64-4dc0-b9de-bb92f66b3c5c",
+            "title": "TEST_ONLY",
+            "subject": "Math",
+            "type": "TITLE_HERO",
+            "durationInFrames": 90
+          }
+        ]
+      },
+      "status": 200,
+      "response": {
+        "id": "a04b5262-ec98-453c-8ec8-3e02add40c86",
+        "title": "TEST_ONLY blocker diagnosis",
+        "subject": "Math",
+        "gradeLevel": "4",
+        "totalDurationSeconds": 3,
+        "scriptStatus": "DRAFT",
+        "videoStatus": "NOT_RENDERED",
+        "fps": 30,
+        "scenes": [
+          {
+            "id": "22ea02d2-5f64-4dc0-b9de-bb92f66b3c5c",
+            "type": "TITLE_HERO",
+            "title": "TEST_ONLY",
+            "narration": "TEST_ONLY",
+            "durationInFrames": 90,
+            "gradeLevel": "4",
+            "subtitle": "TEST_ONLY",
+            "badgeText": "TEST_ONLY",
+            "subject": "Math"
+          }
+        ],
+        "workspaceId": "4057d63b-ace4-4b93-812c-70ae2d2b9456",
+        "ownerId": "d62ac02f-0829-4987-b9ac-870e2c79bc4b",
+        "ownerName": "TEST_ONLY BLOCKER WRITER",
+        "currentVersionNo": 1,
+        "videoUrl": null,
+        "createdAt": "2026-11-05T18:49:19.670356",
+        "visualTheme": "default",
+        "draftRevision": 1
+      }
+    }
+  },
+  {
+    "kind": "HTTP",
+    "log_line": 1075,
+    "data": {
+      "case": "NON_STEM_SUBMIT_HOOK",
+      "method": "POST",
+      "path": "/scripts/a04b5262-ec98-453c-8ec8-3e02add40c86/submit-review",
+      "request": {},
+      "status": 500,
+      "response": {
+        "status": 500,
+        "code": "INTERNAL_ERROR",
+        "message": "An unexpected error occurred",
+        "timestamp": "2026-11-05T18:49:21.2449798"
+      }
+    }
+  },
+  {
+    "kind": "CLOSE",
+    "log_line": 1086,
+    "data": {
+      "closed": true,
+      "context": "FULL_UNMODIFIED"
+    }
+  },
+  {
+    "kind": "BEAN",
+    "log_line": 1198,
+    "data": {
+      "context": "P3_DATA_JPA_SLICE_NO_TEST_METHODS",
+      "profiles": [
+        "stem-p3-test"
+      ],
+      "stemEnabled": "true",
+      "repoClass": "com.stemotion.domain.stem.StemRepository",
+      "targetClass": "com.stemotion.domain.stem.StemRepository",
+      "isAopProxy": false,
+      "repoJdbcNull": false,
+      "repoJsonNull": false,
+      "targetJdbcNull": false,
+      "targetJsonNull": false,
+      "serviceDbIsRepoBean": true,
+      "translatorPostProcessors": [],
+      "advisors": [],
+      "selectOne": 1,
+      "migrations": 25,
+      "repoEncodeViaMethod": "{\"TEST_ONLY\":true}"
+    }
+  },
+  {
+    "kind": "CLOSE",
+    "log_line": 1210,
+    "data": {
+      "closed": true,
+      "context": "P3_DATA_JPA_SLICE"
+    }
+  },
+  {
+    "kind": "DONE",
+    "log_line": 1211,
+    "data": {
+      "p4Rerun": false,
+      "codeChanged": false
+    }
+  }
+]

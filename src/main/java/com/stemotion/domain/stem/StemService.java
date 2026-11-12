@@ -1,0 +1,162 @@
+package com.stemotion.domain.stem;
+import com.fasterxml.jackson.databind.*;
+import com.stemotion.core.exception.ApiException;
+import com.stemotion.core.security.WorkspaceAccess;
+import com.stemotion.domain.workspace.entity.WorkspaceRole;
+import com.stemotion.domain.script.entity.ScriptVersion;
+import com.stemotion.domain.script.repository.ScriptVersionRepository;
+import com.stemotion.domain.project.entity.ClipProject;
+import com.stemotion.domain.project.repository.ClipProjectRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import static com.stemotion.domain.stem.StemDtos.*;
+@Service
+@ConditionalOnProperty(name="app.stem.enabled",havingValue="true")
+@Transactional
+public class StemService {
+ private final StemRepository db; private final StemValidator validator;private final WorkspaceAccess access;private final ScriptVersionRepository versions;private final ClipProjectRepository projects;
+ @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager em;
+ @org.springframework.beans.factory.annotation.Autowired(required=false) private StemArtifactService artifacts;
+ public StemService(StemRepository db,StemValidator validator,WorkspaceAccess access,ScriptVersionRepository versions,ClipProjectRepository projects){this.db=db;this.validator=validator;this.access=access;this.versions=versions;this.projects=projects;}
+ private void revision(Integer expected,int actual,String field){validator.rev(expected,field);if(expected!=actual)throw ApiException.staleRevision(field,actual,expected,"STEM target changed; reload");}
+ private ScriptVersion target(String project,String version,String actor,boolean write){
+  access.requireProject(project,actor,false);
+  ScriptVersion v=versions.findById(version).orElseThrow(()->ApiException.notFound("ScriptVersion",version));
+  if(!v.getProject().getId().equals(project))throw ApiException.forbidden("Version is outside project");
+  if(write)access.requireActiveStemSeat(v.getProject().getWorkspace().getId(),actor,WorkspaceRole.WRITER);
+  return v;
+ }
+ private void lock(ScriptVersion v){
+  var row=db.jdbc().queryForList("select id from script_versions where id=? for update",v.getId());if(row.isEmpty())throw ApiException.conflict("Version changed");
+  if(em!=null){em.refresh(v);em.refresh(v.getProject());}
+  db.jdbc().queryForList("select id from workspaces where id=? for update",v.getProject().getWorkspace().getId());
+ }
+ private void editable(ScriptVersion v){if(Boolean.TRUE.equals(v.getProject().getArchived())||!Boolean.TRUE.equals(v.getIsCurrent())||!(v.getStatus()==com.stemotion.core.enums.StemEnums.ScriptStatus.DRAFT||v.getStatus()==com.stemotion.core.enums.StemEnums.ScriptStatus.CHANGE_REQUESTED))throw new ApiException(org.springframework.http.HttpStatus.CONFLICT,"STEM_IMMUTABLE","Submitted brief is immutable");}
+ private String digest(Object request){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(db.encode(request).getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
+ private String receipt(String actor,String op,String target,String key,Object payload){
+  validator.idem(key);db.jdbc().update("delete from stem_receipts where actor_id=? and operation=? and request_key=? and expires_at<=current_timestamp",actor,op,key);
+  var rows=db.jdbc().queryForList("select * from stem_receipts where actor_id=? and operation=? and request_key=?",actor,op,key);
+  if(rows.isEmpty())return null;var r=rows.get(0);if(!target.equals(db.text(r,"target"))||!digest(payload).equals(db.text(r,"request_digest")))throw new ApiException(org.springframework.http.HttpStatus.CONFLICT,"STEM_IDEMPOTENCY_CONFLICT","Key reused with another payload or target");return db.text(r,"response");
+ }
+ private void remember(String actor,String op,String target,String key,Object payload,Object result){db.jdbc().update("insert into stem_receipts(actor_id,operation,target,request_key,request_digest,response,expires_at) values(?,?,?,?,?,?::jsonb,current_timestamp+interval '24 hours')",actor,op,target,key,digest(payload),db.encode(result));}
+ public View get(String project,String version,String actor){target(project,version,actor,false);return view(version);}
+ public View create(String project,String version,String actor,Create request){validator.limits(db.json().valueToTree(request),0);
+  validator.schema(request.schemaVersion());validator.rev(request.expectedScriptRevision(),"expectedScriptRevision");var v=target(project,version,actor,true);lock(v);
+  String replay=receipt(actor,"CREATE",version,request.idempotencyKey(),request);if(replay!=null)return db.decode(replay,View.class);
+  editable(v);revision(request.expectedScriptRevision(),v.getDraftRevision(),"SCRIPT_DRAFT");if(db.brief(version)!=null)throw ApiException.conflict("Brief already exists");
+  db.jdbc().update("insert into stem_briefs(id,version_id,payload) values(?,?,?::jsonb)",db.id(),version,db.encode(StemDtos.empty()));
+  View result=view(version);remember(actor,"CREATE",version,request.idempotencyKey(),request,result);db.audit(actor,version,"BRIEF_CREATED",Map.of("revision",0));return result;
+ }
+ public View save(String project,String version,String actor,Save request){validator.limits(db.json().valueToTree(request),0);
+  validator.schema(request.schemaVersion());validator.rev(request.baseRevision(),"baseRevision");validator.rev(request.expectedScriptRevision(),"expectedScriptRevision");
+  var v=target(project,version,actor,true);lock(v);String replay=receipt(actor,"SAVE",version,request.idempotencyKey(),request);if(replay!=null)return db.decode(replay,View.class);
+  editable(v);revision(request.expectedScriptRevision(),v.getDraftRevision(),"SCRIPT_DRAFT");var row=requiredBrief(version);revision(request.baseRevision(),db.number(row,"revision"),"STEM_BRIEF");
+  validator.check(request.brief(),request.evidence());catalogReferences(request.brief(),v.getProject().getWorkspace().getId(),db.decode(db.text(row,"payload"),Brief.class));
+  Set<String> existing=new HashSet<>();for(Evidence e:db.evidence(db.text(row,"id")))existing.add(e.id());
+  Set<String> allIds=new HashSet<>();for(Evidence e:request.evidence()){
+   if(e.id()!=null&&!existing.contains(e.id()))throw StemValidator.invalid("evidence.id","Evidence outside brief");
+   if(e.sceneId()!=null){Integer n=db.jdbc().queryForObject("select count(*) from scenes where id=? and version_id=?",Integer.class,e.sceneId(),version);if(n!=1){boolean oldOrphan=e.id()!=null&&db.jdbc().queryForObject("select count(*) from stem_evidence where id=? and brief_id=? and original_scene_id=? and scene_id is null",Integer.class,e.id(),db.text(row,"id"),e.sceneId())==1;if(!oldOrphan)throw StemValidator.invalid("evidence.sceneId","Scene outside version");}}
+  }
+  db.jdbc().update("update stem_briefs set payload=?::jsonb,policy_id=?,topic_id=?,revision=revision+1,readiness='NEEDS_REVIEW' where id=?",db.encode(request.brief()),request.brief().policyVersionId(),request.brief().topicVersionId(),db.text(row,"id"));
+  db.audit(actor,version,"EVIDENCE_PREVIOUS",db.evidence(db.text(row,"id")));
+  db.jdbc().update("update stem_evidence set retired=true where brief_id=?",db.text(row,"id"));
+  for(Evidence e:request.evidence()){
+   String id=e.id()==null?db.id():e.id();if(!allIds.add(id))throw StemValidator.invalid("evidence.id","Duplicate evidence");
+   String live=e.sceneId()!=null&&db.jdbc().queryForObject("select count(*) from scenes where id=? and version_id=?",Integer.class,e.sceneId(),version)==1?e.sceneId():null;
+   db.jdbc().update("insert into stem_evidence(id,brief_id,scene_id,original_scene_id,task_key,objective_key,component,explanation) values(?,?,?,?,?,?,?,?) on conflict(id) do update set scene_id=excluded.scene_id,original_scene_id=excluded.original_scene_id,task_key=excluded.task_key,objective_key=excluded.objective_key,component=excluded.component,explanation=excluded.explanation,retired=false",id,db.text(row,"id"),live,e.sceneId(),e.taskKey(),e.objectiveKey(),e.component(),e.explanation());
+  }
+  invalidate(version);db.audit(actor,version,"BRIEF_REPLACED",Map.of("revision",request.baseRevision()+1));View result=view(version);remember(actor,"SAVE",version,request.idempotencyKey(),request,result);return result;
+ }
+ private Map<String,Object> requiredBrief(String version){var r=db.brief(version);if(r==null)throw ApiException.notFound("STEM brief",version);return r;}
+ private void catalogReferences(Brief b,String workspace,Brief old){
+  checkKind(b.topicVersionId(),"TOPIC_VERSION");checkKind(b.policyVersionId(),"POLICY");for(String id:b.outcomeIds())checkKind(id,"OUTCOME");
+  if(b.policyVersionId()!=null&&!Objects.equals(b.policyVersionId(),old.policyVersionId())&&!db.settings(workspace).policyIds().contains(b.policyVersionId()))throw StemValidator.invalid("brief.policyVersionId","Policy is not assigned");
+  for(String id:b.outcomeIds()){
+   var r=db.jdbc().queryForMap("select * from stem_catalog where id=?",id);JsonNode data=db.decode(db.text(r,"data"),JsonNode.class);
+   if(data.hasNonNull("gradeKey")&&!Objects.equals(data.path("gradeKey").asText(),b.gradeKey()))throw StemValidator.invalid("brief.outcomeIds","Outcome grade mismatch");
+   if(data.hasNonNull("subjectKey")&&!b.subjectKeys().contains(data.path("subjectKey").asText()))throw StemValidator.invalid("brief.subjectKeys","Outcome subject mismatch");
+  }
+ }
+ private void checkKind(String id,String kind){if(id!=null){validator.key(id,kind+"Id");if(db.jdbc().queryForObject("select count(*) from stem_catalog where id=? and kind=?",Integer.class,id,kind)!=1)throw StemValidator.invalid("catalog."+kind,"Missing or wrong catalog kind");}}
+ private View view(String version){var v=versions.findById(version).orElseThrow();var mode=db.settings(v.getProject().getWorkspace().getId());var r=db.brief(version);if(r==null)return new View("stem.v1",null,version,0,"UNVERIFIED","LEGACY_UNMAPPED",mode.mode(),mode.revision(),null,List.of(),List.of(),null);
+  Brief b=db.decode(db.text(r,"payload"),Brief.class);var evidence=db.evidence(db.text(r,"id"));var findings=new ArrayList<>(validator.check(b,evidence));
+  for(Evidence e:evidence)if(e.sceneId()!=null&&db.jdbc().queryForObject("select count(*) from scenes where id=? and version_id=?",Integer.class,e.sceneId(),version)!=1)findings.add(new Finding("TECH-EVIDENCE","evidence."+e.id(),"ERROR","Orphan scene reference"));
+  if(b.policyVersionId()!=null&&!mode.policyIds().contains(b.policyVersionId()))findings.add(new Finding("TECH-POLICY","brief.policyVersionId","ERROR","Pinned policy is unavailable"));
+  return new View("stem.v1",db.text(r,"id"),version,db.number(r,"revision"),"UNVERIFIED",b.rawLegacy()!=null&&!b.rawLegacy().isBlank()&&b.context().primary()==null?"LEGACY_UNMAPPED":findings.stream().anyMatch(f->f.severity().equals("ERROR"))?"INCOMPLETE":db.text(r,"readiness"),mode.mode(),mode.revision(),b,evidence,findings,legacy(b));
+ }
+ private LegacySuggestion legacy(Brief b){
+  if(b.rawLegacy()==null||b.rawLegacy().isBlank())return null;
+  String value=b.rawLegacy().strip();boolean pending=b.context().primary()==null;
+  if(value.equals("DEPARTMENT_LIBRARY"))return new LegacySuggestion(null,List.of(value),pending,"Channel suggestion only; Writer confirms learning context");
+  if(Set.of("IN_CLASS_SCREEN","GROUP_PRACTICE").contains(value))return new LegacySuggestion(value,List.of(),pending,"Suggested mapping only; Writer confirms by CAS");
+  return new LegacySuggestion(null,List.of(),true,"Unknown/multiple legacy values: Writer choice or separate variant required");
+ }
+ public StemModels.WorkspaceMode settings(String workspace,String actor){access.requireWorkspace(workspace,actor,false);workspace(workspace);return db.settings(workspace);}
+ private void workspace(String id){if(db.jdbc().queryForObject("select count(*) from workspaces where id=?",Integer.class,id)!=1)throw ApiException.notFound("Workspace",id);db.jdbc().queryForList("select id from workspaces where id=? for update",id);}
+ public StemModels.WorkspaceMode saveSettings(String workspace,String actor,Settings request){validator.limits(db.json().valueToTree(request),0);
+  if(!access.isAdmin(actor))throw ApiException.forbidden("Only Admin assigns STEM framework");workspace(workspace);validator.rev(request.baseRevision(),"baseRevision");validator.list(request.policyVersionIds(),100,"policyVersionIds");
+  if(!Set.of("OFF","ADVISORY").contains(Objects.toString(request.mode(),"")))throw StemValidator.invalid("mode","Only OFF/ADVISORY in P3");
+  String replay=receipt(actor,"SETTINGS",workspace,request.idempotencyKey(),request);if(replay!=null)return db.decode(replay,StemModels.WorkspaceMode.class);
+  var old=db.settings(workspace);revision(request.baseRevision(),old.revision(),"STEM_MODE");for(String policy:request.policyVersionIds())checkKind(policy,"POLICY");
+  if(new HashSet<>(request.policyVersionIds()).size()!=request.policyVersionIds().size())throw StemValidator.invalid("policyVersionIds","Duplicate policy");
+  if(request.defaultPolicyVersionId()!=null&&!request.policyVersionIds().contains(request.defaultPolicyVersionId()))throw StemValidator.invalid("defaultPolicyVersionId","Default must be assigned");
+  var legacy=db.jdbc().queryForList("select legacy_modes from stem_settings where workspace_id=?",workspace);
+  if(!legacy.isEmpty()&&db.decode(db.text(legacy.get(0),"legacy_modes"),String[].class).length>1&&!request.mode().equals(request.legacyModeSelection()))throw ApiException.conflict("Legacy mode conflict requires explicit selection");
+  db.jdbc().update("insert into stem_settings(workspace_id,revision,mode,policy_ids,default_policy_id) values(?,?,?,?,?) on conflict(workspace_id) do update set revision=excluded.revision,mode=excluded.mode,policy_ids=excluded.policy_ids,default_policy_id=excluded.default_policy_id,legacy_modes='[]'::jsonb",workspace,old.revision()+1,request.mode(),db.encode(request.policyVersionIds()),request.defaultPolicyVersionId());
+  db.audit(actor,workspace,"MODE_ASSIGNED",request);var result=db.settings(workspace);remember(actor,"SETTINGS",workspace,request.idempotencyKey(),request,result);return result;
+ }
+ public List<StemModels.CatalogVersion> catalog(String actor,String kind,int page,int size,boolean admin){if(admin&&!access.isAdmin(actor))throw ApiException.forbidden("Admin framework view required");if(access.user(actor).isEmpty())throw ApiException.forbidden("Authenticated user required");return db.catalog(kind,page,size);}
+ public View validate(String project,String version,String actor,Validate request){validator.limits(db.json().valueToTree(request),0);
+  var v=target(project,version,actor,false);lock(v);var r=requiredBrief(version);revision(request.expectedBriefRevision(),db.number(r,"revision"),"STEM_BRIEF");revision(request.expectedScriptRevision(),v.getDraftRevision(),"SCRIPT_DRAFT");phase(request.phase());
+  db.jdbc().update("insert into stem_validation_limits(actor_id,version_id,bucket,requests) values(?,?,floor(extract(epoch from current_timestamp)/60),1) on conflict(actor_id,version_id) do update set requests=case when stem_validation_limits.bucket=excluded.bucket then stem_validation_limits.requests+1 else 1 end,bucket=excluded.bucket",actor,version);
+  int count=db.jdbc().queryForObject("select requests from stem_validation_limits where actor_id=? and version_id=?",Integer.class,actor,version);if(count>10)throw new ApiException(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS,"STEM_RATE_LIMIT","Validation limit10/minute",Map.of("retryAfterSeconds",60));
+  if("VIDEO".equals(request.phase()))compositionRevision(version,request.expectedCompositionRevision());View result=view(version);db.jdbc().update("insert into stem_validation_runs(id,brief_id,phase,brief_revision,script_revision,mode_revision,findings) values(?,?,?,?,?,?,?::jsonb)",db.id(),db.text(r,"id"),request.phase(),result.revision(),v.getDraftRevision(),result.modeRevision(),db.encode(result.findings()));return result;
+ }
+ private void phase(String phase){if(!Set.of("SCRIPT","VIDEO").contains(Objects.toString(phase,"")))throw StemValidator.invalid("phase","Expected SCRIPT/VIDEO");}
+ private void compositionRevision(String version,Integer expected){validator.rev(expected,"expectedCompositionRevision");var r=db.jdbc().queryForList("select revision from compositions where script_version_id=? for update",version);if(r.isEmpty())throw ApiException.conflict("Composition missing");revision(expected,db.number(r.get(0),"revision"),"COMPOSITION");}
+ public void onScriptMutation(String version){if(db.brief(version)!=null)invalidate(version);}
+ private void invalidate(String version){db.jdbc().update("update stem_briefs set readiness='NEEDS_REVIEW' where version_id=?",version);db.jdbc().update("update stem_assessments set freshness='NEEDS_REVIEW' where version_id=?",version);}
+ public void submission(ClipProject project,ScriptVersion version){lock(version);if(db.brief(version.getId())!=null){View v=view(version.getId());validator.transition(v.effectiveMode(),v.findings(),false);}}
+ public record ReviewTicket(String actor,String version,String phase,Assessment request,Set<String> previous,boolean replay,String note) {}
+ public ReviewTicket prepare(ClipProject project,ScriptVersion version,String actor,String phase,Assessment a){return prepare(project,version,actor,phase,a,null);}
+ public ReviewTicket prepare(ClipProject project,ScriptVersion version,String actor,String phase,Assessment a,String note){
+  lock(version);access.requireProjectRole(project.getId(),actor,Set.of(WorkspaceRole.REVIEWER));
+  if(a==null)return null;validator.limits(db.json().valueToTree(a),0);access.requireActiveStemSeat(project.getWorkspace().getId(),actor,WorkspaceRole.REVIEWER);phase(phase);validator.list(a.criteria(),20,"criteria");
+  Set<String> criterionKeys=new HashSet<>();for(Criterion c:a.criteria()){if(!criterionKeys.add(c.key()))throw StemValidator.invalid("criteria.key","Duplicate criterion");validator.key(c.key(),"criteria.key");if(!Set.of("ADEQUATE","NEEDS_CHANGES","NOT_ASSESSED","NOT_APPLICABLE").contains(Objects.toString(c.judgment(),"")))throw StemValidator.invalid("criteria.judgment","Unknown judgment");validator.list(c.evidenceIds(),20,"criteria.evidenceIds");if(c.rationale()==null||c.rationale().isBlank())throw StemValidator.invalid("criteria.rationale","Rationale required");}
+  String replay=receipt(actor,"APPROVE_"+phase,version.getId(),a.idempotencyKey(),Map.of("assessment",a,"note",Objects.toString(note,"")));if(replay!=null)return new ReviewTicket(actor,version.getId(),phase,a,Set.of(),true,note);
+  var r=requiredBrief(version.getId());revision(a.expectedBriefRevision(),db.number(r,"revision"),"STEM_BRIEF");revision(a.expectedScriptRevision(),version.getDraftRevision(),"SCRIPT_DRAFT");revision(a.expectedModeRevision(),db.settings(project.getWorkspace().getId()).revision(),"STEM_MODE");
+  if(phase.equals("VIDEO"))compositionRevision(version.getId(),a.expectedCompositionRevision());
+  Set<String> ids=new HashSet<>();db.evidence(db.text(r,"id")).forEach(e->ids.add(e.id()));for(Criterion c:a.criteria())if(!ids.containsAll(c.evidenceIds()))throw StemValidator.invalid("criteria.evidenceIds","Evidence outside brief");checkKind(a.rubricVersionId(),"RUBRIC");
+  return new ReviewTicket(actor,version.getId(),phase,a,historyIds(project.getId()),false,note);
+ }
+ private Set<String> historyIds(String project){return new HashSet<>(db.jdbc().queryForList("select id from status_histories where project_id=?",String.class,project));}
+ public void finish(ClipProject project,ReviewTicket ticket){if(ticket==null||ticket.replay())return;if(em!=null)em.flush();Set<String> ids=historyIds(project.getId());ids.removeAll(ticket.previous());if(ids.size()!=1)throw ApiException.conflict("Expected exactly one existing review decision");String decision=ids.iterator().next();
+  int linked=db.jdbc().queryForObject("select count(*) from status_histories where id=? and changed_by=? and event_type='REVIEW_DECISION' and decision='APPROVED'",Integer.class,decision,ticket.actor());if(linked!=1)throw ApiException.conflict("Assessment needs matching existing decision");
+  var r=requiredBrief(ticket.version());db.jdbc().update("insert into stem_assessments(id,version_id,brief_id,decision_id,actor_id,phase,brief_revision,script_revision,mode_revision,composition_revision,payload) values(?,?,?,?,?,?,?,?,?,?,?::jsonb)",db.id(),ticket.version(),db.text(r,"id"),decision,ticket.actor(),ticket.phase(),ticket.request().expectedBriefRevision(),ticket.request().expectedScriptRevision(),ticket.request().expectedModeRevision(),ticket.request().expectedCompositionRevision(),db.encode(ticket.request()));
+  remember(ticket.actor(),"APPROVE_"+ticket.phase(),ticket.version(),ticket.request().idempotencyKey(),Map.of("assessment",ticket.request(),"note",Objects.toString(ticket.note(),"")),Map.of("decisionId",decision));
+  if(artifacts!=null&&ticket.phase().equals("SCRIPT")){String assessment=db.jdbc().queryForObject("select id from stem_assessments where decision_id=?",String.class,decision);artifacts.scriptApproved(project,ticket.actor(),decision,assessment);}
+ }
+ public record ChangeTicket(String actor,String source,ChangeTarget request,String note,String copiedVersion) {}
+ public ChangeTicket beginChange(ClipProject project,String actor,ChangeTarget request,String note){
+  access.requireProjectRole(project.getId(),actor,Set.of(WorkspaceRole.REVIEWER));
+  ScriptVersion source=versions.findFirstByProjectIdAndIsCurrentTrue(project.getId()).orElseThrow();
+  if(request!=null){validator.limits(db.json().valueToTree(request),0);validator.key(request.expectedVersionId(),"expectedVersionId");source=versions.findById(request.expectedVersionId()).orElseThrow(()->ApiException.notFound("ScriptVersion",request.expectedVersionId()));if(!source.getProject().getId().equals(project.getId()))throw ApiException.forbidden("Version outside project");}
+  lock(source);if(request==null)return null;
+  Object payload=Map.of("target",request,"note",note);String cached=receipt(actor,"CHANGE",source.getId(),request.idempotencyKey(),payload);
+  if(cached!=null)return new ChangeTicket(actor,source.getId(),request,note,db.decode(cached,JsonNode.class).path("copiedVersion").asText());
+  if(!Boolean.TRUE.equals(source.getIsCurrent()))throw ApiException.conflict("Change source is no longer current");revision(request.expectedScriptRevision(),source.getDraftRevision(),"SCRIPT_DRAFT");revision(request.expectedBriefRevision(),db.number(requiredBrief(source.getId()),"revision"),"STEM_BRIEF");
+  return new ChangeTicket(actor,source.getId(),request,note,null);
+ }
+ public void finishChange(ChangeTicket t,String next){if(t!=null)remember(t.actor(),"CHANGE",t.source(),t.request().idempotencyKey(),Map.of("target",t.request(),"note",t.note()),Map.of("copiedVersion",next));}
+ public void copy(String oldVersion,String newVersion,Map<String,String> map){
+  if(em!=null)em.flush();var old=db.brief(oldVersion);if(old==null)return;
+  Set<String> source=new HashSet<>(db.jdbc().queryForList("select id from scenes where version_id=?",String.class,oldVersion));Set<String> destination=new HashSet<>(db.jdbc().queryForList("select id from scenes where version_id=?",String.class,newVersion));
+  if(!map.keySet().equals(source)||new HashSet<>(map.values()).size()!=map.size()||!destination.equals(new HashSet<>(map.values())))throw ApiException.conflict("Incomplete/nonbijective copy map");
+  String brief=db.id();db.jdbc().update("insert into stem_briefs(id,version_id,payload,policy_id,topic_id,copied_from,readiness) values(?,?,?::jsonb,?,?,?,'NEEDS_REVIEW')",brief,newVersion,db.text(old,"payload"),db.text(old,"policy_id"),db.text(old,"topic_id"),db.text(old,"id"));
+  for(Evidence e:db.evidence(db.text(old,"id"))){if(e.sceneId()!=null&&!map.containsKey(e.sceneId()))throw ApiException.conflict("Orphan evidence cannot be copied without correction");String scene=e.sceneId()==null?null:map.get(e.sceneId());db.jdbc().update("insert into stem_evidence(id,brief_id,scene_id,original_scene_id,task_key,objective_key,component,explanation,copied_from) values(?,?,?,?,?,?,?,?,?)",db.id(),brief,scene,scene,e.taskKey(),e.objectiveKey(),e.component(),e.explanation(),e.id());}
+ }
+}

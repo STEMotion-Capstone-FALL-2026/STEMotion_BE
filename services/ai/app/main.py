@@ -52,7 +52,7 @@ RETRY_NOTE = ("\n\nLẦN TRƯỚC KẾT QUẢ BỊ TỪ CHỐI VÌ: {reason}. Tr
               "bắt buộc của từng template (ví dụ DIAGRAM_EXPLAINER cần diagramTitle và labels).")
 
 
-async def execute(request, client, validate_operation=None):
+async def execute(request, client, validate_operation=None, allow_retry=True):
     started = time.monotonic()
     try:
         result, model, usage = await client.generate(request)
@@ -61,7 +61,7 @@ async def execute(request, client, validate_operation=None):
             try:
                 validate_result(validate_operation, result)
             except InvalidResult as refused:
-                if validate_operation not in RETRYABLE:
+                if validate_operation not in RETRYABLE or not allow_retry:
                     raise
                 # One more try, telling the model what was wrong. Both attempts' tokens count.
                 retry = request.model_copy(update={"prompt": request.prompt + RETRY_NOTE.format(reason=refused.reason)})
@@ -88,15 +88,15 @@ async def generate(request: GenerationRequest, client=Depends(provider)):
 
 @app.post("/script/generate", response_model=GenerationResponse, dependencies=[Depends(require_service_key)])
 async def generate_script(request: ScriptInput, client=Depends(provider)):
-    return await execute(build_request("generate", request), client, "generate")
+    return await execute(build_request("generate", request), client, "generate", allow_retry=request.stemContext is None)
 
 @app.post("/script/action", response_model=GenerationResponse, dependencies=[Depends(require_service_key)])
 async def action(request: ActionInput, client=Depends(provider)):
-    return await execute(build_request(request.action, request), client, request.action)
+    return await execute(build_request(request.action, request), client, request.action, allow_retry=request.stemContext is None)
 
 def action_handler(operation):
     async def handler(request: AnalysisInput, client=Depends(provider)):
-        return await execute(build_request(operation, request), client, operation)
+        return await execute(build_request(operation, request), client, operation, allow_retry=request.stemContext is None)
     return handler
 
 for operation in ("resegment", "grade", "extract", "terms"):

@@ -1,0 +1,12 @@
+{
+  "migrations": 25,
+  "assessments": 1,
+  "approvedDecisions": 1,
+  "approvalReceipts": 1,
+  "settingsRevision": 3,
+  "advisoryWorkspaces": 1,
+  "modeAudits": 3,
+  "modeAuditsWithBaseRevision": 3,
+  "modeAuditsWithModeRevision": 0,
+  "verifiedAssessments": 0
+}

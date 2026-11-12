@@ -1,0 +1,216 @@
+{
+  "be": [
+    {
+      "relative": "services/ai/app/grounding.py",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\services\\ai\\app\\grounding.py",
+      "before_sha256": null,
+      "sha256": "42ab9bad3925ea2dfcb8a7391d44ce7e3bde8e3ff162a8a8b29f6431be8cdce8",
+      "change": "NEW"
+    },
+    {
+      "relative": "services/ai/app/main.py",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\services\\ai\\app\\main.py",
+      "before_sha256": "1aa560b31c670636f3047b6f2d09883e79379475c5f3ced5ef1ff3050ecc016c",
+      "sha256": "0a547077d07fa457d3ee14bc4434aeeb6f271956d6b50af015658b0dffa11b04",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "services/ai/app/models.py",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\services\\ai\\app\\models.py",
+      "before_sha256": "f2f97ea863b0b498dc027eddd5c88d3324d71ca356ef6270460d0501eefa8569",
+      "sha256": "4234f18eb3b94b0c8badeb9c6d0cc4891acfb364524630ea837bd2b9fb69de63",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "services/ai/app/prompting.py",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\services\\ai\\app\\prompting.py",
+      "before_sha256": "14807695fab33177fa2a8bcbfce45e05c9c5bfe497584947254931482faeaaa1",
+      "sha256": "6a601cea72637cb972736a350eafab73e2089b35a286bcc85d27ee4f4dab8e8d",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "services/ai/tests/p6_fake_server.py",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\services\\ai\\tests\\p6_fake_server.py",
+      "before_sha256": null,
+      "sha256": "60be9c82587203760a391dcf78e275c1d3b01d627bcd8152770ba54f0ca06713",
+      "change": "NEW"
+    },
+    {
+      "relative": "services/ai/tests/test_grounding_p6.py",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\services\\ai\\tests\\test_grounding_p6.py",
+      "before_sha256": null,
+      "sha256": "2349431f580be7a98d599246da8607b652ec96eff13504a8e6993a88bf5c662f",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/main/java/com/stemotion/domain/ai/controller/AiController.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\ai\\controller\\AiController.java",
+      "before_sha256": "00bd24ec91e91ba47892f791de727aee0a92b3c4cb01d2eaf75ea7cabc99a7f2",
+      "sha256": "612f9a789ddea97f4e49fd5b83ea2662f3066a8f62871eed3e4332f770452c57",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "src/main/java/com/stemotion/domain/ai/controller/StemGroundedAiController.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\ai\\controller\\StemGroundedAiController.java",
+      "before_sha256": null,
+      "sha256": "c74941e15c539d9cfeee2870eac6e58eabe857577ed751f863f1e905de0da556",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/main/java/com/stemotion/domain/ai/controller/StemGroundedAiLimitFilter.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\ai\\controller\\StemGroundedAiLimitFilter.java",
+      "before_sha256": null,
+      "sha256": "441ea7baa40de43f1a3280c6672e582580fba1b575e0b302df8ecaa145f182cd",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/main/java/com/stemotion/domain/ai/dto/AiDtos.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\ai\\dto\\AiDtos.java",
+      "before_sha256": "6d0fab994a6fe7bef0a6c8c284fb80f7b6164881f652a17bbf183665b9e99279",
+      "sha256": "5eddc2cee354fc005b9de24ad87f10a2d05fb623cff8fd118cfe57438e2068f2",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "src/main/java/com/stemotion/domain/ai/service/StemAiContextResolver.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\ai\\service\\StemAiContextResolver.java",
+      "before_sha256": null,
+      "sha256": "2df03f72ba7ce0af5f16f537e6bc89d4ff640e1aeca4b762667b3e03ed8386cb",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/main/java/com/stemotion/domain/ai/service/StemGroundedAiService.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\ai\\service\\StemGroundedAiService.java",
+      "before_sha256": null,
+      "sha256": "b197fb6cb87162370297389d9e43c84f7e669d3f63b89278aa6cc0cd1df84a73",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/main/java/com/stemotion/domain/library/controller/LibraryController.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\library\\controller\\LibraryController.java",
+      "before_sha256": "edf96742edfca73b9eda5a920ffb9b5c9048bbe3e394bbeae8918ccbfce593d8",
+      "sha256": "5506e82c264d2bf24600cfaff8c976b15cb69a0d009269ab69401ede3f41b155",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "src/main/java/com/stemotion/domain/library/dto/LibraryDtos.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\library\\dto\\LibraryDtos.java",
+      "before_sha256": "47123aac0dd79f5dbe99761a844c64026804133de2232c4c2e157b608a7c80fe",
+      "sha256": "27bbfe76e12c9dfc5ffd0ce8549f351f3d343c2ff892d753dd901b807c6efc49",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "src/main/java/com/stemotion/domain/library/service/LibraryService.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\library\\service\\LibraryService.java",
+      "before_sha256": "8e5472a1b90600a5c19fa9702ade35f9bbd7326c0e71cb6052f1a4bd42e55a39",
+      "sha256": "8df5820405d4766700b48034d3d1981181ac21d322f257a5ec949d4fed5ef374",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "src/main/java/com/stemotion/domain/library/service/StemLibraryQuery.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\main\\java\\com\\stemotion\\domain\\library\\service\\StemLibraryQuery.java",
+      "before_sha256": null,
+      "sha256": "e601cdbac569eccd9dfdd2ce0817f676d6d52b530a003d9c52524dfca2513e9c",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/test/java/com/stemotion/domain/ai/service/StemGroundedOutputP6Test.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\test\\java\\com\\stemotion\\domain\\ai\\service\\StemGroundedOutputP6Test.java",
+      "before_sha256": null,
+      "sha256": "10e5da32a3849c569d055f0bbccd6e61a9744e93656dc12ae472a9854bbfdd17",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/test/java/com/stemotion/domain/stem/StemSpecimensP6Test.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\test\\java\\com\\stemotion\\domain\\stem\\StemSpecimensP6Test.java",
+      "before_sha256": null,
+      "sha256": "d5d757f52eb1c3eb68ee0279a15b3de5e847ff354bf2d94fd4a2c2b372424d10",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/test/java/com/stemotion/e2e/StemP6HttpTest.java",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\test\\java\\com\\stemotion\\e2e\\StemP6HttpTest.java",
+      "before_sha256": null,
+      "sha256": "322cb0e7f546164a8544af542618d490d5ca0b0e9117b33a34e382a4f0306ef0",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/test/resources/stem-p6/contract-specimens.json",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\src\\test\\resources\\stem-p6\\contract-specimens.json",
+      "before_sha256": null,
+      "sha256": "3098ae2050b0130edbbaba80b4927dc88e102f51044225296c0f53cec965cd18",
+      "change": "NEW"
+    }
+  ],
+  "fe": [
+    {
+      "relative": "src/components/stem/StemFlow.p6-live.test.tsx",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\components\\stem\\StemFlow.p6-live.test.tsx",
+      "before_sha256": null,
+      "sha256": "4841650c77cece07a658fa158e8d4a3112b169416a0d3dd37a37e2cd3c8a67df",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/components/stem/StemGroundedAiPanel.tsx",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\components\\stem\\StemGroundedAiPanel.tsx",
+      "before_sha256": null,
+      "sha256": "8191202daea07d1250245015c2e66a35db46ce4ce189e1eb0a4b47c476bd8671",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/components/stem/StemLearningCard.tsx",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\components\\stem\\StemLearningCard.tsx",
+      "before_sha256": null,
+      "sha256": "117c1427d4e48b13fab5e80e4563e65014a3be75e226c2a9f776c48210d47d8c",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/components/stem/StemP6.test.tsx",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\components\\stem\\StemP6.test.tsx",
+      "before_sha256": null,
+      "sha256": "c5f84848718d1de1000bd37055d4d3a41ce45d95e36b5d4739b5903f35a1611b",
+      "change": "NEW"
+    },
+    {
+      "relative": "src/components/views/MediaLibrary/MediaLibraryView.tsx",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\components\\views\\MediaLibrary\\MediaLibraryView.tsx",
+      "before_sha256": "a73e5b135d1390bf83a040b505a56dc62f6327b9dcddb04e38aab0d258c10a62",
+      "sha256": "fc1b9f3787215ef33ea1d150333932e73e90de578d9c86df29197afd4db824d3",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "src/components/views/WriterStudio/WriterStudio.tsx",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\components\\views\\WriterStudio\\WriterStudio.tsx",
+      "before_sha256": "8c72fc534f3ec00f5142c3625f1c19c2e66fb85bdde510e51d05900e0493f34c",
+      "sha256": "6e86657411ff31da552accf7dfbe29e6e6e773974701a7c5b23b7b16cf4525e5",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "src/services/apiClient.ts",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\services\\apiClient.ts",
+      "before_sha256": "9269d3047eecb9312125578f9dc0352a1ea44255b13dde5cfdd60cfed0dd182b",
+      "sha256": "2f756b2abb5ed18f8334faabb618418341065974da2f800059ab618b48392129",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "src/services/libraryService.ts",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\services\\libraryService.ts",
+      "before_sha256": "ded3b1638a5f3545ae1e4a752658e55c7a8217ff063197ca380a44689dcec8c8",
+      "sha256": "033f6f2f759b1475aa41d10ea6d9c7ae718939b684951ce6406dbab6ec640231",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "src/services/scriptService.ts",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\services\\scriptService.ts",
+      "before_sha256": "2a18c03b472b5dcee612d419274ed21f3e9b875b6bab0c7835d22d9859a56fef",
+      "sha256": "fde341f1475280aac20d977b7d4dcd091df87148b28233c3dc64e2b9073fb301",
+      "change": "MODIFIED"
+    },
+    {
+      "relative": "src/types/stem.ts",
+      "path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-04\\STEMotion_FE\\src\\types\\stem.ts",
+      "before_sha256": "5be236a657b7c0d4aa4160d79448d21c4b3662055e876d1bfdd3687e18bc94c0",
+      "sha256": "d17a140f9cbd51573aa7485da932f0a2ec9d01a0425168273bce5675b4b681b1",
+      "change": "MODIFIED"
+    }
+  ]
+}

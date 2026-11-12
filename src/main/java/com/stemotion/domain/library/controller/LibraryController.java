@@ -23,16 +23,18 @@ public class LibraryController {
 
     private final LibraryService libraryService;
 
+    public record Search(StemSubject subject,String gradeLevel,Integer page,Integer size,String grade,String educationLevel,String subjectId,String outcomeId,String usageContext,String contextRole,String channel,String verificationStatus,String q) {
+        com.stemotion.domain.library.service.StemLibraryQuery.Filters filters(){
+            if(grade!=null && gradeLevel!=null && !grade.trim().equalsIgnoreCase(gradeLevel.trim()))throw com.stemotion.core.exception.ApiException.badRequest("grade and gradeLevel conflict");
+            return new com.stemotion.domain.library.service.StemLibraryQuery.Filters(subject,grade==null?gradeLevel:grade,educationLevel,subjectId,outcomeId,usageContext,contextRole,channel,verificationStatus,q);
+        }
+    }
     @GetMapping("/clips")
-    @Operation(summary = "List published clips, filtered by subject and grade")
-    public ResponseEntity<List<LibraryItem>> findClips(
-        @RequestParam(required = false) StemSubject subject,
-        @RequestParam(required = false) String gradeLevel,
-        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer page,
-        @org.springframework.web.bind.annotation.RequestParam(required = false) Integer size
-    ) {
-        return com.stemotion.core.web.PagedResponse.list(com.stemotion.core.web.PageParams.of(page, size),
-            () -> libraryService.findPublished(subject, gradeLevel), p -> libraryService.findPublished(subject, gradeLevel, p));
+    @Operation(summary = "Published snapshot-backed learning cards with server filtering and paging")
+    public ResponseEntity<List<LibraryItem>> findClips(@org.springframework.web.bind.annotation.ModelAttribute Search query){
+        var filters=query.filters();
+        return com.stemotion.core.web.PagedResponse.list(com.stemotion.core.web.PageParams.of(query.page(),query.size()),
+            ()->libraryService.search(filters,null),p->libraryService.searchPage(filters,p));
     }
 
     @GetMapping("/clips/{projectId}")
@@ -42,8 +44,8 @@ public class LibraryController {
     }
 
     @GetMapping("/filters")
-    @Operation(summary = "Subjects and grades that actually have published clips")
-    public ResponseEntity<LibraryService.LibraryFilters> filters() {
-        return ResponseEntity.ok(libraryService.availableFilters());
+    @Operation(summary = "Frozen metadata facets using the same filters as the list")
+    public ResponseEntity<java.util.Map<String,List<String>>> filters(@org.springframework.web.bind.annotation.ModelAttribute Search query){
+        return ResponseEntity.ok(libraryService.facets(query.filters()));
     }
 }

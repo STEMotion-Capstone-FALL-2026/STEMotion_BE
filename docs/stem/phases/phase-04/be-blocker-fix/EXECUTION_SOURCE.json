@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-05",
+  "timezone": "Asia/Saigon",
+  "prompt": "C:\\Users\\LeTran\\.codex\\attachments\\1399ddfa-9b0f-418e-aaf1-aae452e8cfe6\\Pasted text.txt",
+  "prompt_sha256": "db96e4732e7eb2b47774a85da4c84afef6c91064d5ab22866b8d43afedb48238",
+  "decisions": {
+    "B-Q01": "A",
+    "B-Q02": "contract unchanged",
+    "B-Q03": "migration/shared unchanged",
+    "B-Q04": "A BT01–BT09 only"
+  },
+  "head": "f6c6f0bdcdcc6bbaf1f1246f86678d3249dea8e1",
+  "commits_created": 0,
+  "patch_sha256": "5c243ec1348219f2ae746de747e9f281353d4bc1ad25c347b415e0572ed6a927"
+}

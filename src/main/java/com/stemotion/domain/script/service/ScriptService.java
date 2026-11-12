@@ -57,6 +57,9 @@ public class ScriptService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.stemotion.domain.production.repository.CompositionRepository compositionRepository;
 
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.stemotion.domain.stem.StemService stem;
+
     // ---------------------------------------------------------------- queries
 
     @Transactional(readOnly = true)
@@ -230,6 +233,7 @@ public class ScriptService {
             : replaceScenes(current, request.scenes());
 
         versionRepository.save(current);
+        if(stem!=null)stem.onScriptMutation(current.getId());
         applyTotalDuration(project, scenes);
 
         return toResponse(project, current, scenes);
@@ -286,6 +290,7 @@ public class ScriptService {
             throw ApiException.badRequest("A script needs at least one scene before it can be reviewed");
         }
 
+        if(stem!=null)stem.submission(project,current);
         ProjectStatus from = project.getPipelineStatus();
         statusHistoryService.validateTransition(from, ProjectStatus.SCRIPT_REVIEW);
 
@@ -302,7 +307,11 @@ public class ScriptService {
     /** Reviewer accepts the script; it becomes available to the producer. */
     @Transactional
     public ScriptResponse approve(String projectId, ReviewDecisionRequest request, String reviewerId) {
+        if(request!=null && request.changeTarget()!=null)throw ApiException.badRequest("changeTarget only allowed on request-changes");
+        if(stem==null && request!=null && request.stemAssessment()!=null)throw ApiException.badRequest("STEM is disabled");
         ClipProject project = getOrThrow(projectId);
+        var stemTicket=stem==null?null:stem.prepare(project,currentVersion(project),reviewerId,"SCRIPT",request==null?null:request.stemAssessment(),request==null?null:request.note());
+        if(stemTicket!=null && stemTicket.replay())return findById(projectId);
         requireStatus(project, ScriptStatus.IN_REVIEW);
 
         ProjectStatus from = project.getPipelineStatus();
@@ -321,6 +330,7 @@ public class ScriptService {
             com.stemotion.domain.project.entity.StatusHistory.Decision.APPROVED,
             request == null ? null : request.note());
 
+        if(stem!=null)stem.finish(project,stemTicket);
         return toResponse(project, current, scenesOf(current));
     }
 
@@ -344,7 +354,14 @@ public class ScriptService {
     @Transactional
     public ScriptResponse requestChanges(String projectId, ReviewDecisionRequest request, String reviewerId) {
         String reason = requireReason(request == null ? null : request.note());
+        if(request!=null && request.stemAssessment()!=null)throw ApiException.badRequest("Assessment is not accepted on request-changes");
+        if(stem==null && request!=null && request.changeTarget()!=null)throw ApiException.badRequest("STEM is disabled");
         ClipProject project = getOrThrow(projectId);
+        var changeTicket=stem==null?null:stem.beginChange(project,reviewerId,request==null?null:request.changeTarget(),reason);
+        if(changeTicket!=null && changeTicket.copiedVersion()!=null) {
+            ScriptVersion copiedVersion=versionOrThrow(changeTicket.copiedVersion(),projectId);
+            return toResponse(project,copiedVersion,scenesOf(copiedVersion));
+        }
         requireStatus(project, ScriptStatus.IN_REVIEW);
 
         ProjectStatus from = project.getPipelineStatus();
@@ -367,7 +384,9 @@ public class ScriptService {
             .createdBy(authService.findUserOrThrow(reviewerId))
             .build());
 
-        List<Scene> copied = copyScenes(scenesOf(reviewed), next);
+        var copy = copyScenes(scenesOf(reviewed), next);
+        List<Scene> copied = copy.scenes();
+        if(stem!=null)stem.copy(reviewed.getId(),next.getId(),copy.oldToNew());
         project.setScriptStatus(ScriptStatus.CHANGE_REQUESTED);
         projectRepository.save(project);
         statusHistoryService.recordReview(
@@ -376,6 +395,7 @@ public class ScriptService {
             com.stemotion.domain.project.entity.StatusHistory.Decision.REJECTED,
             reason);
 
+        if(stem!=null)stem.finishChange(changeTicket,next.getId());
         return toResponse(project, next, copied);
     }
 
@@ -527,19 +547,26 @@ public class ScriptService {
         return sceneRepository.saveAll(scenes);
     }
 
-    private List<Scene> copyScenes(List<Scene> source, ScriptVersion target) {
-        List<Scene> copies = source.stream()
-            .map(scene -> Scene.builder()
-                .orderNo(scene.getOrderNo())
-                .sceneType(scene.getSceneType())
-                .title(scene.getTitle())
-                .narration(scene.getNarration())
-                .durationInFrames(scene.getDurationInFrames())
-                .props(scene.getProps())
-                .scriptVersion(target)
-                .build())
-            .toList();
-        return sceneRepository.saveAll(copies);
+    private record SceneCopy(List<Scene> scenes, java.util.Map<String,String> oldToNew) {}
+    private SceneCopy copyScenes(List<Scene> source, ScriptVersion target) {
+        java.util.Map<Scene,String> originals = new java.util.IdentityHashMap<>();
+        List<Scene> copies = new java.util.ArrayList<>();
+        for(Scene original:source) {
+            Scene copy=Scene.builder().orderNo(original.getOrderNo()).sceneType(original.getSceneType())
+                .title(original.getTitle()).narration(original.getNarration()).durationInFrames(original.getDurationInFrames())
+                .props(original.getProps()).scriptVersion(target).build();
+            copies.add(copy); originals.put(copy,original.getId());
+        }
+        List<Scene> saved=sceneRepository.saveAll(copies);
+        java.util.Map<String,String> map=new java.util.LinkedHashMap<>();
+        for(Scene copy:copies) {
+            if(copy.getId()==null||originals.get(copy)==null){
+                if(stem!=null)throw ApiException.conflict("Copy did not allocate a scene identity");
+                continue; // Legacy bare-service mocks do not allocate database ids.
+            }
+            if(map.put(originals.get(copy),copy.getId())!=null)throw ApiException.conflict("Duplicate source scene");
+        }
+        return new SceneCopy(saved,java.util.Map.copyOf(map));
     }
 
     private void applyTotalDuration(ClipProject project, List<Scene> scenes) {
