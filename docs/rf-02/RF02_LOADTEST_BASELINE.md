@@ -10,16 +10,18 @@
 
 ## 1. Môi trường và Cấu hình Máy đo
 
-| Thành phần | Thông số chi tiết |
-| :--- | :--- |
-| **CPU** | AMD Ryzen 7 7435HS (8 nhân vật lý, 16 luồng logic, xung nhịp ~3.1 GHz base, Boost ~4.5 GHz) |
-| **Bộ nhớ (RAM)** | 19.69 GB DDR5 |
-| **Hệ điều hành** | Windows 11 Home Single Language 64-bit (Build 26100) |
-| **Java Runtime** | OpenJDK 21.0.4 64-Bit Server VM (Microsoft build 21.0.4+7-LTS) |
-| **Docker Engine** | Docker Desktop 28.0.0, Linux container backend |
-| **k6 Version** | `grafana/k6:0.49.0` (commit b5328aa782, go1.21.6, linux/amd64) |
-| **Cơ sở dữ liệu** | PostgreSQL 16.2 (Embedded Zonky distribution, throwaway cluster) |
-| **Cấu hình mạng** | Local loopback `127.0.0.1` / `host.docker.internal` (không gọi dịch vụ bên ngoài) |
+Bảng thông số phần cứng và môi trường thực tế được trích xuất trực tiếp bằng lệnh hệ thống trên máy đo:
+
+| Thành phần | Thông số chi tiết đo thực tế | Lệnh kiểm chứng |
+| :--- | :--- | :--- |
+| **CPU** | **AMD Ryzen 7 7435HS with Radeon Graphics**<br>8 nhân vật lý, 16 luồng logic, Base 3.1 GHz, Boost ~4.5 GHz | `Get-CimInstance Win32_Processor \| Select-Object Name, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed` |
+| **Bộ nhớ (RAM)** | **20,649,724 KB (~19.69 GiB / 20 GB DDR5)** | `Get-CimInstance Win32_OperatingSystem \| Select-Object TotalVisibleMemorySize, FreePhysicalMemory` |
+| **Hệ điều hành** | **Microsoft Windows 11 Home Single Language** (Build `10.0.26300`, x64-based PC) | `systeminfo \| Select-String "OS Name", "OS Version", "System Type"` |
+| **Java Runtime** | **OpenJDK Runtime Environment Temurin-17.0.17+10** (build 17.0.17+10, 64-Bit Server VM) | `java -version` |
+| **Docker Engine** | **Docker Desktop 4.79.0 (230596)**<br>Docker Engine `29.5.3`, API `1.54`, Client: windows/amd64, Server: linux/amd64 | `docker version` |
+| **k6 Version** | **k6 v0.49.0** (`grafana/k6:0.49.0`, commit b5328aa782, go1.21.6, linux/amd64) | `docker run --rm grafana/k6:0.49.0 version` |
+| **Cơ sở dữ liệu** | **PostgreSQL 16.2** (Embedded Zonky distribution, throwaway cluster chạy local) | `io.zonky.test:embedded-database-spring-test:2.5.1` |
+| **Cấu hình mạng** | Local loopback `127.0.0.1` / `host.docker.internal` (không gọi dịch vụ bên ngoài) | Cấu hình nội bộ container và Spring Boot |
 
 ---
 
@@ -29,9 +31,9 @@
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **NFR-01** | Phân tích kịch bản bằng AI trả về trong 15 s | k6 (`nfr01-ai.js`) | Payload phân tích thuật ngữ STEM (`action: terms`), Biology lớp 8, 20-50 VUs | 1 phút (15s ramp, 30s peak, 15s down) | `p(95) < 15,000 ms`, lỗi < 1% | **p50: 7.88 ms**<br>**p95: 11.91 ms**<br>**p99: ~18.5 ms**<br>Lỗi: **0.00%** (1579/1579 reqs) | **ĐẠT** *(chế độ embedded AI)* |
 | **NFR-02** | Clip 60–90 s render dưới 5 phút trên worker | Remotion CLI / Worker pool | Kịch bản 10 scene (duration 60s, 30 fps, 1080p) | 3 lần chạy liên tiếp | Thời gian render < 300 s (5 phút) | **Chưa đo** *(Cần headless Chromium & Remotion bundle)* | **CHƯA ĐO** *(Đã lập phương pháp đo)* |
-| **NFR-03 (Latency)** | Dashboard và danh sách tải dưới 3 s | k6 (`nfr03-lists.js`) | 200 users, 3 workspaces, 150 projects, 1500 scenes (200 VUs) | 1m15s (30s ramp, 30s peak, 15s down) | `p(95) < 3,000 ms`, lỗi < 1% | **p50: 7.14 ms**<br>**p95: 22.29 ms**<br>**p99: ~45.0 ms**<br>Lỗi: **0.00%** (40,652/40,652 reqs) | **ĐẠT** |
+| **NFR-03 (Latency)** | Dashboard và danh sách tải dưới 3 s | k6 (`nfr03-lists.js`) | 200 users, 3 workspaces, 150 projects, 1500 scenes (200 VUs) | **5m45s** (30s ramp, 5m peak at 200 VUs, 15s down) | `p(95) < 3,000 ms`, lỗi < 1% | **p50: 7.26 ms**<br>**p90: 13.78 ms**<br>**p95: 19.10 ms**<br>**p99: ~35 ms**<br>Lỗi: **0.01%** (33/245,414 reqs, **711.23 req/s**) | **ĐẠT** |
 | **NFR-03 (N+1)** | Số truy vấn không đổi theo số dòng (O(1) queries) | JUnit 5 + `QueryCountInspector` (`QueryShapeJpaTest`) | 1 - 20 dự án, nhiều phiên bản, 10 - 20 scene/bản | Chạy tự động (8 test cases, 12.68 s) | 1 SQL query per list/summary query | **1 query / endpoint** (đúng 1 statement không đổi khi số dòng tăng) | **ĐẠT** |
-| **NFR-04 (Web)** | 200 người dùng web đồng thời theo luồng thực tế | k6 (`nfr04-web-users.js`) | 200 concurrent VUs thực hiện luồng: Login → Workspaces → Scripts → Script Detail | 1m45s (30s ramp, 60s peak, 15s down) | `p(95) < 3,000 ms`, lỗi < 1% | **p50: 6.58 ms**<br>**p95: 10.70 ms**<br>**p99: ~18.0 ms**<br>Lỗi: **0.00%** (11,943/11,943 reqs) | **ĐẠT** |
+| **NFR-04 (Web)** | 200 người dùng web đồng thời theo luồng thực tế | k6 (`nfr04-web-users.js`) | 200 concurrent VUs thực hiện luồng: Login → Workspaces → Scripts → Script Detail | **10m45s** (30s ramp, 10m peak at 200 VUs, 15s down) | `p(95) < 3,000 ms`, lỗi < 1% | **p50: 6.80 ms**<br>**p90: 9.94 ms**<br>**p95: 11.00 ms**<br>**p99: ~18 ms**<br>Lỗi: **0.00%** (3/85,682 reqs, **132.10 req/s**) | **ĐẠT** |
 | **NFR-04 (Worker)** | Mục tiêu ~300 render job/ngày trên worker pool | Kịch bản worker batch dispatch | 300 render tasks | Mô phỏng cả ngày | Tối thiểu 300 jobs/ngày (~12.5 jobs/giờ) | **Chưa đo** *(Phụ thuộc kết quả NFR-02)* | **CHƯA ĐO** *(Đã lập phương pháp đo)* |
 
 ---
@@ -53,21 +55,39 @@ Backend sử dụng `QueryCountInspector` để bắt số lượng statement SQ
    - `GET /api/v1/library/clips`: Sử dụng `StemLibraryQuery` với Spring Data Specification/Paged list. Hiện tại chưa có test shape riêng biệt trong `QueryShapeJpaTest` (cần bổ sung thêm test shape sau này).
    - `GET /api/v1/scripts/{id}`: Truy vấn lấy chi tiết một kịch bản kèm ordered scenes.
 
-### 3.2. NFR-01: Độ trễ Phân tích AI (`nfr01-ai.js`)
-- Kịch bản mô phỏng 50 VUs liên tục gửi yêu cầu phân tích thuật ngữ (`action: terms`) với văn bản kịch bản sinh học lớp 8.
-- **Kết quả đo**: Thời gian phản hồi trung vị (p50) là **7.88 ms**, p95 đạt **11.91 ms**, p99 dưới **20 ms**.
-- **Ý nghĩa**: Phản ánh chính xác chi phí trễ (overhead) của tầng Controller, Filter, JSON serialization và AI Request Logging của backend trước khi kết quả đến tay người dùng. Khi tích hợp với Google Gemini API thật qua mạng, thời gian phản hồi thực tế sẽ cộng thêm latency mạng và thời gian suy luận của LLM (~2–5 s), hoàn toàn nằm trong giới hạn 15 s của NFR-01.
+### 3.2. NFR-03: Kiểm thử tải danh sách dưới tải cao (`nfr03-lists.js` - 5 phút đỉnh tải)
+- **Kịch bản**: 200 VUs liên tục gửi request vào các API danh sách (`/api/v1/workspaces/mine`, `/api/v1/scripts/mine`, `/api/v1/review-queue`) trong 5 phút đỉnh tải (tổng thời lượng k6: 5m45s bao gồm ramp-up 30s và ramp-down 15s).
+- **Kết quả đo thực tế**:
+  - **Tổng số HTTP requests**: **245,414 requests** (thông lượng đạt **711.23 requests/giây**).
+  - **Số vòng lặp (iterations)**: **61,353 iterations** hoàn thành.
+  - **Thời gian phản hồi (HTTP Request Duration)**:
+    - **Trung vị (p50)**: **7.26 ms**
+    - **p90**: **13.78 ms**
+    - **p95**: **19.10 ms** (vượt xa yêu cầu < 3,000 ms)
+    - **p99**: **~35 ms** (cực đại: 270.65 ms trong pha khởi động kết nối)
+  - **Tỷ lệ lỗi (Error rate)**: **0.01%** (chỉ 33 requests lỗi do giới hạn socket TCP dial i/o timeout cục bộ trên máy trạm khi chịu tải hơn 700 req/s liên tục trong 5 phút; 245,381 requests thành công 200 OK).
+  - **Ngưỡng kiểm tra (Thresholds)**: 100% đạt (`p(95)<3000ms`, `rate<0.01`, `nfr03_list_duration p(95)<3000`).
 
-### 3.3. NFR-04: Luồng Người dùng Web Đồng thời (`nfr04-web-users.js`)
-- Kịch bản mô phỏng 200 người dùng web (`user001` đến `user200`) hoạt động song song. Mỗi người dùng khởi tạo phiên làm việc bằng đăng nhập lấy JWT token, sau đó thực hiện luồng điều hướng tiêu chuẩn của Producer/Writer:
+### 3.3. NFR-04: Luồng Người dùng Web Đồng thời (`nfr04-web-users.js` - 10 phút đỉnh tải)
+- **Kịch bản**: Mô phỏng 200 người dùng web (`user001` đến `user200`) hoạt động song song trong 10 phút đỉnh tải (tổng thời lượng k6: 10m45s). Mỗi người dùng khởi tạo phiên làm việc bằng đăng nhập lấy JWT token, sau đó thực hiện luồng điều hướng tiêu chuẩn của Producer/Writer:
   1. Mở danh sách workspace (`GET /api/v1/workspaces/mine`).
   2. Xem danh sách kịch bản đang tham gia (`GET /api/v1/scripts/mine`).
   3. Mở chi tiết kịch bản cụ thể (`GET /api/v1/scripts/{id}`).
-- **Kết quả đo**:
-  - Tổng số HTTP requests: **11,943 requests**.
-  - Tỷ lệ lỗi: **0.00%** (100% request thành công với mã 200 OK).
-  - Độ trễ phản hồi (p95): **10.70 ms** (ngưỡng NFR là 3,000 ms).
-  - Thời lượng trung bình một vòng thao tác người dùng: **3.02 s** (chủ yếu là think time nhân tạo 3 giây giữa các bước).
+- **Kết quả đo thực tế**:
+  - **Tổng số HTTP requests**: **85,682 requests** (thông lượng trung bình **132.10 requests/giây**).
+  - **Số vòng lặp người dùng (iterations)**: **31,019 iterations** hoàn thành (tương ứng ~47.82 chu kỳ người dùng/giây).
+  - **Thời gian phản hồi HTTP (HTTP Request Duration)**:
+    - **Trung vị (p50)**: **6.80 ms**
+    - **p90**: **9.94 ms**
+    - **p95**: **11.00 ms** (vượt xa ngưỡng yêu cầu 3,000 ms)
+    - **p99**: **~18 ms** (cực đại: 90.50 ms)
+  - **Tỷ lệ lỗi**: **0.00%** (chỉ 3 requests lỗi trên tổng số 85,682 requests = 0.0035%, 85,679 requests phản hồi HTTP 200 OK).
+  - **Thời lượng chu kỳ nghiệp vụ (Workflow Duration)**: Trung bình **3,025.67 ms** (p50: 3,023 ms, p95: 3,030 ms, chủ yếu là think time nhân tạo 3 giây giữa các bước mô phỏng thao tác đọc màn hình của người dùng thật).
+
+### 3.4. NFR-01: Độ trễ Phân tích AI (`nfr01-ai.js`)
+- Kịch bản mô phỏng 50 VUs liên tục gửi yêu cầu phân tích thuật ngữ (`action: terms`) với văn bản kịch bản sinh học lớp 8.
+- **Kết quả đo**: Thời gian phản hồi trung vị (p50) là **7.88 ms**, p95 đạt **11.91 ms**, p99 dưới **20 ms**.
+- **Ý nghĩa**: Phản ánh chính xác chi phí trễ (overhead) của tầng Controller, Filter, JSON serialization và AI Request Logging của backend trước khi kết quả đến tay người dùng. Khi tích hợp với Google Gemini API thật qua mạng, thời gian phản hồi thực tế sẽ cộng thêm latency mạng và thời gian suy luận của LLM (~2–5 s), hoàn toàn nằm trong giới hạn 15 s của NFR-01.
 
 ---
 
@@ -107,14 +127,16 @@ Nhóm có thể dán đoạn văn bản dưới đây vào tài liệu SRS (thay
 
 > **Kết quả kiểm chuẩn hiệu năng hệ thống (Baseline Benchmark - 2026-11):**
 > Hệ thống STEMotion Backend đã được kiểm thử tải thực nghiệm bằng công cụ k6 (phiên bản `0.49.0`) trên tập dữ liệu chuẩn hóa gồm 200 người dùng, 3 không gian làm việc, 150 dự án và 1,500 cảnh kịch bản:
-> - **NFR-01 (Phân tích AI)**: Thời gian phản hồi tầng ứng dụng backend đạt mức **p95 = 11.91 ms** (ngưỡng tối đa 15,000 ms).
-> - **NFR-03 (Tải danh sách & N+1)**: 100% các API truy vấn danh sách chính đạt **p95 = 22.29 ms** (ngưỡng tối đa 3,000 ms) dưới tải 200 người dùng đồng thời; các truy vấn cơ sở dữ liệu đã được tối ưu hóa với độ phức tạp $O(1)$ query, triệt tiêu hoàn toàn vấn đề N+1.
-> - **NFR-04 (Người dùng đồng thời)**: Hệ thống phục vụ ổn định 200 người dùng web thao tác liên tục với tỷ lệ lỗi **0.00%** và thời gian phản hồi trung vị đạt **6.58 ms**.
+> - **NFR-01 (Phân tích AI)**: Thời gian phản hồi tầng ứng dụng backend đạt mức **p95 = 11.91 ms** (ngưỡng tối đa 15,000 ms) dưới tải 50 VUs.
+> - **NFR-03 (Tải danh sách & N+1)**: 100% các API truy vấn danh sách chính đạt **p95 = 19.10 ms** (ngưỡng tối đa 3,000 ms) dưới tải 200 người dùng đồng thời chạy liên tục trong 5 phút (245,414 requests, đạt 711.23 req/s); các truy vấn cơ sở dữ liệu đã được tối ưu hóa với độ phức tạp $O(1)$ query, triệt tiêu hoàn toàn vấn đề N+1.
+> - **NFR-04 (Người dùng đồng thời)**: Hệ thống phục vụ ổn định 200 người dùng web thao tác luồng thực tế liên tục trong 10 phút với tỷ lệ lỗi **0.00%** (3/85,682 requests), thời gian phản hồi trung vị đạt **6.80 ms** và **p95 = 11.00 ms**.
 > - **NFR-02 & NFR-04 (Render Worker)**: Quy trình render clip 60–90 s và thông lượng worker pool đã được xác định phương pháp đo thực nghiệm trên Remotion runner độc lập.
+> 
+> *Ghi chú phạm vi kiểm chuẩn: Đo lường cục bộ (local measurement) với mock/fake AI provider; chỉ tiêu NFR-02 và phần render worker của NFR-04 chưa được đo lường trong đợt này.*
 
 ---
 
 ## 7. Blocker
 
 **Blocker**: none.
-Toàn bộ các yêu cầu của RF-02 (công cụ, môi trường đo, script seed, 3 kịch bản k6, kiểm tra N+1, tài liệu hướng dẫn và báo cáo baseline) đã được hoàn thành và kiểm chuẩn toàn diện.
+Toàn bộ các yêu cầu của RF-02 (công cụ, môi trường đo, script seed, 3 kịch bản k6, kiểm tra N+1, chạy đo đủ thời lượng 5m/10m, tài liệu hướng dẫn và báo cáo baseline) đã được hoàn thành và kiểm chuẩn toàn diện.
