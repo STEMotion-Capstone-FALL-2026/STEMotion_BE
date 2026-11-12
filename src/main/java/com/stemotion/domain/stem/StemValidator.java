@@ -9,6 +9,14 @@ import static com.stemotion.domain.stem.StemDtos.*;
 @Component
 public class StemValidator {
  private final ObjectMapper json;
+ public static final List<String> STANDARD_STEPS = List.of(
+  "OPENING_PROBLEM",
+  "BACKGROUND_KNOWLEDGE",
+  "PROPOSE_SOLUTION",
+  "SELECT_SOLUTION",
+  "BUILD_TEST",
+  "CLOSING_SHARE_REFLECT"
+ );
  public StemValidator(ObjectMapper json){this.json=json.copy().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);}
  public static ApiException invalid(String field,String message){return new ApiException(HttpStatus.BAD_REQUEST,"STEM_INVALID_FIELD",message,Map.of("field",field));}
  public <T>T parse(JsonNode node,Class<T> type){try{if(node==null||!node.isObject())throw invalid("request","Expected JSON object");limits(node,0);return json.treeToValue(node,type);}catch(ApiException e){throw e;}catch(Exception e){throw invalid("request","Malformed or unknown STEM field");}}
@@ -20,6 +28,7 @@ public class StemValidator {
  public <T>void list(List<T> a,int max,String field){if(a==null||a.size()>max||a.stream().anyMatch(Objects::isNull))throw invalid(field,"Required list, maximum"+max);}
  private final Set<String> contexts=Set.of("IN_CLASS_SCREEN","GROUP_PRACTICE");
  private final Set<String> components=Set.of("S","T","E","M");
+ public List<Finding> evaluate(Brief b,List<Evidence> evidence){return check(b,evidence);}
  public List<Finding> check(Brief b,List<Evidence> evidence){
   if(b==null||b.context()==null)throw invalid("brief.context","Required context object");
   list(b.subjectKeys(),20,"subjectKeys");list(b.outcomeIds(),20,"outcomeIds");list(b.context().secondary(),4,"context.secondary");list(b.distributionChannels(),10,"distributionChannels");list(b.objectives(),20,"objectives");list(b.studentTasks(),20,"studentTasks");list(b.contributions(),4,"contributions");list(evidence,200,"evidence");
@@ -27,6 +36,15 @@ public class StemValidator {
   if(new HashSet<>(b.subjectKeys()).size()!=b.subjectKeys().size()||new HashSet<>(b.outcomeIds()).size()!=b.outcomeIds().size())throw invalid("brief","Duplicate subject/outcome reference");
   if(b.gradeKey()!=null)key(b.gradeKey(),"gradeKey");
   for(Evidence e:evidence){if(e.id()!=null)key(e.id(),"evidence.id");if(e.sceneId()!=null)key(e.sceneId(),"evidence.sceneId");}
+  if(b.steps()!=null){
+   list(b.steps(),20,"steps");
+   for(LessonStep s:b.steps()){
+    if(s.stepKey()!=null)key(s.stepKey(),"steps.stepKey");
+    if(s.sceneIds()!=null)list(s.sceneIds(),200,"steps.sceneIds");
+    if(s.objectiveKeys()!=null)list(s.objectiveKeys(),20,"steps.objectiveKeys");
+    if(s.activityKey()!=null)key(s.activityKey(),"steps.activityKey");
+   }
+  }
   List<Finding> f=new ArrayList<>();
   if(b.context().primary()==null)f.add(new Finding("TECH-CONTEXT","brief.context.primary","ERROR","Primary context is incomplete"));
   Set<String> seen=new HashSet<>();if(b.context().primary()!=null){context(b.context().primary());seen.add(b.context().primary().key());}
@@ -46,7 +64,40 @@ public class StemValidator {
   if(blank(b.scopeOfClip())||blank(b.safetyNotes()))f.add(new Finding("TECH-SCOPE","brief","ERROR","Scope and safety notes incomplete"));
   if(b.contributions().isEmpty())f.add(new Finding("TECH-CONTRIBUTION","brief.contributions","WARN","Contributions require human review; no subject-count threshold"));
   if(b.gradeKey()==null||b.policyVersionId()==null||b.outcomeIds().isEmpty())f.add(new Finding("TECH-CATALOG","brief","ERROR","Catalog/grade/outcome incomplete"));
-  f.add(new Finding("TECH-PROVENANCE","brief","WARN","DRAFT/UNVERIFIED: no scientific verification"));return f;
+
+  List<LessonStep> steps = b.steps()==null?List.of():b.steps();
+  LessonStep opening = steps.stream().filter(s->"OPENING_PROBLEM".equals(s.stepKey())).findFirst().orElse(null);
+  boolean openingBound = opening!=null && (
+   (opening.sceneIds()!=null && !opening.sceneIds().isEmpty() && opening.sceneIds().stream().anyMatch(id->id!=null&&!id.isBlank())) ||
+   (opening.activityKey()!=null && !opening.activityKey().isBlank())
+  );
+  if(opening==null || !openingBound) f.add(new Finding("TECH-LESSON-OPENING","brief.steps.OPENING_PROBLEM","ERROR","Opening problem step missing or not bound to scene/activity"));
+
+  LessonStep closing = steps.stream().filter(s->"CLOSING_SHARE_REFLECT".equals(s.stepKey())).findFirst().orElse(null);
+  boolean closingBound = closing!=null && (
+   (closing.sceneIds()!=null && !closing.sceneIds().isEmpty() && closing.sceneIds().stream().anyMatch(id->id!=null&&!id.isBlank())) ||
+   (closing.activityKey()!=null && !closing.activityKey().isBlank())
+  );
+  if(closing==null || !closingBound) f.add(new Finding("TECH-LESSON-CLOSING","brief.steps.CLOSING_SHARE_REFLECT","ERROR","Closing share/reflect step missing or not bound to scene/activity"));
+
+  boolean orderError=false;
+  Set<String> seenStepKeys=new HashSet<>();
+  int lastStepIndex=-1;
+  for(LessonStep s:steps){
+   String sk=s.stepKey();
+   if(sk==null || !STANDARD_STEPS.contains(sk) || !seenStepKeys.add(sk)){orderError=true;break;}
+   int curIdx=STANDARD_STEPS.indexOf(sk);
+   if(curIdx<lastStepIndex){orderError=true;break;}
+   lastStepIndex=curIdx;
+  }
+  if(orderError) f.add(new Finding("TECH-LESSON-ORDER","brief.steps","ERROR","Step keys must be distinct, known 6-step template keys, and in valid sequential order"));
+
+  List<String> middleSteps=List.of("BACKGROUND_KNOWLEDGE","PROPOSE_SOLUTION","SELECT_SOLUTION","BUILD_TEST");
+  if(middleSteps.stream().anyMatch(ms->steps.stream().noneMatch(s->ms.equals(s.stepKey()))))
+   f.add(new Finding("TECH-LESSON-STEPS","brief.steps","WARN","Middle STEM lesson steps incomplete (steps 2-5)"));
+
+  f.add(new Finding("TECH-PROVENANCE","brief","WARN","DRAFT/UNVERIFIED: no scientific verification"));
+  return f;
  }
  private boolean blank(String s){return s==null||s.isBlank();}
  private void context(ContextEntry c){if(c.key()==null||!contexts.contains(c.key()))throw invalid("context.key","Unknown learning context; channels are separate");}

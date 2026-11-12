@@ -120,7 +120,18 @@ public class StemService {
  private void compositionRevision(String version,Integer expected){validator.rev(expected,"expectedCompositionRevision");var r=db.jdbc().queryForList("select revision from compositions where script_version_id=? for update",version);if(r.isEmpty())throw ApiException.conflict("Composition missing");revision(expected,db.number(r.get(0),"revision"),"COMPOSITION");}
  public void onScriptMutation(String version){if(db.brief(version)!=null)invalidate(version);}
  private void invalidate(String version){db.jdbc().update("update stem_briefs set readiness='NEEDS_REVIEW' where version_id=?",version);db.jdbc().update("update stem_assessments set freshness='NEEDS_REVIEW' where version_id=?",version);}
- public void submission(ClipProject project,ScriptVersion version){lock(version);if(db.brief(version.getId())!=null){View v=view(version.getId());validator.transition(v.effectiveMode(),v.findings(),false);}}
+ public void submission(ClipProject project,ScriptVersion version){
+  lock(version);
+  var mode=db.settings(project.getWorkspace().getId());
+  if("OFF".equals(mode.mode()))return;
+  var r=db.brief(version.getId());
+  if(r==null){
+   if("STRICT".equals(mode.mode()))validator.transition("STRICT",List.of(new Finding("TECH-BRIEF","brief","ERROR","STEM brief is required in STRICT mode")),true);
+   return;
+  }
+  View v=view(version.getId());
+  validator.transition(v.effectiveMode(),v.findings(),true);
+ }
  public record ReviewTicket(String actor,String version,String phase,Assessment request,Set<String> previous,boolean replay,String note) {}
  public ReviewTicket prepare(ClipProject project,ScriptVersion version,String actor,String phase,Assessment a){return prepare(project,version,actor,phase,a,null);}
  public ReviewTicket prepare(ClipProject project,ScriptVersion version,String actor,String phase,Assessment a,String note){
