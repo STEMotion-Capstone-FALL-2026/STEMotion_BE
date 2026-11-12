@@ -30,4 +30,6 @@ public class StemController {
  public List<StemModels.CatalogVersion> catalog(@RequestParam(required=false)String kind,@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="20")int size,Principal p){return service.catalog(actor(p),kind,page,size,false);}
  @GetMapping("/stem/frameworks")
  public List<StemModels.CatalogVersion> frameworks(@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="20")int size,Principal p){return service.catalog(actor(p),null,page,size,true);}
+ @PostMapping("/stem/catalog/import")
+ public StemDtos.ImportResult importCatalog(@RequestBody JsonNode body,Principal p){return service.importCatalog(actor(p),body);}
 }
