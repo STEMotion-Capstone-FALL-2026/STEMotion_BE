@@ -20,6 +20,7 @@ spring:
         stringtype: unspecified
   flyway:
     enabled: false
+    locations: classpath:db/migration,classpath:db/bridge-prod
   jpa:
     hibernate:
       ddl-auto: validate

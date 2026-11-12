@@ -3,188 +3,155 @@
 - **Ngày thực hiện:** 12/11/2026 (Asia/Saigon)
 - **Nhánh tích hợp:** `integrate/stem-rf10-20261112` (tạo từ `origin/main` tại `837c200`)
 - **Nhánh nguồn STEM:** `origin/feat/stem-p3-isolated-20261105` (commit `9c7fdf5`)
-- **Mục tiêu:** Chuẩn bị tích hợp cho RF-10 (Production Flyway migration cho các bảng STEM và API nhánh cô lập) để Owner và Lê Trần review. **Không merge main, không deploy.**
+- **Mục tiêu:** Chuẩn bị nhánh tích hợp RF-10 (Production Flyway bridge SQL cho các bảng STEM và API nhánh cô lập) để Owner và Lê Trần review. **Không merge vào main, không deploy.**
 
 ---
 
-## 1. Kết quả kiểm tra Working Tree & Commit đã merge
+## 1. Kết quả Merge & Xử lý Xung đột
 
-### 1.1. Kiểm tra trạng thái ban đầu (`git status`)
-- Tại Bước 1, repo được kiểm tra bằng lệnh `git status`. Working tree ban đầu ghi nhận 2 file binary trong `docs/deliverables/bm/` bị thay đổi. Thực hiện nghiêm ngặt quy tắc an toàn và ràng buộc cứng không sửa hồ sơ Review 2, tiến trình đã dừng và báo cáo lại cho người phụ trách.
-- Sau khi working tree được đưa về trạng thái sạch (`nothing to commit, working tree clean`), nhánh `integrate/stem-rf10-20261112` được tạo từ `origin/main` (`837c200`).
-
-### 1.2. Thực hiện Merge
-- Lệnh thực thi:
+- **Nhánh cơ sở (Base):** `origin/main` tại commit `837c200`.
+- **Nhánh nguồn (Source):** `origin/feat/stem-p3-isolated-20261105` tại commit `9c7fdf5` (merge-base `f6c6f0b`).
+- **Thực thi:**
   ```bash
   git merge --no-ff origin/feat/stem-p3-isolated-20261105
   ```
-- Kết quả merge: Chiến lược `ort` tự động hoàn tất thành công (tạo merge commit `5e66889`).
-- **Xử lý xung đột:** **0 conflict**. Toàn bộ 184 file code, test, và tài liệu từ nhánh STEM P3–P6 của Lê hòa nhập sạch sẽ vào nhánh tích hợp.
+- **Kết quả:** Chiến lược `ort` hoàn tất tự động với **0 xung đột** (tạo merge commit `5e66889`).
+  - Toàn bộ 184 file mã nguồn STEM, package `com.stemotion.domain.stem.*`, AI Grounding P6, Fingerprint P5, và các hook trong library/production/review đều được tích hợp sạch sẽ.
   - Các tài liệu `docs/deliverables/**` và `docs/diagrams/**` giữ nguyên 100% bản của `main`.
-  - Mã định danh yêu cầu chức năng (FR-62..73) và quy tắc nghiệp vụ (BR-ST01..15) giữ nguyên tính toàn vẹn theo `docs/stem/STEM_MASTER_PLAN_2026-11-04.md`.
+  - Các mã yêu cầu (FR-62..73, BR-ST01..15) giữ nguyên vẹn theo chuẩn tài liệu chính thức.
 
 ---
 
-## 2. Quyết định đánh số Migration (Bước 3)
+## 2. Quyết định Đánh số Migration & Vị trí Lưu trữ Bridge SQL
 
-### 2.1. Phân tích đối chiếu hồ sơ
-1. **Kiểm tra `deploy/auth-v2-drafts/` và `deploy/roles-mail-drafts/`:**
-   - Các file trong hai thư mục này được đánh số nội bộ (`00_preflight_read_only.sql`, `01_expand.sql`, `02_backfill...`).
-   - Tài liệu `README.md` trong cả hai thư mục ghi rõ: *“These SQL files are deliberately outside production Flyway locations. These files are not production Flyway migrations.”*
-2. **Kiểm tra trạng thái Auth v2 trên Production:**
-   - Auth v2 đã cutover thành công trên production thông qua ledger riêng của Supabase: `supabase_migrations.schema_migrations` với mã phiên bản `20261102131936` (`stemotion_auth_roles_mail_legacy_username_cutover`).
-   - Auth v2 **không** ghi nhận bản ghi nào vào bảng ledger Flyway `public.flyway_schema_history`.
-3. **Kiểm tra Flyway hiện hữu trong `src/main/resources/db/migration/`:**
-   - Migration cao nhất hiện tại là `V22__script_draft_revision.sql`.
-   - Vị trí từ `V23` trở đi hoàn toàn trống.
+### 2.1. Đánh số Migration
+- Đối chiếu `deploy/auth-v2-drafts/` và `deploy/roles-mail-drafts/`: các file nháp tại đây là script chạy ngoài Flyway (`00_preflight...`, `01_expand...`).
+- Auth v2 thực tế đã cutover trên production qua bảng ledger riêng `supabase_migrations.schema_migrations` (`20261102131936`), không qua Flyway.
+- Flyway gốc dừng ở `V22__script_draft_revision.sql`. Do đó, giữ nguyên số hiệu `V23`, `V24`, `V25` như Lê đã thiết kế.
 
-### 2.2. Quyết định
-- **Giữ nguyên đánh số V23, V24, V25** như bản thảo bridge SQL của Lê:
+### 2.2. Vị trí Lưu trữ Cô lập (`db/bridge-prod`)
+- **Vấn đề đã khắc phục:** Ba file `V23`–`V25` chứa các điều kiện tiền đề đặc thù của production (PostgreSQL 17, user `postgres`, ledger `supabase_migrations`, parent table ID kiểu `UUID`). Nếu đặt trong `classpath:db/migration`, Flyway mặc định sẽ tự quét và áp dụng vào DB dev/test trống, gây lỗi đứt gãy schema cục bộ.
+- **Giải pháp:** Sử dụng `git mv` di chuyển 3 file bridge SQL sang:
+  `src/main/resources/db/bridge-prod/`
   - `V23__assert_stem_bridge_prerequisites.sql`
   - `V24__create_stem_domain.sql`
   - `V25__create_stem_artifact_lineage.sql`
-- **Lý do:** Không tồn tại xung đột số hiệu với Auth v2 hay các bản nháp deploy. Việc giữ V23–V25 bảo đảm tính nhất quán tuyệt đối với các điều kiện kiểm tra checksum và lịch sử ledger đã viết trong `V23`.
+- **Xác minh SHA-256 (khớp 100% với `R2_HANDOFF.md`):**
+  - `V23`: `d3ebb16fe9c262bf30b1c9d57f7ece38c4185fc29ad3244cd0e69d38b7d0815c`
+  - `V24`: `5cfdb78bf3e8cc3af80f4beeb8ac159f20bd2d053e75b03fd553bd5a3c7bf502`
+  - `V25`: `a7de399149abfb5289d37f5487b19edc6389ffda4ba0d6232adf83b17bf56cda`
+  - Nội dung SQL của Lê được giữ nguyên vẹn từng byte, không chỉnh sửa trực tiếp.
+
+### 2.3. Cấu hình Flyway Locations
+- **Profile Production (`application-cloud.yml`):**
+  ```yaml
+  spring:
+    flyway:
+      enabled: false
+      locations: classpath:db/migration,classpath:db/bridge-prod
+  ```
+  *(Không thêm `classpath:db/auth-v2-e2e` vào cloud).*
+- **Profile Mặc định & Dev/Test (`application.yml`):**
+  Chỉ giữ `locations: classpath:db/migration`. Môi trường dev/test không bao giờ tự ý quét `db/bridge-prod`.
+- **Môi trường Test:** Giữ nguyên hai file fixture `V91000__stem_p3_test_only.sql` và `V92000__stem_p5_artifact_snapshots_test_only.sql` trong `src/test/resources/db/` như trên nhánh của Lê để phục vụ kiểm thử cục bộ.
 
 ---
 
-## 3. Bản copy Bridge SQL (Bước 5)
+## 3. Kết quả Kiểm tra Thực tế
 
-Ba file bridge SQL từ nhánh `origin/docs/stem-weekly-report-2026-11-12` (`docs/stem/rollout-gate-02/BRIDGE_SQL_R2/`) đã được sao chép trực tiếp vào `src/main/resources/db/migration/`:
+### 3a) Database Postgres trống (`stem_empty`)
+- Chạy `mvn flyway:migrate` với cấu hình mặc định (`locations: classpath:db/migration`).
+- **Kết quả:** Áp dụng thành công 22 migration từ `V1` đến `V22` (`BUILD SUCCESS`).
+- **Kiểm tra schema:** Hoàn toàn **không có bất kỳ bảng STEM nào** (`Did not find any relation named "public.stem*"`). DB trống hoạt động ổn định, không bị văng lỗi ở V23.
 
-| File Migration | SHA-256 thực tế | SHA-256 trong manifest Lê (`R2_HANDOFF.md`) | Kết quả đối chiếu |
-|---|---|---|---|
-| `V23__assert_stem_bridge_prerequisites.sql` | `d3ebb16fe9c262bf30b1c9d57f7ece38c4185fc29ad3244cd0e69d38b7d0815c` | `d3ebb16fe9c262bf30b1c9d57f7ece38c4185fc29ad3244cd0e69d38b7d0815c` | **Trùng khớp 100%** |
-| `V24__create_stem_domain.sql` | `5cfdb78bf3e8cc3af80f4beeb8ac159f20bd2d053e75b03fd553bd5a3c7bf502` | `5cfdb78bf3e8cc3af80f4beeb8ac159f20bd2d053e75b03fd553bd5a3c7bf502` | **Trùng khớp 100%** |
-| `V25__create_stem_artifact_lineage.sql` | `a7de399149abfb5289d37f5487b19edc6389ffda4ba0d6232adf83b17bf56cda` | `a7de399149abfb5289d37f5487b19edc6389ffda4ba0d6232adf83b17bf56cda` | **Trùng khớp 100%** |
+### 3b) Database mô phỏng Production (`stem_prod_sim`)
+> *Ghi chú quan trọng: Đây là thử nghiệm mô phỏng điều kiện tiền đề trên môi trường Docker PostgreSQL 17 cục bộ, không phải bằng chứng diễn tập trên production thực tế.*
 
-Nội dung SQL của Lê được giữ nguyên vẹn từng byte, không chỉnh sửa trực tiếp. Các đề xuất hiệu chỉnh được tách thành tài liệu riêng tại `docs/stem/rf-10/PROPOSED_SQL_FIXES_RF10.md`.
-
----
-
-## 4. Đánh giá việc thay thế Test Migration bằng Migration thật (Bước 6)
-
-### Kết luận: BẮT BUỘC GIỮ LẠI `V91000` VÀ `V92000`
-Không thể xóa hai file `V91000__stem_p3_test_only.sql` và `V92000__stem_p5_artifact_snapshots_test_only.sql`.
-
-### Giải thích nguyên nhân:
-1. **Sự không tương thích về kiến trúc schema giữa Dev/Test và Production:**
-   - Trong môi trường kiểm thử tự động (EmbeddedPostgres), DB được sinh từ đầu bằng các file Flyway `V1..V22`. Trong `V1__initial_schema.sql`, tất cả khóa chính của các bảng cha (`users.id`, `script_versions.id`, `scenes.id`...) đều là kiểu **`VARCHAR(36)`**.
-   - Ngược lại, bridge SQL production của Lê (`V24`, `V25`) được thiết kế cho schema production (đã chuyển đổi sang **`UUID`**). Nếu ép test chạy `V24`, PostgreSQL sẽ báo lỗi nghiêm trọng: `Key columns "version_id" and "id" are of incompatible types: uuid and character varying`.
-2. **Điều kiện ngặt nghèo của `V23`:**
-   - `V23` kiểm tra phiên bản PostgreSQL 17, user `postgres`, sự tồn tại của ledger `supabase_migrations` với entry `20261102131936`, và 22 dòng baseline Flyway. Môi trường nhúng test (Zonky PG 16.2, user cục bộ) không thể thỏa mãn các điều kiện này.
-3. **Phụ thuộc mã nguồn kiểm thử:**
-   - Mã test trong `StemPostgresTest.java` (dòng 98) và `StemArtifactP5Test.java` (dòng 216) trực tiếp nạp `V91000` và `V92000` qua đường dẫn file/classpath để kiểm tra phản ứng khi trôi dạt prerequisite. Xóa hai file này sẽ gây lỗi `FileNotFoundException` khi chạy test.
-
----
-
-## 5. Kết quả kiểm tra trên PostgreSQL 17 Local qua Docker (Bước 7)
-
-Kiểm tra được thực hiện trên container Docker `postgres:17-alpine` (PostgreSQL 17.10) tại cổng `5433`:
-
-### 7a) Kiểm tra trên Database trống (`stem_empty`)
-- **Quy trình:** Chạy `mvn flyway:migrate` từ V1 đến mới nhất trên DB chưa có dữ liệu.
-- **Kết quả:**
-  - Áp dụng thành công các phiên bản từ `V1` đến `V22` (22 script hoàn tất).
-  - **Dừng và báo lỗi tại `V23__assert_stem_bridge_prerequisites.sql`:**
-    ```text
-    ERROR: Bridge prerequisite ledger missing (thiếu supabase_migrations.schema_migrations)
-    ERROR: Flyway history differs from the R1 V1 baseline and V2-V22 checksums (V1 là migration SQL thông thường, không phải BASELINE)
-    ERROR: Expected public.users.id to be a single-column UUID primary key (users.id là varchar(36))
-    ```
-  - Khi bỏ qua V23 để áp dụng thử `V24`, tiến trình thất bại ngay lập tức:
-    ```text
-    ERROR: foreign key constraint "stem_briefs_version_id_fkey" cannot be implemented
-    DETAIL: Key columns "version_id" and "id" are of incompatible types: uuid and character varying.
-    ```
-- **Ý nghĩa:** Chứng minh rằng bộ bridge SQL của Lê **chỉ** có thể chạy trên database đã đạt trạng thái cutover của production, hoàn toàn không hỗ trợ khởi tạo từ database trống chạy Flyway V1.
-
-### 7b) Kiểm tra trên Database đã có V1–V22 và Auth v2 Baseline (`stem_prod_sim`)
-- **Thiết lập:** Tạo database mô phỏng chính xác trạng thái production trước giờ G:
-  - Khởi tạo bảng ledger `supabase_migrations.schema_migrations` với version `20261102131936`.
-  - Khởi tạo `public.flyway_schema_history` với Rank 1 là BASELINE (checksum NULL) và 21 dòng V2..V22 với checksum khớp chính xác từng giá trị mà Lê yêu cầu.
-  - Các bảng cha core (`users`, `workspaces`, `clip_projects`, `script_versions`, `scenes`, `status_histories`, `render_jobs`, `compositions`, `clips`, `publications`) có khóa chính `id UUID`.
-  - Bảng `users` có đủ các cột Auth v2 và check constraint `users_system_role_check`.
-  - Đầy đủ 6 bảng phụ trợ Auth v2 và Notification.
+- **Thiết lập:** DB PostgreSQL 17.10 cục bộ chứa:
+  - Ledger `supabase_migrations.schema_migrations` với bản ghi `20261102131936`.
+  - `public.flyway_schema_history` với Rank 1 là BASELINE và 21 checksum V2–V22 khớp tuyệt đối.
+  - 10 bảng cha core có khóa chính `id UUID`, bảng `users` có cột Auth v2.
+- **Thực thi:** Chạy Flyway với locations của profile cloud (`classpath:db/migration,classpath:db/bridge-prod`).
 - **Kết quả:**
   ```text
   [INFO] Current version of schema "public": 22
   [INFO] Migrating schema "public" to version "23 - assert stem bridge prerequisites"
   [INFO] Migrating schema "public" to version "24 - create stem domain"
   [INFO] Migrating schema "public" to version "25 - create stem artifact lineage"
-  [INFO] Successfully applied 3 migrations to schema "public", now at version v25 (execution time 00:00.160s)
+  [INFO] Successfully applied 3 migrations to schema "public", now at version v25
   [INFO] BUILD SUCCESS
   ```
-- **Xác minh đối tượng sau migration:**
-  - Đủ **11 bảng STEM** mới (`stem_catalog`, `stem_briefs`, `stem_evidence`, `stem_settings`, `stem_assessments`, `stem_validation_runs`, `stem_validation_limits`, `stem_receipts`, `stem_audit`, `stem_p5_snapshots`, `stem_p5_compatibility`).
-  - Đủ **4 append-only trigger** trên 2 bảng lineage:
-    - `stem_p5_snapshots_immutable` (BEFORE UPDATE/DELETE)
-    - `stem_p5_proofs_immutable` (BEFORE UPDATE/DELETE)
-    - `stem_p5_snapshots_no_truncate` (BEFORE TRUNCATE)
-    - `stem_p5_proofs_no_truncate` (BEFORE TRUNCATE)
-  - Quyền sở hữu đối tượng thuộc về `postgres`, RLS đã được kích hoạt.
+  Khởi tạo hoàn tất **11 bảng STEM** (`stem_catalog`, `stem_briefs`, `stem_evidence`, `stem_settings`, `stem_assessments`, `stem_validation_runs`, `stem_validation_limits`, `stem_receipts`, `stem_audit`, `stem_p5_snapshots`, `stem_p5_compatibility`) và **4 append-only trigger** bất biến.
 
-### 7c) Kết quả chạy kiểm thử toàn diện (`mvn -q verify`)
-- **Tổng số test thực thi:** **573 test**.
-- **Kết quả thống kê:**
-  - **Passed:** **507 test**.
-  - **Errors:** **49 test**.
-  - **Skipped:** **17 test**.
-  - **Failures:** **0 test**.
-- **Phân tích nguyên nhân 49 lỗi:**
-  - 100% (49/49) lỗi xuất hiện ở 7 test class tích hợp cơ sở dữ liệu (`StemPostgresTest` [29], `PostgresConcurrencyTest` [8], `RolesAndNotificationsPostgresTest` [7], `AuthMigrationRehearsalTest` [2], `StemArtifactP5Test` [1], `StemFullContextRegressionTest` [1], `StemP6HttpTest` [1]).
-  - **Nguyên nhân cốt lõi:** Khi 3 file `V23`–`V25` được đặt vào `src/main/resources/db/migration/`, cấu hình Flyway trong testrunner tự động quét `classpath:db/migration`. Khi chạy trên Zonky EmbeddedPostgres, Flyway gặp `V23` và văng lỗi ngay dòng 7: `ERROR: Bridge requires PostgreSQL 17` (do EmbeddedPostgres là PG 16.2 và không có snapshot production).
-  - Riêng `StemP6HttpTest` phát sinh thêm lỗi thiếu môi trường Python cục bộ (`.audit/stem-p6/exact-lock/venv/Scripts/python.exe`), hoàn toàn độc lập với code Spring Boot.
-- **So sánh với con số của Lê:**
-  - Lê ghi nhận: `BE 360 pass` ở P6 (chỉ chạy một suite chọn lọc 360 test unit/service khi chưa copy bridge SQL vào `db/migration`) và `422 pass / 17 skip` ở P3.
-  - Con số **507 test pass** ở lần chạy tích hợp này khẳng định toàn bộ nghiệp vụ STEM, DTO, Validator, Service, Fingerprint P5, AI Grounding P6, và API Controllers đều hoạt động hoàn hảo và không bị hồi quy.
+### 3c) Kết quả Chạy Kiểm thử (`mvn -q verify`)
+- **Tổng số test thực thi:** **595 test**.
+- **Passed:** **577 test**.
+- **Failures:** **0 test**.
+- **Skipped:** **17 test**.
+- **Errors:** **1 test** (`com.stemotion.e2e.StemP6HttpTest`).
 
----
+#### Phân tích chi tiết về test duy nhất bị lỗi (`StemP6HttpTest`):
+- **Lỗi ghi nhận:**
+  ```text
+  Cannot run program "D:\CapstoneFall2026\STEMotion_BE\.audit\stem-p6\exact-lock\venv\Scripts\python.exe": CreateProcess error=2, The system cannot find the file specified
+  ```
+- **Nguyên nhân:** Mã kiểm thử `StemP6HttpTest.java` (dòng 44) gọi trực tiếp binary Python từ đường dẫn tuyệt đối `.audit/stem-p6/exact-lock/venv/Scripts/python.exe`. Thư mục `.audit` này là môi trường ảo cục bộ trên máy của Lê, nằm trong `.gitignore` và không được commit vào repository.
+- **Đối chứng với nhánh gốc của Lê:** Khi thực hiện kiểm tra đối chứng trên nhánh `origin/feat/stem-p3-isolated-20261105`, test này cũng **fail lỗi tương tự** vì cùng lý do thiếu môi trường virtualenv cục bộ.
+- **Kết luận:** Ngoại trừ test đặc thù môi trường cục bộ nói trên, toàn bộ **577 test** chức năng, unit test, integration test của cả Core và STEM P3/P5/P6 đều đạt tỷ lệ pass 100%.
 
-## 6. Các phát hiện và Đề xuất kỹ thuật cho Bridge SQL
-
-1. **Cảnh báo Transaction Block trong V24 và V25:**
-   - Dòng 4 trong `V24` và `V25` chứa lệnh: `SET LOCAL search_path = pg_catalog;`.
-   - Khi chạy qua các công cụ không bọc transaction tường minh, PostgreSQL cảnh báo: `WARNING: SET LOCAL can only be used in transaction blocks`.
-   - *Đề xuất:* Đảm bảo runner triển khai bắt buộc cờ `--single-transaction` hoặc bọc toàn bộ khối trong `BEGIN; ... COMMIT;`.
-2. **Ràng buộc cứng Role `postgres`:**
-   - `V23` và `V24` kiểm tra `IF current_user <> 'postgres' THEN RAISE EXCEPTION...`.
-   - Nếu production Supabase hoặc RDS dùng role quản trị mang tên khác (ví dụ `supabase_admin`), migration sẽ bị chặn đứng dù user đó có toàn quyền.
-   - *Đề xuất:* Xem chi tiết tại [PROPOSED_SQL_FIXES_RF10.md](file:///D:/CapstoneFall2026/STEMotion_BE/docs/stem/rf-10/PROPOSED_SQL_FIXES_RF10.md).
-3. **Phân ly giữa Dev Flyway và Prod Bridge Flyway:**
-   - Cần có migration chính thức để migrate schema dev cục bộ từ `VARCHAR(36)` sang `UUID` để đồng bộ hoàn toàn với production trước khi đưa V23–V25 thành migration mặc định của repository.
+### 3d) Kiểm tra Khởi động App khi STEM mode OFF
+- Khởi động ứng dụng với profile mặc định trỏ vào DB Postgres trống (đã chạy V1–V22):
+  - Toàn bộ các bean STEM (`StemService`, `StemRepository`, `StemArtifactService`, `StemController`, `StemArtifactController`...) đều được đánh dấu `@ConditionalOnProperty(name = "app.stem.enabled", havingValue = "true")`.
+  - Khi STEM mode ở trạng thái OFF (mặc định), không có bất kỳ bean STEM nào được khởi tạo. Ứng dụng **hoàn toàn không cần và không đòi hỏi các bảng STEM** khi khởi động.
+  - *Lưu ý về Hibernate:* Khi bật `ddl-auto: validate`, Hibernate sẽ kiểm tra các thực thể JPA của Auth v2 (`google_auth_challenges`...). Do Auth v2 nằm ngoài Flyway V1–V22, trên môi trường dev cục bộ cần bổ sung các bảng auth v2 hoặc đặt `ddl-auto: none`. Bản thân các bảng STEM không phải là thực thể JPA mà truy cập qua `JdbcTemplate` nên không ảnh hưởng tới Hibernate validation.
 
 ---
 
-## 7. Rủi ro còn mở (Theo hồ sơ của Lê)
+## 4. Hiện trạng Schema Drift (Repo ↔ Production)
+
+Qua quá trình tích hợp và thử nghiệm, nhóm ghi nhận sự phân nhánh (schema drift) đáng kể giữa mã nguồn trong repository và cơ sở dữ liệu Production:
+
+1. **Khóa chính bảng Core (VARCHAR(36) vs UUID):**
+   - File `V1__initial_schema.sql` trong repository khởi tạo toàn bộ khóa chính (`users.id`, `workspaces.id`, `script_versions.id`, `scenes.id`...) dưới dạng `VARCHAR(36)`.
+   - Trong khi đó, Production (Supabase) đã được chuyển đổi sang kiểu `UUID`. Bridge migration `V24` của Lê sử dụng `UUID` cho tất cả các foreign key trỏ về bảng cha.
+2. **Auth v2 Ledger nằm ngoài Flyway:**
+   - Các bảng định danh Google, thông báo, và phân quyền Auth v2 đã được áp dụng trực tiếp lên Production qua ledger của Supabase (`20261102131936`), không có migration Flyway tương ứng trong `src/main/resources/db/migration/`.
+
+### Đề xuất Follow-up:
+1. **Migration chuẩn hóa UUID cho mọi môi trường:** Xây dựng một Flyway migration chuẩn hóa chuyển đổi toàn bộ `VARCHAR(36)` sang `UUID` cho môi trường Dev/Test/CI, giúp DB khởi tạo từ Flyway khớp 100% với Production.
+2. **Dựng Staging từ Schema-only Dump của Production:** Môi trường Staging phục vụ R3 rehearsal bắt buộc phải được dựng từ bản dump schema-only (`pg_dump --schema-only`) lấy từ Production (không trích xuất dữ liệu người dùng). Điều này đảm bảo môi trường diễn tập có đúng kiểu dữ liệu UUID, các bảng Auth v2, và ledger Supabase.
+
+---
+
+## 5. Rủi ro còn mở (Theo hồ sơ của Lê)
 
 | Mã rủi ro | Trạng thái | Đánh giá & Khuyến nghị |
 |---|---|---|
-| **Conflict.C01** (Auth v2 writer & epoch) | **OPEN** | Snapshot và mã nguồn chưa chứng minh toàn bộ external/legacy writers đã ngừng ghi vào `public.users.role`. Cần rà soát và đóng băng mọi writer cũ trước giờ G. |
-| **Conflict.C02** (Migration Engine & Ledger) | **OPEN** | Cần quyết định chính thức về runner chạy bridge SQL trên Production: chạy qua Flyway standalone CLI riêng hay kích hoạt qua Spring Boot startup, và phải bảo đảm V23–V25 chạy trong một single transaction atomic. |
-| **Bridge.BR01** (Rollback & Restore Proof) | **OPEN (R3 BLOCKED)** | Chưa có bằng chứng thử nghiệm khôi phục dữ liệu (`Restore proof NOT_RECEIVED`). Cần hoàn thiện diễn tập rollback transaction abort hoặc point-in-time recovery trước khi đóng Gate 2 và mở Gate 3. |
+| **Conflict.C01** (Auth v2 writer & epoch) | **OPEN** | Cần xác nhận không còn bất kỳ external writer cũ nào ghi vào `public.users.role` trước khi triển khai bridge STEM. |
+| **Conflict.C02** (Migration Engine & Ledger) | **OPEN** | Xác nhận quy trình chạy bridge SQL: chạy qua CLI độc lập với cờ `--single-transaction` để bảo đảm V23->V24->V25 chạy atomic trong một transaction. |
+| **Bridge.BR01** (Rollback & Restore Proof) | **OPEN (R3 BLOCKED)** | Chưa có bằng chứng thử nghiệm khôi phục (`Restore proof NOT_RECEIVED`). Cần diễn tập rollback tại R3 trước khi mở Gate 3. |
 
 ---
 
-## 8. Các bước Lê Trần và Owner cần Review trước R3 Rehearsal
+## 6. Các bước Lê Trần và Owner cần Review trước R3 Rehearsal
 
-1. **Review tính toàn vẹn của nhánh tích hợp:** Kiểm tra commit `5e66889` trên nhánh `integrate/stem-rf10-20261112`.
-2. **Review 3 file bridge SQL trong `src/main/resources/db/migration/`:** Xác nhận mã băm SHA-256 và vị trí đặt file.
-3. **Xác nhận cấu hình role thực thi:** Xác nhận user kết nối DB production trong buổi rehearsal có đúng là `postgres` hay là `supabase_admin`.
-4. **Phê duyệt phương án chạy kiểm thử:** Quyết định giải pháp cô lập `V23–V25` khỏi test profile EmbeddedPostgres (hoặc nâng cấp engine test lên Testcontainers PostgreSQL 17 có snapshot) để đưa `mvn test` đạt 556/556 pass.
-5. **Thực hiện Rehearsal trên Staging (R3):** Diễn tập rollback và forward-fix theo đúng `ROLLBACK_PLAN_R2.md`.
+1. **Xác nhận cấu trúc phân tách `db/bridge-prod`:** Kiểm tra vị trí mới của V23–V25 và cấu hình `application-cloud.yml`.
+2. **Đối chiếu mã SHA-256:** Xác nhận lại 3 mã băm của V23, V24, V25 trong `src/main/resources/db/bridge-prod/`.
+3. **Chuẩn bị môi trường Staging schema-only:** Dựng DB diễn tập từ dump schema production để tiến hành R3 rehearsal.
+4. **Xử lý test `StemP6HttpTest`:** Bổ sung cấu hình đường dẫn Python động (hoặc biến môi trường `PYTHON_PATH`) để test này có thể chạy trên máy CI/CD mà không phụ thuộc vào thư mục `.audit` cục bộ.
 
 ---
 
-## 9. Hướng dẫn cho Owner
+## 7. Hướng dẫn cho Owner
 
-Nhánh tích hợp đã được commit cục bộ trên máy với commit message chuẩn chỉnh. **Chưa có bất kỳ lệnh push hay thay đổi nào trên remote/main.**
+Toàn bộ công việc sửa đổi đã được hoàn tất trên nhánh `integrate/stem-rf10-20261112`. **Không có lệnh push nào được thực hiện lên remote.**
 
-Khi Owner và nhóm sẵn sàng đưa lên remote để mở Pull Request review, chạy các lệnh sau từ terminal:
+Khi Owner sẵn sàng đưa nhánh lên remote để mở PR review, chạy các lệnh sau:
 
 ```bash
 # 1. Đẩy nhánh tích hợp lên origin
 git push origin integrate/stem-rf10-20261112
 
-# 2. Tạo Draft PR vào main bằng GitHub CLI (gh)
+# 2. Tạo Draft Pull Request vào main
 gh pr create --base main --head integrate/stem-rf10-20261112 --title "draft: RF-10 STEM domain Flyway migration & isolated API integration" --body-file docs/stem/rf-10/RF10_INTEGRATION_REPORT.md --draft
 ```
