@@ -100,7 +100,7 @@ else
 fi
 
 # Check 3: CHECK stem_settings.mode accepts STRICT
-TEST_WS_ID=$(${PSQL_CMD} -t -A -c "INSERT INTO public.workspaces (name) VALUES ('rehearsal_test_ws') RETURNING id;")
+TEST_WS_ID=$(${PSQL_CMD} -q -t -A -c "INSERT INTO public.workspaces (name) VALUES ('rehearsal_test_ws') RETURNING id;")
 if ${PSQL_CMD} -v ON_ERROR_STOP=1 -c "INSERT INTO public.stem_settings (workspace_id, revision, mode, policy_ids) VALUES ('${TEST_WS_ID}', 1, 'STRICT', '[]'::jsonb);" >/dev/null 2>&1; then
     echo "  [PASS] stem_settings.mode accepts STRICT"
     PASS_COUNT=$((PASS_COUNT + 1))
@@ -110,7 +110,7 @@ else
 fi
 
 # Check 4: CHECK stem_settings.mode rejects invalid value
-TEST_WS_ID2=$(${PSQL_CMD} -t -A -c "INSERT INTO public.workspaces (name) VALUES ('rehearsal_test_ws_2') RETURNING id;")
+TEST_WS_ID2=$(${PSQL_CMD} -q -t -A -c "INSERT INTO public.workspaces (name) VALUES ('rehearsal_test_ws_2') RETURNING id;")
 if ${PSQL_CMD} -v ON_ERROR_STOP=1 -c "INSERT INTO public.stem_settings (workspace_id, revision, mode, policy_ids) VALUES ('${TEST_WS_ID2}', 1, 'INVALID_MODE', '[]'::jsonb);" >/dev/null 2>&1; then
     echo "  [FAIL] stem_settings.mode accepted INVALID_MODE (expected rejection)"
     FAIL_COUNT=$((FAIL_COUNT + 1))

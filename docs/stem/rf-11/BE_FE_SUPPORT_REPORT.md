@@ -106,6 +106,10 @@
 - **Kết quả chạy thử script:**
   - Trên môi trường máy hiện tại: **Chưa chạy được** do Docker Desktop daemon chưa được khởi động (`failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine`). Đã ghi nhận trung thực theo đúng yêu cầu kiểm định, không giả lập kết quả.
   - Script đã được rà soát tĩnh đảm bảo 100% cú pháp bash, biến port/container độc lập và tuân thủ các điều kiện ràng buộc trong V23.
+- **Cập nhật khi review (12/11/2026, Docker Desktop 29.5.3, image `postgres:17`):**
+  - Sửa script: `psql` chạy bên trong container (máy không cần cài `psql`, không mở cổng ra ngoài); V23–V26 áp trong **một** transaction như kế hoạch R5; thêm `-q` cho các lệnh `RETURNING id` (trước đó id bị lẫn dòng `INSERT 0 1`, làm kiểm tra STRICT báo FAIL sai); `.gitattributes` giữ LF cho script.
+  - Kết quả chạy thật: **5 PASS, 0 FAIL** — 11 bảng STEM; 4 trigger append-only; `stem_settings.mode` nhận `STRICT`; từ chối giá trị lạ; chạy lại V23 thì lỗi và rollback. Container được xoá sau khi chạy.
+  - Đây vẫn là giả lập cục bộ, không thay cho R3 trên bản sao schema-only của production.
 
 ---
 
