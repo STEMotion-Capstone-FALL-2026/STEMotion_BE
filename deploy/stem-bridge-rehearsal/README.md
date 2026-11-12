@@ -36,7 +36,7 @@ Thư mục này chứa script và schema phục vụ diễn tập cục bộ b�
 ## Yêu cầu
 
 - Docker Engine / Docker Desktop (chạy image `postgres:17`).
-- Client CLI `psql` (tương thích PostgreSQL 17).
+- Không cần cài `psql` trên máy: script chạy `psql` bên trong container.
 - Bash shell (Linux/macOS hoặc Git Bash trên Windows).
 
 ## Cách chạy

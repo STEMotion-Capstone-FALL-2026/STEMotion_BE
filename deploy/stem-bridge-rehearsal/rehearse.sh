@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # rehearse.sh – Local rehearsal of V23–V26 bridge migrations on simulated production schema.
-# Requires: Docker CLI, postgres:17 image, psql CLI.
+# Requires: Docker CLI and the postgres:17 image (psql runs inside the container; no host psql needed).
 # Usage: bash deploy/stem-bridge-rehearsal/rehearse.sh
 # WARNING: Local simulation only. Does NOT replace R3 on production schema-only dump.
 
@@ -13,7 +13,9 @@ BRIDGE_DIR="${REPO_ROOT}/src/main/resources/db/bridge-prod"
 CONTAINER_NAME="stem_rehearsal_$(date +%s)_$$"
 PORT=15433
 PGPASSWORD_VAL="rehearsal_only_local_$(date +%s)"
-PSQL_CMD="psql -h 127.0.0.1 -p ${PORT} -U postgres -d postgres"
+# psql runs inside the container over TCP: the image's init-time server listens only on the
+# socket, so a TCP connection succeeds only once the real server is up.
+PSQL_CMD="docker exec -i -e PGPASSWORD=${PGPASSWORD_VAL} ${CONTAINER_NAME} psql -h 127.0.0.1 -U postgres -d postgres"
 
 PASS_COUNT=0
 FAIL_COUNT=0
@@ -29,7 +31,7 @@ echo "=================================================="
 echo " STEM Bridge Rehearsal (V23–V26) - Local Prod Sim"
 echo "=================================================="
 echo "Container: ${CONTAINER_NAME}"
-echo "Port     : ${PORT}"
+echo "Port     : none (psql runs inside the container)"
 echo "Bridge   : ${BRIDGE_DIR}"
 echo ""
 
@@ -37,7 +39,6 @@ echo ""
 echo "--> Starting postgres:17 container..."
 docker run -d \
     --name "${CONTAINER_NAME}" \
-    -p "${PORT}:5432" \
     -e POSTGRES_PASSWORD="${PGPASSWORD_VAL}" \
     -e POSTGRES_DB=postgres \
     postgres:17 >/dev/null
@@ -63,21 +64,17 @@ echo "PostgreSQL is ready."
 
 # 3. Load simulated production schema
 echo "--> Loading prod-sim-schema.sql..."
-${PSQL_CMD} -v ON_ERROR_STOP=1 -f "${SCRIPT_DIR}/prod-sim-schema.sql" >/dev/null
+${PSQL_CMD} -v ON_ERROR_STOP=1 < "${SCRIPT_DIR}/prod-sim-schema.sql" >/dev/null
 echo "prod-sim-schema.sql loaded successfully."
 
 # 4. Apply bridge migrations V23–V26 in order
-echo "--> Applying V23–V26 bridge migrations..."
-for sql_file in \
-    "${BRIDGE_DIR}/V23__assert_stem_bridge_prerequisites.sql" \
+echo "--> Applying V23–V26 bridge migrations in ONE transaction (as planned for R5)..."
+cat "${BRIDGE_DIR}/V23__assert_stem_bridge_prerequisites.sql" \
     "${BRIDGE_DIR}/V24__create_stem_domain.sql" \
     "${BRIDGE_DIR}/V25__create_stem_artifact_lineage.sql" \
-    "${BRIDGE_DIR}/V26__allow_stem_strict_mode.sql"; do
-    filename="$(basename "${sql_file}")"
-    echo "  Applying ${filename}..."
-    ${PSQL_CMD} --single-transaction -v ON_ERROR_STOP=1 -f "${sql_file}" >/dev/null
-    echo "  Applied ${filename} OK."
-done
+    "${BRIDGE_DIR}/V26__allow_stem_strict_mode.sql" \
+  | ${PSQL_CMD} --single-transaction -v ON_ERROR_STOP=1 >/dev/null
+echo "  Applied V23–V26 OK."
 
 echo ""
 echo "--> Running verification checks..."
@@ -124,7 +121,7 @@ fi
 
 # Check 5: Re-running V23 fails with transaction rollback (idempotency check)
 echo "--> Testing re-run failure / transaction rollback..."
-if ${PSQL_CMD} --single-transaction -v ON_ERROR_STOP=1 -f "${BRIDGE_DIR}/V23__assert_stem_bridge_prerequisites.sql" >/dev/null 2>&1; then
+if ${PSQL_CMD} --single-transaction -v ON_ERROR_STOP=1 < "${BRIDGE_DIR}/V23__assert_stem_bridge_prerequisites.sql" >/dev/null 2>&1; then
     echo "  [FAIL] Re-running V23 succeeded when it should have failed"
     FAIL_COUNT=$((FAIL_COUNT + 1))
 else
