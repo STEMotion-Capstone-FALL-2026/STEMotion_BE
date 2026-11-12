@@ -179,11 +179,11 @@ public class StemService {
   String currentFp=phase.equals("SCRIPT")?computeScriptFingerprint(project,version):computeCompositionFingerprint(project,version);
   if("STRICT".equals(mode.mode())){
    if(a.expectedFingerprint()==null||a.expectedFingerprint().isBlank()||!a.expectedFingerprint().equals(currentFp)){
-    throw new ApiException(HttpStatus.CONFLICT,"STEM_FINGERPRINT_STALE","Rubric assessment fingerprint does not match target "+phase+": expected="+currentFp+", actual="+a.expectedFingerprint(),Map.of("expected",Objects.toString(a.expectedFingerprint(),""),"actual",currentFp));
+    throw new ApiException(HttpStatus.CONFLICT,"STEM_FINGERPRINT_STALE","Rubric assessment fingerprint does not match target "+phase+": expected="+currentFp+", actual="+a.expectedFingerprint(),Map.of("expected",currentFp,"actual",Objects.toString(a.expectedFingerprint(),"")));
    }
   }else if(a.expectedFingerprint()!=null&&!a.expectedFingerprint().equals(currentFp)){
    if("ADVISORY".equals(mode.mode()))
-    db.audit(actor,project.getId(),"STEM_FINGERPRINT_MISMATCH",Map.of("phase",phase,"expected",a.expectedFingerprint(),"actual",currentFp));
+    db.audit(actor,project.getId(),"STEM_FINGERPRINT_MISMATCH",Map.of("phase",phase,"expected",currentFp,"actual",a.expectedFingerprint()));
   }
   return new ReviewTicket(actor,version.getId(),phase,a,historyIds(project.getId()),false,note);
  }
@@ -299,17 +299,11 @@ public class StemService {
   if("OFF".equals(mode.mode())||db.brief(version.getId())==null)return;
   String actual=computeScriptFingerprint(project,version);
   String expected=null;
-  var rows=db.jdbc().queryForList("select payload from stem_assessments where version_id=? and phase='SCRIPT' order by id desc limit 1",version.getId());
+  var rows=db.jdbc().queryForList("select a.payload from stem_assessments a join status_histories h on h.id=a.decision_id where a.version_id=? and a.phase='SCRIPT' order by h.created_at desc, a.id desc limit 1",version.getId());
   if(!rows.isEmpty()){
    JsonNode payload=db.decode(db.text(rows.get(0),"payload"),JsonNode.class);
    expected=payload.path("fingerprint").asText(null);
    if(expected==null||expected.isBlank())expected=payload.path("expectedFingerprint").asText(null);
-  }
-  if(expected==null&&artifacts!=null){
-   try{
-    var snap=db.jdbc().queryForList("select semantic_hash from stem_p5_snapshots where version_id=? and stage='APPROVAL' order by id desc limit 1",version.getId());
-    if(!snap.isEmpty())expected=db.text(snap.get(0),"semantic_hash");
-   }catch(Exception ignored){}
   }
   if("STRICT".equals(mode.mode())){
    if(expected==null||expected.isBlank()||!actual.equals(expected)){
@@ -340,10 +334,18 @@ public class StemService {
   if("OFF".equals(mode.mode())||db.brief(version.getId())==null)return;
   String actual=computeCompositionFingerprint(project,version);
   String expected=getCompositionSnapshot(project.getId(),version.getId());
-  if(expected!=null&&!expected.isBlank()&&!actual.equals(expected)){
-   if("STRICT".equals(mode.mode())){
-    throw new ApiException(HttpStatus.CONFLICT,"STEM_FINGERPRINT_STALE","Composition fingerprint does not match review snapshot",Map.of("expected",expected,"actual",actual));
-   }else if("ADVISORY".equals(mode.mode())){
+  if("SEND_BACK".equals(stage)){
+   if(expected!=null&&!expected.isBlank()&&!actual.equals(expected)){
+    db.audit(actor,project.getId(),"STEM_FINGERPRINT_MISMATCH",Map.of("stage","SEND_BACK","expected",expected,"actual",actual));
+   }
+   return;
+  }
+  if("STRICT".equals(mode.mode())){
+   if(expected==null||expected.isBlank()||!actual.equals(expected)){
+    throw new ApiException(HttpStatus.CONFLICT,"STEM_FINGERPRINT_STALE","Composition fingerprint does not match review snapshot",Map.of("expected",Objects.toString(expected,""),"actual",actual));
+   }
+  }else if(expected!=null&&!expected.isBlank()&&!actual.equals(expected)){
+   if("ADVISORY".equals(mode.mode())){
     db.audit(actor,project.getId(),"STEM_FINGERPRINT_MISMATCH",Map.of("stage",stage,"expected",expected,"actual",actual));
    }
   }
@@ -353,17 +355,11 @@ public class StemService {
   if("OFF".equals(mode.mode())||db.brief(version.getId())==null)return;
   String actual=computeCompositionFingerprint(project,version);
   String expected=null;
-  var rows=db.jdbc().queryForList("select payload from stem_assessments where version_id=? and phase='VIDEO' order by id desc limit 1",version.getId());
+  var rows=db.jdbc().queryForList("select a.payload from stem_assessments a join status_histories h on h.id=a.decision_id where a.version_id=? and a.phase='VIDEO' order by h.created_at desc, a.id desc limit 1",version.getId());
   if(!rows.isEmpty()){
    JsonNode payload=db.decode(db.text(rows.get(0),"payload"),JsonNode.class);
    expected=payload.path("fingerprint").asText(null);
    if(expected==null||expected.isBlank())expected=payload.path("expectedFingerprint").asText(null);
-  }
-  if(expected==null&&artifacts!=null){
-   try{
-    var snap=db.jdbc().queryForList("select contract_hash from stem_p5_snapshots where version_id=? and stage='APPROVAL' and clip_id is not null order by id desc limit 1",version.getId());
-    if(!snap.isEmpty())expected=db.text(snap.get(0),"contract_hash");
-   }catch(Exception ignored){}
   }
   if("STRICT".equals(mode.mode())){
    if(expected==null||expected.isBlank()||!actual.equals(expected)){
@@ -376,19 +372,13 @@ public class StemService {
   }
  }
  public void saveCompositionSnapshot(String project,String version,String fp,String actor){
-  db.jdbc().update("delete from stem_receipts where target=? and operation='COMPOSITION_SNAPSHOT'",project);
-  db.jdbc().update("insert into stem_receipts(actor_id,operation,target,request_key,request_digest,response,expires_at) values(?,'COMPOSITION_SNAPSHOT',?,?,?,?::jsonb,current_timestamp+interval '30 days')",
-   actor,project,version,fp,db.encode(Map.of("fingerprint",fp)));
   db.audit(actor,project,"COMPOSITION_SNAPSHOT",Map.of("fingerprint",fp,"versionId",version));
  }
  public String getCompositionSnapshot(String project,String version){
-  var rows=db.jdbc().queryForList("select request_digest from stem_receipts where target=? and operation='COMPOSITION_SNAPSHOT' and request_key=?",project,version);
-  if(!rows.isEmpty())return db.text(rows.get(0),"request_digest");
-  if(artifacts!=null){
-   try{
-    var snap=db.jdbc().queryForList("select contract_hash from stem_p5_snapshots where project_id=? and version_id=? and stage in ('SUBMISSION','RENDER_INPUT') order by id desc limit 1",project,version);
-    if(!snap.isEmpty())return db.text(snap.get(0),"contract_hash");
-   }catch(Exception ignored){}
+  var rows=db.jdbc().queryForList("select payload from stem_audit where target=? and event='COMPOSITION_SNAPSHOT' and payload->>'versionId'=? order by created_at desc, id desc limit 1",project,version);
+  if(!rows.isEmpty()){
+   JsonNode payload=db.decode(db.text(rows.get(0),"payload"),JsonNode.class);
+   return payload.path("fingerprint").asText(null);
   }
   return null;
  }
