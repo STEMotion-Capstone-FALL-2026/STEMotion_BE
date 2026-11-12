@@ -85,11 +85,14 @@ public class StemService {
   }
  }
  private void checkKind(String id,String kind){if(id!=null){validator.key(id,kind+"Id");if(db.jdbc().queryForObject("select count(*) from stem_catalog where id=? and kind=?",Integer.class,id,kind)!=1)throw StemValidator.invalid("catalog."+kind,"Missing or wrong catalog kind");}}
- private View view(String version){var v=versions.findById(version).orElseThrow();var mode=db.settings(v.getProject().getWorkspace().getId());var r=db.brief(version);if(r==null)return new View("stem.v1",null,version,0,"UNVERIFIED","LEGACY_UNMAPPED",mode.mode(),mode.revision(),null,List.of(),List.of(),null);
+ private View view(String version){var v=versions.findById(version).orElseThrow();var mode=db.settings(v.getProject().getWorkspace().getId());var r=db.brief(version);if(r==null)return new View("stem.v1",null,version,0,"UNVERIFIED","LEGACY_UNMAPPED",mode.mode(),mode.revision(),null,List.of(),List.of(),null,null,null);
   Brief b=db.decode(db.text(r,"payload"),Brief.class);var evidence=db.evidence(db.text(r,"id"));var findings=new ArrayList<>(validator.check(b,evidence));
   for(Evidence e:evidence)if(e.sceneId()!=null&&db.jdbc().queryForObject("select count(*) from scenes where id=? and version_id=?",Integer.class,e.sceneId(),version)!=1)findings.add(new Finding("TECH-EVIDENCE","evidence."+e.id(),"ERROR","Orphan scene reference"));
   if(b.policyVersionId()!=null&&!mode.policyIds().contains(b.policyVersionId()))findings.add(new Finding("TECH-POLICY","brief.policyVersionId","ERROR","Pinned policy is unavailable"));
-  return new View("stem.v1",db.text(r,"id"),version,db.number(r,"revision"),"UNVERIFIED",b.rawLegacy()!=null&&!b.rawLegacy().isBlank()&&b.context().primary()==null?"LEGACY_UNMAPPED":findings.stream().anyMatch(f->f.severity().equals("ERROR"))?"INCOMPLETE":db.text(r,"readiness"),mode.mode(),mode.revision(),b,evidence,findings,legacy(b));
+  String scriptFingerprint=computeScriptFingerprint(v.getProject(),v);
+  var compRows=db.jdbc().queryForList("select id from compositions where script_version_id=?",version);
+  String compositionFingerprint=compRows.isEmpty()?null:computeCompositionFingerprint(v.getProject(),v);
+  return new View("stem.v1",db.text(r,"id"),version,db.number(r,"revision"),"UNVERIFIED",b.rawLegacy()!=null&&!b.rawLegacy().isBlank()&&b.context().primary()==null?"LEGACY_UNMAPPED":findings.stream().anyMatch(f->f.severity().equals("ERROR"))?"INCOMPLETE":db.text(r,"readiness"),mode.mode(),mode.revision(),b,evidence,findings,legacy(b),scriptFingerprint,compositionFingerprint);
  }
  private LegacySuggestion legacy(Brief b){
   if(b.rawLegacy()==null||b.rawLegacy().isBlank())return null;

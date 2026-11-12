@@ -3,3 +3,5 @@ deploy/hetzner/**/*.sh text eol=lf
 deploy/hetzner/*.cjs text eol=lf
 deploy/hetzner/Caddyfile text eol=lf
 deploy/hetzner/**/*.caddy text eol=lf
+deploy/stem-bridge-rehearsal/*.sh text eol=lf
+deploy/stem-bridge-rehearsal/*.sql text eol=lf

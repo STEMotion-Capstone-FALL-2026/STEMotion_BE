@@ -44,12 +44,16 @@ public class E2eServer {
     }
 
     static String[] launchArguments(String... args) {
+        boolean stem = "1".equals(env("E2E_STEM", "0"));
+        String flywayLocations = stem
+            ? "classpath:db/migration,classpath:db/auth-v2-e2e,classpath:db/stem-p3,classpath:db/stem-p5"
+            : "classpath:db/migration,classpath:db/auth-v2-e2e";
         List<String> all = new ArrayList<>(List.of(
             "--server.port=" + env("E2E_API_PORT", "18080"),
             "--server.address=127.0.0.1",
             "--spring.flyway.enabled=true",
             "--spring.jpa.hibernate.ddl-auto=validate",
-            "--spring.flyway.locations=classpath:db/migration,classpath:db/auth-v2-e2e",
+            "--spring.flyway.locations=" + flywayLocations,
             "--app.auth-v2.enabled=true",
             "--app.notification-email.enabled=true",
             "--app.notification-email.provider=local",
@@ -77,6 +81,10 @@ public class E2eServer {
             "--app.video.storyboard-enabled=false",
             "--logging.level.org.hibernate.SQL=WARN",
             "--logging.level.com.stemotion=INFO"));
+        if (stem) {
+            all.add("--app.stem.enabled=true");
+            all.add("--app.stem.artifact.enabled=true");
+        }
         // Spring joins repeated command-line option values with commas; later entries do
         // not replace earlier ones. Remove overridden defaults before adding user arguments.
         for (String arg : args) {
@@ -151,10 +159,46 @@ public class E2eServer {
                     .build());
             };
         }
+
+        @Bean
+        @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+            name = "app.stem.enabled", havingValue = "true")
+        ApplicationRunner seedStemCatalog(DataSource dataSource) {
+            return args -> {
+                try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+                    var rs = statement.executeQuery("SELECT count(*) FROM stem_catalog WHERE id='00000000-0000-0000-0000-000000000001'");
+                    if (rs.next() && rs.getInt(1) > 0) return;
+
+                    statement.execute("INSERT INTO stem_catalog(id,kind,logical_key,version_no,data) VALUES (" +
+                        "'00000000-0000-0000-0000-000000000001','SOURCE_EDITION','stem-source-gdpt2018',1," +
+                        "'{\"name\":\"CT GDPT 2018 (DRAFT TEST_ONLY)\",\"gradeLevel\":\"GRADE_4\"}'::jsonb) ON CONFLICT DO NOTHING");
+
+                    statement.execute("INSERT INTO stem_catalog(id,kind,logical_key,version_no,source_id,data) VALUES (" +
+                        "'00000000-0000-0000-0000-000000000002','PROFILE','stem-profile-grade4-math',1,'00000000-0000-0000-0000-000000000001'," +
+                        "'{\"gradeLevel\":\"GRADE_4\",\"subject\":\"Math\"}'::jsonb) ON CONFLICT DO NOTHING");
+
+                    statement.execute("INSERT INTO stem_catalog(id,kind,logical_key,version_no,data) VALUES (" +
+                        "'00000000-0000-0000-0000-000000000004','RUBRIC','stem-rubric-standard',1," +
+                        "'{\"name\":\"Standard STEM Rubric (DRAFT TEST_ONLY)\"}'::jsonb) ON CONFLICT DO NOTHING");
+
+                    statement.execute("INSERT INTO stem_catalog(id,kind,logical_key,version_no,data) VALUES (" +
+                        "'00000000-0000-0000-0000-000000000005','POLICY','stem-policy-grade4-math',1," +
+                        "'{\"name\":\"STEM Grade 4 Math Policy (DRAFT TEST_ONLY)\",\"rubricVersionId\":\"00000000-0000-0000-0000-000000000004\"}'::jsonb) ON CONFLICT DO NOTHING");
+
+                    statement.execute("INSERT INTO stem_catalog(id,kind,logical_key,version_no,parent_id,source_id,data) VALUES (" +
+                        "'00000000-0000-0000-0000-000000000003','OUTCOME','stem-outcome-math-g4-01',1," +
+                        "'00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001'," +
+                        "'{\"gradeKey\":\"GRADE_4\",\"subjectKey\":\"Math\",\"title\":\"Nhan biet goc nhon, goc tu (DRAFT TEST_ONLY)\"}'::jsonb) ON CONFLICT DO NOTHING");
+                }
+            };
+        }
     }
 
-    private static String env(String name, String fallback) {
-        String value = System.getenv(name);
+    static String env(String name, String fallback) {
+        String value = System.getProperty(name);
+        if (value == null || value.isBlank()) {
+            value = System.getenv(name);
+        }
         return value == null || value.isBlank() ? fallback : value;
     }
 }
