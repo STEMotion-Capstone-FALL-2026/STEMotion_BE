@@ -1,0 +1,65 @@
+{
+  "logs": [
+    {
+      "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\be-final-01\\maven.log",
+      "shutdowns": 4,
+      "starts": 4
+    },
+    {
+      "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\be-final-complete\\maven.log",
+      "shutdowns": 4,
+      "starts": 4
+    },
+    {
+      "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\be-handoff\\maven.log",
+      "shutdowns": 4,
+      "starts": 4
+    },
+    {
+      "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\be-new-01\\maven.log",
+      "shutdowns": 1,
+      "starts": 1
+    },
+    {
+      "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\be-review-final\\maven.log",
+      "shutdowns": 4,
+      "starts": 4
+    },
+    {
+      "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\p4-live-final-complete\\backend.log",
+      "shutdowns": 1,
+      "starts": 1
+    },
+    {
+      "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\p4-live-handoff\\backend.log",
+      "shutdowns": 1,
+      "starts": 1
+    }
+  ],
+  "checked_at": "2026-11-07T11:31:34.7996227+07:00",
+  "remaining_count": 0,
+  "scope": "P6 audit root or PG data directories observed only in owned logs",
+  "killed": 0,
+  "remaining": [],
+  "pg_data_directories": [
+    "C:/Users/LeTran/AppData/Local/Temp/epg10952678191303452921",
+    "C:/Users/LeTran/AppData/Local/Temp/epg12176688339047522896",
+    "C:/Users/LeTran/AppData/Local/Temp/epg12300480334353340424",
+    "C:/Users/LeTran/AppData/Local/Temp/epg12857525907448671947",
+    "C:/Users/LeTran/AppData/Local/Temp/epg15790207434166472003",
+    "C:/Users/LeTran/AppData/Local/Temp/epg15978275761858943121",
+    "C:/Users/LeTran/AppData/Local/Temp/epg16358846890413261453",
+    "C:/Users/LeTran/AppData/Local/Temp/epg3578426611875819154",
+    "C:/Users/LeTran/AppData/Local/Temp/epg3600598373398659872",
+    "C:/Users/LeTran/AppData/Local/Temp/epg4240393946796366855",
+    "C:/Users/LeTran/AppData/Local/Temp/epg5248230916923401743",
+    "C:/Users/LeTran/AppData/Local/Temp/epg5954676922396801608",
+    "C:/Users/LeTran/AppData/Local/Temp/epg6801043810276541108",
+    "C:/Users/LeTran/AppData/Local/Temp/epg7458064337209118798",
+    "C:/Users/LeTran/AppData/Local/Temp/epg8486831975245299276",
+    "C:/Users/LeTran/AppData/Local/Temp/epg921848678439325374",
+    "C:/Users/LeTran/AppData/Local/Temp/epg9404688314729652017",
+    "C:/Users/LeTran/AppData/Local/Temp/epg9588442942242172502",
+    "C:/Users/LeTran/AppData/Local/Temp/epg9773901414785692058"
+  ]
+}

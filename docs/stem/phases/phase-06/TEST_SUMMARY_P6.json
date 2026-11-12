@@ -1,0 +1,272 @@
+{
+  "date": "2026-11-07",
+  "phase_status": "PARTIAL_UNCOMMITTED_NOT_CLOSED",
+  "be": {
+    "tests": 360,
+    "old_required": 268,
+    "p6_new": 55,
+    "extra_existing_affected": 37,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "name": "com.stemotion.domain.admin.controller.AiUsageAccessTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.ai.service.AiApproachTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.ai.service.AiCostCalculatorTest",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.ai.service.AiScriptServiceTest",
+        "tests": "19",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.ai.service.StemGroundedOutputP6Test",
+        "tests": "11",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.production.service.ClipArtifactServiceTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.production.service.CompositionServiceTest",
+        "tests": "14",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.production.service.FrozenCompositionRenderTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.production.service.PublicationFlowTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.production.service.PublishAvailabilityTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.production.service.RenderContractTest",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.production.service.RenderRetryTest",
+        "tests": "13",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.project.service.ReviewDecisionEventTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.review.service.ClipQaServiceTest",
+        "tests": "16",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.review.service.ReviewHistoryServiceTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.review.service.WebFirstReviewTest",
+        "tests": "9",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.script.mapper.ComposedSceneValidatorTest",
+        "tests": "9",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.script.mapper.SceneMapperTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.script.mapper.ScenePropsValidatorTest",
+        "tests": "29",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.stem.StemFingerprintP5Test",
+        "tests": "92",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.stem.StemPostgresTest",
+        "tests": "29",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.stem.StemSpecimensP6Test",
+        "tests": "28",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.domain.stem.StemValidatorTest",
+        "tests": "9",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.e2e.StemArtifactP5Test",
+        "tests": "21",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.e2e.StemFullContextRegressionTest",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.e2e.StemP6HttpTest",
+        "tests": "16",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.integration.client.AiGatewayTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.stemotion.perf.PageParamsTest",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      }
+    ],
+    "evidence": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\be-final-complete"
+  },
+  "fe": {
+    "tests": 258,
+    "old_required": 227,
+    "p6_new": 31,
+    "failures": 0,
+    "skipped": 0,
+    "evidence": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\fe-handoff-final",
+    "type_unit_build": [
+      {
+        "name": "typecheck",
+        "exit_code": 0,
+        "seconds": 23.92,
+        "owned_pid": 38388
+      },
+      {
+        "name": "unit",
+        "exit_code": 0,
+        "seconds": 157.76,
+        "owned_pid": 30396
+      },
+      {
+        "name": "build",
+        "exit_code": 0,
+        "seconds": 2.6,
+        "owned_pid": 34272
+      }
+    ]
+  },
+  "ai": {
+    "tests": 85,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "old_required": 69,
+    "p6_new": 16,
+    "lock_entries": 77,
+    "mismatches": 0,
+    "pip_check": "PASS",
+    "evidence": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\ai-final-complete"
+  },
+  "p4_live": {
+    "tests": 2,
+    "failures": 0,
+    "evidence": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\p4-live-final-complete",
+    "runtime": {
+      "ready": true,
+      "test_exit_code": 0,
+      "server_closed": true,
+      "original_p4_source_config_runner_modified": false,
+      "owned_server_pid": 23804,
+      "owned_port": 51130,
+      "server_exit_code": 0
+    }
+  },
+  "p6_live": {
+    "tests": 2,
+    "failures": 0,
+    "evidence": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\fe-live-be-final-complete",
+    "note": "Two FE tests are run by one BE orchestration case; report separately, no summed universal denominator."
+  }
+}

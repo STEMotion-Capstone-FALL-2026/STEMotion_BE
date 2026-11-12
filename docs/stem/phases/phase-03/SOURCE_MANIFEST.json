@@ -1,0 +1,93 @@
+{
+  "base": "f6c6f0bdcdcc6bbaf1f1246f86678d3249dea8e1",
+  "branch": "feat/stem-p3-isolated-20261105",
+  "isolated_path": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE",
+  "commits_created": false,
+  "files": [
+    {
+      "file": "src/main/java/com/stemotion/core/exception/GlobalExceptionHandler.java",
+      "change": "modified",
+      "sha256": "7e28afdf76b4a41972d2c591d12619908146fd4c9b72b7d9b2c1ca2bf7300240"
+    },
+    {
+      "file": "src/main/java/com/stemotion/core/security/WorkspaceAccess.java",
+      "change": "modified",
+      "sha256": "67fca2eb0095188749cf9feb49b09a9d24d6273e9d268307d04fb117cbe25336"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/review/controller/FeedbackController.java",
+      "change": "modified",
+      "sha256": "ab6f22ff4f074c3453340d336659460d48bca2b91c2f7b6d69d4c65cbf1de7f5"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/review/service/FeedbackService.java",
+      "change": "modified",
+      "sha256": "f7e697e08e52caaca4c2ce5308ea1a28ce3927716758121ed97ca2f033d880e3"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/script/dto/ScriptDtos.java",
+      "change": "modified",
+      "sha256": "8eb8b2fe1a94b2fa16e28da7286b03f2cbdfc71a5faa37d9b5abcffd28a71ef7"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/script/service/ScriptService.java",
+      "change": "modified",
+      "sha256": "fb47fe26ff7f30744e3925bae8381248bb488ab4f2a61faca411a00552105608"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemController.java",
+      "change": "new",
+      "sha256": "b6a5e12f6990de1839deb66c8382deaea8c082c8774d75a12a022f6c8093d980"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemDtos.java",
+      "change": "new",
+      "sha256": "554391e513fa61d68c058348eae5e9aada81111e690540cc4709416a26dfa77c"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemModels.java",
+      "change": "new",
+      "sha256": "241ab2ebc48b1f26208611a2080fe30ae3fdb0c229b88eec3ed910b9febd701b"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemRepository.java",
+      "change": "new",
+      "sha256": "23c9ef07bea65f7fa53478d2aea695d01f780dfcc40020fd35811ccbfbe249ee"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemRequestLimitFilter.java",
+      "change": "new",
+      "sha256": "36fbd851ce0ec4f6728ab6c0f9011617890f3e4c6e95dce4ba881312922c7941"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "change": "new",
+      "sha256": "4168f71de20705202e8404719bf829fdecd81c5273c2e918179ff39633351bfa"
+    },
+    {
+      "file": "src/main/java/com/stemotion/domain/stem/StemValidator.java",
+      "change": "new",
+      "sha256": "2d8e2ddc96898e198d15ac8e33ca5f49ba18a6cc0b7630f03eeb8cb07daecfcd"
+    },
+    {
+      "file": "src/test/java/com/stemotion/domain/stem/StemPostgresTest.java",
+      "change": "new",
+      "sha256": "55e7f867d981548ced616f515cf38bbde5b6c83f3dd3b255c73493821b7caf3f"
+    },
+    {
+      "file": "src/test/java/com/stemotion/domain/stem/StemValidatorTest.java",
+      "change": "new",
+      "sha256": "388a4394b20d68f6f68652006d66baad917970851faaea898c43732bd3df77d8"
+    },
+    {
+      "file": "src/test/resources/application-stem-p3-test.properties",
+      "change": "new",
+      "sha256": "857c9c28700eb1a2cc130065ad551b1b91aa7f9f788af3632792c61c78d8a881"
+    },
+    {
+      "file": "src/test/resources/db/stem-p3/V91000__stem_p3_test_only.sql",
+      "change": "new",
+      "sha256": "013f9998e636eb4fb98d294888c498420a74780eeed138f1fdd34285df4b33cd"
+    }
+  ]
+}

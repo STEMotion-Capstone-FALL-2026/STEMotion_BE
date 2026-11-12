@@ -1,0 +1,1434 @@
+diff --git a/src/main/java/com/stemotion/domain/library/dto/LibraryDtos.java b/src/main/java/com/stemotion/domain/library/dto/LibraryDtos.java
+--- a/src/main/java/com/stemotion/domain/library/dto/LibraryDtos.java
++++ b/src/main/java/com/stemotion/domain/library/dto/LibraryDtos.java
+@@ -23,6 +23,12 @@
+         /** Ready-to-paste iframe for Canvas/Moodle. */
+         String embedCode,
+         String youtubeUrl,
+-        LocalDateTime publishedAt
+-    ) {}
++        LocalDateTime publishedAt,
++        String verificationStatus,
++        String snapshotId
++    ) {
++        public LibraryItem(String id,String title,StemSubject subject,String gradeLevel,Integer totalDurationSeconds,Integer sceneCount,String ownerName,String workspaceName,String videoUrl,String embedCode,String youtubeUrl,LocalDateTime publishedAt){
++            this(id,title,subject,gradeLevel,totalDurationSeconds,sceneCount,ownerName,workspaceName,videoUrl,embedCode,youtubeUrl,publishedAt,"LEGACY_UNMAPPED",null);
++        }
++    }
+ }
+diff --git a/src/main/java/com/stemotion/domain/library/service/LibraryService.java b/src/main/java/com/stemotion/domain/library/service/LibraryService.java
+--- a/src/main/java/com/stemotion/domain/library/service/LibraryService.java
++++ b/src/main/java/com/stemotion/domain/library/service/LibraryService.java
+@@ -34,6 +34,8 @@
+     private final SceneRepository sceneRepository;
+     private final ScriptService scriptService;
+     private final com.stemotion.domain.production.repository.PublicationRepository publicationRepository;
++    @org.springframework.beans.factory.annotation.Autowired(required=false)
++    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
+ 
+     /** Subjects and grades present in the library, for the filter dropdowns. */
+     public record LibraryFilters(List<StemSubject> subjects, List<String> gradeLevels) {}
+@@ -48,6 +50,7 @@
+     public List<LibraryItem> findPublished(StemSubject subject, String gradeLevel) {
+         String grade = (gradeLevel == null || gradeLevel.isBlank()) ? null : gradeLevel.trim();
+ 
++        if(stemArtifacts!=null)return snapshotItems(subject,grade);
+         return toItems(library(subject, grade, org.springframework.data.domain.Pageable.unpaged()).getContent());
+     }
+ 
+@@ -59,6 +62,10 @@
+     public org.springframework.data.domain.Page<LibraryItem> findPublished(StemSubject subject, String gradeLevel,
+             com.stemotion.core.web.PageParams paging) {
+         String grade = (gradeLevel == null || gradeLevel.isBlank()) ? null : gradeLevel.trim();
++        if(stemArtifacts!=null){
++            var all=snapshotItems(subject,grade);var pageable=paging.pageable();int from=(int)Math.min(pageable.getOffset(),all.size());int to=Math.min(from+pageable.getPageSize(),all.size());
++            return new org.springframework.data.domain.PageImpl<>(all.subList(from,to),pageable,all.size());
++        }
+         var page = library(subject, grade, paging.pageable());
+         return new org.springframework.data.domain.PageImpl<>(toItems(page.getContent()), page.getPageable(),
+             page.getTotalElements());
+@@ -94,6 +101,10 @@
+      */
+     @Transactional(readOnly = true)
+     public LibraryFilters availableFilters() {
++        if(stemArtifacts!=null){
++            var items=snapshotItems(null,null);
++            return new LibraryFilters(items.stream().map(LibraryItem::subject).distinct().sorted(Comparator.comparing(Enum::name)).toList(),items.stream().map(LibraryItem::gradeLevel).filter(java.util.Objects::nonNull).distinct().sorted().toList());
++        }
+         // Two DISTINCT queries over the columns, not the library rows (DB performance plan, follow-up).
+         List<StemSubject> subjects = publicationRepository
+             .findLibrarySubjects(Publication.Platform.INTERNAL_LIBRARY, VideoStatus.PUBLISHED).stream()
+@@ -127,9 +138,22 @@
+             scenes.getOrDefault(e.getProject().getId(), 0L).intValue())).toList();
+     }
+ 
+-    private static LibraryItem toItem(Publication publication, PublishRecord latest, int sceneCount) {
++    private List<LibraryItem> snapshotItems(StemSubject subject,String grade){
++        return toItems(library(null,null,org.springframework.data.domain.Pageable.unpaged()).getContent()).stream()
++            .filter(i->subject==null||i.subject()==subject).filter(i->grade==null||grade.equalsIgnoreCase(i.gradeLevel())).toList();
++    }
++
++    private LibraryItem toItem(Publication publication, PublishRecord latest, int sceneCount) {
+         ClipProject project = publication.getProject();
+         String videoUrl = publication.getClip().getVideoUrl();
++        if(stemArtifacts!=null){
++            var meta=stemArtifacts.publicationMetadata(publication.getId());
++            if(meta.isObject()){
++                com.fasterxml.jackson.databind.JsonNode export;
++                try{export=new com.fasterxml.jackson.databind.ObjectMapper().readTree(publication.getMetadata());}catch(Exception ex){throw ApiException.conflict("Unreadable publication snapshot metadata");}
++                return new LibraryItem(project.getId(),meta.path("title").asText(),StemSubject.valueOf(meta.path("subject").asText()),meta.path("gradeLevel").asText(),meta.path("totalDurationSeconds").asInt(),meta.path("sceneCount").asInt(),meta.path("ownerName").asText(),meta.path("workspaceName").asText(),videoUrl,export.path("lmsEmbedCode").isTextual()?export.path("lmsEmbedCode").asText():com.stemotion.domain.production.service.VideoEmbed.build(videoUrl),null,publication.getPublishedAt(),meta.path("verificationStatus").asText("UNVERIFIED"),meta.path("snapshotId").asText());
++            }
++        }
+         return new LibraryItem(
+             project.getId(),
+             project.getTitle(),
+diff --git a/src/main/java/com/stemotion/domain/production/dto/ProductionDtos.java b/src/main/java/com/stemotion/domain/production/dto/ProductionDtos.java
+--- a/src/main/java/com/stemotion/domain/production/dto/ProductionDtos.java
++++ b/src/main/java/com/stemotion/domain/production/dto/ProductionDtos.java
+@@ -129,11 +129,16 @@
+         String videoUrl,
+         String errorMessage,
+         /** Caption/audio sync summary from Whisper alignment, sent with COMPLETED. */
+-        com.fasterxml.jackson.databind.JsonNode captionSync
+-    ) {
++        com.fasterxml.jackson.databind.JsonNode captionSync,
++        com.fasterxml.jackson.databind.JsonNode artifactManifest
++    ) {
++        public RenderCallbackRequest(String jobId, RenderStatus status, Integer progress, String stage,
++                                     String videoUrl, String errorMessage, com.fasterxml.jackson.databind.JsonNode captionSync) {
++            this(jobId,status,progress,stage,videoUrl,errorMessage,captionSync,null);
++        }
+         public RenderCallbackRequest(String jobId, RenderStatus status, Integer progress, String stage,
+                                      String videoUrl, String errorMessage) {
+-            this(jobId, status, progress, stage, videoUrl, errorMessage, null);
++            this(jobId, status, progress, stage, videoUrl, errorMessage, null, null);
+         }
+     }
+ 
+@@ -146,8 +151,16 @@
+         @NotBlank(message = "title is required")
+         String title,
+ 
+-        String description
+-    ) {}
++        String description,
++        Boolean legacyUnverifiedAcknowledged,
++        ArtifactExpectation artifactExpectation,
++        String idempotencyKey
++    ) {
++        public PublishRequest(List<PublishTarget> targets,String title,String description) {
++            this(targets,title,description,null,null,null);
++        }
++    }
++    public record ArtifactExpectation(String clipId,String jobId,String snapshotId,String inputHash) {}
+ 
+     public record PublishResponse(
+         String id,
+diff --git a/src/main/java/com/stemotion/domain/production/service/CompositionService.java b/src/main/java/com/stemotion/domain/production/service/CompositionService.java
+--- a/src/main/java/com/stemotion/domain/production/service/CompositionService.java
++++ b/src/main/java/com/stemotion/domain/production/service/CompositionService.java
+@@ -52,6 +52,8 @@
+     private final SceneMapper sceneMapper;
+     private final AuthService authService;
+     private final ObjectMapper objectMapper;
++    @org.springframework.beans.factory.annotation.Autowired(required=false)
++    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
+ 
+     /** What a render draws: the saved composition, or the approved script as it is. */
+     /** {@code details.resource} of a stale composition save or sync. */
+@@ -155,6 +157,7 @@
+             throw ApiException.staleRevision(COMPOSITION, currentRevision, baseRevision,
+                 "The composition is now at revision " + currentRevision + " (edited elsewhere); reload it before syncing");
+         }
++        var stemBefore=stemArtifacts==null?null:stemArtifacts.capture(project);
+         List<Map<String, Object>> scenes = current == null ? scriptScenes(version) : read(current.getScenes());
+         for (Map<String, Object> scene : scenes) {
+             String id = String.valueOf(scene.get("id"));
+@@ -175,6 +178,7 @@
+             throw ApiException.staleRevision(COMPOSITION, null, baseRevision,
+                 "The composition was just saved elsewhere; reload it before syncing");
+         }
++        if(stemArtifacts!=null)stemArtifacts.measured(project,userId,stemBefore);
+         return response(project, version, saved, scenes);
+     }
+ 
+diff --git a/src/main/java/com/stemotion/domain/production/service/PublishService.java b/src/main/java/com/stemotion/domain/production/service/PublishService.java
+--- a/src/main/java/com/stemotion/domain/production/service/PublishService.java
++++ b/src/main/java/com/stemotion/domain/production/service/PublishService.java
+@@ -38,6 +38,9 @@
+     private final com.stemotion.domain.production.repository.PublicationRepository publicationRepository;
+     private final ClipArtifactService clipArtifactService;
+     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
++    @org.springframework.beans.factory.annotation.Autowired(required=false)
++    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
++
+ 
+     @Transactional(readOnly = true)
+     public List<PublishResponse> findByProject(String projectId) {
+@@ -59,6 +62,11 @@
+                 "PUBLISH_TARGET_UNAVAILABLE", "YouTube OAuth publishing is not configured yet");
+         }
+ 
++        if(stemArtifacts!=null){
++            stemArtifacts.lock(project);
++            var replay=stemArtifacts.publishReplay(project,currentUserId,request);
++            if(replay!=null)return replay;
++        }
+         if (publicationRepository.existsByProjectIdAndPlatform(projectId,
+                 com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY)) {
+             throw ApiException.conflict("This project already has an INTERNAL_LIBRARY publication");
+@@ -73,6 +81,7 @@
+             throw ApiException.badRequest("The project has no rendered video to publish");
+         }
+         var clip = clipArtifactService.requireCurrent(project, scriptService.currentVersion(project).getId());
++        var artifactPublish=stemArtifacts==null?null:stemArtifacts.beforePublish(project,clip,request);
+         // Library exports must also produce a usable, safely escaped LMS iframe.
+         VideoEmbed.build(clip.getVideoUrl());
+ 
+@@ -113,8 +122,9 @@
+         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+             throw new IllegalStateException("Could not serialize publication metadata",ex);
+         }
++        com.stemotion.domain.production.entity.Publication publication;
+         try {
+-            publicationRepository.saveAndFlush(com.stemotion.domain.production.entity.Publication.builder()
++            publication=publicationRepository.saveAndFlush(com.stemotion.domain.production.entity.Publication.builder()
+             .project(project).clip(clip).publisher(record.getPublishedBy())
+             .platform(com.stemotion.domain.production.entity.Publication.Platform.INTERNAL_LIBRARY)
+             .metadata(metadata).publishedAt(java.time.LocalDateTime.now()).build());
+@@ -126,10 +136,13 @@
+             throw ex;
+         }
+ 
++        if(stemArtifacts!=null)stemArtifacts.published(publication,currentUserId,artifactPublish);
+         project.setVideoStatus(VideoStatus.PUBLISHED);
+         projectRepository.save(project);
+ 
+-        return PublishResponse.from(record);
++        var response=PublishResponse.from(record);
++        if(stemArtifacts!=null)stemArtifacts.rememberPublish(project,currentUserId,request,response);
++        return response;
+     }
+ 
+ }
+diff --git a/src/main/java/com/stemotion/domain/production/service/RenderService.java b/src/main/java/com/stemotion/domain/production/service/RenderService.java
+--- a/src/main/java/com/stemotion/domain/production/service/RenderService.java
++++ b/src/main/java/com/stemotion/domain/production/service/RenderService.java
+@@ -53,6 +53,9 @@
+     private final AuthService authService;
+     private final IntegrationProperties properties;
+     private final ClipArtifactService clipArtifactService;
++    @org.springframework.beans.factory.annotation.Autowired(required=false)
++    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
++
+ 
+     /**
+      * Queues a render of the producer's composition of the approved script,
+@@ -63,7 +66,12 @@
+      */
+     @Transactional
+     public RenderJobResponse start(String projectId, StartRenderRequest request, String currentUserId) {
++        return startFrozen(projectId,request,currentUserId,null);
++    }
++
++    private RenderJobResponse startFrozen(String projectId, StartRenderRequest request,String currentUserId,String approvalSnapshot) {
+         ClipProject project = requireRenderable(projectId);
++        if(stemArtifacts!=null)stemArtifacts.lock(project);
+         ScriptVersion version = scriptService.currentVersion(project);
+         CompositionService.RenderInput input = compositionService.renderInput(version);
+         if (input.scenes().isEmpty()) {
+@@ -71,7 +79,7 @@
+         }
+         String theme = input.composition() == null ? VisualThemes.DEFAULT : input.composition().getVisualTheme();
+         return enqueueNew(project, version, toScriptProps(project, input.scenes(), theme), input.composition(),
+-            input.revision(), request.ttsVoice(), currentUserId);
++            input.revision(), request.ttsVoice(), currentUserId,approvalSnapshot);
+     }
+ 
+     private ClipProject requireRenderable(String projectId) {
+@@ -108,7 +116,7 @@
+ 
+     private RenderJobResponse enqueueNew(ClipProject project, ScriptVersion version, Map<String, Object> scriptProps,
+                                          Composition composition, Integer compositionRevision, String ttsVoice,
+-                                         String currentUserId) {
++                                         String currentUserId,String approvalSnapshot) {
+         // Proposal output contract: clamp legacy requests to 1080p30.
+         RenderResolution resolution = RenderResolution.RES_1080P;
+         int fps = 30;
+@@ -129,6 +137,7 @@
+             .inputProps(writeProps(scriptProps))
+             .build());
+ 
++        if(stemArtifacts!=null)stemArtifacts.freeze(job,approvalSnapshot);
+         moveProduction(project, VideoStatus.RENDERING);
+ 
+         String jobId = job.getId();
+@@ -211,6 +220,8 @@
+             .or(() -> renderJobRepository.findByExternalJobId(callback.jobId()))
+             .orElseThrow(() -> ApiException.notFound("RenderJob", callback.jobId()));
+ 
++        boolean currentArtifact=stemArtifacts==null||stemArtifacts.callback(job,callback);
++
+         // Duplicate completion and late progress must never undo QA approval,
+         // cancellation or a terminal failure.
+         if (job.getStatus() == RenderStatus.COMPLETED || job.getStatus() == RenderStatus.FAILED) {
+@@ -241,9 +252,12 @@
+         ClipProject project = job.getProject();
+         if (job.getStatus() == RenderStatus.COMPLETED) {
+             job.setProgress(100);
+-            clipArtifactService.recordCompleted(job, callback.captionSync());
+-            project.setVideoUrl(job.getVideoUrl());
+-            moveProduction(project, VideoStatus.IN_QA);
++            var artifact=clipArtifactService.recordCompleted(job, callback.captionSync());
++            if(stemArtifacts!=null)stemArtifacts.completed(job,artifact,callback);
++            if(currentArtifact){
++                project.setVideoUrl(job.getVideoUrl());
++                moveProduction(project, VideoStatus.IN_QA);
++            }
+         } else if (job.getStatus() == RenderStatus.FAILED) {
+             return RenderJobResponse.from(handleFailure(job), null);
+         }
+@@ -272,6 +286,13 @@
+         }
+ 
+         int nextAttempt = job.getAttemptCount() + 1;
++        if(stemArtifacts!=null){
++            // P5 retries have a distinct job/attempt binding; old callbacks cannot complete the replacement.
++            renderJobRepository.saveAndFlush(job);
++            var response=enqueueNew(project,job.getScriptVersion(),propsOf(job),job.getComposition(),job.getCompositionRevision(),job.getTtsVoice(),job.getRequestedBy().getId(),stemArtifacts.approvalForJob(job.getId()));
++            var replacement=getOrThrow(response.jobId());replacement.setAttemptCount(nextAttempt);
++            return renderJobRepository.save(replacement);
++        }
+         log.warn("Render job {} failed on attempt {} ({}), retrying as attempt {}",
+             job.getId(), job.getAttemptCount(), job.getErrorMessage(), nextAttempt);
+ 
+@@ -312,11 +333,16 @@
+      */
+     @Transactional
+     public void renderApproved(String projectId, String userId) {
++        renderApproved(projectId,userId,null);
++    }
++
++    @Transactional
++    public void renderApproved(String projectId, String userId,String approvalSnapshot) {
+         if (renderJobRepository.existsByProjectIdAndStatusIn(projectId,
+                 List.of(RenderStatus.QUEUED, RenderStatus.PROCESSING))) {
+             return;
+         }
+-        start(projectId, new StartRenderRequest(null, null, null), userId);
++        startFrozen(projectId, new StartRenderRequest(null, null, null), userId,approvalSnapshot);
+     }
+ 
+     /** Re-queues a failed job manually, outside the automatic budget. */
+@@ -335,7 +361,7 @@
+         // Same composition version as the failed job, even if the draft changed since.
+         ClipProject project = requireRenderable(failed.getProject().getId());
+         RenderJobResponse response = enqueueNew(project, failed.getScriptVersion(), propsOf(failed),
+-            failed.getComposition(), failed.getCompositionRevision(), failed.getTtsVoice(), currentUserId);
++            failed.getComposition(), failed.getCompositionRevision(), failed.getTtsVoice(), currentUserId,stemArtifacts==null?null:stemArtifacts.approvalForJob(failed.getId()));
+ 
+         RenderJob retried = getOrThrow(response.jobId());
+         retried.setAttemptCount(failed.getAttemptCount() + 1);
+diff --git a/src/main/java/com/stemotion/domain/review/dto/QaDtos.java b/src/main/java/com/stemotion/domain/review/dto/QaDtos.java
+--- a/src/main/java/com/stemotion/domain/review/dto/QaDtos.java
++++ b/src/main/java/com/stemotion/domain/review/dto/QaDtos.java
+@@ -41,6 +41,11 @@
+         boolean passed,
+         int failCount,
+         int warnCount,
+-        List<QaFinding> findings
+-    ) {}
++        List<QaFinding> findings,
++        java.util.Map<String,String> evaluatedAgainst
++    ) {
++        public QaReport(String projectId,boolean passed,int failCount,int warnCount,List<QaFinding> findings){
++            this(projectId,passed,failCount,warnCount,findings,null);
++        }
++    }
+ }
+diff --git a/src/main/java/com/stemotion/domain/review/service/ClipQaService.java b/src/main/java/com/stemotion/domain/review/service/ClipQaService.java
+--- a/src/main/java/com/stemotion/domain/review/service/ClipQaService.java
++++ b/src/main/java/com/stemotion/domain/review/service/ClipQaService.java
+@@ -56,15 +56,40 @@
+     private final CompositionService compositionService;
+     private final ClipRepository clipRepository;
+     private final ObjectMapper objectMapper;
++    @org.springframework.beans.factory.annotation.Autowired(required=false)
++    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
++
+ 
+     @Transactional(readOnly = true)
+     public QaReport run(String projectId) {
+         ClipProject project = scriptService.getOrThrow(projectId);
+         // The clip as rendered: the producer's composition when there is one.
+-        List<Scene> scenes = compositionService.renderScenes(scriptService.currentVersion(project));
++        var version=scriptService.currentVersion(project);
++        List<Scene> scenes = compositionService.renderScenes(version);
++        Integer frozenFps=null;
++        java.util.Map<String,String> evaluatedAgainst=null;
++        if(stemArtifacts!=null){
++            var current=clipRepository.findCurrentArtifacts(project.getId(),version.getId(),project.getVideoUrl());
++            if(current.size()==1){
++                var frozen=stemArtifacts.frozenScenes(current.get(0));
++                if(frozen.isArray()){
++                    frozenFps=current.get(0).getRenderJob().getFps();
++                    evaluatedAgainst=stemArtifacts.frozenReference(current.get(0));
++                    scenes=new ArrayList<>();
++                    for(var raw:frozen){
++                        var props=((com.fasterxml.jackson.databind.node.ObjectNode)raw).deepCopy();
++                        props.remove(java.util.List.of("id","type","title","narration","durationInFrames"));
++                        Scene scene=Scene.builder().scriptVersion(version).orderNo(scenes.size()+1)
++                            .sceneType(SceneType.valueOf(raw.path("type").asText())).title(raw.path("title").asText())
++                            .narration(raw.path("narration").asText()).durationInFrames(raw.path("durationInFrames").asInt())
++                            .props(props.toString()).build();scene.setId(raw.path("id").asText());scenes.add(scene);
++                    }
++                }
++            }
++        }
+ 
+         List<QaFinding> findings = new ArrayList<>();
+-        int fps = project.getFps() == null || project.getFps() <= 0 ? 30 : project.getFps();
++        int fps = frozenFps!=null?frozenFps:(project.getFps() == null || project.getFps() <= 0 ? 30 : project.getFps());
+ 
+         checkStructure(scenes, findings);
+         checkClipDuration(scenes, fps, findings);
+@@ -93,7 +118,7 @@
+             ));
+         }
+ 
+-        return new QaReport(projectId, fails == 0, (int) fails, (int) warns, findings);
++        return new QaReport(projectId, fails == 0, (int) fails, (int) warns, findings,evaluatedAgainst);
+     }
+ 
+     // ------------------------------------------------------------------ checks
+diff --git a/src/main/java/com/stemotion/domain/review/service/FeedbackService.java b/src/main/java/com/stemotion/domain/review/service/FeedbackService.java
+--- a/src/main/java/com/stemotion/domain/review/service/FeedbackService.java
++++ b/src/main/java/com/stemotion/domain/review/service/FeedbackService.java
+@@ -56,6 +56,9 @@
+     private final StatusHistoryService statusHistoryService;
+     private final CompositionService compositionService;
+     private final RenderService renderService;
++    @org.springframework.beans.factory.annotation.Autowired(required=false)
++    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
++
+ 
+     @org.springframework.beans.factory.annotation.Autowired(required=false)
+     private com.stemotion.domain.stem.StemService stem;
+@@ -236,6 +239,7 @@
+         ScriptVersion version = scriptService.currentVersion(project);
+         Composition composition = compositionService.ensure(project, version, producerId);
+         if(stem!=null)stem.submission(project,version);
++        if(stemArtifacts!=null)stemArtifacts.submission(project,producerId);
+         var from = project.getPipelineStatus();
+         project.setVideoStatus(VideoStatus.IN_QA);
+         projectRepository.save(project);
+@@ -276,6 +280,7 @@
+             );
+         }
+ 
++        var artifactReview=stemArtifacts==null?null:stemArtifacts.beforeReview(project);
+         var from = project.getPipelineStatus();
+         project.setVideoStatus(VideoStatus.APPROVED);
+         projectRepository.save(project);
+@@ -284,13 +289,16 @@
+             statusHistoryService.recordReview(project, from, reviewer,
+                 StatusHistory.TargetType.CLIP, clip.get().getId(), StatusHistory.Decision.APPROVED, reason);
+             if(stem!=null)stem.finish(project,stemTicket);
++            if(stemArtifacts!=null)stemArtifacts.afterReview(project,reviewerId,artifactReview,clip.get());
+             return;
+         }
+         Composition composition = compositionService.ensure(project, version, reviewerId);
+         statusHistoryService.recordReview(project, from, reviewer, StatusHistory.TargetType.COMPOSITION,
+             composition.getId(), StatusHistory.Decision.APPROVED, reason, revisionNote(composition));
+         if(stem!=null)stem.finish(project,stemTicket);
+-        renderService.renderApproved(projectId, reviewerId);
++        String approvalSnapshot=stemArtifacts==null?null:stemArtifacts.afterReview(project,reviewerId,artifactReview,null);
++        if(stemArtifacts==null)renderService.renderApproved(projectId,reviewerId);
++        else renderService.renderApproved(projectId,reviewerId,approvalSnapshot);
+     }
+ 
+     /** Sends the clip, or the composition reviewed in the web player, back to the producer. */
+diff --git a/src/main/java/com/stemotion/domain/stem/StemArtifactController.java b/src/main/java/com/stemotion/domain/stem/StemArtifactController.java
+--- /dev/null
++++ b/src/main/java/com/stemotion/domain/stem/StemArtifactController.java
+@@ -0,0 +1,20 @@
++package com.stemotion.domain.stem;
++
++import com.stemotion.domain.script.service.ScriptService;
++import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
++import org.springframework.security.core.annotation.AuthenticationPrincipal;
++import org.springframework.security.core.userdetails.UserDetails;
++import org.springframework.web.bind.annotation.*;
++import java.util.Map;
++
++@RestController
++@ConditionalOnProperty(name="app.stem.artifact.enabled",havingValue="true")
++public class StemArtifactController {
++    private final StemArtifactService artifacts;
++    private final ScriptService scripts;
++    public StemArtifactController(StemArtifactService artifacts,ScriptService scripts){this.artifacts=artifacts;this.scripts=scripts;}
++    @GetMapping("/api/v1/scripts/{projectId}/stem-artifact-status")
++    public Map<String,Object> status(@PathVariable String projectId,@AuthenticationPrincipal UserDetails actor){
++        return artifacts.status(scripts.getOrThrow(projectId),actor.getUsername());
++    }
++}
+diff --git a/src/main/java/com/stemotion/domain/stem/StemArtifactRequestFilter.java b/src/main/java/com/stemotion/domain/stem/StemArtifactRequestFilter.java
+--- /dev/null
++++ b/src/main/java/com/stemotion/domain/stem/StemArtifactRequestFilter.java
+@@ -0,0 +1,47 @@
++package com.stemotion.domain.stem;
++
++import com.fasterxml.jackson.core.*;
++import com.fasterxml.jackson.databind.*;
++import jakarta.servlet.*;
++import jakarta.servlet.http.*;
++import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
++import org.springframework.stereotype.Component;
++import org.springframework.web.filter.OncePerRequestFilter;
++import java.io.*;
++import java.nio.charset.StandardCharsets;
++import java.util.*;
++
++/** Separate P5 transport bounds; never applies the brief cap to frozen render input. */
++@Component
++@ConditionalOnProperty(name="app.stem.artifact.enabled",havingValue="true")
++public class StemArtifactRequestFilter extends OncePerRequestFilter {
++    private final ObjectMapper output;
++    private final ObjectMapper input=new ObjectMapper(JsonFactory.builder()
++        .streamReadConstraints(StreamReadConstraints.builder().maxNestingDepth(16).maxStringLength(65536).maxNumberLength(1024).build()).build())
++        .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
++    public StemArtifactRequestFilter(ObjectMapper mapper){output=mapper;}
++    @Override protected boolean shouldNotFilter(HttpServletRequest request){
++        return !"POST".equals(request.getMethod())||!(request.getRequestURI().equals("/api/v1/render/callback")||request.getRequestURI().matches("/api/v1/scripts/[^/]+/publish"));
++    }
++    @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)throws IOException,ServletException{
++        boolean callback=request.getRequestURI().endsWith("/callback");int limit=callback?1048576:65536;
++        byte[] bytes=request.getInputStream().readNBytes(limit+1);
++        String field="request",error=null;
++        if(bytes.length>limit)error="P5 request byte limit exceeded";
++        else try{
++            JsonNode tree=input.readTree(bytes);
++            if(tree==null||!tree.isObject())error="Expected JSON object";
++            else {
++                Set<String> allowed=callback?Set.of("jobId","status","progress","stage","videoUrl","errorMessage","captionSync","artifactManifest"):Set.of("targets","title","description","legacyUnverifiedAcknowledged","artifactExpectation","idempotencyKey");
++                for(var names=tree.fieldNames();names.hasNext();){String name=names.next();if(!allowed.contains(name)){error="Unknown/server-owned request field";field=name;break;}}
++                if(error==null&&tree.hasNonNull("artifactManifest")&&tree.get("artifactManifest").toString().getBytes(StandardCharsets.UTF_8).length>65536){error="Manifest exceeds64KiB";field="artifactManifest";}
++                if(error==null&&tree.hasNonNull("videoUrl")&&tree.path("videoUrl").asText().getBytes(StandardCharsets.UTF_8).length>4096){error="Output URL exceeds4096bytes";field="videoUrl";}
++            }
++        }catch(IOException ex){error="Invalid/bounded JSON request";}
++        if(error!=null){response.setStatus(400);response.setContentType("application/json");output.writeValue(response.getOutputStream(),Map.of("status",400,"code","STEM_INVALID_FIELD","message",error,"timestamp",java.time.Instant.now().toString(),"details",Map.of("field",field)));return;}
++        chain.doFilter(new HttpServletRequestWrapper(request){
++            @Override public ServletInputStream getInputStream(){var stream=new ByteArrayInputStream(bytes);return new ServletInputStream(){public int read(){return stream.read();}public boolean isFinished(){return stream.available()==0;}public boolean isReady(){return true;}public void setReadListener(ReadListener listener){throw new UnsupportedOperationException("Synchronous endpoint");}};}
++            @Override public BufferedReader getReader(){return new BufferedReader(new InputStreamReader(getInputStream(),StandardCharsets.UTF_8));}
++        },response);
++    }
++}
+diff --git a/src/main/java/com/stemotion/domain/stem/StemArtifactService.java b/src/main/java/com/stemotion/domain/stem/StemArtifactService.java
+--- /dev/null
++++ b/src/main/java/com/stemotion/domain/stem/StemArtifactService.java
+@@ -0,0 +1,238 @@
++package com.stemotion.domain.stem;
++
++import com.fasterxml.jackson.databind.*;
++import com.fasterxml.jackson.databind.node.*;
++import com.stemotion.core.exception.ApiException;
++import com.stemotion.core.security.WorkspaceAccess;
++import com.stemotion.domain.project.entity.ClipProject;
++import com.stemotion.domain.production.entity.*;
++import com.stemotion.domain.production.dto.ProductionDtos.*;
++import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
++import org.springframework.stereotype.Service;
++import org.springframework.transaction.annotation.Transactional;
++import org.springframework.http.HttpStatus;
++import java.util.*;
++
++/** Isolated, additive artifact lineage. All snapshots/proofs are append-only. */
++@Service
++@ConditionalOnProperty(name="app.stem.artifact.enabled",havingValue="true")
++@Transactional
++public class StemArtifactService {
++    private final StemRepository db;
++    private final WorkspaceAccess access;
++    private final StemFingerprint fingerprint;
++    @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager em;
++    public StemArtifactService(StemRepository db,WorkspaceAccess access){this.db=db;this.access=access;this.fingerprint=new StemFingerprint(db.json());}
++    public static ApiException conflict(String reason){return new ApiException(HttpStatus.CONFLICT,"STEM_STALE_TARGET","Artifact target changed or lacks required acknowledgement",Map.of("reason",reason));}
++    private ObjectNode object(){return db.json().createObjectNode();}
++    private String text(Map<String,Object> r,String k){return db.text(r,k);}
++    private JsonNode tree(Object value){return value==null?NullNode.instance:fingerprint.parse(value.toString());}
++    private Map<String,Object> one(String sql,Object...args){return db.jdbc().queryForList(sql,args).stream().findFirst().orElse(null);}
++    public record Capture(String project,String version,String workspace,String composition,Integer revision,JsonNode payload,JsonNode scenes,StemFingerprint.Result hashes) {}
++
++    /** Same leading lock order as P3: script version -> workspace -> composition -> project. */
++    public void lock(ClipProject project){
++        var rows=db.jdbc().queryForList("select id from script_versions where project_id=? and is_current=true for update",project.getId());
++        if(rows.size()!=1)throw conflict("REVIEW_TARGET_CHANGED");
++        db.jdbc().queryForList("select id from workspaces where id=? for update",project.getWorkspace().getId());
++        db.jdbc().queryForList("select id from compositions where script_version_id=? for update",text(rows.get(0),"id"));
++        db.jdbc().queryForList("select id from clip_projects where id=? for update",project.getId());
++        if(em!=null)em.refresh(project);
++    }
++    public Capture capture(ClipProject project){
++        Map<String,Object> version=one("select * from script_versions where project_id=? and is_current=true",project.getId());
++        if(version==null)throw conflict("REVIEW_TARGET_CHANGED");String vid=text(version,"id");
++        Map<String,Object> composition=one("select * from compositions where script_version_id=?",vid);
++        ArrayNode scenes=db.json().createArrayNode();
++        if(composition!=null)scenes=(ArrayNode)tree(composition.get("scenes"));
++        else for(var row:db.jdbc().queryForList("select * from scenes where version_id=? order by order_no",vid)){
++            ObjectNode scene=(ObjectNode)tree(row.get("props"));scene.put("id",text(row,"id"));scene.put("type",text(row,"scene_type"));
++            scene.put("title",text(row,"title"));scene.put("narration",text(row,"narration"));scene.put("durationInFrames",((Number)row.get("duration_in_frames")).intValue());scenes.add(scene);
++        }
++        var brief=db.brief(vid);ObjectNode briefData=object();ArrayNode editions=db.json().createArrayNode();
++        if(brief!=null){briefData.set("brief",tree(brief.get("payload")));briefData.set("evidence",db.json().valueToTree(db.evidence(text(brief,"id"))));
++            Set<String> refs=new TreeSet<>();JsonNode b=briefData.path("brief");
++            for(String key:List.of("policyVersionId","topicVersionId"))if(b.hasNonNull(key))refs.add(b.path(key).asText());
++            b.path("outcomeIds").forEach(n->refs.add(n.asText()));Set<String> seen=new HashSet<>();
++            while(!refs.isEmpty()){
++                String id=refs.iterator().next();refs.remove(id);if(!seen.add(id))continue;
++                if(seen.size()>200)throw StemValidator.invalid("editions","Catalog closure limit");
++                Map<String,Object> row=one("select * from stem_catalog where id=?",id);
++                if(row==null)throw conflict("REVIEW_TARGET_CHANGED");
++                ObjectNode edition=object().put("id",id).put("kind",text(row,"kind")).put("version",((Number)row.get("version_no")).intValue());
++                edition.set("data",tree(row.get("data")));edition.put("digest",StemFingerprint.sha(fingerprint.canonical(tree(row.get("data")))));editions.add(edition);
++                for(String key:List.of("parent_id","source_id"))if(row.get(key)!=null)refs.add(text(row,key));
++            }
++        }
++        ObjectNode metadata=object().put("title",project.getTitle()).put("subject",project.getSubject().name()).put("gradeLevel",project.getGradeLevel());
++        briefData.set("publicMetadata",metadata);
++        var projected=fingerprint.project(scenes,briefData,editions);
++        String visualTheme=composition==null?"default":Objects.toString(composition.get("visual_theme"),"default");
++        ObjectNode presentation=projected.presentation().deepCopy();presentation.put("visualTheme",visualTheme);
++        var hashes=new StemFingerprint.Result(projected.semanticHash(),fingerprint.hash("presentationContract",presentation),"default".equals(visualTheme)?projected.classification():"UNKNOWN",projected.semantic(),presentation);
++        var mode=db.settings(project.getWorkspace().getId());
++        ObjectNode payload=object().put("schemaVersion","stem-snapshot.v1").put("hashVersion",StemFingerprint.VERSION)
++            .put("canonicalVersion",StemFingerprint.CANONICAL).put("projectorVersion",StemFingerprint.PROJECTOR).put("classifierVersion",StemFingerprint.CLASSIFIER)
++            .put("verificationStatus",brief==null?"LEGACY_UNMAPPED":"UNVERIFIED").put("capturedMode",mode.mode()).put("modeRevision",mode.revision())
++            .put("scriptRevision",((Number)version.get("draft_revision")).intValue()).put("briefRevision",brief==null?0:db.number(brief,"revision"));
++        payload.set("brief",briefData);payload.set("editions",editions);payload.set("scenes",scenes);
++        payload.set("publicMetadata",metadata.deepCopy().put("sceneCount",scenes.size()).put("totalDurationSeconds",totalSeconds(scenes,project.getFps())).put("ownerName",project.getOwner().getFullName()).put("workspaceName",project.getWorkspace().getName()));
++        if(brief!=null)payload.put("briefId",text(brief,"id"));
++        return new Capture(project.getId(),vid,project.getWorkspace().getId(),composition==null?null:text(composition,"id"),composition==null?null:db.number(composition,"revision"),payload,scenes,hashes);
++    }
++    private int totalSeconds(JsonNode scenes,Integer fps){long frames=0;for(JsonNode n:scenes)frames+=n.path("durationInFrames").asInt();return (int)Math.ceil(frames/(double)(fps==null||fps<=0?30:fps));}
++    private String insert(String stage,Capture c,String actor,String parent,String approval,String job,String clip,String publication,String decision,String assessment,JsonNode frozen,String inputHash,String assurance,JsonNode extras){
++        if(em!=null)em.flush();
++        ObjectNode payload=c.payload().deepCopy();if(extras!=null)payload.set("lineage",extras);
++        String token=Objects.toString(decision,Objects.toString(job,Objects.toString(clip,Objects.toString(publication,fingerprint.canonical(c.payload())))));
++        String dedupe=StemFingerprint.sha(stage+"|"+c.project()+"|"+c.version()+"|"+c.composition()+"|"+c.revision()+"|"+token);
++        String existingId=db.jdbc().queryForList("select id from stem_p5_snapshots where dedupe_key=?",String.class,dedupe).stream().findFirst().orElse(null);
++        if(existingId!=null)return existingId;
++        fingerprint.canonical(payload);if(frozen!=null&&fingerprint.canonical(frozen).getBytes(java.nio.charset.StandardCharsets.UTF_8).length>8388608)throw StemValidator.invalid("inputProps","Frozen input exceeds8MiB");
++        String id=db.id();db.jdbc().update("insert into stem_p5_snapshots(id,stage,project_id,version_id,workspace_id,actor_id,composition_id,composition_revision,job_id,clip_id,publication_id,decision_id,assessment_id,parent_id,approval_id,semantic_hash,contract_hash,input_hash,classification,assurance,payload,frozen_input,dedupe_key) values(?,?,?,?,?,?,?::uuid,?,?,?::uuid,?::uuid,?,?,?,?,?,?,?,?,?,?::jsonb,?::jsonb,?)",
++            id,stage,c.project(),c.version(),c.workspace(),actor,c.composition(),c.revision(),job,clip,publication,decision,assessment,parent,approval,c.hashes().semanticHash(),c.hashes().presentationContractHash(),inputHash,c.hashes().classification(),assurance,db.encode(payload),frozen==null?null:db.encode(frozen),dedupe);
++        return id;
++    }
++    public void submission(ClipProject project,String actor){lock(project);Capture c=capture(project);insert("SUBMISSION",c,actor,null,null,null,null,null,null,null,null,null,"UNKNOWN",null);}
++    public record Review(Capture capture,Set<String> decisions){}
++    public Review beforeReview(ClipProject project){
++        lock(project);return new Review(capture(project),new HashSet<>(db.jdbc().queryForList("select id from status_histories where project_id=?",String.class,project.getId())));
++    }
++    public String afterReview(ClipProject project,String actor,Review review,Clip clip){
++        if(em!=null)em.flush();Capture current=capture(project);if(!same(review.capture(),current))throw conflict("REVIEW_TARGET_CHANGED");
++        Set<String> decisions=new HashSet<>(db.jdbc().queryForList("select id from status_histories where project_id=? and event_type='REVIEW_DECISION' and decision='APPROVED' and changed_by=?",String.class,project.getId(),actor));decisions.removeAll(review.decisions());
++        if(decisions.size()!=1)throw conflict("REVIEW_TARGET_CHANGED");String decision=decisions.iterator().next();
++        var a=one("select id from stem_assessments where decision_id=?",decision);
++        if(clip!=null)requireArtifactCurrent(project,clip,false);
++        return insert("APPROVAL",current,actor,null,null,clip==null?null:clip.getRenderJob().getId(),clip==null?null:clip.getId(),null,decision,a==null?null:text(a,"id"),null,null,"UNKNOWN",null);
++    }
++    private boolean same(Capture a,Capture b){return a.version().equals(b.version())&&Objects.equals(a.revision(),b.revision())&&a.hashes().semanticHash().equals(b.hashes().semanticHash())&&a.hashes().presentationContractHash().equals(b.hashes().presentationContractHash())&&a.payload().path("modeRevision").equals(b.payload().path("modeRevision"))&&a.payload().path("briefRevision").equals(b.payload().path("briefRevision"));}
++    private String inputHash(RenderJob job,JsonNode props){
++        ObjectNode input=object().put("fps",job.getFps()).put("resolution",job.getResolution().name()).put("ttsVoice",job.getTtsVoice()).put("rendererIdentity","FullSTEMVideo:baseline-9fe67cf");input.set("inputProps",props);
++        return fingerprint.hash("renderInput",input);
++    }
++    public void freeze(RenderJob job,String approval){
++        lock(job.getProject());Capture c=capture(job.getProject());
++        if(!c.version().equals(job.getScriptVersion().getId())||!Objects.equals(c.revision(),job.getCompositionRevision()))throw conflict("ARTIFACT_BINDING_MISMATCH");
++        if(approval!=null){Map<String,Object> a=snapshot(approval);if(a==null||!"APPROVAL".equals(text(a,"stage"))||!matches(a,c))throw conflict("REVIEW_TARGET_CHANGED");}
++        JsonNode props=tree(job.getInputProps());String attempt=db.id();
++        insert("RENDER_INPUT",c,job.getRequestedBy().getId(),approval,approval,job.getId(),null,null,null,null,props,inputHash(job,props),"UNKNOWN",object().put("attemptToken",attempt).put("rendererVersion","FullSTEMVideo:baseline-9fe67cf"));
++    }
++    private Map<String,Object> snapshot(String id){return one("select * from stem_p5_snapshots where id=?",id);}
++    private Map<String,Object> jobSnapshot(String job){return one("select * from stem_p5_snapshots where stage='RENDER_INPUT' and job_id=?",job);}
++    private boolean matches(Map<String,Object> snap,Capture c){
++        return text(snap,"version_id").equals(c.version())&&Objects.equals(snap.get("composition_revision"),c.revision())&&text(snap,"semantic_hash").equals(c.hashes().semanticHash())&&text(snap,"contract_hash").equals(c.hashes().presentationContractHash())&&StemFingerprint.VERSION.equals(tree(snap.get("payload")).path("hashVersion").asText())&&StemFingerprint.CANONICAL.equals(tree(snap.get("payload")).path("canonicalVersion").asText())&&StemFingerprint.PROJECTOR.equals(tree(snap.get("payload")).path("projectorVersion").asText())&&StemFingerprint.CLASSIFIER.equals(tree(snap.get("payload")).path("classifierVersion").asText());
++    }
++    public boolean callback(RenderJob job,RenderCallbackRequest callback){
++        lock(job.getProject());db.jdbc().queryForList("select id from render_jobs where id=? for update",job.getId());
++        if(em!=null)em.refresh(job);
++        Map<String,Object> snap=jobSnapshot(job.getId());JsonNode manifest=callback.artifactManifest();
++        if(snap!=null&&!text(snap,"input_hash").equals(inputHash(job,tree(job.getInputProps()))))throw conflict("ARTIFACT_BINDING_MISMATCH");
++        if(manifest!=null&&!manifest.isNull()){
++            if(!manifest.isObject()||fingerprint.canonical(manifest).getBytes(java.nio.charset.StandardCharsets.UTF_8).length>65536)throw StemValidator.invalid("artifactManifest","Invalid manifest");
++            Set<String> allowed=Set.of("schemaVersion","attemptToken","renderInputHash","snapshotId","rendererVersion","artifactSha256","artifactBytes","assurance");
++            manifest.fieldNames().forEachRemaining(k->{if(!allowed.contains(k))throw StemValidator.invalid("artifactManifest."+k,"Unknown field");});
++            if(manifest.hasNonNull("assurance")&&!Set.of("BINDING_ONLY","TEST_ONLY_SYNTHETIC").contains(manifest.path("assurance").asText()))throw StemValidator.invalid("artifactManifest.assurance","Unsupported assurance claim");
++            if(snap==null)throw conflict("CALLBACK_MANIFEST_MISMATCH");JsonNode expected=tree(snap.get("payload")).path("lineage");
++            if(!"stem-render-manifest.v1".equals(manifest.path("schemaVersion").asText())||!expected.path("attemptToken").equals(manifest.path("attemptToken"))||!text(snap,"id").equals(manifest.path("snapshotId").asText())||!text(snap,"input_hash").equals(manifest.path("renderInputHash").asText())||!expected.path("rendererVersion").equals(manifest.path("rendererVersion")))throw conflict("CALLBACK_MANIFEST_MISMATCH");
++            if(manifest.hasNonNull("artifactSha256")&&!manifest.path("artifactSha256").asText().matches("[0-9a-f]{64}"))throw StemValidator.invalid("artifactManifest.artifactSha256","Invalid digest");
++            if(manifest.hasNonNull("artifactBytes")&&(!manifest.path("artifactBytes").isIntegralNumber()||!manifest.path("artifactBytes").canConvertToLong()||manifest.path("artifactBytes").asLong()<0||manifest.path("artifactBytes").asLong()>9007199254740991L))throw StemValidator.invalid("artifactManifest.artifactBytes","Invalid size");
++        }
++        if(job.getStatus()==com.stemotion.core.enums.StemEnums.RenderStatus.COMPLETED&&callback.status()==com.stemotion.core.enums.StemEnums.RenderStatus.COMPLETED){
++            Map<String,Object> existing=one("select payload from stem_p5_snapshots where stage='CLIP' and job_id=?",job.getId());
++            JsonNode old=existing==null?NullNode.instance:tree(existing.get("payload")).path("lineage");
++            JsonNode actual=manifest==null?NullNode.instance:manifest;
++            if(!Objects.equals(job.getVideoUrl(),callback.videoUrl())||!old.path("manifest").equals(actual))throw conflict("CALLBACK_MANIFEST_MISMATCH");
++        }
++        Capture c=capture(job.getProject());return c.version().equals(job.getScriptVersion().getId())&&Objects.equals(c.revision(),job.getCompositionRevision())&&(snap==null||matches(snap,c));
++    }
++    public void completed(RenderJob job,Clip clip,RenderCallbackRequest callback){
++        Map<String,Object> render=jobSnapshot(job.getId());Capture c=render==null?capture(job.getProject()):from(render);
++        JsonNode manifest=callback.artifactManifest();ObjectNode data=object().put("videoUrl",clip.getVideoUrl());data.set("manifest",manifest==null?NullNode.instance:manifest);
++        String assurance=manifest==null||manifest.isNull()?"UNKNOWN":"BINDING_ONLY";
++        insert("CLIP",c,null,render==null?null:text(render,"id"),render==null?null:text(render,"approval_id"),job.getId(),clip.getId(),null,null,null,null,render==null?null:text(render,"input_hash"),assurance,data);
++    }
++    private Capture from(Map<String,Object> row){
++        JsonNode p=tree(row.get("payload"));var hashes=new StemFingerprint.Result(text(row,"semantic_hash"),text(row,"contract_hash"),text(row,"classification"),NullNode.instance,NullNode.instance);
++        return new Capture(text(row,"project_id"),text(row,"version_id"),text(row,"workspace_id"),text(row,"composition_id"),(Integer)row.get("composition_revision"),p,p.path("scenes"),hashes);
++    }
++    public boolean requireArtifactCurrent(ClipProject project,Clip clip,boolean requireApproval){
++        lock(project);Capture c=capture(project);RenderJob job=clip.getRenderJob();
++        if(!c.version().equals(job.getScriptVersion().getId())||!Objects.equals(c.revision(),job.getCompositionRevision())||!Objects.equals(project.getVideoUrl(),clip.getVideoUrl()))throw conflict("ARTIFACT_BINDING_MISMATCH");
++        Map<String,Object> render=jobSnapshot(job.getId());Map<String,Object> artifact=one("select * from stem_p5_snapshots where stage='CLIP' and clip_id=?::uuid",clip.getId());
++        if(render!=null&&(!matches(render,c)||!text(render,"input_hash").equals(inputHash(job,tree(job.getInputProps())))))throw conflict("ARTIFACT_BINDING_MISMATCH");
++        if(artifact!=null&&!Objects.equals(tree(artifact.get("payload")).path("lineage").path("videoUrl").asText(),clip.getVideoUrl()))throw conflict("ARTIFACT_BINDING_MISMATCH");
++        if(requireApproval&&render!=null){
++            String aid=artifact==null?null:text(artifact,"approval_id");
++            Map<String,Object> approval=aid==null?null:snapshot(aid);
++            if(approval==null){List<Map<String,Object>> rows=db.jdbc().queryForList("select * from stem_p5_snapshots where stage='APPROVAL' and clip_id=?::uuid",clip.getId());if(rows.size()==1)approval=rows.get(0);}
++            if(approval==null||!matches(approval,c))throw conflict("REVIEW_TARGET_CHANGED");
++        }
++        return render!=null&&artifact!=null&&"BINDING_ONLY".equals(text(artifact,"assurance"));
++    }
++    public record PublishCapture(Capture capture,Map<String,Object> artifact){}
++    public PublishResponse publishReplay(ClipProject project,String actor,PublishRequest request){
++        if(request.idempotencyKey()==null)return null;
++        new StemValidator(db.json()).idem(request.idempotencyKey());
++        db.jdbc().update("delete from stem_receipts where actor_id=? and operation='P5_PUBLISH' and request_key=? and expires_at<=current_timestamp",actor,request.idempotencyKey());
++        Map<String,Object> r=one("select * from stem_receipts where actor_id=? and operation='P5_PUBLISH' and request_key=?",actor,request.idempotencyKey());
++        if(r==null)return null;
++        if(!project.getId().equals(text(r,"target"))||!StemFingerprint.sha(fingerprint.canonical(db.json().valueToTree(request))).equals(text(r,"request_digest")))throw new ApiException(HttpStatus.CONFLICT,"STEM_IDEMPOTENCY_CONFLICT","Publish key reused");
++        return db.decode(text(r,"response"),PublishResponse.class);
++    }
++    public void rememberPublish(ClipProject project,String actor,PublishRequest request,PublishResponse response){
++        if(request.idempotencyKey()==null)return;
++        db.jdbc().update("insert into stem_receipts(actor_id,operation,target,request_key,request_digest,response,expires_at) values(?,'P5_PUBLISH',?,?,?,?::jsonb,current_timestamp+interval '24 hours')",actor,project.getId(),request.idempotencyKey(),StemFingerprint.sha(fingerprint.canonical(db.json().valueToTree(request))),db.encode(response));
++    }
++    public String approvalForJob(String job){var row=jobSnapshot(job);return row==null?null:text(row,"approval_id");}
++    public void scriptApproved(ClipProject project,String actor,String decision,String assessment){
++        insert("APPROVAL",capture(project),actor,null,null,null,null,null,decision,assessment,null,null,"UNKNOWN",object().put("phase","SCRIPT"));
++    }
++    public void measured(ClipProject project,String actor,Capture before){
++        if(em!=null)em.flush();Capture after=capture(project);
++        String oldId=insert("SUBMISSION",before,actor,null,null,null,null,null,null,null,null,null,"UNKNOWN",null);
++        String newId=insert("SUBMISSION",after,actor,oldId,null,null,null,null,null,null,null,null,"UNKNOWN",null);
++        boolean compatible=fingerprint.compatible(before.scenes(),after.scenes(),before.hashes(),after.hashes());
++        for(var approval:db.jdbc().queryForList("select * from stem_p5_snapshots where stage='APPROVAL' and version_id=?",before.version())){
++            boolean scriptSource="SCRIPT".equals(tree(approval.get("payload")).path("lineage").path("phase").asText())&&text(approval,"semantic_hash").equals(before.hashes().semanticHash())&&text(approval,"contract_hash").equals(before.hashes().presentationContractHash())&&StemFingerprint.VERSION.equals(tree(approval.get("payload")).path("hashVersion").asText());
++            if(!matches(approval,before)&&!scriptSource)continue;
++            JsonNode proof=object().put("technicalOnly",true).put("pixelAudioVerified",false).put("semanticHash",after.hashes().semanticHash()).put("presentationContractHash",after.hashes().presentationContractHash());
++            db.jdbc().update("insert into stem_p5_compatibility(id,approval_id,before_id,after_id,proof_version,result,proof) values(?,?,?,?,?,?,?::jsonb) on conflict(approval_id,before_id,after_id,proof_version) do nothing",db.id(),text(approval,"id"),oldId,newId,"stem-timing-proof.v1",compatible?"COMPATIBLE":"UNKNOWN",db.encode(proof));
++        }
++    }
++    public PublishCapture beforePublish(ClipProject project,Clip clip,PublishRequest request){
++        boolean known=requireArtifactCurrent(project,clip,true);
++        var expected=request.artifactExpectation();
++        var artifact=one("select * from stem_p5_snapshots where stage='CLIP' and clip_id=?::uuid",clip.getId());
++        if(expected!=null&&(!clip.getId().equals(expected.clipId())||!clip.getRenderJob().getId().equals(expected.jobId())||artifact==null||!text(artifact,"id").equals(expected.snapshotId())||!Objects.equals(text(artifact,"input_hash"),expected.inputHash())))throw conflict("ARTIFACT_BINDING_MISMATCH");
++        if(!known&&!Boolean.TRUE.equals(request.legacyUnverifiedAcknowledged()))throw conflict("LEGACY_ACK_REQUIRED");
++        return new PublishCapture(capture(project),artifact);
++    }
++    public void published(Publication publication,String actor,PublishCapture before){
++        Capture c=capture(publication.getProject());if(!same(before.capture(),c))throw conflict("REVIEW_TARGET_CHANGED");
++        var a=before.artifact();ObjectNode lineage=object().put("videoUrl",publication.getClip().getVideoUrl()).put("publicationMetadata",publication.getMetadata());
++        insert("PUBLICATION",c,actor,a==null?null:text(a,"id"),a==null?null:text(a,"approval_id"),publication.getClip().getRenderJob().getId(),publication.getClip().getId(),publication.getId(),null,null,null,a==null?null:text(a,"input_hash"),a==null?"UNKNOWN":text(a,"assurance"),lineage);
++    }
++    public JsonNode publicationMetadata(String publication){
++        var row=one("select id,payload from stem_p5_snapshots where stage='PUBLICATION' and publication_id=?::uuid",publication);
++        if(row==null)return NullNode.instance;
++        JsonNode payload=tree(row.get("payload"));ObjectNode metadata=payload.path("publicMetadata").deepCopy();
++        return metadata.put("verificationStatus",payload.path("verificationStatus").asText("UNVERIFIED")).put("snapshotId",text(row,"id"));
++    }
++    public JsonNode frozenScenes(Clip clip){Map<String,Object> row=jobSnapshot(clip.getRenderJob().getId());return row==null?NullNode.instance:tree(row.get("frozen_input")).path("scenes");}
++    public Map<String,String> frozenReference(Clip clip){var row=jobSnapshot(clip.getRenderJob().getId());return row==null?Map.of("jobId",clip.getRenderJob().getId(),"assurance","UNKNOWN"):Map.of("jobId",clip.getRenderJob().getId(),"snapshotId",text(row,"id"),"inputHash",text(row,"input_hash"));}
++    public Map<String,Object> status(ClipProject project,String actor){
++        access.requireProject(project.getId(),actor,false);
++        // The controller's read transaction has ended; load this graph in our transaction.
++        if(em!=null)project=em.find(ClipProject.class,project.getId());
++        Capture c=capture(project);
++        var rows=db.jdbc().queryForList("select s.* from stem_p5_snapshots s join clips c on c.id=s.clip_id where s.stage='CLIP' and s.project_id=? and c.video_url=?",project.getId(),project.getVideoUrl());
++        Map<String,Object> artifact=rows.size()==1?rows.get(0):null;boolean matches=artifact!=null&&matches(artifact,c);
++        boolean known=matches&&"BINDING_ONLY".equals(text(artifact,"assurance"));
++        boolean currentProof=db.jdbc().queryForObject("select count(*) from stem_p5_compatibility p join stem_p5_snapshots s on s.id=p.after_id where s.project_id=? and s.version_id=? and s.composition_revision is not distinct from ? and s.semantic_hash=? and s.contract_hash=? and p.result='COMPATIBLE'",Integer.class,c.project(),c.version(),c.revision(),c.hashes().semanticHash(),c.hashes().presentationContractHash())>0;
++        ObjectNode target=object().put("projectId",c.project()).put("versionId",c.version()).put("compositionRevision",c.revision());
++        if(artifact!=null){target.put("clipId",text(artifact,"clip_id")).put("jobId",text(artifact,"job_id")).put("snapshotId",text(artifact,"id")).put("inputHash",text(artifact,"input_hash"));}
++        var mode=db.settings(c.workspace());
++        return Map.of("schemaVersion","stem-artifact.v1","target",target,"freshness",matches||currentProof?"CURRENT":"NEEDS_REVIEW","classification",c.hashes().classification(),"integrity",artifact==null?"UNKNOWN":matches?"MATCH":"MISMATCH","publishEligibility",Map.of("allowed",matches&&project.getVideoStatus()==com.stemotion.core.enums.StemEnums.VideoStatus.APPROVED,"route",known?"CURRENT":artifact==null||matches?"LEGACY_UNVERIFIED":"BLOCKED","requiresLegacyAcknowledgement",!known),"snapshotOrigin",artifact==null?Map.of():Map.of("snapshotId",text(artifact,"id"),"capturedMode",tree(artifact.get("payload")).path("capturedMode").asText(),"effectiveMode",mode.mode()),"verificationStatus","UNVERIFIED","reasons",matches?List.of():List.of(artifact==null?"LEGACY_ACK_REQUIRED":"ARTIFACT_BINDING_MISMATCH"));
++    }
++}
+diff --git a/src/main/java/com/stemotion/domain/stem/StemFingerprint.java b/src/main/java/com/stemotion/domain/stem/StemFingerprint.java
+--- /dev/null
++++ b/src/main/java/com/stemotion/domain/stem/StemFingerprint.java
+@@ -0,0 +1,236 @@
++package com.stemotion.domain.stem;
++
++import com.fasterxml.jackson.core.JsonParser;
++import com.fasterxml.jackson.databind.*;
++import com.fasterxml.jackson.databind.node.*;
++import java.math.BigDecimal;
++import java.nio.charset.StandardCharsets;
++import java.security.MessageDigest;
++import java.text.Normalizer;
++import java.util.*;
++
++/** Versioned, server-owned projections. Technical compatibility is not scientific verification. */
++public final class StemFingerprint {
++    public static final String VERSION = "stem-hash.v1";
++    public static final String CANONICAL = "stem-canonical.v1";
++    public static final String PROJECTOR = "stem-projector.v1";
++    public static final String CLASSIFIER = "stem-classifier.v1";
++    private final ObjectMapper json;
++    public StemFingerprint(ObjectMapper mapper) {
++        json = mapper.copy().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
++            .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
++            .enable(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS);
++    }
++    public JsonNode parse(String value) {
++        try { return json.readTree(value); }
++        catch (Exception e) { throw StemValidator.invalid("projection", "Invalid JSON projection"); }
++    }
++    public String canonical(JsonNode value) {
++        StringBuilder output = new StringBuilder();
++        encode(value, output, 0, new int[]{0});
++        if (output.toString().getBytes(StandardCharsets.UTF_8).length > 16 * 1024 * 1024)
++            throw StemValidator.invalid("projection", "Projection exceeds 16MiB");
++        return output.toString();
++    }
++    private void encode(JsonNode n, StringBuilder out, int depth, int[] nodes) {
++        if (depth > 40 || ++nodes[0] > 20000) throw StemValidator.invalid("projection", "Projection complexity limit");
++        if (n == null || n.isNull()) { out.append("null"); return; }
++        if (n.isObject()) {
++            SortedMap<String, JsonNode> fields = new TreeMap<>(StemFingerprint::codepointOrder);
++            n.fields().forEachRemaining(e -> {
++                String key = nfc(e.getKey());
++                if (fields.putIfAbsent(key,e.getValue()) != null)
++                    throw StemValidator.invalid("projection", "Duplicate key after NFC");
++            });
++            out.append('{'); boolean first=true;
++            for (var e:fields.entrySet()) {
++                if(!first)out.append(','); first=false;
++                quote(e.getKey(),out);out.append(':');encode(e.getValue(),out,depth+1,nodes);
++            }
++            out.append('}');
++        } else if(n.isArray()) {
++            out.append('[');boolean first=true;
++            for(JsonNode child:n){if(!first)out.append(',');first=false;encode(child,out,depth+1,nodes);}out.append(']');
++        } else if(n.isTextual()) quote(nfc(n.textValue()),out);
++        else if(n.isBoolean())out.append(n.booleanValue());
++        else if(n.isNumber()) {
++            BigDecimal number;
++            try { number=new BigDecimal(n.asText()); }
++            catch(NumberFormatException ex){throw StemValidator.invalid("projection", "Number must be finite");}
++            if(number.precision()>512 || Math.abs((long)number.scale())>1536 ||
++                Math.abs((long)number.precision()-number.scale()-1)>1024)
++                throw StemValidator.invalid("projection","Number precision/exponent limit");
++            String text=number.signum()==0?"0":number.stripTrailingZeros().toPlainString();
++            if(text.length()>2048)throw StemValidator.invalid("projection","Number length limit");out.append(text);
++        } else throw StemValidator.invalid("projection","Unsupported JSON scalar");
++        if(out.length()>16*1024*1024)throw StemValidator.invalid("projection","Projection size limit");
++    }
++    private static int codepointOrder(String a,String b) {
++        var x=a.codePoints().iterator();var y=b.codePoints().iterator();
++        while(x.hasNext()&&y.hasNext()){int c=Integer.compare(x.nextInt(),y.nextInt());if(c!=0)return c;}
++        return x.hasNext()?1:y.hasNext()?-1:0;
++    }
++    private static String nfc(String s) {
++        for(int i=0;i<s.length();i++)if(Character.isSurrogate(s.charAt(i))) {
++            if(!Character.isHighSurrogate(s.charAt(i))||i+1>=s.length()||!Character.isLowSurrogate(s.charAt(++i)))
++                throw StemValidator.invalid("projection","Unpaired surrogate");
++        }
++        if(s.codePointCount(0,s.length())>65536)throw StemValidator.invalid("projection","String length limit");
++        return Normalizer.normalize(s,Normalizer.Form.NFC);
++    }
++    private static void quote(String s,StringBuilder out) {
++        out.append('"');
++        s.codePoints().forEach(c->{if(c=='"')out.append("\\\"");else if(c=='\\')out.append("\\\\");
++            else if(c<32)out.append(String.format(Locale.ROOT,"\\u%04x",c));else out.appendCodePoint(c);});
++        out.append('"');
++    }
++    public String hash(String projection, JsonNode value) {
++        if(!Set.of("semantic","presentationContract","renderInput").contains(projection))throw new IllegalArgumentException("projection");
++        String prefix=String.join("\0","STEMotion/P5",projection,VERSION,CANONICAL,PROJECTOR,CLASSIFIER,"");
++        return sha(prefix+canonical(value));
++    }
++    public static String sha(String text) {
++        try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8)));}
++        catch(Exception e){throw new IllegalStateException(e);}
++    }
++    public record Result(String semanticHash,String presentationContractHash,String classification,JsonNode semantic,JsonNode presentation) {}
++    private static final Set<String> COMMON=Set.of("id","type","title","narration","durationInFrames","captionWords","narrationAudioUrl",
++        "customFontSize","fontSizeScale","cardScale","cardTheme","cardWidth","componentLayouts","extraBlocks","visualPlan");
++    private static final Set<String> CONDITIONAL=Set.of("customFontSize","fontSizeScale","cardScale","cardTheme","cardWidth","componentLayouts","visualPlan");
++    public static final Set<String> BLOCKS=Set.of("title","text","list","formula","icon","icons","number","chart","choice","arrow","highlight","guide");
++    private static final Map<String,Set<String>> SCENES=Map.ofEntries(
++        Map.entry("TITLE_HERO",Set.of("subtitle","subject","gradeLevel","badgeText")),
++        Map.entry("MATH_FORMULA",Set.of("latex","steps")),
++        Map.entry("DIAGRAM_EXPLAINER",Set.of("diagramTitle","labels","svgType")),
++        Map.entry("DATA_CHART",Set.of("chartType","xAxisLabel","yAxisLabel","dataPoints")),
++        Map.entry("ALGORITHM_WALKTHROUGH",Set.of("language","codeSnippet","layoutSplit","steps")),
++        Map.entry("STEM_QUIZ",Set.of("question","options","correctIndex","hint","explanation")),
++        Map.entry("OUTRO",Set.of("summaryPoints","nextLessonSuggestion","instructorName")),
++        Map.entry("CHEMICAL_REACTION",Set.of("equation","reactants","products","condition","observation","flaskColor")),
++        Map.entry("COMPARISON_SPLIT",Set.of("topicA","topicB","conclusion")),
++        Map.entry("PROCESS_TIMELINE",Set.of("processTitle","stages")),
++        Map.entry("GEOMETRY_SPACE",Set.of("shapeType","theoremName","formulaLatex","dimensions","explanation")),
++        Map.entry("ILLUSTRATED_EXPLAINER",Set.of("headline","caption","ambience","layout","detail","icons")),
++        Map.entry("COMPOSED",Set.of("frame","ambience","blocks")));
++    public static Set<String> sceneTypes(){return SCENES.keySet();}
++    private static final Set<String> SET_FIELDS=Set.of("subjectKeys","outcomeIds","distributionChannels","objectiveKeys","taskKeys");
++    public JsonNode normalizedSets(JsonNode node) {
++        if(node.isObject()) {
++            ObjectNode result=json.createObjectNode();
++            node.fields().forEachRemaining(e->{
++                if(SET_FIELDS.contains(e.getKey())&&e.getValue().isArray()) {
++                    TreeMap<String,JsonNode> sorted=new TreeMap<>(StemFingerprint::codepointOrder);
++                    for(JsonNode n:e.getValue()){
++                        if(!n.isTextual()||sorted.putIfAbsent(nfc(n.asText()),TextNode.valueOf(nfc(n.asText())))!=null)
++                            throw StemValidator.invalid(e.getKey(),"Invalid/duplicate set reference");
++                    }
++                    result.set(e.getKey(),json.valueToTree(sorted.values()));
++                }else result.set(e.getKey(),normalizedSets(e.getValue()));
++            });return result;
++        }
++        if(node.isArray()){ArrayNode a=json.createArrayNode();node.forEach(n->a.add(normalizedSets(n)));return a;}
++        return node.deepCopy();
++    }
++    public Result project(JsonNode scenes,JsonNode brief,JsonNode editions) {
++        if(!scenes.isArray()||scenes.size()>200)throw StemValidator.invalid("scenes","Expected <=200 scenes");
++        ObjectNode semantic=json.createObjectNode();semantic.set("brief",normalizedSets(brief));semantic.set("editions",editions.deepCopy());
++        ArrayNode ss=semantic.putArray("scenes"), pp=json.createArrayNode();boolean[] unknown={false};
++        Map<String,Integer> sceneIds=new HashMap<>();
++        for(int i=0;i<scenes.size();i++)if(sceneIds.put(scenes.get(i).path("id").asText(),i)!=null)unknown[0]=true;
++        // Generated evidence IDs do not define meaning; relationships do.
++        normalizeEvidence(semantic,sceneIds,unknown);
++        for(JsonNode scene:scenes) {
++            if(!scene.isObject())throw StemValidator.invalid("scenes","Scene must be object");
++            ObjectNode s=json.createObjectNode(),p=json.createObjectNode();String type=scene.path("type").asText();
++            Set<String> keys=SCENES.get(type);if(keys==null){unknown[0]=true;keys=Set.of();}
++            // Only these static template contracts have the implemented numeric timing proof.
++            // All13 types are projected, but dynamic templates need renderer/visibility evidence.
++            if(!Set.of("TITLE_HERO","OUTRO").contains(type))unknown[0]=true;
++            Set<String> known=keys;
++            nestedFields(scene,"labels",Set.of("name","description","xPercent","yPercent"),unknown);
++            nestedFields(scene,"dataPoints",Set.of("label","value","color"),unknown);
++            nestedFields(scene,"icons",Set.of("name","label"),unknown);
++            nestedFields(scene,"stages",Set.of("stageNumber","title","description","badge"),unknown);
++            nestedFields(scene,"steps",type.equals("MATH_FORMULA")?Set.of("label","latexSnippet","explanation"):Set.of("lineHighlight","variableState","note"),unknown);
++            nestedFields(scene,"topicA",Set.of("title","badge","points","color"),unknown);
++            nestedFields(scene,"topicB",Set.of("title","badge","points","color"),unknown);
++            nestedFields(scene,"dimensions",Set.of("a","b","c"),unknown);
++            scene.fields().forEachRemaining(e->{String key=e.getKey();JsonNode val=e.getValue();
++                if(key.equals("id"))return;
++                if(key.equals("captionWords")){
++                    ArrayNode words=s.putArray(key);if(!val.isArray())unknown[0]=true;else val.forEach(w->{
++                        words.add(w.path("text"));
++                        if(!w.isObject()||!w.path("text").isTextual())unknown[0]=true;
++                        w.fieldNames().forEachRemaining(k->{if(!Set.of("text","start","end").contains(k)){unknown[0]=true;s.set("unclassifiedCaption",val);}});
++                    });
++                }else if(key.equals("durationInFrames")){/* numeric timing belongs to bounded compatibility proof */}
++                else if(key.equals("narrationAudioUrl")){p.set(key,val);unknown[0]=true;}
++                else if(CONDITIONAL.contains(key)){p.set(key,val);if(!val.isNull()&&(!val.isContainerNode()||!val.isEmpty()))unknown[0]=true;}
++                else if(key.equals("blocks")||key.equals("extraBlocks")){
++                    s.set(key,blocks(val,unknown));p.set(key,val);
++                }else {s.set(key,val);if(!COMMON.contains(key)&&!known.contains(key))unknown[0]=true;}
++            });
++            if(!s.has("captionWords")){
++                ArrayNode words=s.putArray("captionWords");String narration=scene.path("narration").asText();
++                if(!narration.isBlank())for(String word:narration.strip().split("\\s+"))words.add(word);
++            }
++            ss.add(s);pp.add(p);
++        }
++        String sh=hash("semantic",semantic);ObjectNode contract=json.createObjectNode().put("semanticHash",sh);contract.set("presentation",pp);
++        return new Result(sh,hash("presentationContract",contract),unknown[0]?"UNKNOWN":"CLASSIFIED",semantic,contract);
++    }
++    private void nestedFields(JsonNode root,String key,Set<String> known,boolean[] unknown){
++        if(!root.hasNonNull(key))return;JsonNode value=root.get(key);
++        if(value.isArray()){for(JsonNode child:value)checkFields(child,known,unknown);}
++        else checkFields(value,known,unknown);
++    }
++    private void checkFields(JsonNode node,Set<String> known,boolean[] unknown){
++        if(!node.isObject()){unknown[0]=true;return;}
++        node.fieldNames().forEachRemaining(k->{if(!known.contains(k))unknown[0]=true;});
++    }
++    private void normalizeEvidence(ObjectNode semantic,Map<String,Integer> sceneIds,boolean[] unknown) {
++        JsonNode ev=semantic.path("brief").path("evidence");
++        if(!ev.isArray())return;
++        for(JsonNode entry:ev)if(entry.isObject()){
++            ObjectNode e=(ObjectNode)entry;e.remove("id");
++            if(e.hasNonNull("sceneId")){Integer pos=sceneIds.get(e.path("sceneId").asText());if(pos==null)unknown[0]=true;else e.put("sceneId",pos);}
++        }
++    }
++    private JsonNode blocks(JsonNode blocks,boolean[] unknown) {
++        if(!blocks.isArray()||blocks.size()>12)throw StemValidator.invalid("blocks","Expected <=12 blocks");
++        if(!blocks.isEmpty())unknown[0]=true; // No arbitrary cue/layout visibility proof is claimed.
++        ArrayNode result=json.createArrayNode();Map<String,Integer> ids=new HashMap<>();
++        for(int i=0;i<blocks.size();i++)if(ids.put(blocks.get(i).path("id").asText(),i)!=null)unknown[0]=true;
++        Set<String> fields=Set.of("id","kind","slot","text","items","latex","icon","icons","value","unit","points","question","options","answer","from","to","pose","at","until","revealAt","strikeAt","motion","emphasis","tone","x","y","w","h","scale","fontSize","hidden");
++        for(JsonNode raw:blocks){
++            if(!raw.isObject())throw StemValidator.invalid("blocks","Block must be object");
++            ObjectNode b=raw.deepCopy();b.remove("id");
++            nestedFields(b,"icon",Set.of("name","label"),unknown);nestedFields(b,"icons",Set.of("name","label"),unknown);nestedFields(b,"points",Set.of("label","value"),unknown);
++            if(!BLOCKS.contains(b.path("kind").asText()))unknown[0]=true;
++            b.fieldNames().forEachRemaining(k->{if(!fields.contains(k))unknown[0]=true;});
++            for(String k:List.of("from","to"))if(b.hasNonNull(k)){
++                Integer target=ids.get(b.path(k).asText());if(target==null)unknown[0]=true;else b.put(k,target);
++            }
++            // All conditional block properties remain hashed. No claim of arbitrary pixel proof.
++            if(b.has("hidden")||b.has("x")||b.has("y")||b.has("motion"))unknown[0]=true;
++            result.add(b);
++        }return result;
++    }
++    /** Safe numeric alignment subset; no arbitrary layout/asset/audio or shorter scene inheritance. */
++    public boolean compatible(JsonNode before,JsonNode after,Result oldHash,Result newHash) {
++        if(!"CLASSIFIED".equals(oldHash.classification())||!"CLASSIFIED".equals(newHash.classification())||
++            !oldHash.semanticHash().equals(newHash.semanticHash())||!oldHash.presentationContractHash().equals(newHash.presentationContractHash())||before.size()!=after.size())return false;
++        for(int i=0;i<before.size();i++){
++            JsonNode a=before.get(i),b=after.get(i);
++            if(!a.path("id").equals(b.path("id"))||b.path("durationInFrames").asInt()<a.path("durationInFrames").asInt()||!validTimes(b))return false;
++        }return true;
++    }
++    private boolean validTimes(JsonNode scene){
++        double last=0, seconds=scene.path("durationInFrames").asDouble()/30;
++        if(!Double.isFinite(seconds)||seconds<=0)return false;
++        for(JsonNode w:scene.path("captionWords")){
++            double start=w.path("start").asDouble(Double.NaN),end=w.path("end").asDouble(Double.NaN);
++            if(!Double.isFinite(start)||!Double.isFinite(end)||start<last||end<start||end>seconds)return false;last=end;
++        }return true;
++    }
++}
+diff --git a/src/main/java/com/stemotion/domain/stem/StemService.java b/src/main/java/com/stemotion/domain/stem/StemService.java
+--- a/src/main/java/com/stemotion/domain/stem/StemService.java
++++ b/src/main/java/com/stemotion/domain/stem/StemService.java
+@@ -20,6 +20,7 @@
+ public class StemService {
+  private final StemRepository db; private final StemValidator validator;private final WorkspaceAccess access;private final ScriptVersionRepository versions;private final ClipProjectRepository projects;
+  @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager em;
++ @org.springframework.beans.factory.annotation.Autowired(required=false) private StemArtifactService artifacts;
+  public StemService(StemRepository db,StemValidator validator,WorkspaceAccess access,ScriptVersionRepository versions,ClipProjectRepository projects){this.db=db;this.validator=validator;this.access=access;this.versions=versions;this.projects=projects;}
+  private void revision(Integer expected,int actual,String field){validator.rev(expected,field);if(expected!=actual)throw ApiException.staleRevision(field,actual,expected,"STEM target changed; reload");}
+  private ScriptVersion target(String project,String version,String actor,boolean write){
+@@ -137,6 +138,7 @@
+   int linked=db.jdbc().queryForObject("select count(*) from status_histories where id=? and changed_by=? and event_type='REVIEW_DECISION' and decision='APPROVED'",Integer.class,decision,ticket.actor());if(linked!=1)throw ApiException.conflict("Assessment needs matching existing decision");
+   var r=requiredBrief(ticket.version());db.jdbc().update("insert into stem_assessments(id,version_id,brief_id,decision_id,actor_id,phase,brief_revision,script_revision,mode_revision,composition_revision,payload) values(?,?,?,?,?,?,?,?,?,?,?::jsonb)",db.id(),ticket.version(),db.text(r,"id"),decision,ticket.actor(),ticket.phase(),ticket.request().expectedBriefRevision(),ticket.request().expectedScriptRevision(),ticket.request().expectedModeRevision(),ticket.request().expectedCompositionRevision(),db.encode(ticket.request()));
+   remember(ticket.actor(),"APPROVE_"+ticket.phase(),ticket.version(),ticket.request().idempotencyKey(),Map.of("assessment",ticket.request(),"note",Objects.toString(ticket.note(),"")),Map.of("decisionId",decision));
++  if(artifacts!=null&&ticket.phase().equals("SCRIPT")){String assessment=db.jdbc().queryForObject("select id from stem_assessments where decision_id=?",String.class,decision);artifacts.scriptApproved(project,ticket.actor(),decision,assessment);}
+  }
+  public record ChangeTicket(String actor,String source,ChangeTarget request,String note,String copiedVersion) {}
+  public ChangeTicket beginChange(ClipProject project,String actor,ChangeTarget request,String note){
+diff --git a/src/test/java/com/stemotion/domain/stem/StemFingerprintP5Test.java b/src/test/java/com/stemotion/domain/stem/StemFingerprintP5Test.java
+--- /dev/null
++++ b/src/test/java/com/stemotion/domain/stem/StemFingerprintP5Test.java
+@@ -0,0 +1,97 @@
++package com.stemotion.domain.stem;
++
++import com.fasterxml.jackson.databind.*;
++import com.fasterxml.jackson.databind.node.*;
++import org.junit.jupiter.api.*;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.ValueSource;
++import java.nio.file.*;
++import java.util.*;
++import java.util.stream.Stream;
++import static org.assertj.core.api.Assertions.*;
++
++class StemFingerprintP5Test {
++    private final ObjectMapper json=new ObjectMapper();
++    private final StemFingerprint fp=new StemFingerprint(json);
++    @TestFactory Stream<DynamicTest> approvedCanonicalGoldenVectors() throws Exception {
++        JsonNode vectors=json.readTree(Files.readString(Path.of("docs/stem/phases/phase-05/CANONICAL_VECTORS.json"))).path("vectors");
++        List<DynamicTest> tests=new ArrayList<>();
++        for(JsonNode v:vectors)tests.add(DynamicTest.dynamicTest(v.path("id").asText(),()->{
++            if(v.has("expectedStatus"))assertThatThrownBy(()->fp.canonical(fp.normalizedSets(fp.parse(v.path("inputLiteral").asText())))).isInstanceOf(com.stemotion.core.exception.ApiException.class);
++            else {
++                JsonNode input=fp.normalizedSets(fp.parse(v.path("inputLiteral").asText()));
++                assertThat(fp.canonical(input)).isEqualTo(v.path("canonicalUtf8Literal").asText());
++                if(StemFingerprint.VERSION.equals(v.path("hashVersion").asText()))assertThat(fp.hash(v.path("projection").asText(),input)).isEqualTo(v.path("expectedSha256").asText());
++                else assertThat(fp.hash(v.path("projection").asText(),input)).isNotEqualTo(v.path("expectedSha256").asText());
++            }
++        }));return tests.stream();
++    }
++    private ArrayNode scene(String type){return json.createArrayNode().add(json.createObjectNode().put("id","TEST_ONLY_scene").put("type",type).put("title","TEST_ONLY").put("narration","không đổi đơn vị").put("durationInFrames",180));}
++    private StemFingerprint.Result project(JsonNode s){return fp.project(s,json.createObjectNode(),json.createArrayNode());}
++    @ParameterizedTest @ValueSource(strings={
++        "TITLE_HERO:subtitle","TITLE_HERO:subject","TITLE_HERO:gradeLevel","TITLE_HERO:badgeText",
++        "MATH_FORMULA:latex","MATH_FORMULA:steps","DIAGRAM_EXPLAINER:diagramTitle","DIAGRAM_EXPLAINER:labels","DIAGRAM_EXPLAINER:svgType",
++        "DATA_CHART:chartType","DATA_CHART:xAxisLabel","DATA_CHART:yAxisLabel","DATA_CHART:dataPoints",
++        "ALGORITHM_WALKTHROUGH:language","ALGORITHM_WALKTHROUGH:codeSnippet","ALGORITHM_WALKTHROUGH:steps",
++        "STEM_QUIZ:question","STEM_QUIZ:options","STEM_QUIZ:correctIndex","STEM_QUIZ:hint","STEM_QUIZ:explanation",
++        "OUTRO:summaryPoints","OUTRO:nextLessonSuggestion","OUTRO:instructorName",
++        "CHEMICAL_REACTION:equation","CHEMICAL_REACTION:reactants","CHEMICAL_REACTION:products","CHEMICAL_REACTION:condition","CHEMICAL_REACTION:observation",
++        "COMPARISON_SPLIT:topicA","COMPARISON_SPLIT:topicB","COMPARISON_SPLIT:conclusion",
++        "PROCESS_TIMELINE:processTitle","PROCESS_TIMELINE:stages",
++        "GEOMETRY_SPACE:shapeType","GEOMETRY_SPACE:theoremName","GEOMETRY_SPACE:formulaLatex","GEOMETRY_SPACE:dimensions","GEOMETRY_SPACE:explanation",
++        "ILLUSTRATED_EXPLAINER:headline","ILLUSTRATED_EXPLAINER:caption","ILLUSTRATED_EXPLAINER:icons","ILLUSTRATED_EXPLAINER:layout","COMPOSED:frame"})
++    void semanticFieldMutationCannotKeepApproval(String entry){
++        String[] pair=entry.split(":");ArrayNode a=scene(pair[0]),b=a.deepCopy();
++        ((ObjectNode)a.get(0)).put(pair[1],"TEST_ONLY_original");((ObjectNode)b.get(0)).put(pair[1],"TEST_ONLY_changed");
++        assertThat(project(a).semanticHash()).isNotEqualTo(project(b).semanticHash());
++    }
++    @ParameterizedTest @ValueSource(strings={"title","text","list","formula","icon","icons","number","chart","choice","arrow","highlight","guide"})
++    void everyBlockAndExtraBlockRetainsSemanticContent(String kind){
++        for(String field:List.of("blocks","extraBlocks")){
++            ArrayNode a=scene(field.equals("blocks")?"COMPOSED":"TITLE_HERO"),b=a.deepCopy();
++            ((ObjectNode)a.get(0)).putArray(field).add(json.createObjectNode().put("id","b1").put("kind",kind).put("text","không dẫn điện"));
++            ((ObjectNode)b.get(0)).putArray(field).add(json.createObjectNode().put("id","b1").put("kind",kind).put("text","dẫn điện"));
++            assertThat(project(a).semanticHash()).isNotEqualTo(project(b).semanticHash());
++        }
++    }
++    @Test void safeLongerAlignmentKeepsSemanticAndContractButChangesRenderInput(){
++        ArrayNode a=scene("TITLE_HERO"),b=a.deepCopy();((ObjectNode)b.get(0)).put("durationInFrames",210);
++        var x=project(a);var y=project(b);assertThat(x.semanticHash()).isEqualTo(y.semanticHash());assertThat(x.presentationContractHash()).isEqualTo(y.presentationContractHash());
++        assertThat(fp.compatible(a,b,x,y)).isTrue();assertThat(fp.hash("renderInput",a)).isNotEqualTo(fp.hash("renderInput",b));
++        assertThat(fp.compatible(b,a,y,x)).isFalse();
++    }
++    @Test void captionTokensAndCutoffCannotBeHiddenByTimingProjection(){
++        ArrayNode a=scene("TITLE_HERO"),b=a.deepCopy();
++        ((ObjectNode)a.get(0)).putArray("captionWords").add(json.createObjectNode().put("text","không").put("start",0).put("end",1));
++        ((ObjectNode)b.get(0)).putArray("captionWords").add(json.createObjectNode().put("text","có").put("start",0).put("end",1));
++        assertThat(project(a).semanticHash()).isNotEqualTo(project(b).semanticHash());
++        b=a.deepCopy();((ObjectNode)b.get(0)).put("durationInFrames",15);assertThat(fp.compatible(a,b,project(a),project(b))).isFalse();
++    }
++    @Test void unknownRawSubtreeIsRetainedAndCannotInherit(){
++        ArrayNode a=scene("TITLE_HERO"),b=a.deepCopy();((ObjectNode)a.get(0)).putObject("futureRule").put("voltage",5);((ObjectNode)b.get(0)).putObject("futureRule").put("voltage",50);
++        assertThat(project(a).classification()).isEqualTo("UNKNOWN");assertThat(project(a).semanticHash()).isNotEqualTo(project(b).semanticHash());assertThat(fp.compatible(a,a,project(a),project(a))).isFalse();
++    }
++    @Test void themeChangesContractAndAudioWithoutContentProofIsUnknown(){
++        ArrayNode a=scene("TITLE_HERO"),b=a.deepCopy();((ObjectNode)b.get(0)).put("cardTheme","contrast");
++        assertThat(project(a).semanticHash()).isEqualTo(project(b).semanticHash());assertThat(project(a).presentationContractHash()).isNotEqualTo(project(b).presentationContractHash());
++        ((ObjectNode)a.get(0)).put("narrationAudioUrl","https://example.invalid/audio?signature=one");((ObjectNode)b.get(0)).put("narrationAudioUrl","https://example.invalid/audio?signature=two");assertThat(project(a).classification()).isEqualTo("UNKNOWN");assertThat(fp.compatible(a,b,project(a),project(b))).isFalse();
++    }
++    @Test void sceneReorderAndCueRelationshipChangesAreSemantic(){
++        ArrayNode a=scene("TITLE_HERO");a.add(json.createObjectNode().put("id","second").put("type","OUTRO").put("title","conclusion").put("durationInFrames",180));
++        ArrayNode b=json.createArrayNode().add(a.get(1)).add(a.get(0));assertThat(project(a).semanticHash()).isNotEqualTo(project(b).semanticHash());
++        ArrayNode c=scene("COMPOSED");((ObjectNode)c.get(0)).putArray("blocks").add(json.createObjectNode().put("id","b").put("kind","choice").put("revealAt","sau câu hỏi"));
++        ArrayNode d=c.deepCopy();((ObjectNode)d.get(0).path("blocks").get(0)).put("revealAt","trước câu hỏi");assertThat(project(c).semanticHash()).isNotEqualTo(project(d).semanticHash());
++    }
++    @Test void numericCaptionAlignmentAndNewSameTokenAlignmentKeepTheSupportedContract(){
++        ArrayNode a=scene("TITLE_HERO"),b=a.deepCopy();ArrayNode words=((ObjectNode)b.get(0)).putArray("captionWords");
++        String[] tokens={"không","đổi","đơn","vị"};for(int i=0;i<tokens.length;i++)words.add(json.createObjectNode().put("text",tokens[i]).put("start",i*.5).put("end",i*.5+.4));
++        assertThat(fp.compatible(a,b,project(a),project(b))).isTrue();
++        a=b.deepCopy();((ObjectNode)b.get(0)).put("durationInFrames",210);
++        for(JsonNode word:b.get(0).path("captionWords")){((ObjectNode)word).put("start",word.path("start").asDouble()*1.1).put("end",word.path("end").asDouble()*1.1);}
++        assertThat(project(a).semanticHash()).isEqualTo(project(b).semanticHash());assertThat(project(a).presentationContractHash()).isEqualTo(project(b).presentationContractHash());assertThat(fp.compatible(a,b,project(a),project(b))).isTrue();
++    }
++    @Test void dynamicCueTemplatesNeverInheritOnOnlyLongerDuration(){
++        ArrayNode a=scene("COMPOSED"),b=a.deepCopy();((ObjectNode)b.get(0)).put("durationInFrames",300);
++        assertThat(project(a).classification()).isEqualTo("UNKNOWN");assertThat(fp.compatible(a,b,project(a),project(b))).isFalse();
++    }
++}
+diff --git a/src/test/java/com/stemotion/e2e/StemArtifactP5Test.java b/src/test/java/com/stemotion/e2e/StemArtifactP5Test.java
+--- /dev/null
++++ b/src/test/java/com/stemotion/e2e/StemArtifactP5Test.java
+@@ -0,0 +1,231 @@
++package com.stemotion.e2e;
++
++import com.fasterxml.jackson.databind.*;
++import com.fasterxml.jackson.databind.node.*;
++import com.stemotion.StemotionApplication;
++import com.stemotion.core.enums.StemEnums.*;
++import com.stemotion.domain.auth.entity.*;
++import com.stemotion.domain.auth.repository.UserRepository;
++import com.stemotion.domain.project.entity.ClipProject;
++import com.stemotion.domain.project.repository.ClipProjectRepository;
++import com.stemotion.domain.script.entity.*;
++import com.stemotion.domain.script.repository.*;
++import com.stemotion.domain.workspace.entity.*;
++import com.stemotion.domain.workspace.repository.*;
++import org.junit.jupiter.api.*;
++import org.springframework.boot.SpringApplication;
++import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
++import org.springframework.context.ConfigurableApplicationContext;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.transaction.PlatformTransactionManager;
++import org.springframework.transaction.support.TransactionTemplate;
++import org.springframework.security.crypto.password.PasswordEncoder;
++import java.net.*;
++import java.net.http.*;
++import java.util.*;
++import static org.assertj.core.api.Assertions.*;
++
++/** Full Spring/JWT/HTTP/owned PG; only external render/provider integrations are fake. */
++class StemArtifactP5Test {
++    static final ObjectMapper JSON=new ObjectMapper();static final HttpClient HTTP=HttpClient.newHttpClient();
++    static ConfigurableApplicationContext context;static JdbcTemplate db;static String base,writer,reviewer,producer,admin,writerId,reviewerId,producerId;
++    String project,version,workspace;
++    @BeforeAll static void boot() throws Exception {
++        System.setProperty("spring.devtools.restart.enabled","false");
++        context=new SpringApplication(StemotionApplication.class,E2eServer.Config.class).run(E2eServer.launchArguments(
++            "--server.port=0","--server.address=127.0.0.1","--spring.profiles.active=stem-p5-test","--spring.dotenv.enabled=false",
++            "--spring.flyway.locations=classpath:db/migration,classpath:db/auth-v2-e2e,classpath:db/stem-p3,classpath:db/stem-p5",
++            "--app.stem.enabled=true","--app.stem.artifact.enabled=true","--app.notification-email.enabled=false",
++            "--app.integration.render.max-attempts=3",
++            "--app.integration.render.callback-url=http://127.0.0.1:9/unused-p5-test-callback",
++            "--logging.level.root=WARN","--logging.level.com.stemotion=WARN","--logging.level.org.hibernate.SQL=WARN",
++            "--logging.level.io.zonky.test.db.postgres.embedded.EmbeddedPostgres=INFO"));
++        base="http://127.0.0.1:"+((ServletWebServerApplicationContext)context).getWebServer().getPort()+"/api/v1";db=context.getBean(JdbcTemplate.class);
++        assertThat(db.queryForObject("select count(*) from flyway_schema_history where success",Integer.class)).isEqualTo(26);
++        var tx=new TransactionTemplate(context.getBean(PlatformTransactionManager.class));
++        List<String> ids=tx.execute(s->{List<String> result=new ArrayList<>();for(String role:List.of("writer","reviewer","producer"))result.add(context.getBean(UserRepository.class).saveAndFlush(User.builder().fullName("TEST_ONLY "+role).username("p5-"+role).passwordHash(context.getBean(PasswordEncoder.class).encode("P5-fixture-only-123")).systemRole(SystemRole.USER).status(User.UserStatus.ACTIVE).mustChangePassword(false).build()).getId());return result;});
++        writerId=ids.get(0);reviewerId=ids.get(1);producerId=ids.get(2);
++        writer=login("p5-writer","P5-fixture-only-123");reviewer=login("p5-reviewer","P5-fixture-only-123");producer=login("p5-producer","P5-fixture-only-123");admin=login("e2e-admin","E2e-fixture-only-123");
++    }
++    @AfterAll static void close(){if(context!=null)context.close();}
++    @BeforeEach void seed(){
++        new TransactionTemplate(context.getBean(PlatformTransactionManager.class)).execute(s->{
++            var users=context.getBean(UserRepository.class);var owner=users.findById(writerId).orElseThrow();
++            var ws=context.getBean(WorkspaceRepository.class).saveAndFlush(Workspace.builder().name("TEST_ONLY P5 "+UUID.randomUUID()).createdBy(owner).build());workspace=ws.getId();
++            var members=context.getBean(WorkspaceMemberRepository.class);
++            for(var pair:List.of(Map.entry(writerId,WorkspaceRole.WRITER),Map.entry(reviewerId,WorkspaceRole.REVIEWER),Map.entry(producerId,WorkspaceRole.PRODUCER)))members.saveAndFlush(WorkspaceMember.builder().workspace(ws).user(users.findById(pair.getKey()).orElseThrow()).role(pair.getValue()).build());
++            var p=context.getBean(ClipProjectRepository.class).saveAndFlush(ClipProject.builder().title("TEST_ONLY P5 unverified").subject(StemSubject.Math).gradeLevel("4").fps(30).totalDurationSeconds(20).owner(owner).workspace(ws).scriptStatus(ScriptStatus.APPROVED).videoStatus(VideoStatus.NOT_RENDERED).build());project=p.getId();
++            var v=context.getBean(ScriptVersionRepository.class).saveAndFlush(ScriptVersion.builder().project(p).title("TEST_ONLY").versionNo(1).createdBy(owner).status(ScriptStatus.APPROVED).build());version=v.getId();
++            var scenes=context.getBean(SceneRepository.class);
++            scenes.saveAndFlush(Scene.builder().scriptVersion(v).sceneType(SceneType.TITLE_HERO).title("TEST_ONLY question").narration("TEST_ONLY").durationInFrames(300).props("{\"subtitle\":\"TEST_ONLY\",\"subject\":\"Math\",\"gradeLevel\":\"4\",\"badgeText\":\"TEST_ONLY\"}").orderNo(1).build());
++            scenes.saveAndFlush(Scene.builder().scriptVersion(v).sceneType(SceneType.OUTRO).title("TEST_ONLY conclusion").narration("TEST_ONLY").durationInFrames(300).props("{\"summaryPoints\":[\"TEST_ONLY\"],\"nextLessonSuggestion\":\"TEST_ONLY\",\"instructorName\":\"TEST_ONLY\"}").orderNo(2).build());
++            return null;
++        });
++    }
++    String path(String action){return "/scripts/"+project+"/"+action;}
++    static JsonNode node(HttpResponse<String> r)throws Exception{JsonNode n=JSON.readTree(r.body());return n.has("data")?n.get("data"):n;}
++    static String login(String u,String p)throws Exception{var r=call("POST","/auth/login",Map.of("username",u,"password",p),null);assertThat(r.statusCode()).isEqualTo(200);return node(r).path("accessToken").asText();}
++    static HttpResponse<String> call(String method,String path,Object body,String token)throws Exception{
++        var b=HttpRequest.newBuilder(URI.create(base+path)).header("Content-Type","application/json");if(token!=null)b.header("Authorization","Bearer "+token);
++        return HTTP.send(b.method(method,body==null?HttpRequest.BodyPublishers.noBody():HttpRequest.BodyPublishers.ofString(JSON.writeValueAsString(body))).build(),HttpResponse.BodyHandlers.ofString());
++    }
++    HttpResponse<String> callback(String job,JsonNode manifest,String url)throws Exception{
++        ObjectNode body=JSON.createObjectNode().put("jobId",job).put("status","COMPLETED").put("videoUrl",url);if(manifest!=null)body.set("artifactManifest",manifest);
++        var req=HttpRequest.newBuilder(URI.create(base+"/render/callback")).header("Content-Type","application/json").header("X-Render-Api-Key","e2e-worker-key").POST(HttpRequest.BodyPublishers.ofString(body.toString())).build();return HTTP.send(req,HttpResponse.BodyHandlers.ofString());
++    }
++    JsonNode manifest(String job)throws Exception{
++        var row=db.queryForMap("select id,input_hash,payload from stem_p5_snapshots where stage='RENDER_INPUT' and job_id=?",job);JsonNode lineage=JSON.readTree(row.get("payload").toString()).path("lineage");
++        return JSON.createObjectNode().put("schemaVersion","stem-render-manifest.v1").put("attemptToken",lineage.path("attemptToken").asText()).put("renderInputHash",row.get("input_hash").toString()).put("snapshotId",row.get("id").toString()).put("rendererVersion",lineage.path("rendererVersion").asText()).put("assurance","BINDING_ONLY");
++    }
++    String rendered(boolean withManifest)throws Exception{
++        var start=call("POST","/render/projects/"+project+"/start",Map.of(),producer);assertThat(start.statusCode()).as(start.body()).isEqualTo(202);String job=node(start).path("jobId").asText();
++        var done=callback(job,withManifest?manifest(job):null,"https://example.invalid/"+project+".mp4");assertThat(done.statusCode()).as(done.body()).isEqualTo(200);return job;
++    }
++    String compositionApproved()throws Exception{
++        var submit=call("POST",path("submit-video-review"),Map.of(),producer);assertThat(submit.statusCode()).as(submit.body()).isEqualTo(200);
++        var approve=call("POST",path("approve-video"),Map.of("note","TEST_ONLY workflow, not expert approval"),reviewer);assertThat(approve.statusCode()).as(approve.body()).isEqualTo(204);
++        return db.queryForObject("select id from render_jobs where project_id=?",String.class,project);
++    }
++    ObjectNode publishBody(boolean ack){return JSON.createObjectNode().put("title","TEST_ONLY snapshot").put("legacyUnverifiedAcknowledged",ack).put("idempotencyKey","p5-"+UUID.randomUUID()).set("targets",JSON.createArrayNode().add("INTERNAL_LIBRARY"));}
++    int count(String stage){return db.queryForObject("select count(*) from stem_p5_snapshots where project_id=? and stage=?",Integer.class,project,stage);}
++
++    @Test void B02CompositionReviewFrozenCallbackPublishAndSnapshotConsumption()throws Exception{
++        String job=compositionApproved();assertThat(count("SUBMISSION")).isEqualTo(1);assertThat(count("APPROVAL")).isEqualTo(1);assertThat(count("RENDER_INPUT")).isEqualTo(1);
++        var done=callback(job,manifest(job),"https://example.invalid/"+project+".mp4");assertThat(done.statusCode()).as(done.body()).isEqualTo(200);assertThat(count("CLIP")).isEqualTo(1);
++        var body=publishBody(false);var pub=call("POST",path("publish"),body,producer);assertThat(pub.statusCode()).as(pub.body()).isEqualTo(201);assertThat(count("PUBLICATION")).isEqualTo(1);
++        assertThat(call("POST",path("publish"),body,producer).statusCode()).isEqualTo(201);assertThat(count("PUBLICATION")).isEqualTo(1);
++        db.update("update clip_projects set title='TEST_ONLY mutable new title',grade_level='11' where id=?",project);
++        var detail=call("GET","/library/clips/"+project,null,writer);assertThat(detail.statusCode()).isEqualTo(200);assertThat(node(detail).path("title").asText()).isEqualTo("TEST_ONLY P5 unverified");assertThat(node(detail).path("gradeLevel").asText()).isEqualTo("4");assertThat(node(detail).path("verificationStatus").asText()).isEqualTo("LEGACY_UNMAPPED");assertThat(node(detail).path("snapshotId").asText()).isNotBlank();
++        var filters=call("GET","/library/filters",null,writer);assertThat(node(filters).path("gradeLevels").toString()).contains("4");
++    }
++    @Test void B01RenderedClipReviewDoesNotEnqueueReplacement()throws Exception{
++        rendered(true);var approve=call("POST",path("approve-video"),Map.of("note","TEST_ONLY"),reviewer);assertThat(approve.statusCode()).as(approve.body()).isEqualTo(204);
++        assertThat(db.queryForObject("select count(*) from render_jobs where project_id=?",Integer.class,project)).isEqualTo(1);
++        assertThat(call("POST",path("publish"),publishBody(false),producer).statusCode()).isEqualTo(201);
++    }
++    @Test void B03WrongManifestHard409WritesNoArtifactEvenWithLegacyAck()throws Exception{
++        String job=compositionApproved();ObjectNode bad=(ObjectNode)manifest(job);bad.put("renderInputHash","0".repeat(64));
++        var r=callback(job,bad,"https://example.invalid/bad.mp4");assertThat(r.statusCode()).isEqualTo(409);assertThat(count("CLIP")).isZero();
++        assertThat(db.queryForObject("select video_url from clip_projects where id=?",String.class,project)).isNull();
++    }
++    @Test void B03DuplicateSameCompletionNoopContradictoryCompletion409()throws Exception{
++        String job=compositionApproved();JsonNode m=manifest(job);String url="https://example.invalid/"+project+".mp4";
++        assertThat(callback(job,m,url).statusCode()).isEqualTo(200);assertThat(callback(job,m,url).statusCode()).isEqualTo(200);assertThat(count("CLIP")).isEqualTo(1);assertThat(callback(job,m,url+"?different=1").statusCode()).isEqualTo(409);
++    }
++    @Test void P02MissingManifestRequiresExplicitUnverifiedAndKeepsHistory()throws Exception{
++        String job=compositionApproved();assertThat(callback(job,null,"https://example.invalid/"+project+".mp4").statusCode()).isEqualTo(200);
++        var no=call("POST",path("publish"),publishBody(false),producer);assertThat(no.statusCode()).isEqualTo(409);assertThat(count("PUBLICATION")).isZero();assertThat(no.body()).contains("LEGACY_ACK_REQUIRED");
++        assertThat(call("POST",path("publish"),publishBody(true),producer).statusCode()).isEqualTo(201);
++        assertThat(db.queryForObject("select count(*) from status_histories where project_id=? and decision='APPROVED'",Integer.class,project)).isEqualTo(1);
++        assertThat(db.queryForObject("select payload->>'verificationStatus' from stem_p5_snapshots where stage='PUBLICATION' and project_id=?",String.class,project)).isEqualTo("LEGACY_UNMAPPED");
++    }
++    @Test void P01ChangedCompositionBlocksPublishEvenExplicitUnverified()throws Exception{
++        String job=compositionApproved();callback(job,manifest(job),"https://example.invalid/"+project+".mp4");
++        db.update("update compositions set revision=revision+1 where project_id=?",project);
++        assertThat(call("POST",path("publish"),publishBody(true),producer).statusCode()).isEqualTo(409);assertThat(count("PUBLICATION")).isZero();
++    }
++    @Test void P03YoutubeUnavailableAtomicNoWrite()throws Exception{
++        String job=compositionApproved();callback(job,manifest(job),"https://example.invalid/"+project+".mp4");ObjectNode body=publishBody(false);body.set("targets",JSON.createArrayNode().add("YOUTUBE"));
++        var r=call("POST",path("publish"),body,producer);assertThat(r.statusCode()).isEqualTo(503);assertThat(r.body()).contains("PUBLISH_TARGET_UNAVAILABLE");assertThat(count("PUBLICATION")).isZero();
++    }
++    @Test void G05ExistingMediaFailHardBlocksOffMode()throws Exception{
++        db.update("update scenes set duration_in_frames=1 where version_id=?",version);String job=compositionApproved();callback(job,manifest(job),"https://example.invalid/"+project+".mp4");
++        var qa=call("GET",path("qa-report"),null,producer);assertThat(qa.statusCode()).isEqualTo(200);assertThat(node(qa).path("passed").asBoolean()).isFalse();
++        assertThat(call("POST",path("publish"),publishBody(true),producer).statusCode()).isEqualTo(400);assertThat(count("PUBLICATION")).isZero();
++    }
++    @Test void B04SendBackDoesNotRequireStemPass()throws Exception{
++        assertThat(call("POST",path("submit-video-review"),Map.of(),producer).statusCode()).isEqualTo(200);
++        assertThat(call("POST",path("send-back"),Map.of("note","TEST_ONLY needs work"),reviewer).statusCode()).isEqualTo(204);
++        assertThat(count("APPROVAL")).isZero();assertThat(count("SUBMISSION")).isEqualTo(1);
++    }
++    @Test void SnapshotImmutabilityAndRlsDoNotMutateExistingSchema()throws Exception{
++        compositionApproved();assertThatThrownBy(()->db.update("update stem_p5_snapshots set assurance='BINDING_ONLY' where project_id=?",project)).isInstanceOf(org.springframework.dao.DataAccessException.class);
++        assertThatThrownBy(()->db.update("delete from stem_p5_snapshots where project_id=?",project)).isInstanceOf(org.springframework.dao.DataAccessException.class);
++        assertThat(db.queryForObject("select count(*) from pg_class where relname in ('stem_p5_snapshots','stem_p5_compatibility') and relrowsecurity",Integer.class)).isEqualTo(2);
++    }
++    @Test void AdminWithoutReviewerSeatCannotAttachVideoAssessment()throws Exception{
++        assertThat(call("POST",path("submit-video-review"),Map.of(),producer).statusCode()).isEqualTo(200);
++        String brief=UUID.randomUUID().toString();db.update("insert into stem_briefs(id,version_id,payload) values(?,?,?::jsonb)",brief,version,JSON.writeValueAsString(com.stemotion.domain.stem.StemDtos.empty()));
++        var assessment=Map.of("expectedBriefRevision",0,"expectedScriptRevision",0,"expectedModeRevision",0,"expectedCompositionRevision",1,"criteria",List.of(Map.of("key","TEST_ONLY","judgment","NOT_ASSESSED","rationale","TEST_ONLY not expert feedback","evidenceIds",List.of())),"idempotencyKey","p5-"+UUID.randomUUID());
++        var r=call("POST",path("approve-video"),Map.of("note","TEST_ONLY","stemAssessment",assessment),admin);assertThat(r.statusCode()).isEqualTo(403);assertThat(count("APPROVAL")).isZero();assertThat(count("RENDER_INPUT")).isZero();
++    }
++    ObjectNode assessment()throws Exception{
++        String brief=UUID.randomUUID().toString();db.update("insert into stem_briefs(id,version_id,payload) values(?,?,?::jsonb)",brief,version,JSON.writeValueAsString(com.stemotion.domain.stem.StemDtos.empty()));
++        ObjectNode a=JSON.createObjectNode().put("expectedBriefRevision",0).put("expectedScriptRevision",0).put("expectedModeRevision",0).put("expectedCompositionRevision",1).put("idempotencyKey","p5-"+UUID.randomUUID());
++        a.putArray("criteria").add(JSON.createObjectNode().put("key","TEST_ONLY").put("judgment","NOT_ASSESSED").put("rationale","TEST_ONLY not expert review").set("evidenceIds",JSON.createArrayNode()));return a;
++    }
++    @Test void ConcurrentKeyedApproveCreatesOneDecisionAssessmentSnapshotAndJob()throws Exception{
++        call("POST",path("submit-video-review"),Map.of(),producer);JsonNode a=assessment();var body=Map.of("note","TEST_ONLY","stemAssessment",a);
++        var first=java.util.concurrent.CompletableFuture.supplyAsync(()->{try{return call("POST",path("approve-video"),body,reviewer).statusCode();}catch(Exception e){throw new RuntimeException(e);}});
++        var second=java.util.concurrent.CompletableFuture.supplyAsync(()->{try{return call("POST",path("approve-video"),body,reviewer).statusCode();}catch(Exception e){throw new RuntimeException(e);}});
++        assertThat(first.get()).isEqualTo(204);assertThat(second.get()).isEqualTo(204);assertThat(count("APPROVAL")).isEqualTo(1);assertThat(count("RENDER_INPUT")).isEqualTo(1);
++        assertThat(db.queryForObject("select count(*) from stem_assessments where version_id=?",Integer.class,version)).isEqualTo(1);
++        assertThat(call("POST",path("approve-video"),Map.of("note","TEST_ONLY changed","stemAssessment",a),reviewer).statusCode()).isEqualTo(409);
++    }
++    @Test void G06ModeChangeBetweenLoadAndVideoApprovalRollsBackAllWrites()throws Exception{
++        call("POST",path("submit-video-review"),Map.of(),producer);JsonNode a=assessment();
++        var settings=Map.of("baseRevision",0,"mode","ADVISORY","policyVersionIds",List.of(),"idempotencyKey","p5-"+UUID.randomUUID());
++        assertThat(call("PUT","/workspaces/"+workspace+"/stem-settings",settings,admin).statusCode()).isEqualTo(200);
++        assertThat(call("POST",path("approve-video"),Map.of("note","TEST_ONLY","stemAssessment",a),reviewer).statusCode()).isEqualTo(409);assertThat(count("APPROVAL")).isZero();assertThat(count("RENDER_INPUT")).isZero();
++    }
++    @Test void FrozenInputTamperIsKnownMismatchAndCannotUseLegacyFallback()throws Exception{
++        String job=compositionApproved();JsonNode m=manifest(job);db.update("update render_jobs set input_props=jsonb_set(input_props,'{title}','\"TEST_ONLY tampered\"') where id=?",job);
++        assertThat(callback(job,m,"https://example.invalid/changed.mp4").statusCode()).isEqualTo(409);assertThat(count("CLIP")).isZero();
++    }
++    @Test void OldCallbackCannotReplaceCurrentUrlAfterCompositionChanged()throws Exception{
++        String job=compositionApproved();JsonNode m=manifest(job);db.update("update compositions set revision=revision+1 where project_id=?",project);
++        assertThat(callback(job,m,"https://example.invalid/old.mp4").statusCode()).isEqualTo(200);assertThat(count("CLIP")).isEqualTo(1);
++        assertThat(db.queryForObject("select video_url from clip_projects where id=?",String.class,project)).isNull();
++    }
++    @Test void StatusReadIsAuthorizedAndNeverClaimsVerified()throws Exception{
++        String job=compositionApproved();callback(job,manifest(job),"https://example.invalid/"+project+".mp4");
++        var r=call("GET",path("stem-artifact-status"),null,writer);assertThat(r.statusCode()).as(r.body()).isEqualTo(200);assertThat(node(r).path("verificationStatus").asText()).isEqualTo("UNVERIFIED");assertThat(node(r).path("snapshotOrigin").path("snapshotId").asText()).isNotBlank();
++        assertThat(call("GET",path("stem-artifact-status"),null,null).statusCode()).isIn(401,403);
++    }
++    @Test void P5RlsDeniesClientEvenWithExplicitSelectGrant()throws Exception{
++        String role="p5_client_"+UUID.randomUUID().toString().replace("-","");db.execute("create role "+role+" noinherit");db.execute("grant usage on schema public to "+role);db.execute("grant select on stem_p5_snapshots,stem_p5_compatibility to "+role);
++        compositionApproved();
++        new TransactionTemplate(context.getBean(PlatformTransactionManager.class)).execute(s->{db.execute("set local role "+role);assertThat(db.queryForObject("select count(*) from stem_p5_snapshots",Integer.class)).isZero();return null;});
++    }
++    @Test void AT21MeasuredTimingPreservesTechnicalAssessmentButSemanticEditNeedsNewReview()throws Exception{
++        db.update("update script_versions set status='DRAFT' where id=?",version);db.update("update clip_projects set script_status='DRAFT' where id=?",project);
++        ObjectNode a=assessment();a.remove("expectedCompositionRevision");
++        assertThat(call("POST",path("submit-review"),Map.of(),writer).statusCode()).isEqualTo(200);
++        var approved=call("POST",path("approve"),Map.of("note","TEST_ONLY not expert approval","stemAssessment",a),reviewer);assertThat(approved.statusCode()).as(approved.body()).isEqualTo(200);
++        var tx=new TransactionTemplate(context.getBean(PlatformTransactionManager.class));
++        tx.execute(s->{
++            var p=context.getBean(ClipProjectRepository.class).findById(project).orElseThrow();var v=context.getBean(ScriptVersionRepository.class).findById(version).orElseThrow();
++            var compositions=context.getBean(com.stemotion.domain.production.service.CompositionService.class);var composition=compositions.ensure(p,v,producerId);
++            Map<String,Integer> frames=new HashMap<>();db.queryForList("select id from scenes where version_id=?",String.class,version).forEach(id->frames.put(id,330));
++            compositions.applyMeasured(project,version,composition.getRevision(),frames,Map.of(),producerId);return null;
++        });
++        assertThat(db.queryForObject("select count(*) from stem_p5_compatibility p join stem_p5_snapshots s on s.id=p.after_id where s.project_id=? and p.result='COMPATIBLE'",Integer.class,project)).isEqualTo(1);
++        var status=node(call("GET",path("stem-artifact-status"),null,writer));assertThat(status.path("freshness").asText()).isEqualTo("CURRENT");assertThat(status.path("verificationStatus").asText()).isEqualTo("UNVERIFIED");
++        var composition=node(call("GET",path("composition"),null,producer));ArrayNode scenes=(ArrayNode)composition.path("scenes");((ObjectNode)scenes.get(0)).put("title","TEST_ONLY changed semantic question");
++        var save=call("PUT",path("composition"),Map.of("baseRevision",composition.path("revision").asInt(),"scenes",scenes),producer);assertThat(save.statusCode()).as(save.body()).isEqualTo(200);
++        assertThat(node(call("GET",path("stem-artifact-status"),null,writer)).path("freshness").asText()).isEqualTo("NEEDS_REVIEW");
++    }
++    @Test void P5TransportBoundsRejectServerClaimsAndWhitespaceBeforeMutation()throws Exception{
++        ObjectNode body=publishBody(true);body.put("verified",true);
++        var claim=call("POST",path("publish"),body,producer);assertThat(claim.statusCode()).isEqualTo(400);assertThat(claim.body()).contains("STEM_INVALID_FIELD").contains("verified");
++        var request=HttpRequest.newBuilder(URI.create(base+path("publish"))).header("Content-Type","application/json").header("Authorization","Bearer "+producer).POST(HttpRequest.BodyPublishers.ofString(" ".repeat(65537))).build();
++        assertThat(HTTP.send(request,HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(400);assertThat(count("PUBLICATION")).isZero();
++    }
++    @Test void NewMigrationRejectsWrongParentTypeWithoutChangingPublicSchema()throws Exception{
++        String schema="p5_wrong_"+UUID.randomUUID().toString().replace("-","");db.execute("create schema "+schema);db.execute("create table "+schema+".users(id uuid primary key)");
++        String sql=java.nio.file.Files.readString(java.nio.file.Path.of("src/test/resources/db/stem-p5/V92000__stem_p5_artifact_snapshots_test_only.sql"));
++        assertThatThrownBy(()->new TransactionTemplate(context.getBean(PlatformTransactionManager.class)).execute(s->{db.execute("set local search_path="+schema+",pg_catalog");db.execute(sql);return null;})).isInstanceOf(org.springframework.dao.DataAccessException.class).hasMessageContaining("P5 prerequisite drift");
++        assertThat(db.queryForObject("select to_regclass(?)::text",String.class,schema+".stem_p5_snapshots")).isNull();assertThat(db.queryForObject("select count(*) from flyway_schema_history where success",Integer.class)).isEqualTo(26);
++    }
++    @Test void B03RetryHasNewAttemptAndOldCompletionCannotWin()throws Exception{
++        String old=compositionApproved();JsonNode oldManifest=manifest(old);
++        ObjectNode failed=JSON.createObjectNode().put("jobId",old).put("status","FAILED").put("errorMessage","TEST_ONLY transient fake failure");
++        var request=HttpRequest.newBuilder(URI.create(base+"/render/callback")).header("Content-Type","application/json").header("X-Render-Api-Key","e2e-worker-key").POST(HttpRequest.BodyPublishers.ofString(failed.toString())).build();
++        var response=HTTP.send(request,HttpResponse.BodyHandlers.ofString());assertThat(response.statusCode()).as(response.body()).isEqualTo(200);
++        String next=node(response).path("jobId").asText();assertThat(next).isNotEqualTo(old);assertThat(db.queryForObject("select attempt_count from render_jobs where id=?",Integer.class,next)).isEqualTo(2);
++        assertThat(manifest(next).path("renderInputHash")).isEqualTo(oldManifest.path("renderInputHash"));assertThat(manifest(next).path("attemptToken")).isNotEqualTo(oldManifest.path("attemptToken"));
++        assertThat(callback(old,oldManifest,"https://example.invalid/old-attempt.mp4").statusCode()).isEqualTo(200);assertThat(count("CLIP")).isZero();
++        assertThat(callback(next,manifest(next),"https://example.invalid/"+project+".mp4").statusCode()).isEqualTo(200);assertThat(count("CLIP")).isEqualTo(1);
++        assertThat(call("POST",path("publish"),publishBody(false),producer).statusCode()).isEqualTo(201);
++    }
++}
+diff --git a/src/test/resources/db/stem-p5/V92000__stem_p5_artifact_snapshots_test_only.sql b/src/test/resources/db/stem-p5/V92000__stem_p5_artifact_snapshots_test_only.sql
+--- /dev/null
++++ b/src/test/resources/db/stem-p5/V92000__stem_p5_artifact_snapshots_test_only.sql
+@@ -0,0 +1,68 @@
++-- P5 TEST ONLY. Approved 2026-11-05. Never production reservation or migration.
++DO $$ DECLARE t text; k text; BEGIN
++ FOREACH t IN ARRAY ARRAY['users','workspaces','clip_projects','script_versions','status_histories','render_jobs'] LOOP
++  SELECT format_type(atttypid,atttypmod) INTO k FROM pg_attribute WHERE attrelid=t::regclass AND attname='id' AND NOT attisdropped;
++  IF k IS DISTINCT FROM 'character varying(36)' THEN RAISE EXCEPTION 'P5 prerequisite drift %.id: %',t,k; END IF;
++ END LOOP;
++ FOREACH t IN ARRAY ARRAY['compositions','clips','publications'] LOOP
++  SELECT format_type(atttypid,atttypmod) INTO k FROM pg_attribute WHERE attrelid=t::regclass AND attname='id' AND NOT attisdropped;
++  IF k IS DISTINCT FROM 'uuid' THEN RAISE EXCEPTION 'P5 prerequisite drift %.id: %',t,k; END IF;
++ END LOOP;
++ IF to_regclass('stem_briefs') IS NULL OR to_regclass('stem_assessments') IS NULL THEN RAISE EXCEPTION 'P5 needs P3 test schema'; END IF;
++END $$;
++
++CREATE TABLE stem_p5_snapshots (
++ id varchar(36) PRIMARY KEY,
++ stage varchar(20) NOT NULL CHECK(stage IN ('SUBMISSION','APPROVAL','RENDER_INPUT','CLIP','PUBLICATION')),
++ project_id varchar(36) NOT NULL REFERENCES clip_projects(id),
++ version_id varchar(36) NOT NULL REFERENCES script_versions(id),
++ workspace_id varchar(36) NOT NULL REFERENCES workspaces(id),
++ actor_id varchar(36) REFERENCES users(id),
++ composition_id uuid REFERENCES compositions(id), composition_revision integer CHECK(composition_revision>=1),
++ job_id varchar(36) REFERENCES render_jobs(id), clip_id uuid REFERENCES clips(id), publication_id uuid REFERENCES publications(id),
++ decision_id varchar(36) REFERENCES status_histories(id), assessment_id varchar(36) REFERENCES stem_assessments(id),
++ parent_id varchar(36) REFERENCES stem_p5_snapshots(id), approval_id varchar(36) REFERENCES stem_p5_snapshots(id),
++ semantic_hash varchar(64) NOT NULL CHECK(semantic_hash ~ '^[0-9a-f]{64}$'),
++ contract_hash varchar(64) NOT NULL CHECK(contract_hash ~ '^[0-9a-f]{64}$'),
++ input_hash varchar(64) CHECK(input_hash ~ '^[0-9a-f]{64}$'),
++ classification varchar(12) NOT NULL CHECK(classification IN ('CLASSIFIED','UNKNOWN')),
++ assurance varchar(24) NOT NULL CHECK(assurance IN ('UNKNOWN','BINDING_ONLY','TEST_ONLY_SYNTHETIC')),
++ payload jsonb NOT NULL CHECK(jsonb_typeof(payload)='object' AND octet_length(payload::text)<=16777216),
++ frozen_input jsonb CHECK(jsonb_typeof(frozen_input)='object' AND octet_length(frozen_input::text)<=8388608),
++ dedupe_key varchar(64) NOT NULL UNIQUE CHECK(dedupe_key ~ '^[0-9a-f]{64}$'),
++ created_at timestamp NOT NULL DEFAULT current_timestamp,
++ CHECK(stage<>'APPROVAL' OR decision_id IS NOT NULL),
++ CHECK(stage<>'RENDER_INPUT' OR (job_id IS NOT NULL AND frozen_input IS NOT NULL AND input_hash IS NOT NULL)),
++ CHECK(stage<>'CLIP' OR (clip_id IS NOT NULL AND job_id IS NOT NULL)),
++ CHECK(stage<>'PUBLICATION' OR (clip_id IS NOT NULL AND publication_id IS NOT NULL))
++);
++CREATE UNIQUE INDEX stem_p5_job_unique ON stem_p5_snapshots(job_id) WHERE stage='RENDER_INPUT';
++CREATE UNIQUE INDEX stem_p5_clip_unique ON stem_p5_snapshots(clip_id) WHERE stage='CLIP';
++CREATE UNIQUE INDEX stem_p5_publication_unique ON stem_p5_snapshots(publication_id) WHERE stage='PUBLICATION';
++CREATE UNIQUE INDEX stem_p5_decision_unique ON stem_p5_snapshots(decision_id) WHERE stage='APPROVAL';
++CREATE INDEX stem_p5_target_idx ON stem_p5_snapshots(project_id,version_id,stage);
++
++CREATE TABLE stem_p5_compatibility (
++ id varchar(36) PRIMARY KEY,
++ approval_id varchar(36) NOT NULL REFERENCES stem_p5_snapshots(id),
++ before_id varchar(36) NOT NULL REFERENCES stem_p5_snapshots(id),
++ after_id varchar(36) NOT NULL REFERENCES stem_p5_snapshots(id),
++ proof_version varchar(128) NOT NULL,
++ result varchar(16) NOT NULL CHECK(result IN ('COMPATIBLE','INCOMPATIBLE','UNKNOWN')),
++ proof jsonb NOT NULL CHECK(jsonb_typeof(proof)='object' AND octet_length(proof::text)<=65536),
++ created_at timestamp NOT NULL DEFAULT current_timestamp,
++ UNIQUE(approval_id,before_id,after_id,proof_version)
++);
++CREATE FUNCTION stem_p5_append_only() RETURNS trigger LANGUAGE plpgsql AS $$
++BEGIN RAISE EXCEPTION 'P5 snapshot/proof is append-only' USING ERRCODE='23514'; END $$;
++CREATE TRIGGER stem_p5_snapshots_immutable BEFORE UPDATE OR DELETE ON stem_p5_snapshots FOR EACH ROW EXECUTE FUNCTION stem_p5_append_only();
++CREATE TRIGGER stem_p5_proofs_immutable BEFORE UPDATE OR DELETE ON stem_p5_compatibility FOR EACH ROW EXECUTE FUNCTION stem_p5_append_only();
++DO $$ DECLARE t text; r text; BEGIN
++ FOREACH t IN ARRAY ARRAY['stem_p5_snapshots','stem_p5_compatibility'] LOOP
++  EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY',t);
++  EXECUTE format('REVOKE ALL ON TABLE %I FROM PUBLIC',t);
++  FOREACH r IN ARRAY ARRAY['anon','authenticated'] LOOP
++   IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r) THEN EXECUTE format('REVOKE ALL ON TABLE %I FROM %I',t,r); END IF;
++  END LOOP;
++ END LOOP;
++END $$;

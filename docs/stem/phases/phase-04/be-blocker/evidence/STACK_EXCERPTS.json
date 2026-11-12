@@ -1,0 +1,68 @@
+[
+  {
+    "log_line": 63,
+    "first_line": "java.lang.NullPointerException: Cannot invoke \"org.springframework.jdbc.core.JdbcTemplate.queryForObject(String, java.lang.Class, Object[])\" because \"this.db.jdbc\" is null",
+    "frames": [
+      "\tat com.stemotion.domain.stem.StemService.workspace(StemService.java:98) ~[classes/:na]",
+      "\tat com.stemotion.domain.stem.StemService.settings(StemService.java:97) ~[classes/:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]"
+    ]
+  },
+  {
+    "log_line": 227,
+    "first_line": "java.lang.NullPointerException: Cannot invoke \"com.fasterxml.jackson.databind.ObjectMapper.valueToTree(Object)\" because \"this.db.json\" is null",
+    "frames": [
+      "\tat com.stemotion.domain.stem.StemService.create(StemService.java:46) ~[classes/:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]",
+      "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]"
+    ]
+  },
+  {
+    "log_line": 393,
+    "first_line": "java.lang.NullPointerException: Cannot invoke \"com.fasterxml.jackson.databind.ObjectMapper.valueToTree(Object)\" because \"this.db.json\" is null",
+    "frames": [
+      "\tat com.stemotion.domain.stem.StemService.save(StemService.java:53) ~[classes/:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]",
+      "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]"
+    ]
+  },
+  {
+    "log_line": 556,
+    "first_line": "java.lang.NullPointerException: Cannot invoke \"com.fasterxml.jackson.databind.ObjectMapper.valueToTree(Object)\" because \"this.db.json\" is null",
+    "frames": [
+      "\tat com.stemotion.domain.stem.StemService.validate(StemService.java:112) ~[classes/:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]",
+      "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]"
+    ]
+  },
+  {
+    "log_line": 719,
+    "first_line": "java.lang.NullPointerException: Cannot invoke \"com.fasterxml.jackson.databind.ObjectMapper.valueToTree(Object)\" because \"this.db.json\" is null",
+    "frames": [
+      "\tat com.stemotion.domain.stem.StemService.saveSettings(StemService.java:99) ~[classes/:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]",
+      "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]"
+    ]
+  },
+  {
+    "log_line": 886,
+    "first_line": "java.lang.NullPointerException: Cannot invoke \"org.springframework.jdbc.core.JdbcTemplate.queryForList(String, Object[])\" because \"this.db.jdbc\" is null",
+    "frames": [
+      "\tat com.stemotion.domain.stem.StemService.lock(StemService.java:33) ~[classes/:na]",
+      "\tat com.stemotion.domain.stem.StemService.submission(StemService.java:122) ~[classes/:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]",
+      "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]"
+    ]
+  }
+]

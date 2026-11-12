@@ -1,0 +1,8 @@
+{
+  "name": "p3-required-cases-final-native",
+  "exit_code": 0,
+  "elapsed_seconds": 71.7,
+  "repo": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE",
+  "tests": "StemValidatorTest,StemPostgresTest",
+  "external_providers": "disabled/local placeholders; environment allow-list"
+}

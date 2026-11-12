@@ -1,0 +1,358 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "requestKeys": [
+      "username",
+      "password"
+    ],
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users",
+    "requestKeys": [
+      "fullName",
+      "username",
+      "password",
+      "systemRole"
+    ],
+    "status": 201
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "requestKeys": [
+      "username",
+      "password"
+    ],
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/change-password",
+    "requestKeys": [
+      "currentPassword",
+      "newPassword"
+    ],
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users",
+    "requestKeys": [
+      "fullName",
+      "username",
+      "password",
+      "systemRole"
+    ],
+    "status": 201
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "requestKeys": [
+      "username",
+      "password"
+    ],
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/change-password",
+    "requestKeys": [
+      "currentPassword",
+      "newPassword"
+    ],
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users",
+    "requestKeys": [
+      "fullName",
+      "username",
+      "password",
+      "systemRole"
+    ],
+    "status": 201
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "requestKeys": [
+      "username",
+      "password"
+    ],
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/change-password",
+    "requestKeys": [
+      "currentPassword",
+      "newPassword"
+    ],
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspaces",
+    "requestKeys": [
+      "name",
+      "department",
+      "leaderUserId",
+      "leaderRole",
+      "members"
+    ],
+    "status": 201
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspaces/{TEST_ONLY_ID}/scripts",
+    "requestKeys": [
+      "title",
+      "subject",
+      "gradeLevel",
+      "fps",
+      "scenes"
+    ],
+    "status": 201
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspaces/{TEST_ONLY_ID}/stem-settings",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/stem/catalog",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/workspaces/{TEST_ONLY_ID}/stem-settings",
+    "requestKeys": [
+      "baseRevision",
+      "mode",
+      "policyVersionIds",
+      "defaultPolicyVersionId",
+      "idempotencyKey",
+      "legacyModeSelection"
+    ],
+    "status": 200,
+    "baseRevision": 0,
+    "mode": "ADVISORY"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/workspaces/{TEST_ONLY_ID}/stem-settings",
+    "requestKeys": [
+      "baseRevision",
+      "mode",
+      "policyVersionIds",
+      "defaultPolicyVersionId",
+      "idempotencyKey",
+      "legacyModeSelection"
+    ],
+    "status": 409,
+    "baseRevision": 0,
+    "mode": "OFF"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/workspaces/{TEST_ONLY_ID}/stem-settings",
+    "requestKeys": [
+      "baseRevision",
+      "mode",
+      "policyVersionIds",
+      "defaultPolicyVersionId",
+      "idempotencyKey",
+      "legacyModeSelection"
+    ],
+    "status": 200,
+    "baseRevision": 1,
+    "mode": "OFF"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/workspaces/{TEST_ONLY_ID}/stem-settings",
+    "requestKeys": [
+      "baseRevision",
+      "mode",
+      "policyVersionIds",
+      "defaultPolicyVersionId",
+      "idempotencyKey",
+      "legacyModeSelection"
+    ],
+    "status": 200,
+    "baseRevision": 2,
+    "mode": "ADVISORY"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions/{TEST_ONLY_ID}/stem",
+    "requestKeys": [
+      "schemaVersion",
+      "expectedScriptRevision",
+      "idempotencyKey"
+    ],
+    "status": 200
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions/{TEST_ONLY_ID}/stem",
+    "requestKeys": [
+      "schemaVersion",
+      "baseRevision",
+      "expectedScriptRevision",
+      "idempotencyKey",
+      "brief",
+      "evidence"
+    ],
+    "status": 200
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions/{TEST_ONLY_ID}/stem",
+    "requestKeys": [
+      "schemaVersion",
+      "baseRevision",
+      "expectedScriptRevision",
+      "idempotencyKey",
+      "brief",
+      "evidence"
+    ],
+    "status": 400
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspaces/{TEST_ONLY_ID}/stem-settings",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/stem/catalog",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspaces/{TEST_ONLY_ID}/stem-settings",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/stem/catalog",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions/{TEST_ONLY_ID}/stem",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions/{TEST_ONLY_ID}/stem",
+    "requestKeys": [
+      "schemaVersion",
+      "baseRevision",
+      "expectedScriptRevision",
+      "idempotencyKey",
+      "brief",
+      "evidence"
+    ],
+    "status": 400
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions/{TEST_ONLY_ID}/stem",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions/{TEST_ONLY_ID}/stem",
+    "requestKeys": [
+      "schemaVersion",
+      "baseRevision",
+      "expectedScriptRevision",
+      "idempotencyKey",
+      "brief",
+      "evidence"
+    ],
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions/{TEST_ONLY_ID}/stem",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/submit-review",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions/{TEST_ONLY_ID}/stem",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/approve",
+    "requestKeys": [
+      "note",
+      "stemAssessment"
+    ],
+    "status": 403
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions/{TEST_ONLY_ID}/stem",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/approve",
+    "requestKeys": [
+      "note",
+      "stemAssessment"
+    ],
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}",
+    "requestKeys": [],
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scripts/{TEST_ONLY_ID}/versions/{TEST_ONLY_ID}/stem",
+    "requestKeys": [],
+    "status": 200
+  }
+]

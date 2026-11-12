@@ -1,0 +1,7 @@
+{
+  "date": "2026-11-05",
+  "testDataDirectoriesChecked": 25,
+  "remainingOwnedPostgres": [],
+  "processesStoppedByThisCheck": 0,
+  "note": "Read-only check; no user app or server stopped"
+}

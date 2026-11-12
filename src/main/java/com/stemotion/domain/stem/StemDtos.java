@@ -1,0 +1,26 @@
+package com.stemotion.domain.stem;
+import java.util.List;
+/** P3 schema. No client-supplied verification or semantic hashes. */
+public final class StemDtos {
+ private StemDtos() {}
+ public record ContextEntry(String key,String condition,String adaptations) {}
+ public record UsageContext(ContextEntry primary,List<ContextEntry> secondary) {}
+ public record Objective(String key,String outcomeId,String learnerAction,String observableEvidence) {}
+ public record Task(String key,String learnerAction,String teacherSupport,String materials,String safety,String assessmentEvidence,String executionContextKey) {}
+ public record Contribution(String component,String explanation,List<String> objectiveKeys,List<String> taskKeys) {}
+ public record Brief(String policyVersionId,String topicVersionId,String gradeKey,List<String> subjectKeys,List<String> outcomeIds,String scopeOfClip,UsageContext context,List<String> distributionChannels,List<Objective> objectives,List<Task> studentTasks,List<Contribution> contributions,String safetyNotes,String rawLegacy) {}
+ public record Evidence(String id,String sceneId,String taskKey,String objectiveKey,String component,String explanation) {}
+ public record Create(String schemaVersion,Integer expectedScriptRevision,String idempotencyKey) {}
+ public record Save(String schemaVersion,Integer baseRevision,Integer expectedScriptRevision,String idempotencyKey,Brief brief,List<Evidence> evidence) {}
+ public record Settings(Integer baseRevision,String mode,List<String> policyVersionIds,String defaultPolicyVersionId,String idempotencyKey,String legacyModeSelection) {}
+ public record Validate(Integer expectedBriefRevision,Integer expectedScriptRevision,String phase,Integer expectedCompositionRevision) {}
+ public record ChangeTarget(String expectedVersionId,Integer expectedScriptRevision,Integer expectedBriefRevision,String idempotencyKey) {}
+ public record Criterion(String key,String judgment,String rationale,List<String> evidenceIds) {}
+ public record Assessment(Integer expectedBriefRevision,Integer expectedScriptRevision,Integer expectedCompositionRevision,Integer expectedModeRevision,String rubricVersionId,List<Criterion> criteria,String idempotencyKey) {}
+ public record Finding(String ruleId,String field,String severity,String message,String basis) {
+  public Finding(String ruleId,String field,String severity,String message){this(ruleId,field,severity,message,"PRODUCT_RULE");}
+ }
+ public record LegacySuggestion(String primaryKey,List<String> channelKeys,boolean requiresConfirmation,String reason) {}
+ public record View(String schemaVersion,String briefId,String scriptVersionId,int revision,String verificationStatus,String readiness,String effectiveMode,int modeRevision,Brief brief,List<Evidence> evidence,List<Finding> findings,LegacySuggestion legacySuggestion) {}
+ public static Brief empty() { return new Brief(null,null,null,List.of(),List.of(),null,new UsageContext(null,List.of()),List.of(),List.of(),List.of(),List.of(),null,null); }
+}

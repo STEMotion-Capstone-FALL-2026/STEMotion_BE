@@ -1,0 +1,11 @@
+{
+  "data_dirs": [
+    "C:/Users/LeTran/AppData/Local/Temp/epg3012365658697803983",
+    "C:/Users/LeTran/AppData/Local/Temp/epg11274421223177765412"
+  ],
+  "remaining_owned_processes": [],
+  "remaining_probe_java": [],
+  "graceful_context_close_markers": 2,
+  "postmaster_shutdown_markers": 2,
+  "action": "read-only verification; no existing user process stopped"
+}

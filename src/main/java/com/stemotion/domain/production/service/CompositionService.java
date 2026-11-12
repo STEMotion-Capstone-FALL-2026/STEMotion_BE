@@ -52,6 +52,8 @@ public class CompositionService {
     private final SceneMapper sceneMapper;
     private final AuthService authService;
     private final ObjectMapper objectMapper;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
 
     /** What a render draws: the saved composition, or the approved script as it is. */
     /** {@code details.resource} of a stale composition save or sync. */
@@ -155,6 +157,7 @@ public class CompositionService {
             throw ApiException.staleRevision(COMPOSITION, currentRevision, baseRevision,
                 "The composition is now at revision " + currentRevision + " (edited elsewhere); reload it before syncing");
         }
+        var stemBefore=stemArtifacts==null?null:stemArtifacts.capture(project);
         List<Map<String, Object>> scenes = current == null ? scriptScenes(version) : read(current.getScenes());
         for (Map<String, Object> scene : scenes) {
             String id = String.valueOf(scene.get("id"));
@@ -175,6 +178,7 @@ public class CompositionService {
             throw ApiException.staleRevision(COMPOSITION, null, baseRevision,
                 "The composition was just saved elsewhere; reload it before syncing");
         }
+        if(stemArtifacts!=null)stemArtifacts.measured(project,userId,stemBefore);
         return response(project, version, saved, scenes);
     }
 

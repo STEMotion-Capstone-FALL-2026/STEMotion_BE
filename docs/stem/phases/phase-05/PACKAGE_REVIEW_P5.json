@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-06",
+  "status": "PARTIAL_UNCOMMITTED_NOT_CLOSED",
+  "final_counts": {
+    "be": 268,
+    "fe": 227,
+    "live": 2
+  },
+  "source_preservation": "PRESERVATION_P5.json",
+  "be_delta_files": 17,
+  "fe_delta_files": 9,
+  "no_unexpected_source_changes": true,
+  "case_inventory_reference": "CASE_COVERAGE_P5.md",
+  "no_new_phase_started": true,
+  "manifest_excludes_itself": true
+}

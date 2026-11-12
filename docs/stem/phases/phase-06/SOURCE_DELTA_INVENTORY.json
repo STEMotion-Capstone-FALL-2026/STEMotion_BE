@@ -1,0 +1,44 @@
+{
+  "be": {
+    "modified": [
+      "services/ai/app/main.py",
+      "services/ai/app/models.py",
+      "services/ai/app/prompting.py",
+      "src/main/java/com/stemotion/domain/ai/controller/AiController.java",
+      "src/main/java/com/stemotion/domain/ai/dto/AiDtos.java",
+      "src/main/java/com/stemotion/domain/library/controller/LibraryController.java",
+      "src/main/java/com/stemotion/domain/library/dto/LibraryDtos.java",
+      "src/main/java/com/stemotion/domain/library/service/LibraryService.java"
+    ],
+    "new": [
+      "services/ai/app/grounding.py",
+      "services/ai/tests/p6_fake_server.py",
+      "services/ai/tests/test_grounding_p6.py",
+      "src/main/java/com/stemotion/domain/ai/controller/StemGroundedAiController.java",
+      "src/main/java/com/stemotion/domain/ai/controller/StemGroundedAiLimitFilter.java",
+      "src/main/java/com/stemotion/domain/ai/service/StemAiContextResolver.java",
+      "src/main/java/com/stemotion/domain/ai/service/StemGroundedAiService.java",
+      "src/main/java/com/stemotion/domain/library/service/StemLibraryQuery.java",
+      "src/test/java/com/stemotion/domain/ai/service/StemGroundedOutputP6Test.java",
+      "src/test/java/com/stemotion/domain/stem/StemSpecimensP6Test.java",
+      "src/test/java/com/stemotion/e2e/StemP6HttpTest.java",
+      "src/test/resources/stem-p6/contract-specimens.json"
+    ]
+  },
+  "fe": {
+    "modified": [
+      "src/components/views/MediaLibrary/MediaLibraryView.tsx",
+      "src/components/views/WriterStudio/WriterStudio.tsx",
+      "src/services/apiClient.ts",
+      "src/services/libraryService.ts",
+      "src/services/scriptService.ts",
+      "src/types/stem.ts"
+    ],
+    "new": [
+      "src/components/stem/StemFlow.p6-live.test.tsx",
+      "src/components/stem/StemGroundedAiPanel.tsx",
+      "src/components/stem/StemLearningCard.tsx",
+      "src/components/stem/StemP6.test.tsx"
+    ]
+  }
+}

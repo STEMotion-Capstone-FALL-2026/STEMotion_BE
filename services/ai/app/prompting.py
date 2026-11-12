@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from .models import GenerationRequest
 from .schemas import schema_for
+from .grounding import instruction as grounded_instruction, context_section
 
 ROOT = Path(__file__).parent
 ICONS = json.loads((ROOT / "contracts/icons.json").read_text(encoding="utf-8"))
@@ -23,6 +24,10 @@ def build_request(operation, data):
     else:
         prompt = template(operation) % (data.subject or "STEM", data.gradeLevel or "trung học", data.scriptText)
     instruction = template("system")
+    if data.stemContext is not None:
+        instruction = grounded_instruction(data.stemContext)
+        # Same server data section as embedded Java. Legacy free-form requests remain unchanged.
+        prompt = 'Operation: ' + operation + '\n' + context_section(data.stemContext)
     if operation in {"generate", "resegment"}:
         instruction += "\nFor icons[].name and suggestedIcons[], use only these exact names: " + ", ".join(ICONS) + "."
     return GenerationRequest(systemInstruction=instruction, prompt=prompt,

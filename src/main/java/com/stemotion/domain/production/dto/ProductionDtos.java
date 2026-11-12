@@ -129,11 +129,16 @@ public final class ProductionDtos {
         String videoUrl,
         String errorMessage,
         /** Caption/audio sync summary from Whisper alignment, sent with COMPLETED. */
-        com.fasterxml.jackson.databind.JsonNode captionSync
+        com.fasterxml.jackson.databind.JsonNode captionSync,
+        com.fasterxml.jackson.databind.JsonNode artifactManifest
     ) {
         public RenderCallbackRequest(String jobId, RenderStatus status, Integer progress, String stage,
+                                     String videoUrl, String errorMessage, com.fasterxml.jackson.databind.JsonNode captionSync) {
+            this(jobId,status,progress,stage,videoUrl,errorMessage,captionSync,null);
+        }
+        public RenderCallbackRequest(String jobId, RenderStatus status, Integer progress, String stage,
                                      String videoUrl, String errorMessage) {
-            this(jobId, status, progress, stage, videoUrl, errorMessage, null);
+            this(jobId, status, progress, stage, videoUrl, errorMessage, null, null);
         }
     }
 
@@ -146,8 +151,16 @@ public final class ProductionDtos {
         @NotBlank(message = "title is required")
         String title,
 
-        String description
-    ) {}
+        String description,
+        Boolean legacyUnverifiedAcknowledged,
+        ArtifactExpectation artifactExpectation,
+        String idempotencyKey
+    ) {
+        public PublishRequest(List<PublishTarget> targets,String title,String description) {
+            this(targets,title,description,null,null,null);
+        }
+    }
+    public record ArtifactExpectation(String clipId,String jobId,String snapshotId,String inputHash) {}
 
     public record PublishResponse(
         String id,

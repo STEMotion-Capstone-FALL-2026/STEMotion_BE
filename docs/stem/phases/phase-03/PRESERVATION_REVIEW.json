@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-05",
+  "input_files_compared": 203,
+  "changed_inputs": [],
+  "original_repos": {
+    "STEMotion_BE": {
+      "head": "f6c6f0bdcdcc6bbaf1f1246f86678d3249dea8e1",
+      "same_head": true,
+      "same_status": true,
+      "tracked_files_compared": 504,
+      "changed_tracked": []
+    },
+    "STEMotion_FE": {
+      "head": "9fe67cf7801b3e971b3c852c80f68214fd13bba7",
+      "same_head": true,
+      "same_status": true,
+      "tracked_files_compared": 196,
+      "changed_tracked": []
+    },
+    "STEMotion_RENDER": {
+      "head": "022ea0a4d764a368f9179ba676fcf09a892b644f",
+      "same_head": true,
+      "same_status": true,
+      "tracked_files_compared": 54,
+      "changed_tracked": []
+    }
+  },
+  "isolated_real_env_files": [],
+  "secret_files_hashed": false,
+  "note": "Only documented non-secret tracked files/input docs compared; original working trees not written"
+}

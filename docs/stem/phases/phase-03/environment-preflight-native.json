@@ -1,0 +1,8 @@
+{
+  "name": "environment-preflight-native",
+  "exit_code": 0,
+  "elapsed_seconds": 33.62,
+  "repo": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE",
+  "tests": "PostgresConcurrencyTest",
+  "external_providers": "disabled/local placeholders; environment allow-list"
+}

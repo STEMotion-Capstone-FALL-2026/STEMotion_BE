@@ -1,0 +1,5 @@
+{
+  "gate": "PASS: before source unchanged; 3 HTTP500/NPE failures, no errors/skips; real PET proxy prerequisites passed",
+  "test_sha256": "95763fb4234d062043de978fef23df1a9245b463b8f53e897bd45ecfa3c6cfa3",
+  "no_production_change_before_red": true
+}

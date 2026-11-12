@@ -1,0 +1,11 @@
+{
+  "source_files": {
+    "be": 20,
+    "fe": 10
+  },
+  "source_hashes_verified": true,
+  "unexpected_scope_files": [],
+  "whitespace_findings": [],
+  "mapping_rows": 52,
+  "partial_not_closed": true
+}

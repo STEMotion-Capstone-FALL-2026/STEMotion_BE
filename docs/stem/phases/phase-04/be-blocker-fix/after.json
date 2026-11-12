@@ -1,0 +1,30 @@
+{
+  "name": "after",
+  "exit_code": 0,
+  "seconds": 111.33,
+  "build_directory": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\be-blocker-fix\\after",
+  "suites": [
+    {
+      "name": "com.stemotion.domain.stem.StemPostgresTest",
+      "tests": "29",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.stemotion.domain.stem.StemValidatorTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.stemotion.e2e.StemFullContextRegressionTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "tests": "StemFullContextRegressionTest,StemPostgresTest,StemValidatorTest"
+}

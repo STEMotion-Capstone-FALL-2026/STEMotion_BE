@@ -1,0 +1,27 @@
+{
+  "entries": 77,
+  "missing_or_mismatch": [],
+  "bootstrap_or_extra": {
+    "pip": "24.0"
+  },
+  "dependency_check": "No broken requirements found.",
+  "dependency_equivalence_pass": true,
+  "ai_suites": "PASS_FAKE_OFFLINE",
+  "ai_baseline_suites": {
+    "tests": 69,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "exact_lock_gate": "PASS",
+  "fake_provider": true,
+  "real_network_denied": true,
+  "log": "C:\\Users\\LeTran\\FPT University\\2026_FALL\\STEMotion\\.audit\\stem-phase-2026-11-05\\phase-03\\STEMotion_BE\\.audit\\stem-p6\\ai-exact-baseline-native\\results.xml",
+  "final_ai_tests": {
+    "tests": 85,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "scope": "LOCAL_P6_ONLY_P0_NOT_CLOSED"
+}

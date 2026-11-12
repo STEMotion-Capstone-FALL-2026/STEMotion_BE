@@ -1,0 +1,84 @@
+{
+  "be_clone": {
+    "head": "f6c6f0bdcdcc6bbaf1f1246f86678d3249dea8e1",
+    "branch": "feat/stem-p3-isolated-20261105",
+    "head_unchanged": true,
+    "branch_unchanged": true,
+    "baseline_files_checked": 757,
+    "modified_approved": [
+      "src/main/java/com/stemotion/domain/stem/StemService.java",
+      "src/main/java/com/stemotion/domain/library/dto/LibraryDtos.java",
+      "src/main/java/com/stemotion/domain/library/service/LibraryService.java",
+      "src/main/java/com/stemotion/domain/production/dto/ProductionDtos.java",
+      "src/main/java/com/stemotion/domain/production/service/CompositionService.java",
+      "src/main/java/com/stemotion/domain/production/service/PublishService.java",
+      "src/main/java/com/stemotion/domain/production/service/RenderService.java",
+      "src/main/java/com/stemotion/domain/review/dto/QaDtos.java",
+      "src/main/java/com/stemotion/domain/review/service/ClipQaService.java",
+      "src/main/java/com/stemotion/domain/review/service/FeedbackService.java"
+    ],
+    "new_source": [
+      "src/main/java/com/stemotion/domain/stem/StemArtifactController.java",
+      "src/main/java/com/stemotion/domain/stem/StemArtifactRequestFilter.java",
+      "src/main/java/com/stemotion/domain/stem/StemArtifactService.java",
+      "src/main/java/com/stemotion/domain/stem/StemFingerprint.java",
+      "src/test/java/com/stemotion/domain/stem/StemFingerprintP5Test.java",
+      "src/test/java/com/stemotion/e2e/StemArtifactP5Test.java",
+      "src/test/resources/db/stem-p5/V92000__stem_p5_artifact_snapshots_test_only.sql"
+    ],
+    "missing": [],
+    "unexpected": [],
+    "baseline_patch_reconstruction_hash_verified": true
+  },
+  "fe_p4": {
+    "head": "9fe67cf7801b3e971b3c852c80f68214fd13bba7",
+    "branch": "feat/stem-p4-isolated-20261105",
+    "head_unchanged": true,
+    "branch_unchanged": true,
+    "baseline_files_checked": 319,
+    "modified_approved": [
+      "src/components/stem/StemReadOnlySummary.tsx",
+      "src/services/stemClient.ts",
+      "src/components/modals/PublishModal.tsx",
+      "src/components/views/ProducerStudio/ProducerStudio.tsx",
+      "src/services/libraryService.ts",
+      "src/services/publicationService.ts",
+      "src/services/reviewService.ts",
+      "src/types/stem.ts"
+    ],
+    "new_source": [
+      "src/components/stem/StemArtifact.p5.test.tsx"
+    ],
+    "missing": [],
+    "unexpected": [],
+    "baseline_patch_reconstruction_hash_verified": true
+  },
+  "be_original": {
+    "files_checked": 695,
+    "changed_since_prior_preservation": [],
+    "missing": [],
+    "head_unchanged": true,
+    "read_only": true
+  },
+  "fe_original": {
+    "files_checked": 201,
+    "changed_since_prior_preservation": [],
+    "missing": [],
+    "head_unchanged": true,
+    "read_only": true
+  },
+  "old_test_sources": {
+    "be38plus3_and_existing_regression": "unchanged - no old test source in approved modified list",
+    "fe_p4_test_config_runner": "all pre-existing captured FE files unchanged except approved8 production files; only one new P5 test file",
+    "migrations_V1_22_V9000_V9001_V91000": "unchanged; only new TEST_ONLY V92000"
+  },
+  "actions": {
+    "commits": 0,
+    "pushes": 0,
+    "merges": 0,
+    "deployments": 0,
+    "shared_connections": 0,
+    "worker_changes": 0,
+    "package_lock_toolchain_changes": 0
+  }
+}

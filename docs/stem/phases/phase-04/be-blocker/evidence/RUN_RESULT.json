@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "seconds": 56.46,
+  "temporary_probe_source_removed": true,
+  "temporary_source_sha256": "9794e474cd2369d0ae424f92ad3bdedd70eafd1ff1f6668f1592f456fe7898cd",
+  "repo_source_changed": false,
+  "p4_tests_run": false
+}

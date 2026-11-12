@@ -56,6 +56,12 @@ public class FeedbackService {
     private final StatusHistoryService statusHistoryService;
     private final CompositionService compositionService;
     private final RenderService renderService;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
+
+
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.stemotion.domain.stem.StemService stem;
 
     /**
      * Notes of a project. A status filter applies to the notes themselves; their replies come
@@ -232,6 +238,8 @@ public class FeedbackService {
         }
         ScriptVersion version = scriptService.currentVersion(project);
         Composition composition = compositionService.ensure(project, version, producerId);
+        if(stem!=null)stem.submission(project,version);
+        if(stemArtifacts!=null)stemArtifacts.submission(project,producerId);
         var from = project.getPipelineStatus();
         project.setVideoStatus(VideoStatus.IN_QA);
         projectRepository.save(project);
@@ -247,8 +255,15 @@ public class FeedbackService {
      */
     @Transactional
     public void approveVideo(String projectId, String reviewerId, String reason) {
+        approveVideo(projectId,reviewerId,reason,null);
+    }
+    @Transactional
+    public void approveVideo(String projectId, String reviewerId, String reason, com.stemotion.domain.stem.StemDtos.Assessment assessment) {
+        if(stem==null && assessment!=null)throw ApiException.badRequest("STEM is disabled");
         ClipProject project = scriptService.getOrThrow(projectId);
         scriptService.requireActive(project);
+        var stemTicket=stem==null?null:stem.prepare(project,scriptService.currentVersion(project),reviewerId,"VIDEO",assessment,reason);
+        if(stemTicket!=null && stemTicket.replay())return;
 
         if (project.getVideoStatus() != VideoStatus.IN_QA) {
             throw ApiException.badRequest(
@@ -265,6 +280,7 @@ public class FeedbackService {
             );
         }
 
+        var artifactReview=stemArtifacts==null?null:stemArtifacts.beforeReview(project);
         var from = project.getPipelineStatus();
         project.setVideoStatus(VideoStatus.APPROVED);
         projectRepository.save(project);
@@ -272,12 +288,17 @@ public class FeedbackService {
         if (clip.isPresent()) {
             statusHistoryService.recordReview(project, from, reviewer,
                 StatusHistory.TargetType.CLIP, clip.get().getId(), StatusHistory.Decision.APPROVED, reason);
+            if(stem!=null)stem.finish(project,stemTicket);
+            if(stemArtifacts!=null)stemArtifacts.afterReview(project,reviewerId,artifactReview,clip.get());
             return;
         }
         Composition composition = compositionService.ensure(project, version, reviewerId);
         statusHistoryService.recordReview(project, from, reviewer, StatusHistory.TargetType.COMPOSITION,
             composition.getId(), StatusHistory.Decision.APPROVED, reason, revisionNote(composition));
-        renderService.renderApproved(projectId, reviewerId);
+        if(stem!=null)stem.finish(project,stemTicket);
+        String approvalSnapshot=stemArtifacts==null?null:stemArtifacts.afterReview(project,reviewerId,artifactReview,null);
+        if(stemArtifacts==null)renderService.renderApproved(projectId,reviewerId);
+        else renderService.renderApproved(projectId,reviewerId,approvalSnapshot);
     }
 
     /** Sends the clip, or the composition reviewed in the web player, back to the producer. */

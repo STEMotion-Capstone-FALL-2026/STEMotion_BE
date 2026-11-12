@@ -1,0 +1,142 @@
+ M src/components/ProducerView.tsx
+ M src/components/modals/PublishModal.tsx
+ M src/components/views/ProducerStudio/ProducerStudio.tsx
+ M src/components/views/ReviewerStudio/ReviewerStudio.test.tsx
+ M src/components/views/ReviewerStudio/ReviewerStudio.tsx
+ M src/components/views/WriterStudio/WriterStudio.test.tsx
+ M src/components/views/WriterStudio/WriterStudio.tsx
+ M src/services/apiClient.ts
+ M src/services/compositionService.ts
+ M src/services/libraryService.ts
+ M src/services/publicationService.ts
+ M src/services/reviewService.ts
+ M src/services/sceneSaveQueue.ts
+ M src/services/scriptService.ts
+ M src/types/stem.ts
+?? docs/stem/phases/phase-04/takeover-codex/ANTIGRAVITY_REVIEW.md
+?? docs/stem/phases/phase-04/takeover-codex/ANTIGRAVITY_STARTING_DIFF.patch
+?? docs/stem/phases/phase-04/takeover-codex/BE_INTEGRATION_BLOCKER.md
+?? docs/stem/phases/phase-04/takeover-codex/CASE_COVERAGE.md
+?? docs/stem/phases/phase-04/takeover-codex/FILE_INVENTORY.md
+?? docs/stem/phases/phase-04/takeover-codex/FINAL_RESULT.json
+?? docs/stem/phases/phase-04/takeover-codex/G06_CONTRACT_CONFLICT.md
+?? docs/stem/phases/phase-04/takeover-codex/INPUT_BASELINE.json
+?? docs/stem/phases/phase-04/takeover-codex/LIVE_RUN_RESULT.json
+?? docs/stem/phases/phase-04/takeover-codex/LOG_HYGIENE_CHECK.json
+?? docs/stem/phases/phase-04/takeover-codex/ORIGINAL_FE_STARTING_DIFF.patch
+?? docs/stem/phases/phase-04/takeover-codex/OWNED_PG_IDENTITY.json
+?? docs/stem/phases/phase-04/takeover-codex/OWNED_PG_SHUTDOWN.json
+?? docs/stem/phases/phase-04/takeover-codex/P4_HANDOFF.md
+?? docs/stem/phases/phase-04/takeover-codex/PATCH_P4.diff
+?? docs/stem/phases/phase-04/takeover-codex/POSTGRES_REMAINING_READ_ONLY.json
+?? docs/stem/phases/phase-04/takeover-codex/PRESERVATION_CHECK.json
+?? docs/stem/phases/phase-04/takeover-codex/PROCESS_CLEANUP_CHECK.json
+?? docs/stem/phases/phase-04/takeover-codex/SERVICE_ENDPOINT_MAP.md
+?? docs/stem/phases/phase-04/takeover-codex/SOURCE_MANIFEST.json
+?? docs/stem/phases/phase-04/takeover-codex/STATIC_RESULTS.json
+?? docs/stem/phases/phase-04/takeover-codex/TEST_BASELINE.md
+?? docs/stem/phases/phase-04/takeover-codex/WHITESPACE_CHECK.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/live-r1/LIVE_RUN_RESULT.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/live-r2-sandbox/LIVE_RUN_RESULT.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/live-r3-fixture/LIVE_RUN_RESULT.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/live-r3-fixture/integration-results.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/live-r4-config/LIVE_RUN_RESULT.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/live-r4-config/integration-results.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/live-r5-scene-fixture/LIVE_RUN_RESULT.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/live-r5-scene-fixture/integration-results.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/unit-r1/unit-component-results.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/unit-r2/unit-component-results.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/unit-r3/unit-component-results.json
+?? docs/stem/phases/phase-04/takeover-codex/attempts/unit-r4/unit-component-results.json
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_AMS-Regular-DMm9YOAa.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_AMS-Regular-DRggAlZN.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Fraktur-Regular-CB_wures.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-Bold-Cx986IdX.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-Bold-Jm3AIy58.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-Bold-waoOVXN0.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-Italic-3WenGoN9.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-Italic-BMLOBm91.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-Regular-B22Nviop.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-Regular-Dr94JaBh.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Main-Regular-ypZvNtVU.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Math-Italic-DA0__PXp.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Math-Italic-flOr_0UB.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Math-Italic-t53AETM-.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Script-Regular-C5JkGWo-.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Script-Regular-D3wIWfF6.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Script-Regular-D5yQViql.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Size1-Regular-C195tn64.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Size2-Regular-oD1tc_U0.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Size3-Regular-CTq5MqoE.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Size4-Regular-BF-4gkZK.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Size4-Regular-DWFBv043.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/index-1JiuWgts.js
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/index-CJvoZGx3.js
+?? docs/stem/phases/phase-04/takeover-codex/build/assets/index-KP0faHHU.css
+?? docs/stem/phases/phase-04/takeover-codex/build/index.html
+?? docs/stem/phases/phase-04/takeover-codex/build/music/LICENSE.md
+?? docs/stem/phases/phase-04/takeover-codex/build/music/spacyloop.ogg
+?? docs/stem/phases/phase-04/takeover-codex/build/sample_stem_video.mp4
+?? docs/stem/phases/phase-04/takeover-codex/catalog-test-only.sql
+?? docs/stem/phases/phase-04/takeover-codex/integration-results.json
+?? docs/stem/phases/phase-04/takeover-codex/java-test-only.args
+?? docs/stem/phases/phase-04/takeover-codex/run-live.py
+?? docs/stem/phases/phase-04/takeover-codex/run-static-checks.py
+?? docs/stem/phases/phase-04/takeover-codex/unit-component-results.json
+?? docs/stem/phases/phase-04/takeover-codex/unit-network-guard.ts
+?? docs/stem/phases/phase-04/takeover-codex/vite.build.config.ts
+?? docs/stem/phases/phase-04/takeover-codex/vitest.config.ts
+?? docs/stem/phases/phase-04/takeover-codex/vitest.live.config.ts
+?? docs/stem/phases/phase-05/FE_CONSUMER_PLAN.md
+?? docs/stem/phases/phase-05/INPUT_BASELINE.json
+?? docs/stem/phases/phase-05/PRE_P5_SOURCE.patch
+?? src/components/stem/StemArtifact.p5.test.tsx
+?? src/components/stem/StemBriefPanel.tsx
+?? src/components/stem/StemErrorNotice.tsx
+?? src/components/stem/StemFlow.p4-live.test.tsx
+?? src/components/stem/StemLearningFields.tsx
+?? src/components/stem/StemPanels.test.tsx
+?? src/components/stem/StemReadOnlySummary.tsx
+?? src/components/stem/StemRubricPanel.tsx
+?? src/components/stem/StemWorkspaceSettings.tsx
+?? src/components/stem/useStemTarget.ts
+?? src/services/stemAutosave.test.ts
+?? src/services/stemClient.test.ts
+?? src/services/stemClient.ts

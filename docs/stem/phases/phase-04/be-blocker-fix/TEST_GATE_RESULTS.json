@@ -1,0 +1,98 @@
+{
+  "before_regression": {
+    "failures": 3,
+    "errors": 0,
+    "skipped": 0,
+    "reason": "HTTP500 NPE workspace/create/lock"
+  },
+  "after_be_tests": {
+    "pass": 41,
+    "p3_unchanged_tests": 38,
+    "new_full_context": 3,
+    "fail": 0,
+    "skip": 0
+  },
+  "regression_source_same": true,
+  "regression_source_sha256": "95763fb4234d062043de978fef23df1a9245b463b8f53e897bd45ecfa3c6cfa3",
+  "p3_test_names_match_baseline": {
+    "StemPostgresTest": true,
+    "StemValidatorTest": true
+  },
+  "p4_live_pass": 2,
+  "settings_wire_checks": [
+    {
+      "method": "PUT",
+      "path": "/api/v1/workspaces/{TEST_ONLY_ID}/stem-settings",
+      "requestKeys": [
+        "baseRevision",
+        "mode",
+        "policyVersionIds",
+        "defaultPolicyVersionId",
+        "idempotencyKey",
+        "legacyModeSelection"
+      ],
+      "status": 200,
+      "baseRevision": 0,
+      "mode": "ADVISORY"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/workspaces/{TEST_ONLY_ID}/stem-settings",
+      "requestKeys": [
+        "baseRevision",
+        "mode",
+        "policyVersionIds",
+        "defaultPolicyVersionId",
+        "idempotencyKey",
+        "legacyModeSelection"
+      ],
+      "status": 409,
+      "baseRevision": 0,
+      "mode": "OFF"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/workspaces/{TEST_ONLY_ID}/stem-settings",
+      "requestKeys": [
+        "baseRevision",
+        "mode",
+        "policyVersionIds",
+        "defaultPolicyVersionId",
+        "idempotencyKey",
+        "legacyModeSelection"
+      ],
+      "status": 200,
+      "baseRevision": 1,
+      "mode": "OFF"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/workspaces/{TEST_ONLY_ID}/stem-settings",
+      "requestKeys": [
+        "baseRevision",
+        "mode",
+        "policyVersionIds",
+        "defaultPolicyVersionId",
+        "idempotencyKey",
+        "legacyModeSelection"
+      ],
+      "status": 200,
+      "baseRevision": 2,
+      "mode": "ADVISORY"
+    }
+  ],
+  "db_audit": {
+    "migrations": 25,
+    "assessments": 1,
+    "approvedDecisions": 1,
+    "approvalReceipts": 1,
+    "settingsRevision": 3,
+    "advisoryWorkspaces": 1,
+    "modeAudits": 3,
+    "modeAuditsWithBaseRevision": 3,
+    "modeAuditsWithModeRevision": 0,
+    "verifiedAssessments": 0
+  },
+  "full_be_regression_run": false,
+  "fe_216_regression_run": false
+}

@@ -1,0 +1,460 @@
+diff --git a/src/components/stem/StemFlow.p6-live.test.tsx b/src/components/stem/StemFlow.p6-live.test.tsx
+--- /dev/null
++++ b/src/components/stem/StemFlow.p6-live.test.tsx
+@@ -0,0 +1,28 @@
++import React from 'react';
++import {beforeAll,afterEach,it,expect,vi} from 'vitest';
++import {render,screen,fireEvent,cleanup} from '@testing-library/react';
++import {apiClient} from '../../services/apiClient';
++import {scriptService} from '../../services/scriptService';
++import {libraryService} from '../../services/libraryService';
++import {StemLearningCard} from './StemLearningCard';
++import {StemGroundedAiPanel} from './StemGroundedAiPanel';
++
++const url=process.env.P6_LIVE_API_URL;
++if(!url||!/^http:\/\/127\.0\.0\.1:\d+\/api\/v1$/.test(url))throw new Error('Owned P6 localhost runner required');
++const project=process.env.P6_TEST_PROJECT!,version=process.env.P6_TEST_VERSION!,outcome=process.env.P6_TEST_OUTCOME!;
++beforeAll(async()=>{vi.spyOn(apiClient,'getBaseUrl').mockReturnValue(url);const login=await apiClient.post<any>('/auth/login',{username:'p5-writer',password:'P5-fixture-only-123'});apiClient.setAuthToken(login.accessToken);});
++afterEach(()=>cleanup());
++it('live P6 library card and combined paging come from frozen BE projection',async()=>{
++  const rows=await libraryService.getPublishedClips('Math','4',{educationLevel:'PRIMARY',outcomeId:outcome,usageContext:'GROUP_PRACTICE',contextRole:'SECONDARY',channel:'DEPARTMENT_LIBRARY',page:0,size:1});
++  expect(rows).toHaveLength(1);expect(rows.pagination?.total).toBe(1);expect(rows[0].learningCard?.verificationStatus).toBe('UNVERIFIED');
++  render(<StemLearningCard item={rows[0]}/>);expect(screen.getByText(/TEST_ONLY compare/)).toBeTruthy();expect(screen.getByText('Chưa được thẩm định chuyên môn')).toBeTruthy();
++});
++it('live P6 FE → BE → Python fake suggestion; changed brief rejects accept without saving script',async()=>{
++  render(<StemGroundedAiPanel projectId={project} isWriter/>);fireEvent.click(screen.getByRole('button',{name:'Yêu cầu gợi ý theo hồ sơ'}));
++  await screen.findByRole('button',{name:'Chấp nhận gợi ý STEM'}, {timeout:20000});
++  const brief=await scriptService.getStemBrief(project,version);
++  if(!brief.brief)throw new Error('TEST_ONLY expected a seeded draft brief');
++  await scriptService.saveStemBrief(project,version,{schemaVersion:'stem.v1',baseRevision:brief.revision,expectedScriptRevision:0,idempotencyKey:'TEST_ONLY-p6-live-'+Date.now(),brief:{...brief.brief,safetyNotes:'TEST_ONLY changed while suggestion open'},evidence:brief.evidence});
++  fireEvent.click(screen.getByRole('button',{name:'Chấp nhận gợi ý STEM'}));await screen.findByText(/Bạn vẫn có thể chỉnh sửa và lưu kịch bản thủ công/,{},{timeout:20000});
++  const current=await scriptService.getStemTarget(project);expect(current.scriptRevision).toBe(0);
++});
+diff --git a/src/components/stem/StemGroundedAiPanel.tsx b/src/components/stem/StemGroundedAiPanel.tsx
+--- /dev/null
++++ b/src/components/stem/StemGroundedAiPanel.tsx
+@@ -0,0 +1,41 @@
++import React from 'react';
++import {scriptService} from '../../services/scriptService';
++import type {GroundedAiResult} from '../../types/stem';
++import {StemErrorNotice} from './StemErrorNotice';
++
++export function StemGroundedAiPanel({projectId,isWriter}: {projectId:string;isWriter:boolean}) {
++  const [operation,setOperation]=React.useState<GroundedAiResult['operation']>('terms');
++  const [result,setResult]=React.useState<GroundedAiResult|null>(null);
++  const [busy,setBusy]=React.useState(false);const [error,setError]=React.useState<unknown>(null);const [decision,setDecision]=React.useState('');
++  const request=React.useRef(0);
++  React.useEffect(()=>{request.current++;setResult(null);setDecision('');setError(null);setBusy(false);return()=>{request.current++;};},[projectId]);
++  const generate=async()=>{
++    const id=++request.current;setBusy(true);setError(null);setResult(null);setDecision('');
++    try {
++      const target=await scriptService.getStemTarget(projectId);const brief=await scriptService.getStemBrief(projectId,target.versionId);
++      if(!brief.briefId)throw new Error('Cần lưu hồ sơ STEM nháp trước khi yêu cầu gợi ý.');
++      const value=await scriptService.getGroundedSuggestion(projectId,operation,{scriptVersionId:target.versionId,expectedScriptRevision:target.scriptRevision,expectedBriefRevision:brief.revision,expectedModeRevision:brief.modeRevision});
++      if(request.current===id)setResult(value);
++    }catch(e){if(request.current===id)setError(e);}finally{if(request.current===id)setBusy(false);}
++  };
++  const decide=async(value:'ACCEPTED'|'IGNORED')=>{
++    if(!result?.requestId)return;const id=request.current;setBusy(true);setError(null);
++    try{await scriptService.decideAiRequest(result.requestId,value,{projectId,target:result.grounding.target,contextDigest:result.grounding.contextDigest});if(id===request.current)setDecision(value);}catch(e){if(id===request.current)setError(e);}finally{if(id===request.current)setBusy(false);}
++  };
++  return <section aria-label="AI theo hồ sơ STEM" className="mt-5 rounded-xl border bg-white p-4 space-y-3 text-sm">
++    <h3 className="font-semibold">AI theo hồ sơ STEM</h3>
++    <p>Gợi ý nháp, chưa thẩm định. AI dùng bản kịch bản và hồ sơ đã lưu trên máy chủ. Hãy lưu thay đổi trước khi yêu cầu.</p>
++    <label>Loại gợi ý <select aria-label="Loại gợi ý STEM" value={operation} disabled={busy} onChange={e=>setOperation(e.target.value as GroundedAiResult['operation'])}>
++      <option value="generate">Gợi ý kịch bản</option><option value="resegment">Gợi ý phân cảnh</option><option value="grade">Ngôn ngữ theo lớp</option><option value="extract">Khái niệm STEM</option><option value="terms">Thuật ngữ và điểm cần xem lại</option>
++    </select></label>
++    <button type="button" disabled={!isWriter||busy} onClick={()=>void generate()}>{busy?'Đang xử lý…':'Yêu cầu gợi ý theo hồ sơ'}</button>
++    <StemErrorNotice error={error} onReload={()=>{setError(null);setResult(null);}} onRetryReady={()=>setError(null)}/>
++    {error!=null&&<p>Bạn vẫn có thể chỉnh sửa và lưu kịch bản thủ công.</p>}
++    {result&&<><p>Chưa thẩm định · Mục tiêu: {result.grounding.objectiveKeys.join(', ')||'Chưa khai báo'} · Nhiệm vụ: {result.grounding.activityKeys.join(', ')||'Chưa khai báo'}</p>
++      <pre className="whitespace-pre-wrap max-h-80 overflow-auto">{JSON.stringify(result.result,null,2)}</pre>
++      <p>Chấp nhận chỉ ghi nhận lựa chọn. Kịch bản chưa tự thay đổi; hãy biên tập và dùng Lưu nháp hiện hữu.</p>
++      {result.requestId&&!decision&&<><button disabled={busy} onClick={()=>void decide('ACCEPTED')}>Chấp nhận gợi ý STEM</button><button disabled={busy} onClick={()=>void decide('IGNORED')}>Bỏ qua gợi ý STEM</button></>}
++      {decision&&<p role="status">Đã ghi nhận lựa chọn. Kịch bản chưa tự thay đổi.</p>}
++    </>}
++  </section>;
++}
+diff --git a/src/components/stem/StemLearningCard.tsx b/src/components/stem/StemLearningCard.tsx
+--- /dev/null
++++ b/src/components/stem/StemLearningCard.tsx
+@@ -0,0 +1,25 @@
++import React from 'react';
++import type { LibraryItem } from '../../services/libraryService';
++
++const contextName = (key?: string) => key === 'IN_CLASS_SCREEN' ? 'Chiếu chung trong lớp' : key === 'GROUP_PRACTICE' ? 'Thực hành nhóm' : 'Chưa đối chiếu';
++export function StemLearningCard({ item }: {item: LibraryItem}) {
++  const card = item.learningCard;
++  const [message,setMessage] = React.useState('');
++  return <section aria-label="Thẻ học liệu STEM" className="rounded-lg border border-slate-200 p-3 space-y-2">
++    <p className="font-semibold text-amber-800">{!card?.snapshotId || card.verificationStatus === 'LEGACY_UNMAPPED' ? 'Chưa đối chiếu hồ sơ STEM' : 'Chưa được thẩm định chuyên môn'}</p>
++    {card?.snapshotId ? <>
++      <p>Lớp: {card.gradeKey || 'Chưa khai báo'} · Cấp: {card.educationLevel || 'Chưa đối chiếu'}</p>
++      <p>Môn chính/phối hợp: {card.subjectKeys?.join(', ') || 'Chưa khai báo'}</p>
++      <p>Bối cảnh chính: {contextName(card.context?.primary?.key)}</p>
++      {card.context?.secondary?.map((c,i) => <p key={i}>Bối cảnh phụ: {contextName(c.key)} — {c.condition || 'Chưa nêu điều kiện'}; {c.adaptations || 'Chưa nêu điều chỉnh'}</p>)}
++      <p>Kênh sử dụng: {card.distributionChannels?.includes('DEPARTMENT_LIBRARY') ? 'Kho học liệu tổ chuyên môn' : 'Chưa khai báo'}</p>
++      <div><strong>Mục tiêu học tập</strong><ul>{card.objectives?.map(o => <li key={o.key}>{o.learnerAction || 'Chưa khai báo'}{o.observableEvidence && ` — Minh chứng: ${o.observableEvidence}`}</li>)}</ul></div>
++      <p>Phạm vi clip / hoạt động ngoài MP4: {card.scopeOfClip || 'Chưa khai báo'}</p>
++      <div><strong>Học sinh làm gì sau khi xem</strong><ul>{card.studentTasks?.map(t => <li key={t.key}>{t.learnerAction || 'Chưa khai báo'}{t.materials && ` — Vật liệu: ${t.materials}`}{t.safety && ` — An toàn: ${t.safety}`}{t.teacherSupport && ` — Hỗ trợ: ${t.teacherSupport}`}</li>)}</ul></div>
++      <p>Lưu ý an toàn: {card.safetyNotes || 'Chưa khai báo; cần giáo viên xem xét'}</p>
++      <details><summary>Nguồn và phiên bản của học liệu</summary><ul>{card.sources?.map((s,i) => <li key={i}>{s.title || s.citation || s.kind || 'Nguồn chưa thẩm định'} · bản {s.version ?? '?'} {s.locator || ''}</li>)}</ul><p>Thông tin thuộc bản đã công bố; chưa phải xác nhận chương trình hoặc hiệu quả học tập.</p></details>
++      <button type="button" className="underline" onClick={async () => { try { await navigator.clipboard.writeText(JSON.stringify({learningCard: card,videoUrl: item.videoUrl},null,2));setMessage('Đã sao chép thẻ và liên kết học liệu.'); } catch {setMessage('Chưa sao chép được. Vui lòng thử lại.');} }}>Sao chép thẻ và liên kết</button>
++      {message && <p role="status">{message}</p>}
++    </> : <p>Vẫn có thể xem, tải và nhúng video. Chưa xác định lớp, yêu cầu cần đạt hay bối cảnh từ hồ sơ lịch sử.</p>}
++  </section>;
++}
+diff --git a/src/components/stem/StemP6.test.tsx b/src/components/stem/StemP6.test.tsx
+--- /dev/null
++++ b/src/components/stem/StemP6.test.tsx
+@@ -0,0 +1,52 @@
++import React from 'react';
++import {afterEach,expect,it,vi} from 'vitest';
++import {render,screen,fireEvent,waitFor,cleanup} from '@testing-library/react';
++import {readFileSync} from 'node:fs';
++import {resolve} from 'node:path';
++import {StemLearningCard} from './StemLearningCard';
++import {StemGroundedAiPanel} from './StemGroundedAiPanel';
++import {libraryService} from '../../services/libraryService';
++import {scriptService} from '../../services/scriptService';
++import {apiClient} from '../../services/apiClient';
++import {MediaLibraryView} from '../views/MediaLibrary/MediaLibraryView';
++
++afterEach(()=>{cleanup();vi.restoreAllMocks();});
++const item:any={id:'TEST_ONLY',title:'TEST_ONLY',subject:'Math',gradeLevel:'4',videoUrl:'https://example.invalid/test.mp4',learningCard:{schemaVersion:'stem-learning-card.v1',publicationId:'TEST_ONLY',snapshotId:'TEST_ONLY',verificationStatus:'UNVERIFIED',gradeKey:'4',context:{primary:{key:'IN_CLASS_SCREEN'},secondary:[{key:'GROUP_PRACTICE',condition:'TEST_ONLY điều kiện',adaptations:'TEST_ONLY thay thế'}]},distributionChannels:['DEPARTMENT_LIBRARY'],objectives:[{key:'o1',learnerAction:'TEST_ONLY quan sát'}],studentTasks:[{key:'t1',learnerAction:'TEST_ONLY đo và ghi',safety:'TEST_ONLY giáo viên giám sát'}],scopeOfClip:'TEST_ONLY hoạt động ngoài MP4'}};
++it('learning card separates frozen tasks, context channel and expert status',()=>{render(<StemLearningCard item={item}/>);expect(screen.getByText('Chưa được thẩm định chuyên môn')).toBeTruthy();expect(screen.getByText(/Học sinh làm gì/)).toBeTruthy();expect(screen.getByText(/TEST_ONLY đo và ghi/)).toBeTruthy();expect(screen.getByText(/Kho học liệu tổ chuyên môn/)).toBeTruthy();expect(screen.getByText(/hoạt động ngoài MP4/)).toBeTruthy();});
++it('legacy card does not infer curriculum or hide read export',()=>{render(<StemLearningCard item={{...item,learningCard:null}}/>);expect(screen.getByText('Chưa đối chiếu hồ sơ STEM')).toBeTruthy();expect(screen.queryByText(/Lớp: 4/)).toBeNull();expect(screen.getByText(/Vẫn có thể xem, tải/)).toBeTruthy();});
++it('combined library params are sent to server and totals use headers',async()=>{
++  const get=vi.spyOn(apiClient,'getPage').mockResolvedValue({data:[item],total:27,pages:2,page:1,size:20});
++  const rows=await libraryService.getPublishedClips('Math','4',{page:1,size:20,educationLevel:'PRIMARY',outcomeId:'TEST_ONLY',usageContext:'GROUP_PRACTICE',contextRole:'SECONDARY',channel:'DEPARTMENT_LIBRARY'});
++  const url=get.mock.calls[0][0];for(const text of ['page=1','gradeLevel=4','outcomeId=TEST_ONLY','contextRole=SECONDARY','channel=DEPARTMENT_LIBRARY'])expect(url).toContain(text);expect(rows.pagination?.total).toBe(27);expect(rows).toHaveLength(1);
++});
++it('library view sends page and advanced filters instead of filtering a page locally',async()=>{
++  const rows:any=[item];rows.pagination={total:21,pages:2,page:0,size:20};
++  const load=vi.spyOn(libraryService,'getPublishedClips').mockResolvedValue(rows);
++  vi.spyOn(libraryService,'getFilters').mockResolvedValue({subjects:['Math'],gradeLevels:['4'],educationLevels:['PRIMARY']});
++  render(<MediaLibraryView script={{videoStatus:'NOT_RENDERED'} as any} onOpenPublishModal={()=>{}}/>);
++  await screen.findByText(item.title);fireEvent.click(screen.getByRole('button',{name:'Trang sau'}));
++  await waitFor(()=>expect(load).toHaveBeenLastCalledWith('',undefined,expect.objectContaining({page:1,size:20})));
++  fireEvent.click(screen.getByRole('button',{name:'Bộ lọc STEM'}));await screen.findByLabelText('Cấp học');
++  fireEvent.change(screen.getByLabelText('Bối cảnh học'),{target:{value:'GROUP_PRACTICE'}});
++  fireEvent.change(screen.getByLabelText('Vai trò bối cảnh'),{target:{value:'SECONDARY'}});
++  await waitFor(()=>expect(load).toHaveBeenLastCalledWith('',undefined,expect.objectContaining({page:0,usageContext:'GROUP_PRACTICE',contextRole:'SECONDARY'})));
++});
++it('grounded action failure keeps manual editing available',async()=>{
++  vi.spyOn(scriptService,'getStemTarget').mockRejectedValue(new Error('TEST_ONLY unavailable'));
++  render(<StemGroundedAiPanel projectId="p" isWriter/>);fireEvent.click(screen.getByRole('button',{name:'Yêu cầu gợi ý theo hồ sơ'}));await screen.findByText(/Bạn vẫn có thể chỉnh sửa/);expect((screen.getByRole('button',{name:'Yêu cầu gợi ý theo hồ sơ'}) as HTMLButtonElement).disabled).toBe(false);
++});
++it('accept passes binding and only records a decision',async()=>{
++  vi.spyOn(scriptService,'getStemTarget').mockResolvedValue({versionId:'v',scriptRevision:2} as any);vi.spyOn(scriptService,'getStemBrief').mockResolvedValue({briefId:'b',revision:3,modeRevision:4} as any);
++  const target={scriptVersionId:'v',expectedScriptRevision:2,expectedBriefRevision:3,expectedModeRevision:4};
++  vi.spyOn(scriptService,'getGroundedSuggestion').mockResolvedValue({operation:'terms',result:{issues:[]},model:'TEST_ONLY',requestId:'r',grounding:{schemaVersion:'stem-ai.v1',contextDigest:'TEST_ONLY-digest',target,verificationStatus:'UNVERIFIED',profile:'PRIMARY_DRAFT',objectiveKeys:['o1'],activityKeys:['t1'],warnings:[]}});
++  const decide=vi.spyOn(scriptService,'decideAiRequest').mockResolvedValue();
++  render(<StemGroundedAiPanel projectId="p" isWriter/>);fireEvent.click(screen.getByRole('button',{name:'Yêu cầu gợi ý theo hồ sơ'}));fireEvent.click(await screen.findByRole('button',{name:'Chấp nhận gợi ý STEM'}));
++  await waitFor(()=>expect(decide).toHaveBeenCalledWith('r','ACCEPTED',{projectId:'p',target,contextDigest:'TEST_ONLY-digest'}));await screen.findByText('Đã ghi nhận lựa chọn. Kịch bản chưa tự thay đổi.');
++});
++const specimens=JSON.parse(readFileSync(resolve(process.cwd(),'../../phase-03/STEMotion_BE/src/test/resources/stem-p6/contract-specimens.json'),'utf8'));
++for(const scene of specimens.scenes)it(`F09 valid DTO through FE AI scene validator: ${scene.type}`,async()=>{
++  vi.spyOn(apiClient,'post').mockResolvedValue({result:{scenes:[scene]}});const result=await scriptService.generateScriptWithAI('TEST_ONLY','Math','4');expect(result.scenes).toHaveLength(1);
++});
++for(const block of specimens.blocks)it(`F10 composed and extraBlocks DTO through FE validator: ${block.kind}`,async()=>{
++  vi.spyOn(apiClient,'post').mockResolvedValue({result:{scenes:[block.scene,block.extraScene]}});const result=await scriptService.generateScriptWithAI('TEST_ONLY','Math','4');expect(result.scenes).toHaveLength(2);
++});
+diff --git a/src/components/views/MediaLibrary/MediaLibraryView.tsx b/src/components/views/MediaLibrary/MediaLibraryView.tsx
+--- a/src/components/views/MediaLibrary/MediaLibraryView.tsx
++++ b/src/components/views/MediaLibrary/MediaLibraryView.tsx
+@@ -14,7 +14,8 @@
+   RefreshCw,
+ } from 'lucide-react';
+ import { STEMScript, STEMSubject } from '../../../types/stem';
+-import { libraryService, LibraryItem } from '../../../services/libraryService';
++import { libraryService, LibraryItem, type LibraryQuery, type LibraryFilters } from '../../../services/libraryService';
++import { StemLearningCard } from '../../stem/StemLearningCard';
+ 
+ interface MediaLibraryViewProps {
+   script: STEMScript;
+@@ -30,6 +31,13 @@
+   const [clips, setClips] = useState<LibraryItem[]>([]);
+   const [selectedSubject, setSelectedSubject] = useState<STEMSubject | ''>('');
+   const [searchQuery, setSearchQuery] = useState('');
++  const [advanced,setAdvanced] = useState(false);
++  const [query,setQuery] = useState<LibraryQuery>({});
++  const [facets,setFacets] = useState<LibraryFilters | null>(null);
++  const [page,setPage] = useState(0);
++  const [total,setTotal] = useState<number | null>(null);
++  const [pages,setPages] = useState<number | null>(null);
++  const facetRequest = useRef(0);
+   const [loading, setLoading] = useState(false);
+   const [loadError, setLoadError] = useState('');
+   const requestId = useRef(0);
+@@ -42,16 +50,17 @@
+     setLoadError('');
+     try {
+       // The subject selector already contains the supported subjects; it needs no filters fetch.
+-      const clipList = await libraryService.getPublishedClips(selectedSubject);
++      const clipList = await libraryService.getPublishedClips(selectedSubject, undefined, {...query, q:searchQuery, page, size:20});
+       if (request !== requestId.current) return;
+       setClips(clipList);
++      setTotal(clipList.pagination?.total ?? null);setPages(clipList.pagination?.pages ?? null);
+     } catch (err: any) {
+       if (request !== requestId.current) return;
+       setLoadError(err.message || 'Không tải được kho học liệu. Vui lòng thử lại.');
+     } finally {
+       if (request === requestId.current) setLoading(false);
+     }
+-  }, [selectedSubject]);
++  }, [selectedSubject,query,searchQuery,page]);
+ 
+   useEffect(() => {
+     setClips([]);
+@@ -68,17 +77,12 @@
+     }).catch(() => showToast?.('Chưa sao chép được mã nhúng. Hãy mở mã nhúng và sao chép thủ công.', 'warn'));
+   };
+ 
+-  // Filter in-memory by search query
+-  const filteredClips = clips.filter((clip) => {
+-    if (!searchQuery.trim()) return true;
+-    const q = searchQuery.toLowerCase();
+-    return (
+-      clip.title?.toLowerCase().includes(q) ||
+-      clip.workspaceName?.toLowerCase().includes(q) ||
+-      clip.ownerName?.toLowerCase().includes(q) ||
+-      clip.gradeLevel?.toLowerCase().includes(q)
+-    );
+-  });
++  const filteredClips = clips; // Server filters before paging and counts the same predicate.
++  const changeFilter = (key: keyof LibraryQuery,value: string) => {setPage(0);setQuery(old=>({...old,[key]:value}));};
++  const openFilters = async () => {
++    setAdvanced(v=>!v);const request=++facetRequest.current;
++    try {const value=await libraryService.getFilters({...query,q:searchQuery});if(request===facetRequest.current)setFacets(value);} catch(err:any){if(request===facetRequest.current)setLoadError(err.message || 'Không tải được bộ lọc.');}
++  };
+ 
+   const getSubjectColor = (subj: STEMSubject) => {
+     switch (subj) {
+@@ -104,7 +108,7 @@
+               </h1>
+             </div>
+             <p className="text-xs text-slate-500 mt-1">
+-              Kho video giải thích STEM ngắn (explainer clips) đã phê duyệt, sẵn sàng nhúng vào Canvas LMS, Moodle, web EdTech hoặc kênh nội dung.
++              Học liệu đã xuất bản, kèm mục tiêu, nhiệm vụ học sinh và giới hạn sử dụng. Trạng thái xuất bản không phải xác nhận chuyên môn.
+             </p>
+           </div>
+ 
+@@ -136,7 +140,7 @@
+             <input
+               type="text"
+               value={searchQuery}
+-              onChange={(e) => setSearchQuery(e.target.value)}
++              onChange={(e) => {setPage(0);setSearchQuery(e.target.value);}}
+               placeholder="Tìm kiếm clip giải thích STEM theo tiêu đề, tác giả, bộ môn..."
+               className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500"
+             />
+@@ -147,7 +151,7 @@
+             <Filter className="w-3.5 h-3.5 text-slate-400" />
+             <select
+               value={selectedSubject}
+-              onChange={(e) => setSelectedSubject(e.target.value as STEMSubject | '')}
++              onChange={(e) => {setPage(0);setSelectedSubject(e.target.value as STEMSubject | '');}}
+               aria-label="Lọc theo môn học"
+               className="px-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500 font-medium text-slate-700"
+             >
+@@ -161,9 +165,22 @@
+           </div>
+ 
+           <div className="text-xs text-slate-500 font-medium ml-auto">
+-            Hiển thị: <b>{filteredClips.length}</b> video
++            Hiển thị: <b>{total ?? filteredClips.length}</b> video · Trang {page + 1}
+           </div>
+         </div>
++
++        <button type="button" onClick={()=>void openFilters()} aria-expanded={advanced} className="text-sm underline">Bộ lọc STEM</button>
++        {advanced && <div className="flex flex-wrap gap-3 bg-white rounded-xl p-4 border text-sm">
++          <label>Cấp học<select aria-label="Cấp học" value={query.educationLevel || ''} onChange={e=>changeFilter('educationLevel',e.target.value)}><option value="">Tất cả</option>{(facets?.educationLevels || ['PRIMARY','LOWER_SECONDARY','UPPER_SECONDARY']).map(x=><option key={x}>{x}</option>)}</select></label>
++          <label>Lớp<input aria-label="Lọc theo lớp" value={query.grade || ''} maxLength={128} onChange={e=>changeFilter('grade',e.target.value)}/></label>
++          <label>Môn trong hồ sơ<input aria-label="Môn trong hồ sơ" value={query.subjectId || ''} maxLength={128} onChange={e=>changeFilter('subjectId',e.target.value)}/></label>
++          <label>Yêu cầu cần đạt<input aria-label="Yêu cầu cần đạt" value={query.outcomeId || ''} maxLength={128} onChange={e=>changeFilter('outcomeId',e.target.value)}/></label>
++          <label>Bối cảnh<select aria-label="Bối cảnh học" value={query.usageContext || ''} onChange={e=>changeFilter('usageContext',e.target.value)}><option value="">Tất cả</option><option value="IN_CLASS_SCREEN">Chiếu trong lớp</option><option value="GROUP_PRACTICE">Thực hành nhóm</option></select></label>
++          <label>Vai trò bối cảnh<select aria-label="Vai trò bối cảnh" value={query.contextRole || 'PRIMARY'} onChange={e=>changeFilter('contextRole',e.target.value)}><option value="PRIMARY">Chính</option><option value="SECONDARY">Phụ</option><option value="ANY">Bất kỳ</option></select></label>
++          <label>Kênh<select aria-label="Kênh sử dụng" value={query.channel || ''} onChange={e=>changeFilter('channel',e.target.value)}><option value="">Tất cả</option><option value="DEPARTMENT_LIBRARY">Kho tổ chuyên môn</option></select></label>
++          <label>Hồ sơ<select aria-label="Trạng thái hồ sơ" value={query.verificationStatus || ''} onChange={e=>changeFilter('verificationStatus',e.target.value)}><option value="">Tất cả</option><option value="LEGACY_UNMAPPED">Chưa đối chiếu</option><option value="UNVERIFIED">Chưa thẩm định</option></select></label>
++        </div>}
++        <nav aria-label="Phân trang thư viện" className="flex gap-4 text-sm"><button disabled={loading || page===0} onClick={()=>setPage(v=>v-1)}>Trang trước</button><button disabled={loading || (pages!=null ? page+1>=pages : clips.length<20)} onClick={()=>setPage(v=>v+1)}>Trang sau</button></nav>
+ 
+         {/* Video Clips Grid */}
+         {loadError && (
+@@ -231,6 +248,7 @@
+                       )}
+                     </div>
+ 
++                    <StemLearningCard item={clip} />
+                     <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                       {clip.videoUrl ? (
+                         <a
+diff --git a/src/components/views/WriterStudio/WriterStudio.tsx b/src/components/views/WriterStudio/WriterStudio.tsx
+--- a/src/components/views/WriterStudio/WriterStudio.tsx
++++ b/src/components/views/WriterStudio/WriterStudio.tsx
+@@ -1,3 +1,4 @@
++import { StemGroundedAiPanel } from '../../stem/StemGroundedAiPanel';
+ import { useActionGuard } from '../../../hooks/useActionGuard';
+ import React, { useState, useEffect, useCallback, useMemo } from 'react';
+ import {
+@@ -622,6 +623,7 @@
+           projectId={script.id} versionId={stemTarget.versionId}
+           scriptRevision={script.draftRevision??stemTarget.scriptRevision} scenes={script.scenes}
+           isWriter={canEdit} workspaceId={stemTarget.workspaceId} showToast={showToast} onEvidenceChange={onEvidenceChange}/>}
++        {activeStudioTab==='STEM_BRIEF'&&<StemGroundedAiPanel key={script.id} projectId={script.id} isWriter={canEdit}/> }
+       </div>
+       <div hidden={activeStudioTab!=='SCENES'} className={activeStudioTab==='SCENES'?'studio-columns flex-1 min-h-0 flex overflow-hidden':'hidden'}>
+         {/* Cột 1: Cấu trúc phân cảnh (Cho phép Thêm / Xóa / Đổi thứ tự) */}
+diff --git a/src/services/apiClient.ts b/src/services/apiClient.ts
+--- a/src/services/apiClient.ts
++++ b/src/services/apiClient.ts
+@@ -73,8 +73,8 @@
+     }
+   },
+ 
+-  async request<T>(endpoint: string, options: RequestInit & { anonymous?: boolean } = {}): Promise<T> {
+-    const { anonymous = false, ...fetchOptions } = options;
++  async request<T>(endpoint: string, options: RequestInit & { anonymous?: boolean; onResponseHeaders?: (headers: Headers) => void } = {}): Promise<T> {
++    const { anonymous = false, onResponseHeaders, ...fetchOptions } = options;
+     const url = `${this.getBaseUrl()}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+     const token = anonymous ? null : this.getAuthToken();
+ 
+@@ -127,6 +127,7 @@
+         );
+       }
+ 
++      onResponseHeaders?.(response.headers);
+       return json.data !== undefined ? json.data : json;
+     } catch (error: any) {
+       if (error instanceof ApiError) {
+@@ -138,6 +139,16 @@
+ 
+   async get<T>(endpoint: string, headers?: Record<string, string>): Promise<T> {
+     return this.request<T>(endpoint, { method: 'GET', headers });
++  },
++
++  async getPage<T>(endpoint: string): Promise<{ data: T; total: number | null; page: number; size: number; pages: number | null }> {
++    const meta = { total: null as number | null, page: 0, size: 20, pages: null as number | null };
++    const data = await this.request<T>(endpoint, { method: 'GET', onResponseHeaders: headers => {
++      const count = (name: string) => { const value = headers?.get?.(name); return value != null && /^\d+$/.test(value) && Number.isSafeInteger(Number(value)) ? Number(value) : null; };
++      meta.total = count('X-Total-Count'); meta.pages = count('X-Total-Pages');
++      meta.page = count('X-Page') ?? 0; meta.size = count('X-Size') ?? 20;
++    }});
++    return { data, ...meta };
+   },
+ 
+   async postPublic<T>(endpoint: string, body?: unknown): Promise<T> {
+diff --git a/src/services/libraryService.ts b/src/services/libraryService.ts
+--- a/src/services/libraryService.ts
++++ b/src/services/libraryService.ts
+@@ -5,6 +5,22 @@
+ 
+ import { apiClient } from './apiClient';
+ import { STEMSubject } from '../types/stem';
++
++export interface LearningCard {
++  schemaVersion: 'stem-learning-card.v1'; publicationId: string; snapshotId?: string;
++  verificationStatus: 'UNVERIFIED' | 'LEGACY_UNMAPPED'; educationLevel?: string; gradeKey?: string;
++  subjectKeys?: string[]; outcomeIds?: string[]; distributionChannels?: string[];
++  context?: { primary?: {key: string; condition?: string; adaptations?: string} | null; secondary?: Array<{key: string; condition?: string; adaptations?: string}> };
++  objectives?: Array<{ key: string; learnerAction?: string; observableEvidence?: string }>;
++  studentTasks?: Array<{ key: string; learnerAction?: string; teacherSupport?: string; materials?: string; safety?: string; assessmentEvidence?: string; executionContextKey?: string }>;
++  scopeOfClip?: string; safetyNotes?: string; sources?: Array<{id?: string; kind?: string; version?: number; title?: string; citation?: string; locator?: string}>;
++  capturedMode?: string; expertVerified?: false;
++}
++export interface LibraryQuery {
++  page?: number; size?: number; q?: string; educationLevel?: string; grade?: string; subjectId?: string; outcomeId?: string;
++  usageContext?: string; contextRole?: string; channel?: string; verificationStatus?: string;
++}
++export type LibraryRows = LibraryItem[] & { pagination?: {total: number | null; page: number; size: number; pages: number | null} };
+ 
+ export interface LibraryItem {
+   id: string;
+@@ -21,11 +37,13 @@
+   publishedAt: string;
+   verificationStatus?: 'UNVERIFIED'|'LEGACY_UNMAPPED';
+   snapshotId?: string|null;
++  learningCard?: LearningCard | null;
+ }
+ 
+ export interface LibraryFilters {
+   subjects: STEMSubject[];
+   gradeLevels: string[];
++  educationLevels?: string[]; subjectIds?: string[]; outcomeIds?: string[]; usageContexts?: string[]; channels?: string[]; verificationStatuses?: string[];
+ }
+ 
+ export const libraryService = {
+@@ -33,14 +51,18 @@
+    * List published clips from the internal media library.
+    * Optionally filtered by subject and/or grade level.
+    */
+-  async getPublishedClips(subject?: STEMSubject | '', gradeLevel?: string): Promise<LibraryItem[]> {
++  async getPublishedClips(subject?: STEMSubject | '', gradeLevel?: string, options?: LibraryQuery): Promise<LibraryRows> {
+     const params = new URLSearchParams();
+     if (subject) params.append('subject', subject);
+     if (gradeLevel) params.append('gradeLevel', gradeLevel);
++    for (const [key, value] of Object.entries(options ?? {})) if (value !== '' && value != null) params.set(key, String(value));
+ 
+     const query = params.toString() ? `?${params.toString()}` : '';
+-    const res = await apiClient.get<LibraryItem[]>(`/library/clips${query}`);
+-    return Array.isArray(res) ? res : [];
++    if (!options) { const res = await apiClient.get<LibraryItem[]>(`/library/clips${query}`); return Array.isArray(res) ? res : []; }
++    const result = await apiClient.getPage<LibraryItem[]>(`/library/clips${query}`);
++    const rows: LibraryRows = Array.isArray(result.data) ? result.data : [];
++    Object.defineProperty(rows, 'pagination', {value: {total: result.total, page: result.page, size: result.size, pages: result.pages}, enumerable: false});
++    return rows;
+   },
+ 
+   /**
+@@ -53,9 +75,10 @@
+   /**
+    * Get available filter options (subjects and grades that have published clips)
+    */
+-  async getFilters(): Promise<LibraryFilters> {
+-    const res = await apiClient.get<LibraryFilters>('/library/filters');
+-    return {
++  async getFilters(options: LibraryQuery = {}): Promise<LibraryFilters> {
++    const params = new URLSearchParams(); for (const [key,value] of Object.entries(options)) if (value != null && value !== '' && key !== 'page' && key !== 'size') params.set(key,String(value));
++    const res = await apiClient.get<LibraryFilters>('/library/filters'+(params.size ? '?'+params : ''));
++    return { ...res,
+       subjects: res?.subjects || [],
+       gradeLevels: res?.gradeLevels || [],
+     };
+diff --git a/src/services/scriptService.ts b/src/services/scriptService.ts
+--- a/src/services/scriptService.ts
++++ b/src/services/scriptService.ts
+@@ -1,3 +1,4 @@
++import type { GroundedAiResult, GroundedAiTarget } from '../types/stem';
+ /**
+  * STEMotion Front-End - Script & Scene Service
+  * Handles AI generation and scene mutations
+@@ -73,8 +74,12 @@
+     };
+   },
+ 
+-  async decideAiRequest(requestId: string, decision: 'ACCEPTED' | 'IGNORED'): Promise<void> {
+-    await apiClient.put(`/ai/requests/${encodeURIComponent(requestId)}/decision`, {decision});
++  async getGroundedSuggestion(projectId: string, operation: GroundedAiResult['operation'], target: GroundedAiTarget): Promise<GroundedAiResult> {
++    return apiClient.post<GroundedAiResult>(`/ai/scripts/${encodeURIComponent(projectId)}/grounded`, {schemaVersion:'stem-ai.v1',operation,...target});
++  },
++
++  async decideAiRequest(requestId: string, decision: 'ACCEPTED' | 'IGNORED', grounding?: {projectId: string;target: GroundedAiTarget;contextDigest: string}): Promise<void> {
++    await apiClient.put(`/ai/requests/${encodeURIComponent(requestId)}/decision`, {decision, ...(grounding ? {grounding} : {})});
+   },
+ 
+   /**
+diff --git a/src/types/stem.ts b/src/types/stem.ts
+--- a/src/types/stem.ts
++++ b/src/types/stem.ts
+@@ -576,3 +576,10 @@
+   reasons: string[];
+ }
+ export interface StemArtifactExpectation {clipId:string;jobId:string;snapshotId:string;inputHash:string}
++export interface GroundedAiTarget {
++  scriptVersionId: string; expectedScriptRevision: number; expectedBriefRevision: number; expectedModeRevision: number;
++}
++export interface GroundedAiResult {
++  operation: 'generate'|'resegment'|'grade'|'extract'|'terms'; result: unknown; model: string; requestId?: string;
++  grounding: {schemaVersion: 'stem-ai.v1'; contextDigest: string; target: GroundedAiTarget; verificationStatus: 'UNVERIFIED'; profile: string; objectiveKeys: string[]; activityKeys: string[]; warnings: unknown[]};
++}
