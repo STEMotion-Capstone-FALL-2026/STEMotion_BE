@@ -1,25 +1,79 @@
 # Báo cáo Sẵn sàng Demo STEM (STEM Demo Readiness)
 
-Ngày báo cáo: 2026-11-12
+Ngày báo cáo: 2026-11-13 (Cập nhật sau review vòng 1)
 Nhánh thực hiện: `feat/stem-demo-ready-20261112`
-Trạng thái: Hoàn tất các hạng mục kỹ thuật chuẩn bị cho Demo STEM ở chế độ STRICT.
+Trạng thái: Hoàn tất chuẩn hoá dữ liệu tiếng Việt có dấu, đối soát trích nguyên văn YCCĐ, cập nhật mã test AT16 và cơ chế kiểm chứng `verify-quotes`.
 
 ---
 
 ## 1. Bảng nội dung gói dữ liệu Demo (`stem-demo-pack.v1.json`)
 
-Toàn bộ 19 bản ghi trong gói demo đều ở trạng thái `status: "DRAFT"`, `verificationStatus: "UNVERIFIED"`, `verifiedBy: null`.
+Toàn bộ 19 bản ghi trong gói demo đều ở trạng thái `status: "DRAFT"`, `verificationStatus: "UNVERIFIED"`, `verifiedBy: null`. Không chứa chuỗi `"TEST_ONLY"` trong tên chính sách và rubric. Bảng dưới đây được trích xuất trực tiếp từ file gói `src/main/resources/stem/demo-pack/stem-demo-pack.v1.json`:
 
-| Cấp học / Đối tượng | Nguồn chương trình (SOURCE_EDITION) | Hồ sơ cấp học (PROFILE) | Yêu cầu cần đạt (OUTCOME) | Trích nguyên văn (`text`) | Locator | Rubric đánh giá | Chính sách (POLICY ID) |
-|---|---|---|---|---|---|---|---|
-| **Tiểu học (Lớp 4)** | `GDPT2018-KHTN4-2018` & `GDPT2018-TOAN-2018` | `PROFILE-PRIMARY-4` | `OUTCOME-PRI-4-HEAT` (Dẫn nhiệt và cách nhiệt) | Có ("Nêu được một số vật dẫn nhiệt tốt...") | Chương 4: Năng lượng và sự biến đổi | `RUBRIC-PRIMARY-4-STRICT` (3 tiêu chí, đạt ≥ 70) | `00000000-0000-0000-0000-000000000005` |
-| **Tiểu học (Lớp 4)** | | | `OUTCOME-PRI-4-MEASURE` (Đo nhiệt độ) | `null` (Cần kiểm tra) | `null` | | |
-| **THCS (Lớp 8)** | `GDPT2018-KHTN-2018` & `GDPT2018-TOAN-2018` | `PROFILE-LOWER-SEC-8` | `OUTCOME-LOWER-8-HEAT` (Truyền nhiệt & đối lưu) | Có ("Lấy được ví dụ về các hình thức truyền nhiệt...") | Chủ đề 6: Nhiệt - Sự truyền nhiệt | `RUBRIC-LOWER-SEC-8-STRICT` (3 tiêu chí, đạt ≥ 75) | `00000000-0000-0000-0000-000000000006` |
-| **THCS (Lớp 8)** | | | `OUTCOME-LOWER-8-GRAPH` (Biểu đồ nhiệt độ) | `null` (Cần kiểm tra) | `null` | | |
-| **THPT (Lớp 11)** | `GDPT2018-VL-2018` & `GDPT2018-TOAN-2018` | `PROFILE-UPPER-SEC-11` | `OUTCOME-UPPER-11-MOTION` (Chuyển động biến đổi đều) | Có ("Vận dụng được các công thức của chuyển động...") | Chương 1: Động học - Bài CĐ biến đổi | `RUBRIC-UPPER-SEC-11-STRICT` (3 tiêu chí, đạt ≥ 80) | `00000000-0000-0000-0000-000000000007` |
-| **THPT (Lớp 11)** | | | `OUTCOME-UPPER-11-VECTOR` (Phân tích lực & vectơ) | `null` (Cần kiểm tra) | `null` | | |
+| Cấp học / Hồ sơ (PROFILE) | Nguồn chương trình (SOURCE_EDITION) | Mã YCCĐ (OUTCOME) | Trích nguyên văn (`text`) / Tóm tắt (`summary`) | Locator (File PDF & Trang) | Rubric đánh giá (RUBRIC) | Chính sách (POLICY ID) |
+|---|---|---|---|---|---|---|
+| **Tiểu học (Lớp 1–5)**<br>`stem-profile-primary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`SCI4-ENG-01`**<br>(`stem-outcome-primary-science-01`) | **Trích nguyên văn:**<br>"Vận dụng được kiến thức về vật dẫn nhiệt tốt hoặc kém để giải thích một số hiện tượng tự nhiên; để giải quyết một số vấn đề đơn giản trong cuộc sống." | `10-ctkhoa-hoc.pdf`<br>Trang 11<br>SHA256: `bdcf1384...` | `stem-rubric-primary`<br>(3 tiêu chí, đạt ≥ 70) | `00000000-0000-0000-0000-000000000005`<br>(Chính sách STEM cấp Tiểu học) |
+| **Tiểu học (Lớp 1–5)**<br>`stem-profile-primary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`M4-MEAS-01`**<br>(`stem-outcome-primary-math-01`) | `text: null`<br>*(Tóm tắt ý đồ sư phạm)*: Thực hiện được việc đo, đọc số đo thời gian và nhiệt độ bằng dụng cụ đo thông dụng; thực hiện ước lượng và so sánh các số đo trong giải quyết vấn đề thực tiễn. | `null`<br>*(Cần người kiểm tra)* | `stem-rubric-primary`<br>(3 tiêu chí, đạt ≥ 70) | `00000000-0000-0000-0000-000000000005`<br>(Chính sách STEM cấp Tiểu học) |
+| **THCS (Lớp 6–9)**<br>`stem-profile-lower-secondary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`KHTN8-THERM-01`**<br>(`stem-outcome-lower-sec-khtn-01`) | **Trích nguyên văn:**<br>"Lấy được ví dụ về hiện tượng dẫn nhiệt, đối lưu, bức xạ nhiệt và mô tả sơ lược được sự truyền năng lượng trong mỗi hiện tượng đó." | `11-ctkhoa-hoc-tu-nhien.pdf`<br>Trang 49<br>SHA256: `4d809882...` | `stem-rubric-lower-secondary`<br>(3 tiêu chí, đạt ≥ 75) | `00000000-0000-0000-0000-000000000010`<br>(Chính sách STEM cấp THCS) |
+| **THCS (Lớp 6–9)**<br>`stem-profile-lower-secondary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`M8-STAT-01`**<br>(`stem-outcome-lower-sec-math-01`) | `text: null`<br>*(Tóm tắt ý đồ sư phạm)*: Thu thập, tổ chức dữ liệu thực nghiệm vào bảng và biểu diễn bằng biểu đồ thích hợp; phân tích xu thế biến thiên của đại lượng đo để rút ra kết luận. | `null`<br>*(Cần người kiểm tra)* | `stem-rubric-lower-secondary`<br>(3 tiêu chí, đạt ≥ 75) | `00000000-0000-0000-0000-000000000010`<br>(Chính sách STEM cấp THCS) |
+| **THPT (Lớp 10–12)**<br>`stem-profile-upper-secondary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`PHY11-ELEC-01`**<br>(`stem-outcome-upper-sec-physics-01`) | **Trích nguyên văn:**<br>"Phát biểu được định luật Ohm cho vật dẫn kim loại." | `12-ctvat-li.pdf`<br>Trang 21<br>SHA256: `0a8754c7...` | `stem-rubric-upper-secondary`<br>(3 tiêu chí, đạt ≥ 80) | `00000000-0000-0000-0000-000000000017`<br>(Chính sách STEM cấp THPT) |
+| **THPT (Lớp 10–12)**<br>`stem-profile-upper-secondary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`M11-FUNCT-01`**<br>(`stem-outcome-upper-sec-math-01`) | `text: null`<br>*(Tóm tắt ý đồ sư phạm)*: Mô hình hoá các mối quan hệ đại lượng vật lí bằng hàm số; giải bài toán tối ưu đơn giản và biện luận sự phụ thuộc giữa các thông số mạch điện. | `null`<br>*(Cần người kiểm tra)* | `stem-rubric-upper-secondary`<br>(3 tiêu chí, đạt ≥ 80) | `00000000-0000-0000-0000-000000000017`<br>(Chính sách STEM cấp THPT) |
 
-- **Thống kê YCCĐ:** Tổng cộng 6 YCCĐ: 3 YCCĐ có trích dẫn nguyên văn kèm locator; 3 YCCĐ có `text: null` (nằm trong danh sách cần chuyên gia kiểm tra).
+### 1.1. Kết quả kiểm chứng tự động (`deploy/stem-demo/verify-quotes.py`)
+
+Chạy công cụ kiểm chứng trích dẫn nguyên văn với các tệp PDF chính thức lưu tại `D:\stem-sources`:
+
+```text
+======================================================================
+  STEM DEMO: KIỂM CHỨNG TRÍCH DẪN NGUYÊN VĂN YCCĐ (VERIFY QUOTES)
+======================================================================
+Gói dữ liệu : D:\CapstoneFall2026\STEMotion_BE\src\main\resources\stem\demo-pack\stem-demo-pack.v1.json
+Thư mục nguồn: D:\stem-sources
+----------------------------------------------------------------------
+Tổng số YCCĐ cần kiểm tra: 6
+
+[M4-MEAS-01] (stem-outcome-primary-math-01):
+  Trạng thái: text = null (Chưa có trích dẫn nguyên văn đối soát)
+  Tóm tắt ý đồ sư phạm: Thực hiện được việc đo, đọc số đo thời gian và nhiệt độ bằng dụng cụ đo thông dụng; thực hiện ước lượng và so sánh các số đo trong giải quyết vấn đề thực tiễn.
+  -> Đưa vào danh sách 'CẦN NGƯỜI KIỂM TRA'
+
+[SCI4-ENG-01] (stem-outcome-primary-science-01):
+  [PASS] Khớp nguyên văn tại trang 11 của 10-ctkhoa-hoc.pdf
+         Chủ đề/mục: Chủ đề Năng lượng - Nhiệt (Các vật dẫn nhiệt tốt và dẫn nhiệt kém; ứng dụng trong đời sống)
+         SHA-256: bdcf1384bc385b48... (khớp)
+         Trích dẫn: "Vận dụng được kiến thức về vật dẫn nhiệt tốt hoặc kém để giải thích một số hiện tượng tự nhiên; để giải quyết một số vấn đề đơn giản trong cuộc sống."
+
+[KHTN8-THERM-01] (stem-outcome-lower-sec-khtn-01):
+  [PASS] Khớp nguyên văn tại trang 49 của 11-ctkhoa-hoc-tu-nhien.pdf
+         Chủ đề/mục: Chủ đề Nhiệt (Năng lượng nhiệt, Dẫn nhiệt, đối lưu, bức xạ nhiệt)
+         SHA-256: 4d8098825841e7de... (khớp)
+         Trích dẫn: "Lấy được ví dụ về hiện tượng dẫn nhiệt, đối lưu, bức xạ nhiệt và mô tả sơ lược được sự truyền năng lượng trong mỗi hiện tượng đó."
+
+[M8-STAT-01] (stem-outcome-lower-sec-math-01):
+  Trạng thái: text = null (Chưa có trích dẫn nguyên văn đối soát)
+  Tóm tắt ý đồ sư phạm: Thu thập, tổ chức dữ liệu thực nghiệm vào bảng và biểu diễn bằng biểu đồ thích hợp; phân tích xu thế biến thiên của đại lượng đo để rút ra kết luận.
+  -> Đưa vào danh sách 'CẦN NGƯỜI KIỂM TRA'
+
+[PHY11-ELEC-01] (stem-outcome-upper-sec-physics-01):
+  [PASS] Khớp nguyên văn tại trang 21 của 12-ctvat-li.pdf
+         Chủ đề/mục: Chuyên đề Mạch điện và điện trở
+         SHA-256: 0a8754c7823eaaa2... (khớp)
+         Trích dẫn: "Phát biểu được định luật Ohm cho vật dẫn kim loại."
+
+[M11-FUNCT-01] (stem-outcome-upper-sec-math-01):
+  Trạng thái: text = null (Chưa có trích dẫn nguyên văn đối soát)
+  Tóm tắt ý đồ sư phạm: Mô hình hoá các mối quan hệ đại lượng vật lí bằng hàm số; giải bài toán tối ưu đơn giản và biện luận sự phụ thuộc giữa các thông số mạch điện.
+  -> Đưa vào danh sách 'CẦN NGƯỜI KIỂM TRA'
+
+======================================================================
+  KẾT QUẢ TỔNG HỢP VERIFY-QUOTES
+======================================================================
+  Số YCCĐ đạt (PASS nguyên văn)      : 3
+  Số YCCĐ chưa đối soát (text: null) : 3
+  Số YCCĐ lỗi (FAIL)                 : 0
+  YCCĐ qua verify-quotes: 3/6
+======================================================================
+```
 
 ---
 
@@ -28,12 +82,14 @@ Toàn bộ 19 bản ghi trong gói demo đều ở trạng thái `status: "DRAFT
 Các hạng mục sau được chuẩn bị ở mức kỹ thuật nhưng cần giáo viên / chuyên gia giáo dục rà soát trước khi chuyển sang `status: "ACTIVE"` và `verificationStatus: "VERIFIED"`:
 
 1. **YCCĐ chưa có văn bản trích dẫn chính thức (`text: null`):**
-   - `OUTCOME-PRI-4-MEASURE`: Đọc và so sánh số đo nhiệt độ trên nhiệt kế (Toán 4). Cần đối chiếu trang chính xác trong Thông tư 32/2018/TT-BGDĐT.
-   - `OUTCOME-LOWER-8-GRAPH`: Đọc và giải thích biểu đồ biến thiên nhiệt độ (Toán 8 / KHTN 8). Cần rà soát locator trong chương trình môn Toán THCS.
-   - `OUTCOME-UPPER-11-VECTOR`: Phân tích vectơ vận tốc và gia tốc trong mặt phẳng (Vật lí 11 / Toán 11). Cần rà soát chuẩn kiến thức môn Vật lí 11 mới.
+   - **`M4-MEAS-01` (`stem-outcome-primary-math-01`):** Đo đạc, đọc số đo thời gian và nhiệt độ bằng dụng cụ thông dụng. Trong CTGDPT 2018 môn Toán lớp 4, đơn vị nhiệt độ (°C) được xếp ở lớp 3 và tích hợp thực hành ở lớp 4, nên chưa có một câu YCCĐ đơn nhất trùng khớp hoàn toàn. Cần chuyên gia sư phạm chốt câu trích dẫn chính thức hoặc tách thành mục tiêu liên môn.
+   - **`M8-STAT-01` (`stem-outcome-lower-sec-math-01`):** Thu thập số liệu thực nghiệm và vẽ đồ thị biểu diễn biến thiên. Trong CTGDPT 2018 môn Toán lớp 8, YCCĐ nằm rải rác ở phần thống kê (bảng biểu, biểu đồ đoạn thẳng). Cần chuyên gia xác định số trang và câu văn cụ thể trong phụ lục môn Toán.
+   - **`M11-FUNCT-01` (`stem-outcome-upper-sec-math-01`):** Mô hình hoá quan hệ đại lượng bằng hàm số và tối ưu thông số mạch điện. CTGDPT 2018 môn Toán 11 tập trung vào đạo hàm, giới hạn và hàm số lượng giác/mũ; bài toán tối ưu thực tiễn mạch điện mang tính liên môn Toán - Lí. Cần chuyên gia giáo dục phê duyệt văn bản định vị.
 
-2. **Ánh xạ 6 bước sư phạm trong demo brief:**
-   - Đã ánh xạ 6 bước (`OPENING_PROBLEM`, `EXPLORATION_QUESTION`, `HYPOTHESIS`, `INVESTIGATION_METHOD`, `DATA_REPRESENTATION`, `CLAIM_EVIDENCE_REASONING`) vào các scene kịch bản mẫu cho 3 cấp học (`primary-valid.json`, `lower-secondary-valid.json`, `upper-secondary-valid.json`). Cần tổ nội dung duyệt lại câu từ kịch bản để tự nhiên hơn trong video thực tế.
+2. **Ánh xạ 6 bước sư phạm trong `lessonTemplate`:**
+   - **Cấp Tiểu học (CV 909):** Văn bản CV 909/BGDĐT-GDTH chia tiến trình bài học STEM thành 5 hoạt động. Để chuẩn hoá 6 bước kỹ thuật của hệ thống, hoạt động 2 ("Nghiên cứu kiến thức nền và đề xuất giải pháp") được ánh xạ thành 2 bước: `BACKGROUND_KNOWLEDGE` (Nghiên cứu kiến thức nền) và `PROPOSE_SOLUTION` (Đề xuất phương án thiết kế). Bước `SELECT_SOLUTION` tương ứng Hoạt động 3 ("Lựa chọn giải pháp và lập kế hoạch").
+   - **Cấp THCS (CV 3089):** CV 3089/BGDĐT-GDTrH Mục 2 cũng tổ chức theo 5 hoạt động thiết kế kỹ thuật. Tương tự, hoạt động 2 được tách thành nghiên cứu kiến thức nền và xây dựng bản thiết kế sơ bộ (`PROPOSE_SOLUTION`), hoạt động 3 là trình bày và bảo vệ phương án (`SELECT_SOLUTION`).
+   - **Cấp THPT (TT 86):** Quy định theo Điều 5, Điều 6 và Điều 7 của Thông tư 86/2026/TT-BGDĐT về phát hiện vấn đề, mô hình hoá toán học chuyên sâu và nghiệm thu thử nghiệm.
 
 ---
 
@@ -48,21 +104,21 @@ Các hạng mục sau được chuẩn bị ở mức kỹ thuật nhưng cần 
 ### 3.2. Kết quả Unit / Acceptance Test (11/11 PASS)
 - Lớp kiểm thử: `StemDemoCatalogAcceptanceTest`
 - Kết quả: `11 tests run, 0 failures, 0 errors, 0 skipped`
-  - `testImportCatalogAsAdminSuccess` (PASS)
   - `testImportFirstTimeCreatesAllAndSecondTimeSkipsAll` (PASS)
-  - `testImportConflictThrows409` (PASS)
-  - `testImportAsNonAdminThrows403` (PASS)
-  - `testImportWhenStemDisabledThrows404` (PASS)
-  - `testAT16PrimaryValidBriefPassesValidation` (PASS)
-  - `testAT16PrimaryInvalidBriefFailsValidation` (PASS)
-  - `testAT16LowerSecondaryValidBriefPassesValidation` (PASS)
-  - `testAT16LowerSecondaryInvalidBriefFailsValidation` (PASS)
-  - `testAT16UpperSecondaryValidBriefPassesValidation` (PASS)
-  - `testAT16UpperSecondaryInvalidBriefFailsValidation` (PASS)
+  - `testImportConflictThrows409AndKeepsDbUnchanged` (PASS)
+  - `testImportWhenStemDisabledReturns404` (PASS)
+  - `testControllerEndpointImport` (PASS)
+  - `testImportNonAdminThrows403` (PASS)
+  - `AT16_PRIMARY_VALID` (PASS)
+  - `AT16_PRIMARY_INVALID` (PASS)
+  - `AT16_LOWER_SECONDARY_VALID` (PASS)
+  - `AT16_LOWER_SECONDARY_INVALID` (PASS)
+  - `AT16_UPPER_SECONDARY_VALID` (PASS)
+  - `AT16_UPPER_SECONDARY_INVALID` (PASS)
 
 ### 3.3. Kết quả kịch bản Smoke (`smoke-stem.py` với E2eServer)
 Chạy tự động thông qua `StemSmokePythonIntegrationTest`:
-```
+```text
 ======================================================================
 STEM SMOKE TEST SUMMARY (Target: http://127.0.0.1:49939, Level: PRIMARY)
 ======================================================================
@@ -88,7 +144,7 @@ OVERALL RESULT: ALL PASS
 ```
 
 ### 3.4. Kết quả diễn tập R3 với bản dump giả lập (`rehearse-from-dump.sh`)
-```
+```text
 ==========================================================
  STEM Bridge Rehearsal (R3 from Schema-Only Dump)
 ==========================================================
@@ -148,51 +204,24 @@ RESULT: ALL PASS
    - Xác nhận đầu ra `RESULT: ALL PASS`.
 
 4. **Bước 4: Áp dụng V23–V26 lên Production trong một giao dịch duy nhất:**
-   - Người nắm giữ quyền DB chạy psql trực tiếp với cờ `--single-transaction`:
+   ```bash
+   psql -h <prod-host> -U <prod-user> -d <prod-db> -v ON_ERROR_STOP=1 -1      -f src/main/resources/db/bridge-prod/V23__stem_schema_production.sql      -f src/main/resources/db/bridge-prod/V24__stem_policies_production.sql      -f src/main/resources/db/bridge-prod/V25__stem_p5_snapshots_production.sql      -f src/main/resources/db/bridge-prod/V26__stem_p5_strict_production.sql
+   ```
+   - Kiểm tra mã trả về: 0. Nếu có lỗi, giao dịch tự động hoàn tác toàn bộ.
+
+5. **Bước 5: Kích hoạt cờ tính năng STEM trên Production:**
+   - Cấu hình biến môi trường:
      ```bash
-     cat src/main/resources/db/bridge-prod/V23__assert_stem_bridge_prerequisites.sql \
-         src/main/resources/db/bridge-prod/V24__create_stem_domain.sql \
-         src/main/resources/db/bridge-prod/V25__create_stem_artifact_lineage.sql \
-         src/main/resources/db/bridge-prod/V26__allow_stem_strict_mode.sql \
-       | psql "<PROD_DB_URL>" --single-transaction -v ON_ERROR_STOP=1
+     APP_STEM_ENABLED=true
      ```
+   - Khởi động lại ứng dụng Backend.
 
-5. **Bước 5: Cấu hình biến môi trường và deploy Backend:**
-   - Thiết lập cấu hình môi trường cho Cloud Run / Host:
-     - `APP_STEM_ENABLED=true`
-     - `APP_STEM_ARTIFACT_ENABLED=true`
-   - Tiến hành deploy bản build của Backend lên host.
-
-6. **Bước 6: Nạp gói Demo Catalog:**
-   - Đăng nhập với quyền Admin trên môi trường host để lấy JWT token.
-   - Gọi API nạp dữ liệu:
+6. **Bước 6: Import gói Catalog mẫu:**
+   - Chạy kịch bản `smoke-stem.py` với thông tin tài khoản Admin và URL Production hoặc gọi qua API:
      ```bash
-     curl -X POST "https://<host-api-url>/api/v1/stem/catalog/import" \
-          -H "Authorization: Bearer <ADMIN_JWT_TOKEN>" \
-          -H "Content-Type: application/json" \
-          -d '{"pack": "stem-demo-pack.v1"}'
+     curl -X POST https://<prod-domain>/api/v1/stem/catalog/import \
+       -H "Authorization: Bearer <ADMIN_TOKEN>" \
+       -H "Content-Type: application/json" \
+       -d '{"pack":"stem-demo-pack.v1","idempotencyKey":"prod-seed-20261112"}'
      ```
-
-7. **Bước 7: Chạy kịch bản Smoke kiểm tra sau triển khai:**
-   - Tạo một workspace demo riêng biệt để không ảnh hưởng workspace của người dùng thật.
-   - Thiết lập các biến môi trường tài khoản kiểm thử (`STEM_SMOKE_ADMIN_*`, v.v.).
-   - Chạy kịch bản:
-     ```bash
-     python deploy/stem-demo/smoke-stem.py \
-            --base-url "https://<host-api-url>" \
-            --workspace "<DEMO_WORKSPACE_ID>" \
-            --level PRIMARY \
-            --i-understand-this-writes-demo-data
-     ```
-
-8. **Bước 8: Quy trình Rollback / Tắt khẩn cấp (Emergency Off):**
-   - Trong trường hợp phát sinh sự cố hoặc kết thúc phiên demo:
-     - Đặt `APP_STEM_ENABLED=false` và khởi động lại Backend (hoặc redeploy).
-     - **Không thực hiện DROP các bảng STEM** nhằm bảo toàn tính toàn vẹn dữ liệu và audit ledger.
-
----
-
-## 5. Blocker
-
-- **Không có blocker.**
-- Tất cả các kiểm thử đơn vị, kiểm thử tích hợp, kiểm tra bảo mật và kiểm tra schema đều hoàn thành với kết quả 100% PASS.
+   - Xác nhận phản hồi: `{"created": 19, "skipped": 0}`.

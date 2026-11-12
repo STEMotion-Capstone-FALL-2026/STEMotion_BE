@@ -10,12 +10,12 @@
     "00000000-0000-0000-0000-000000000003",
     "00000000-0000-0000-0000-000000000013"
   ],
-  "scopeOfClip": "Clip minh hoa hoat dong giu am binh nuoc, do va tinh toan chenh lech nhiet do",
+  "scopeOfClip": "Clip minh hoạ hoạt động giữ ấm bình nước, đo và tính toán chênh lệch nhiệt độ",
   "context": {
     "primary": {
       "key": "IN_CLASS_SCREEN",
-      "condition": "Lop hoc co may chieu hoac tivi",
-      "adaptations": "Giao vien tam dung o phut 1:30 de hoc sinh thao luan"
+      "condition": "Lớp học có máy chiếu hoặc tivi",
+      "adaptations": "Giáo viên tạm dừng ở phút 1:30 để học sinh thảo luận"
     },
     "secondary": []
   },
@@ -26,31 +26,31 @@
     {
       "key": "obj-1",
       "outcomeId": "00000000-0000-0000-0000-000000000003",
-      "learnerAction": "Doc va ghi lai nhiet do bang nhiet ke",
-      "observableEvidence": "Bang so lieu ghi nhiet do truoc va sau 30 phut"
+      "learnerAction": "Đọc và ghi lại nhiệt độ bằng nhiệt kế",
+      "observableEvidence": "Bảng số liệu ghi nhiệt độ trước và sau 30 phút"
     },
     {
       "key": "obj-2",
       "outcomeId": "00000000-0000-0000-0000-000000000013",
-      "learnerAction": "So sanh vat lieu giu nhiet khac nhau",
-      "observableEvidence": "Ket luan ve vat lieu bong va xop giu nhiet tot hon vai mong"
+      "learnerAction": "So sánh vật liệu giữ nhiệt khác nhau",
+      "observableEvidence": "Kết luận về vật liệu bông và xốp giữ nhiệt tốt hơn vải mỏng"
     }
   ],
   "studentTasks": [
     {
       "key": "task-1",
-      "learnerAction": "Thuc hien boc binh nuoc bang vat lieu xop/bong va do nhiet do sau 30 phut",
-      "teacherSupport": "Giao vien ho tro rot nuoc am va bam gio",
-      "materials": "Binh thuy tinh, nhiet ke, bong gon, vai, xop",
-      "safety": "Khong dung nuoc soi tren 50 do C",
-      "assessmentEvidence": "Phieu hoc tap ghi chenh lech nhiet do",
+      "learnerAction": "Thực hiện bọc bình nước bằng vật liệu xốp/bông và đo nhiệt độ sau 30 phút",
+      "teacherSupport": "Giáo viên hỗ trợ rót nước ấm và bấm giờ",
+      "materials": "Bình thuỷ tinh, nhiệt kế, bông gòn, vải, xốp",
+      "safety": "Không dùng nước sôi trên 50 độ C",
+      "assessmentEvidence": "Phiếu học tập ghi chênh lệch nhiệt độ",
       "executionContextKey": "IN_CLASS_SCREEN"
     }
   ],
   "contributions": [
     {
       "component": "S",
-      "explanation": "Kien thuc ve su truyen nhiet va vat lieu dan nhiet",
+      "explanation": "Kiến thức về sự truyền nhiệt và vật liệu dẫn nhiệt",
       "objectiveKeys": [
         "obj-2"
       ],
@@ -60,7 +60,7 @@
     },
     {
       "component": "M",
-      "explanation": "Do luong va tinh toan chenh lech nhiet do giua cac lan do",
+      "explanation": "Đo lường và tính toán chênh lệch nhiệt độ giữa các lần đo",
       "objectiveKeys": [
         "obj-1"
       ],
@@ -69,7 +69,7 @@
       ]
     }
   ],
-  "safetyNotes": "Giao vien kiem soat nuoc am duoi 45 do C, khong dung nuoc soi, dung binh nhua hoac thuy tinh day chiu nhiet",
+  "safetyNotes": "Giáo viên kiểm soát nước ấm dưới 45 độ C, không dùng nước sôi, dùng bình nhựa hoặc thuỷ tinh dày chịu nhiệt",
   "rawLegacy": null,
   "steps": [
     {

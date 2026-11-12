@@ -10,12 +10,12 @@
     "00000000-0000-0000-0000-000000000008",
     "00000000-0000-0000-0000-000000000018"
   ],
-  "scopeOfClip": "Mo hinh xe chay bang nang luong gio va tinh toan hieu suat co nang",
+  "scopeOfClip": "Mô hình xe chạy bằng năng lượng gió và tính toán hiệu suất cơ năng",
   "context": {
     "primary": {
       "key": "GROUP_PRACTICE",
-      "condition": "Phong thuc hanh KHTN co ban nhom",
-      "adaptations": "Chia nhom 4-5 hoc sinh, moi nhom 1 bo dung cu"
+      "condition": "Phòng thực hành KHTN có bàn nhóm",
+      "adaptations": "Chia nhóm 4-5 học sinh, mỗi nhóm 1 bộ dụng cụ"
     },
     "secondary": []
   },
@@ -26,31 +26,31 @@
     {
       "key": "obj-1",
       "outcomeId": "00000000-0000-0000-0000-000000000008",
-      "learnerAction": "Che tao va do toc do xe gio",
-      "observableEvidence": "Mo hinh xe hoat dong va bang do toc do"
+      "learnerAction": "Chế tạo và đo tốc độ xe gió",
+      "observableEvidence": "Mô hình xe hoạt động và bảng đo tốc độ"
     },
     {
       "key": "obj-2",
       "outcomeId": "00000000-0000-0000-0000-000000000018",
-      "learnerAction": "Ve do thi quang duong thoi gian va tinh van toc",
-      "observableEvidence": "Bieu do quang duong thoi gian tren giay ke o"
+      "learnerAction": "Vẽ đồ thị quãng đường thời gian và tính vận tốc",
+      "observableEvidence": "Biểu đồ quãng đường thời gian trên giấy kẻ ô"
     }
   ],
   "studentTasks": [
     {
       "key": "task-1",
-      "learnerAction": "Lap rap khung xe va canh quat, thu nghiem voi quat gio",
-      "teacherSupport": "Huong dan cach can chinh truc banh xe",
-      "materials": "Bia carton, nap chai, que go, quat gio",
-      "safety": "De phong canh quat quet vao tay khi quay nhanh",
-      "assessmentEvidence": "Bao cao thu nghiem xe gio cua nhom",
+      "learnerAction": "Lắp ráp khung xe và cánh quạt, thử nghiệm với quạt gió",
+      "teacherSupport": "Hướng dẫn cách căn chỉnh trục bánh xe",
+      "materials": "Bìa các-tông, nắp chai, que gỗ, quạt gió",
+      "safety": "Đề phòng cánh quạt quẹt vào tay khi quay nhanh",
+      "assessmentEvidence": "Báo cáo thử nghiệm xe gió của nhóm",
       "executionContextKey": "GROUP_PRACTICE"
     }
   ],
   "contributions": [
     {
       "component": "S",
-      "explanation": "Chuyen hoa dong nang cua gio thanh dong nang cua xe",
+      "explanation": "Chuyển hoá động năng của gió thành động năng của xe",
       "objectiveKeys": [
         "obj-1"
       ],
@@ -60,7 +60,7 @@
     },
     {
       "component": "M",
-      "explanation": "Tinh van toc trung binh v=s/t tu ket qua thuc nghiem",
+      "explanation": "Tính vận tốc trung bình v = s / t từ kết quả thực nghiệm",
       "objectiveKeys": [
         "obj-2"
       ],
@@ -69,7 +69,7 @@
       ]
     }
   ],
-  "safetyNotes": "Luu y can than voi keo cat va dao roc giay khi che tao canh quat",
+  "safetyNotes": "Lưu ý cẩn thận với kéo cắt và dao rọc giấy khi chế tạo cánh quạt",
   "rawLegacy": null,
   "steps": [
     {

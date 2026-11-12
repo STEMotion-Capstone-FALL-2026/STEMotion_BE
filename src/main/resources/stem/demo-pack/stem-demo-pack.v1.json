@@ -2,7 +2,7 @@
   "schemaVersion": "stem.v1",
   "pack": "stem-demo-pack.v1",
   "version": 1,
-  "description": "Goi du lieu danh muc STEM demo cho 3 cap hoc (Tieu hoc, THCS, THPT) theo truc nang luong trong doi song - Ban DRAFT",
+  "description": "Gói dữ liệu mẫu STEM phục vụ kiểm thử và demo tích hợp (CTGDPT 2018, CV 909, CV 3089, TT 86)",
   "items": [
     {
       "id": "00000000-0000-0000-0000-000000000001",
@@ -10,8 +10,8 @@
       "logicalKey": "stem-source-gdpt2018",
       "versionNo": 1,
       "data": {
-        "title": "Chuong trinh Giao duc pho thong 2018",
-        "issuer": "Bo Giao duc va Dao tao",
+        "title": "Chương trình Giáo dục phổ thông 2018",
+        "issuer": "Bộ Giáo dục và Đào tạo",
         "docNumber": "32/2018/TT-BGDDT",
         "issuedDate": "2018-12-26",
         "url": "https://vbpl.moj.gov.vn/bogiaoducdaotao/Pages/vbpq-toanvan.aspx?ItemID=146721",
@@ -26,8 +26,8 @@
       "logicalKey": "stem-source-cv909-2023",
       "versionNo": 1,
       "data": {
-        "title": "Huong dan to chuc hoat dong giao duc STEM trong giao duc tieu hoc",
-        "issuer": "Bo Giao duc va Dao tao",
+        "title": "Hướng dẫn tổ chức hoạt động giáo dục STEM trong giáo dục tiểu học",
+        "issuer": "Bộ Giáo dục và Đào tạo",
         "docNumber": "909/BGDDT-GDTH",
         "issuedDate": "2023-03-08",
         "url": "https://thuvienphapluat.vn/cong-van/Giao-duc/Cong-van-909-BGDDT-GDTH-2023-to-chuc-hoat-dong-giao-duc-STEM-trong-giao-duc-Tieu-hoc-575007.aspx",
@@ -42,8 +42,8 @@
       "logicalKey": "stem-source-cv3089-2020",
       "versionNo": 1,
       "data": {
-        "title": "Huong dan trien khai thuc hien giao duc STEM trong giao duc trung hoc",
-        "issuer": "Bo Giao duc va Dao tao",
+        "title": "Hướng dẫn triển khai thực hiện giáo dục STEM trong giáo dục trung học",
+        "issuer": "Bộ Giáo dục và Đào tạo",
         "docNumber": "3089/BGDDT-GDTrH",
         "issuedDate": "2020-08-14",
         "url": "https://www.thptthanhda.edu.vn/download/vanban/2020/2020102106002852_3089_BGDDT-GDTrH_GiaoDucSTEM.pdf",
@@ -58,8 +58,8 @@
       "logicalKey": "stem-source-tt86-2026",
       "versionNo": 1,
       "data": {
-        "title": "Quy dinh ve to chuc giao duc tich hop STEM trong giao duc pho thong",
-        "issuer": "Bo Giao duc va Dao tao",
+        "title": "Quy định về tổ chức giáo dục tích hợp STEM trong giáo dục phổ thông",
+        "issuer": "Bộ Giáo dục và Đào tạo",
         "docNumber": "86/2026/TT-BGDDT",
         "issuedDate": "2026-09-30",
         "url": "https://chinhphu.vn/?docid=219902&orggroupid=4&pageid=27160",
@@ -76,10 +76,11 @@
       "sourceId": "00000000-0000-0000-0000-000000000012",
       "data": {
         "levelCode": "PRIMARY",
-        "name": "Giao duc STEM cap Tieu hoc (Lop 1-5)",
+        "name": "Giáo dục STEM cấp Tiểu học (Lớp 1-5)",
         "gradeKey": "GRADE_4",
         "subject": "Math",
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "description": "Hồ sơ giáo dục STEM tích hợp cấp Tiểu học theo định hướng Công văn 909/BGDĐT-GDTH và CTGDPT 2018"
       }
     },
     {
@@ -90,10 +91,11 @@
       "sourceId": "00000000-0000-0000-0000-000000000006",
       "data": {
         "levelCode": "LOWER_SECONDARY",
-        "name": "Giao duc STEM cap THCS (Lop 6-9)",
+        "name": "Giáo dục STEM cấp THCS (Lớp 6-9)",
         "gradeKey": "GRADE_8",
         "subject": "Physics",
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "description": "Hồ sơ giáo dục STEM tích hợp cấp THCS theo định hướng Công văn 3089/BGDĐT-GDTrH và CTGDPT 2018"
       }
     },
     {
@@ -104,10 +106,11 @@
       "sourceId": "00000000-0000-0000-0000-000000000011",
       "data": {
         "levelCode": "UPPER_SECONDARY",
-        "name": "Giao duc STEM cap THPT (Lop 10-12)",
+        "name": "Giáo dục STEM cấp THPT (Lớp 10-12)",
         "gradeKey": "GRADE_11",
         "subject": "Physics",
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "description": "Hồ sơ giáo dục STEM chuyên sâu cấp THPT theo định hướng Thông tư 86/2026/TT-BGDĐT và CTGDPT 2018"
       }
     },
     {
@@ -121,13 +124,10 @@
         "subjectKey": "Math",
         "gradeKey": "GRADE_4",
         "code": "M4-MEAS-01",
-        "text": "Thuc hien duoc viec do, doc so do thoi gian va nhiet do bang dung cu do thong dung; thuc hien uoc luong va so sanh cac so do trong giai quyet van de thuc tien.",
-        "locator": {
-          "sourceLogicalKey": "stem-source-gdpt2018",
-          "section": "Mon Toan Tieu hoc, mach Do luong",
-          "page": "Trang 48"
-        },
-        "verificationStatus": "UNVERIFIED"
+        "text": null,
+        "locator": null,
+        "verificationStatus": "UNVERIFIED",
+        "summary": "Thực hiện được việc đo, đọc số đo thời gian và nhiệt độ bằng dụng cụ đo thông dụng; thực hiện ước lượng và so sánh các số đo trong giải quyết vấn đề thực tiễn."
       }
     },
     {
@@ -141,13 +141,16 @@
         "subjectKey": "Science",
         "gradeKey": "GRADE_4",
         "code": "SCI4-ENG-01",
-        "text": "Neu duoc vat dan nhiet tot, vat dan nhiet kem; giai thich duoc mot so hien tuong don gian lien quan den su truyen nhiet trong doi song va de xuat cach lam vat giu nhiet don gian.",
+        "text": "Vận dụng được kiến thức về vật dẫn nhiệt tốt hoặc kém để giải thích một số hiện tượng tự nhiên; để giải quyết một số vấn đề đơn giản trong cuộc sống.",
         "locator": {
           "sourceLogicalKey": "stem-source-gdpt2018",
-          "section": "Mon Khoa hoc Lop 4, Chu de Nang luong - Nhiet",
-          "page": "Trang 22"
+          "fileName": "10-ctkhoa-hoc.pdf",
+          "page": 11,
+          "section": "Chủ đề Năng lượng - Nhiệt (Các vật dẫn nhiệt tốt và dẫn nhiệt kém; ứng dụng trong đời sống)",
+          "sha256": "bdcf1384bc385b48e74f3d203ac3e3862de3c66a0b6be50df02f7cd414fa3554"
         },
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "summary": null
       }
     },
     {
@@ -161,13 +164,16 @@
         "subjectKey": "Physics",
         "gradeKey": "GRADE_8",
         "code": "KHTN8-THERM-01",
-        "text": "Mo ta duoc su truyen nang luong nhiet bang dan nhiet, doi luu, buc xa; so sanh duoc tinh dan nhiet cua cac vat lieu va giai thich duoc nguyen li hoat dong cua mot so dung cu giu nhiet trong thuc te.",
+        "text": "Lấy được ví dụ về hiện tượng dẫn nhiệt, đối lưu, bức xạ nhiệt và mô tả sơ lược được sự truyền năng lượng trong mỗi hiện tượng đó.",
         "locator": {
           "sourceLogicalKey": "stem-source-gdpt2018",
-          "section": "Mon KHTN Lop 8, Mach Nang luong nhiet",
-          "page": "Trang 65"
+          "fileName": "11-ctkhoa-hoc-tu-nhien.pdf",
+          "page": 49,
+          "section": "Chủ đề Nhiệt (Năng lượng nhiệt, Dẫn nhiệt, đối lưu, bức xạ nhiệt)",
+          "sha256": "4d8098825841e7de430c298cd76b9e93310682949d92b21d1440c54b75ffa14a"
         },
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "summary": null
       }
     },
     {
@@ -181,13 +187,10 @@
         "subjectKey": "Math",
         "gradeKey": "GRADE_8",
         "code": "M8-STAT-01",
-        "text": "Thu thap, to chuc du lieu thuc nghiem vao bang va bieu dien bang bieu do thich hop; phan tich xu the bien thien cua dai luong do de rut ra ket luan.",
-        "locator": {
-          "sourceLogicalKey": "stem-source-gdpt2018",
-          "section": "Mon Toan Lop 8, Mach Thong ke va Xac suat",
-          "page": "Trang 72"
-        },
-        "verificationStatus": "UNVERIFIED"
+        "text": null,
+        "locator": null,
+        "verificationStatus": "UNVERIFIED",
+        "summary": "Thu thập, tổ chức dữ liệu thực nghiệm vào bảng và biểu diễn bằng biểu đồ thích hợp; phân tích xu thế biến thiên của đại lượng đo để rút ra kết luận."
       }
     },
     {
@@ -201,13 +204,16 @@
         "subjectKey": "Physics",
         "gradeKey": "GRADE_11",
         "code": "PHY11-ELEC-01",
-        "text": "Van dung duoc dinh luat Ohm cho toan mach va cong thuc tinh nang luong, cong suat dien cua doan mach de thiet ke, tinh toan cac thong so cua mach dien mot chieu don gian dap ung yeu cau ky thuat va an toan.",
+        "text": "Phát biểu được định luật Ohm cho vật dẫn kim loại.",
         "locator": {
           "sourceLogicalKey": "stem-source-gdpt2018",
-          "section": "Mon Vat li Lop 11, Chuyen de Dong dien khong doi - Nang luong dien",
-          "page": "Trang 38"
+          "fileName": "12-ctvat-li.pdf",
+          "page": 21,
+          "section": "Chuyên đề Mạch điện và điện trở",
+          "sha256": "0a8754c7823eaaa242b40f902c15dbb0dcedeff25206f2c8e3ecf60163ac371e"
         },
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "summary": null
       }
     },
     {
@@ -221,13 +227,10 @@
         "subjectKey": "Math",
         "gradeKey": "GRADE_11",
         "code": "M11-FUNCT-01",
-        "text": "Mo hinh hoa cac moi quan he dai luong vat li bang ham so; giai bai toan toi uu don gian va bien luan su phu thuoc giua cac thong so mach dien.",
-        "locator": {
-          "sourceLogicalKey": "stem-source-gdpt2018",
-          "section": "Mon Toan Lop 11, Mach Ham so va Ung dung",
-          "page": "Trang 84"
-        },
-        "verificationStatus": "UNVERIFIED"
+        "text": null,
+        "locator": null,
+        "verificationStatus": "UNVERIFIED",
+        "summary": "Mô hình hoá các mối quan hệ đại lượng vật lí bằng hàm số; giải bài toán tối ưu đơn giản và biện luận sự phụ thuộc giữa các thông số mạch điện."
       }
     },
     {
@@ -236,7 +239,7 @@
       "logicalKey": "stem-rubric-primary",
       "versionNo": 1,
       "data": {
-        "name": "Tieu chi danh gia STEM cap Tieu hoc (DRAFT TEST_ONLY)",
+        "name": "Tiêu chí đánh giá STEM cấp Tiểu học (Dự thảo)",
         "levelCode": "PRIMARY",
         "criteria": [
           {
@@ -260,7 +263,8 @@
             "description": "Khong co loi sai lech kien thuc khoa hoc, ngon ngu trong sang de hieu."
           }
         ],
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "description": "Rubric đánh giá năng lực tích hợp STEM cấp Tiểu học theo 3 tiêu chí cốt lõi"
       }
     },
     {
@@ -269,7 +273,7 @@
       "logicalKey": "stem-rubric-lower-secondary",
       "versionNo": 1,
       "data": {
-        "name": "Tieu chi danh gia STEM cap THCS (DRAFT TEST_ONLY)",
+        "name": "Tiêu chí đánh giá STEM cấp THCS (Dự thảo)",
         "levelCode": "LOWER_SECONDARY",
         "criteria": [
           {
@@ -293,7 +297,8 @@
             "description": "Cac hoat dong va tieu chi san pham duoc gan voi minh chung ro rang trong canh quay."
           }
         ],
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "description": "Rubric đánh giá bài học STEM cấp THCS theo định hướng nghiên cứu kỹ thuật và vận dụng kiến thức liên môn"
       }
     },
     {
@@ -302,7 +307,7 @@
       "logicalKey": "stem-rubric-upper-secondary",
       "versionNo": 1,
       "data": {
-        "name": "Tieu chi danh gia STEM cap THPT (DRAFT TEST_ONLY)",
+        "name": "Tiêu chí đánh giá STEM cấp THPT (Dự thảo)",
         "levelCode": "UPPER_SECONDARY",
         "criteria": [
           {
@@ -326,7 +331,8 @@
             "description": "Lien he sau voi he thong thuc te, dinh huong nghe nghiep ky thuat va bao ve moi truong."
           }
         ],
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "description": "Rubric đánh giá dự án STEM chuyên sâu cấp THPT theo chuẩn kỹ thuật và mô hình hoá toán học"
       }
     },
     {
@@ -335,49 +341,50 @@
       "logicalKey": "stem-policy-primary",
       "versionNo": 1,
       "data": {
-        "name": "Chinh sach STEM cap Tieu hoc (DRAFT TEST_ONLY)",
+        "name": "Chính sách STEM cấp Tiểu học (Dự thảo)",
         "levelCode": "PRIMARY",
         "gradeKey": "GRADE_4",
         "rubricVersionId": "00000000-0000-0000-0000-000000000004",
         "lessonTemplate": [
           {
             "stepKey": "OPENING_PROBLEM",
-            "label": "Xac dinh van de thuc tien",
-            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.1",
-            "mappingNote": "Hoat dong 1: Xac dinh van de hoac nhu cau thuc tien"
+            "label": "Xác định vấn đề thực tiễn",
+            "sourceLocator": "Công văn 909/BGDĐT-GDTH Mục II.1",
+            "mappingNote": "Hoạt động 1: Xác định vấn đề hoặc nhu cầu thực tiễn chế tạo sản phẩm STEM"
           },
           {
             "stepKey": "BACKGROUND_KNOWLEDGE",
-            "label": "Nghien cuu kien thuc nen",
-            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.2",
-            "mappingNote": "Hoat dong 2: Nghien cuu kien thuc nen va de xuat giai phap"
+            "label": "Nghiên cứu kiến thức nền",
+            "sourceLocator": "Công văn 909/BGDĐT-GDTH Mục II.2",
+            "mappingNote": "Hoạt động 2: Nghiên cứu kiến thức nền và đề xuất giải pháp"
           },
           {
             "stepKey": "PROPOSE_SOLUTION",
-            "label": "De xuat phuong an thiet ke",
-            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.2",
-            "mappingNote": "Hoat dong 2b: Lua chon y tuong va phuong an don gian"
+            "label": "Đề xuất phương án thiết kế",
+            "sourceLocator": "Công văn 909/BGDĐT-GDTH Mục II.2",
+            "mappingNote": "Hoạt động 2b: Lựa chọn ý tưởng và phương án thiết kế đơn giản"
           },
           {
             "stepKey": "SELECT_SOLUTION",
-            "label": "Lua chon tieu chi va vat lieu",
-            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.3",
-            "mappingNote": "Hoat dong 3: Lap ke hoach va lua chon vat lieu de tim"
+            "label": "Lựa chọn tiêu chí và vật liệu",
+            "sourceLocator": "Công văn 909/BGDĐT-GDTH Mục II.3",
+            "mappingNote": "Hoạt động 3: Lập kế hoạch và lựa chọn vật liệu dễ tìm"
           },
           {
             "stepKey": "BUILD_TEST",
-            "label": "Che tao va thu nghiem mau",
-            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.4",
-            "mappingNote": "Hoat dong 4: Che tao mau va thu nghiem danh gia"
+            "label": "Chế tạo và thử nghiệm mẫu",
+            "sourceLocator": "Công văn 909/BGDĐT-GDTH Mục II.4",
+            "mappingNote": "Hoạt động 4: Chế tạo mẫu và thử nghiệm, đánh giá"
           },
           {
             "stepKey": "CLOSING_SHARE_REFLECT",
-            "label": "Chia se, danh gia va cai tien",
-            "sourceLocator": "CV 909/BGDDT-GDTH Muc II.5",
-            "mappingNote": "Hoat dong 5: Chia se ket qua va de xuat dieu chinh"
+            "label": "Chia sẻ, đánh giá và cải tiến",
+            "sourceLocator": "Công văn 909/BGDĐT-GDTH Mục II.5",
+            "mappingNote": "Hoạt động 5: Chia sẻ kết quả và đề xuất điều chỉnh"
           }
         ],
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "description": "Chính sách quản trị chất lượng kịch bản STEM cấp Tiểu học, yêu cầu đầy đủ 6 bước và kiểm soát an toàn"
       }
     },
     {
@@ -386,49 +393,50 @@
       "logicalKey": "stem-policy-lower-secondary",
       "versionNo": 1,
       "data": {
-        "name": "Chinh sach STEM cap THCS (DRAFT TEST_ONLY)",
+        "name": "Chính sách STEM cấp THCS (Dự thảo)",
         "levelCode": "LOWER_SECONDARY",
         "gradeKey": "GRADE_8",
         "rubricVersionId": "00000000-0000-0000-0000-000000000009",
         "lessonTemplate": [
           {
             "stepKey": "OPENING_PROBLEM",
-            "label": "Xac dinh van de hoac yeu cau ky thuat",
-            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.1",
-            "mappingNote": "Hoat dong 1: Xac dinh van de hoac yeu cau che tao thiet bi"
+            "label": "Xác định vấn đề hoặc yêu cầu kỹ thuật",
+            "sourceLocator": "Công văn 3089/BGDĐT-GDTrH Mục 2.1",
+            "mappingNote": "Hoạt động 1: Xác định vấn đề hoặc yêu cầu chế tạo thiết bị"
           },
           {
             "stepKey": "BACKGROUND_KNOWLEDGE",
-            "label": "Nghien cuu kien thuc nen va de xuat giai phap",
-            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.2",
-            "mappingNote": "Hoat dong 2: Nghien cuu kien thuc nen va de xuat phuong an thiet ke"
+            "label": "Nghiên cứu kiến thức nền và đề xuất giải pháp",
+            "sourceLocator": "Công văn 3089/BGDĐT-GDTrH Mục 2.2",
+            "mappingNote": "Hoạt động 2: Nghiên cứu kiến thức nền và đề xuất phương án thiết kế"
           },
           {
             "stepKey": "PROPOSE_SOLUTION",
-            "label": "Xay dung ban thiet ke so bo",
-            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.2b",
-            "mappingNote": "Phan tich cac phuong an thiet ke tren nguyen li khoa hoc"
+            "label": "Xây dựng bản thiết kế sơ bộ",
+            "sourceLocator": "Công văn 3089/BGDĐT-GDTrH Mục 2.2",
+            "mappingNote": "Hoạt động 2b: Phân tích các phương án thiết kế trên nguyên lí khoa học"
           },
           {
             "stepKey": "SELECT_SOLUTION",
-            "label": "Lua chon phuong an va lap thiet ke chi tiet",
-            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.3",
-            "mappingNote": "Hoat dong 3: Trinh bay va bao ve phuong an thiet ke"
+            "label": "Lựa chọn phương án và lập thiết kế chi tiết",
+            "sourceLocator": "Công văn 3089/BGDĐT-GDTrH Mục 2.3",
+            "mappingNote": "Hoạt động 3: Trình bày và bảo vệ phương án thiết kế"
           },
           {
             "stepKey": "BUILD_TEST",
-            "label": "Che tao mau thu va thu nghiem kiem chung",
-            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.4",
-            "mappingNote": "Hoat dong 4: Che tao mau thu theo thiet ke va thu nghiem"
+            "label": "Chế tạo mẫu thử và thử nghiệm kiểm chứng",
+            "sourceLocator": "Công văn 3089/BGDĐT-GDTrH Mục 2.4",
+            "mappingNote": "Hoạt động 4: Chế tạo mẫu thử theo thiết kế và thử nghiệm"
           },
           {
             "stepKey": "CLOSING_SHARE_REFLECT",
-            "label": "Bao cao ket qua, danh gia va cai tien",
-            "sourceLocator": "CV 3089/BGDDT-GDTrH Muc 2.5",
-            "mappingNote": "Hoat dong 5: Trinh bay san pham va danh gia cai tien"
+            "label": "Báo cáo kết quả, đánh giá và cải tiến",
+            "sourceLocator": "Công văn 3089/BGDĐT-GDTrH Mục 2.5",
+            "mappingNote": "Hoạt động 5: Trình bày sản phẩm và đánh giá cải tiến"
           }
         ],
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "description": "Chính sách quản trị chất lượng bài học STEM cấp THCS, bắt buộc quy trình thiết kế kỹ thuật và thử nghiệm"
       }
     },
     {
@@ -437,49 +445,50 @@
       "logicalKey": "stem-policy-upper-secondary",
       "versionNo": 1,
       "data": {
-        "name": "Chinh sach STEM cap THPT (DRAFT TEST_ONLY)",
+        "name": "Chính sách STEM cấp THPT (Dự thảo)",
         "levelCode": "UPPER_SECONDARY",
         "gradeKey": "GRADE_11",
         "rubricVersionId": "00000000-0000-0000-0000-000000000016",
         "lessonTemplate": [
           {
             "stepKey": "OPENING_PROBLEM",
-            "label": "Phat hien van de va xac dinh muc tieu ky thuat",
-            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 5",
-            "mappingNote": "Xac dinh van de thuc tien can giai quyet va gioi han thiet ke"
+            "label": "Phát hiện vấn đề và xác định mục tiêu kỹ thuật",
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 5",
+            "mappingNote": "Xác định vấn đề thực tiễn cần giải quyết và giới hạn thiết kế kỹ thuật"
           },
           {
             "stepKey": "BACKGROUND_KNOWLEDGE",
-            "label": "Nghien cuu kien thuc chuyen sau va khao sat linh kien",
-            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 5",
-            "mappingNote": "Mo hinh hoa toan hoc va nguyen li vat li lien quan"
+            "label": "Nghiên cứu kiến thức chuyên sâu và khảo sát linh kiện",
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 5",
+            "mappingNote": "Mô hình hoá toán học và nguyên lí vật lí liên quan"
           },
           {
             "stepKey": "PROPOSE_SOLUTION",
-            "label": "Thiet ke mo hinh va tinh toan thong so",
-            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 6",
-            "mappingNote": "Xay dung so do mach va phuong an bo tri linh kien"
+            "label": "Thiết kế mô hình và tính toán thông số",
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 6",
+            "mappingNote": "Xây dựng sơ đồ mạch và phương án bố trí linh kiện"
           },
           {
             "stepKey": "SELECT_SOLUTION",
-            "label": "Danh gia, lua chon phuong an toi uu duoi rang buoc",
-            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 6",
-            "mappingNote": "Bien luan thong so, tieu chi an toan va hieu qua nang luong"
+            "label": "Đánh giá, lựa chọn phương án tối ưu dưới ràng buộc",
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 6",
+            "mappingNote": "Biện luận thông số, tiêu chí an toàn và hiệu quả năng lượng"
           },
           {
             "stepKey": "BUILD_TEST",
-            "label": "Lap rap mach, do dac thu nghiem va thu thap du lieu",
-            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 7",
-            "mappingNote": "Lap rap mach DC, do dong/ap/nhiet do va danh gia sai so"
+            "label": "Lắp ráp mạch, đo đạc thử nghiệm và thu thập dữ liệu",
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 7",
+            "mappingNote": "Lắp ráp mạch DC, đo dòng/áp/nhiệt độ và đánh giá sai số"
           },
           {
             "stepKey": "CLOSING_SHARE_REFLECT",
-            "label": "Bao cao bao ve giai phap va dinh huong ung dung",
-            "sourceLocator": "TT 86/2026/TT-BGDDT Dieu 7",
-            "mappingNote": "Danh gia ket qua, de xuat nang cap he thong va lien he thuc te"
+            "label": "Báo cáo bảo vệ giải pháp và định hướng ứng dụng",
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 7",
+            "mappingNote": "Đánh giá kết quả, đề xuất nâng cấp hệ thống và liên hệ thực tế"
           }
         ],
-        "verificationStatus": "UNVERIFIED"
+        "verificationStatus": "UNVERIFIED",
+        "description": "Chính sách quản trị chất lượng bài học STEM chuyên sâu THPT, bắt buộc đo đạc thông số và biện luận kỹ thuật"
       }
     }
   ]

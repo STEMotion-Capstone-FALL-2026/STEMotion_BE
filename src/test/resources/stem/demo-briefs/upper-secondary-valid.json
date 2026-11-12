@@ -10,12 +10,12 @@
     "00000000-0000-0000-0000-000000000015",
     "00000000-0000-0000-0000-000000000025"
   ],
-  "scopeOfClip": "Khao sat hieu suat pin quang dien va thiet ke mach nap pin mat troi mini",
+  "scopeOfClip": "Khảo sát hiệu suất pin quang điện và thiết kế mạch nạp pin mặt trời mini",
   "context": {
     "primary": {
       "key": "IN_CLASS_SCREEN",
-      "condition": "Phong hoc vat ly co nguon sang chieu",
-      "adaptations": "Co the dung den soi cong suat lon thay cho anh sang mat troi truc tiep"
+      "condition": "Phòng học vật lý có nguồn sáng chiếu",
+      "adaptations": "Có thể dùng đèn soi công suất lớn thay cho ánh sáng mặt trời trực tiếp"
     },
     "secondary": []
   },
@@ -26,31 +26,31 @@
     {
       "key": "obj-1",
       "outcomeId": "00000000-0000-0000-0000-000000000015",
-      "learnerAction": "Do dien ap va dong dien cua tam pin quang dien duoi cuong do sang khac nhau",
-      "observableEvidence": "Bang so lieu V-I va duong dac trung von-ampe"
+      "learnerAction": "Đo điện áp và dòng điện của tấm pin quang điện dưới cường độ sáng khác nhau",
+      "observableEvidence": "Bảng số liệu V-I và đường đặc trưng vôn-ampe"
     },
     {
       "key": "obj-2",
       "outcomeId": "00000000-0000-0000-0000-000000000025",
-      "learnerAction": "Xay dung ham so cong suat P(R) va xac dinh gia tri cuc dai",
-      "observableEvidence": "Do thi cong suat va diem lam viec toi uu Pmax"
+      "learnerAction": "Xây dựng hàm số công suất P(R) và xác định giá trị cực đại",
+      "observableEvidence": "Đồ thị công suất và điểm làm việc tối ưu Pmax"
     }
   ],
   "studentTasks": [
     {
       "key": "task-1",
-      "learnerAction": "Noi mach do gom pin mat troi, bien tro, ampe ke va von ke",
-      "teacherSupport": "Kiem tra so do mach truoc khi bat nguon sang",
-      "materials": "Tam pin solar 5V, bien tro 100 ohm, dong ho VOM, day noi",
-      "safety": "Khong de tam pin gan nguon nhiet qua 60 do C",
-      "assessmentEvidence": "Bang so lieu do va bao cao tinh Pmax",
+      "learnerAction": "Nối mạch đo gồm pin mặt trời, biến trở, ampe kế và vôn kế",
+      "teacherSupport": "Kiểm tra sơ đồ mạch trước khi bật nguồn sáng",
+      "materials": "Tấm pin solar 5V, biến trở 100 ohm, đồng hồ VOM, dây nối",
+      "safety": "Không để tấm pin gần nguồn nhiệt quá 60 độ C",
+      "assessmentEvidence": "Bảng số liệu đo và báo cáo tính Pmax",
       "executionContextKey": "IN_CLASS_SCREEN"
     }
   ],
   "contributions": [
     {
       "component": "S",
-      "explanation": "Hieu ung quang dien trong va chuyen hoa quang nang thanh dien nang",
+      "explanation": "Hiệu ứng quang điện trong và chuyển hoá quang năng thành điện năng",
       "objectiveKeys": [
         "obj-1"
       ],
@@ -60,7 +60,7 @@
     },
     {
       "component": "M",
-      "explanation": "Khao sat ham so va tim cuc tri cua cong suat P=I^2*R",
+      "explanation": "Khảo sát hàm số và tìm cực trị của công suất P = I^2 * R",
       "objectiveKeys": [
         "obj-2"
       ],
@@ -69,7 +69,7 @@
       ]
     }
   ],
-  "safetyNotes": "Su dung dong ho do dien da nang dung thang do, khong chap mach acquy/pin lithium",
+  "safetyNotes": "Sử dụng đồng hồ đo điện đa năng đúng thang đo, không chập mạch acquy/pin lithium",
   "rawLegacy": null,
   "steps": [
     {
