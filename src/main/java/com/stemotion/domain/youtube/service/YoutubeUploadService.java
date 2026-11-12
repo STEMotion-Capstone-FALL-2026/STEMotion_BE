@@ -1,5 +1,12 @@
 package com.stemotion.domain.youtube.service;
 
+import jakarta.annotation.PreDestroy;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
+import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stemotion.domain.production.dto.ProductionDtos.PublishRequest;
@@ -397,4 +404,65 @@ public class YoutubeUploadService {
     private String urlEncode(String value) {
         return value == null ? "" : URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
+
+    @PreDestroy
+    public void shutdown() {
+        log.info("Shutting down YouTube upload executor...");
+        uploadExecutor.shutdown();
+        try {
+            if (!uploadExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                uploadExecutor.shutdownNow();
+                if (!uploadExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    log.warn("YouTube upload executor did not terminate cleanly");
+                }
+            }
+        } catch (InterruptedException e) {
+            uploadExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public int cleanupStaleUploads(LocalDateTime cutoff) {
+        List<Publication> stale = publicationRepository.findStaleUploads(Publication.Platform.YOUTUBE, cutoff);
+        if (stale.isEmpty()) {
+            return 0;
+        }
+        log.info("Found {} stale YouTube uploads to clean up (cutoff: {})", stale.size(), cutoff);
+        int cleaned = 0;
+        for (Publication pub : stale) {
+            try {
+                transactionTemplate.executeWithoutResult(status -> {
+                    Publication p = publicationRepository.findById(pub.getId()).orElse(null);
+                    if (p != null && ("PENDING".equals(p.getUploadStatus()) || "UPLOADING".equals(p.getUploadStatus()))) {
+                        p.setUploadStatus("FAILED");
+                        p.setUploadError("interrupted, please republish");
+                        publicationRepository.save(p);
+                    }
+                });
+                cleaned++;
+            } catch (Exception e) {
+                log.error("Failed to clean up stale publication {}: {}", pub.getId(), e.getMessage());
+            }
+        }
+        return cleaned;
+    }
+
+    @Scheduled(fixedDelayString = "${app.youtube.cleanup-interval-ms:300000}", initialDelay = 10000)
+    public int cleanupStaleUploads() {
+        if (!properties.isEnabled()) {
+            return 0;
+        }
+        int timeoutMinutes = properties.getStaleUploadTimeoutMinutes();
+        if (timeoutMinutes <= 0) {
+            timeoutMinutes = 30;
+        }
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(timeoutMinutes);
+        return cleanupStaleUploads(cutoff);
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void onStartup() {
+        cleanupStaleUploads();
+    }
+
 }

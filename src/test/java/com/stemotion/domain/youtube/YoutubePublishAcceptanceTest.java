@@ -667,4 +667,193 @@ public class YoutubePublishAcceptanceTest {
         assertThat(recoveredPub.getUploadStatus()).isEqualTo("UPLOADED");
         assertThat(recoveredPub.getExternalId()).isEqualTo("yt_vid_test_xyz789");
     }
+
+    @Test
+    void RF08_STALE_UPLOAD_MARKED_FAILED() {
+        connectWorkspaceToYoutube();
+
+        Clip clip = clips.findById(clipId).orElseThrow();
+        ClipProject project = projects.findById(projectId).orElseThrow();
+        User producer = users.findById(producerId).orElseThrow();
+
+        Publication pub = publicationRepository.saveAndFlush(Publication.builder()
+            .project(project)
+            .clip(clip)
+            .publisher(producer)
+            .platform(Publication.Platform.YOUTUBE)
+            .uploadStatus("UPLOADING")
+            .publishedAt(java.time.LocalDateTime.now().minusMinutes(40))
+            .attempts(1)
+            .build());
+
+        // Backdate updated_at via JDBC to simulate 35 minutes of inactivity
+        jdbc.update("update publications set updated_at = now() - interval '35 minutes' where id = ?", pub.getId());
+
+        int cleaned = uploadService.cleanupStaleUploads();
+        assertThat(cleaned).isGreaterThanOrEqualTo(1);
+
+        Publication cleanedPub = publicationRepository.findById(pub.getId()).orElseThrow();
+        assertThat(cleanedPub.getUploadStatus()).isEqualTo("FAILED");
+        assertThat(cleanedPub.getUploadError()).isEqualTo("interrupted, please republish");
+    }
+
+    @Test
+    void RF08_REPUBLISH_AFTER_INTERRUPTED() throws Exception {
+        connectWorkspaceToYoutube();
+
+        Clip clip = clips.findById(clipId).orElseThrow();
+        ClipProject project = projects.findById(projectId).orElseThrow();
+        User producer = users.findById(producerId).orElseThrow();
+
+        Publication pub = publicationRepository.saveAndFlush(Publication.builder()
+            .project(project)
+            .clip(clip)
+            .publisher(producer)
+            .platform(Publication.Platform.YOUTUBE)
+            .uploadStatus("PENDING")
+            .publishedAt(java.time.LocalDateTime.now().minusMinutes(50))
+            .attempts(1)
+            .build());
+
+        // Backdate updated_at
+        jdbc.update("update publications set updated_at = now() - interval '45 minutes' where id = ?", pub.getId());
+
+        // Clean up stale upload
+        uploadService.cleanupStaleUploads();
+        Publication failedPub = publicationRepository.findById(pub.getId()).orElseThrow();
+        assertThat(failedPub.getUploadStatus()).isEqualTo("FAILED");
+        assertThat(failedPub.getUploadError()).isEqualTo("interrupted, please republish");
+
+        // Republish should succeed and reuse the row
+        PublishRequest req = new PublishRequest(
+            List.of(PublishTarget.YOUTUBE),
+            "Republish After Interrupted",
+            "Recovering from interrupted upload"
+        );
+
+        PublishResponse resp = publishService.publish(projectId, req, producerId);
+        assertThat(resp.uploadStatus()).isEqualTo("PENDING");
+
+        for (int i = 0; i < 30; i++) {
+            Thread.sleep(100);
+            Publication p = publicationRepository.findById(pub.getId()).orElse(null);
+            if (p != null && "UPLOADED".equals(p.getUploadStatus())) break;
+        }
+
+        Publication recovered = publicationRepository.findById(pub.getId()).orElseThrow();
+        assertThat(recovered.getId()).isEqualTo(pub.getId());
+        assertThat(recovered.getUploadStatus()).isEqualTo("UPLOADED");
+        assertThat(recovered.getUploadError()).isNull();
+    }
+
+    @Test
+    void RF08_ENABLED_WITHOUT_KEY_FAILS_STARTUP() {
+        new org.springframework.boot.test.context.runner.ApplicationContextRunner()
+            .withConfiguration(org.springframework.boot.autoconfigure.AutoConfigurations.of(
+                org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration.class
+            ))
+            .withUserConfiguration(YoutubeProperties.class)
+            .withPropertyValues("app.youtube.enabled=true", "app.youtube.token-key=")
+            .run(context -> {
+                assertThat(context).hasFailed();
+                assertThat(context.getStartupFailure())
+                    .hasRootCauseInstanceOf(IllegalStateException.class)
+                    .hasRootCauseMessage("app.youtube.enabled is true but YOUTUBE_TOKEN_KEY is not configured");
+            });
+    }
+
+    @Test
+    void RF08_LEGACY_TOKEN_DECRYPTABLE() throws Exception {
+        String testKey = "0123456789abcdef0123456789abcdef";
+        byte[] keyBytes = java.security.MessageDigest.getInstance("SHA-256").digest(testKey.getBytes(StandardCharsets.UTF_8));
+        javax.crypto.SecretKey rawKey = new javax.crypto.spec.SecretKeySpec(keyBytes, "AES");
+
+        // Encrypt with old raw/legacy key
+        byte[] iv = new byte[12];
+        new java.security.SecureRandom().nextBytes(iv);
+        javax.crypto.Cipher legacyCipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
+        legacyCipher.init(javax.crypto.Cipher.ENCRYPT_MODE, rawKey, new javax.crypto.spec.GCMParameterSpec(128, iv));
+        byte[] cipherText = legacyCipher.doFinal("legacy-secret-refresh-token".getBytes(StandardCharsets.UTF_8));
+
+        java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocate(iv.length + cipherText.length);
+        buf.put(iv);
+        buf.put(cipherText);
+        String legacyCiphertext = Base64.getEncoder().encodeToString(buf.array());
+
+        // Decrypt using updated TokenEncryptionService with derived key fallback
+        String decryptedLegacy = encryptionService.decrypt(legacyCiphertext);
+        assertThat(decryptedLegacy).isEqualTo("legacy-secret-refresh-token");
+
+        // Also verify newly encrypted tokens work with derived key
+        String newlyEncrypted = encryptionService.encrypt("new-secret-refresh-token");
+        String decryptedNew = encryptionService.decrypt(newlyEncrypted);
+        assertThat(decryptedNew).isEqualTo("new-secret-refresh-token");
+    }
+
+    @Test
+    void RF08_SCHEMA_VALIDATION_FAILS_WITHOUT_V27() throws Exception {
+        try (EmbeddedPostgres isolatedPg = EmbeddedPostgres.builder().start()) {
+            javax.sql.DataSource ds = isolatedPg.getPostgresDatabase();
+
+            // Run Flyway only up to V22 (before V27)
+            org.flywaydb.core.Flyway flywayV22 = org.flywaydb.core.Flyway.configure()
+                .dataSource(ds)
+                .locations("classpath:db/migration")
+                .target("22")
+                .load();
+            flywayV22.migrate();
+
+            // Populate auth-v2 schema so auth entities pass validation
+            org.flywaydb.core.Flyway flywayAuth = org.flywaydb.core.Flyway.configure()
+                .dataSource(ds)
+                .locations("classpath:db/auth-v2-e2e")
+                .table("flyway_auth_history")
+                .baselineOnMigrate(true)
+                .load();
+            flywayAuth.migrate();
+
+            // Try validating JPA schema without V27 -> must fail because publications table is missing V27 columns
+            org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean emfb =
+                new org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean();
+            emfb.setDataSource(ds);
+            emfb.setPackagesToScan("com.stemotion");
+            emfb.setJpaVendorAdapter(new org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter());
+            Map<String, Object> props = new HashMap<>();
+            props.put("jakarta.persistence.schema-generation.database.action", "validate");
+            props.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+            emfb.setJpaPropertyMap(props);
+
+            assertThatThrownBy(emfb::afterPropertiesSet)
+                .satisfies(ex -> {
+                    String msg = ex.getMessage();
+                    Throwable cause = ex.getCause();
+                    while (cause != null) {
+                        msg += " " + cause.getMessage();
+                        cause = cause.getCause();
+                    }
+                    assertThat(msg).containsIgnoringCase("publications");
+                });
+
+            // Now apply V27
+            org.flywaydb.core.Flyway flywayV27 = org.flywaydb.core.Flyway.configure()
+                .dataSource(ds)
+                .locations("classpath:db/migration")
+                .target("27")
+                .load();
+            flywayV27.migrate();
+
+            // Re-validate JPA schema with V27 applied -> must succeed
+            org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean emfb2 =
+                new org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean();
+            emfb2.setDataSource(ds);
+            emfb2.setPackagesToScan("com.stemotion");
+            emfb2.setJpaVendorAdapter(new org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter());
+            emfb2.setJpaPropertyMap(props);
+
+            emfb2.afterPropertiesSet();
+            assertThat(emfb2.getObject()).isNotNull();
+            emfb2.destroy();
+        }
+    }
+
 }

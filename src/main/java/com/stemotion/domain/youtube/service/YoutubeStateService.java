@@ -1,7 +1,6 @@
 package com.stemotion.domain.youtube.service;
 
 import com.stemotion.core.exception.ApiException;
-import com.stemotion.domain.youtube.config.YoutubeProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,24 +20,13 @@ public class YoutubeStateService {
     private static final String HMAC_SHA256 = "HmacSHA256";
     private static final long STATE_TTL_SECONDS = 600; // 10 minutes
 
-    private final YoutubeProperties properties;
+    private final TokenEncryptionService encryptionService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public record StatePayload(String workspaceId, String userId, long timestamp, String nonce) {}
 
     private byte[] getHmacKey() {
-        String key = properties.getTokenKey();
-        if (key == null || key.isBlank()) {
-            key = properties.getClientSecret();
-        }
-        if (key == null || key.isBlank()) {
-            key = "fallback-test-hmac-key-for-youtube-state";
-        }
-        try {
-            return MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to digest state key", e);
-        }
+        return encryptionService.getDerivedHmacKey();
     }
 
     public String generateState(String workspaceId, String userId) {
