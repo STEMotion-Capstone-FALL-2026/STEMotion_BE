@@ -9,6 +9,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 BRIDGE_DIR="${REPO_ROOT}/src/main/resources/db/bridge-prod"
+MIGRATION_DIR="${REPO_ROOT}/src/main/resources/db/migration"
 
 CONTAINER_NAME="stem_rehearsal_$(date +%s)_$$"
 PORT=15433
@@ -76,6 +77,10 @@ cat "${BRIDGE_DIR}/V23__assert_stem_bridge_prerequisites.sql" \
   | ${PSQL_CMD} --single-transaction -v ON_ERROR_STOP=1 >/dev/null
 echo "  Applied V23–V26 OK."
 
+echo "--> Applying V27__youtube_channel_connections.sql on UUID schema..."
+${PSQL_CMD} -v ON_ERROR_STOP=1 < "${MIGRATION_DIR}/V27__youtube_channel_connections.sql" >/dev/null
+echo "  Applied V27 OK."
+
 echo ""
 echo "--> Running verification checks..."
 
@@ -127,6 +132,17 @@ if ${PSQL_CMD} --single-transaction -v ON_ERROR_STOP=1 < "${BRIDGE_DIR}/V23__ass
 else
     echo "  [PASS] Re-running V23 failed as expected and rolled back"
     PASS_COUNT=$((PASS_COUNT + 1))
+fi
+
+# Check 6: youtube_channel_connections table exists and publications has new columns
+YT_TABLE_EXISTS=$(${PSQL_CMD} -t -A -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='youtube_channel_connections';")
+PUB_EXT_COL=$(${PSQL_CMD} -t -A -c "SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='publications' AND column_name='external_id';")
+if [ "${YT_TABLE_EXISTS}" -eq 1 ] && [ "${PUB_EXT_COL}" -eq 1 ]; then
+    echo "  [PASS] V27 schema elements exist (table: ${YT_TABLE_EXISTS}, column: ${PUB_EXT_COL})"
+    PASS_COUNT=$((PASS_COUNT + 1))
+else
+    echo "  [FAIL] V27 schema elements missing (table: ${YT_TABLE_EXISTS}, column: ${PUB_EXT_COL})"
+    FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
 echo ""

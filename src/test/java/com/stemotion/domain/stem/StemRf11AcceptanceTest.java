@@ -548,7 +548,7 @@ public class StemRf11AcceptanceTest {
   void RF11_MIGRATION_V26() {
     // 1. Check migrations applied: 26 migrations in test profile
     Integer applied = jdbc.queryForObject("select count(*) from flyway_schema_history where success", Integer.class);
-    assertThat(applied).isEqualTo(26);
+    assertThat(applied).isEqualTo(27);
 
     // 2. CHECK constraint accepts STRICT
     Workspace ws1 = workspaces.saveAndFlush(Workspace.builder().name("STRICT_TEST_" + UUID.randomUUID()).createdBy(users.findById(admin).orElseThrow()).build());
