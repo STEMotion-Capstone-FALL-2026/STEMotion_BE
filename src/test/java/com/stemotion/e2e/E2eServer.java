@@ -40,6 +40,13 @@ public class E2eServer {
     public static void main(String[] args) {
         // DevTools would relaunch main with these arguments added a second time.
         System.setProperty("spring.devtools.restart.enabled", "false");
+        // RF-02 load-test mode is opt-in here (E2E_LOADTEST=1) instead of a second main class:
+        // spring-boot:test-run auto-detects the main class, and two candidates break CI and FE E2E.
+        if (LoadTestServer.enabled()) {
+            SpringApplication.from(StemotionApplication::main).with(Config.class, LoadTestServer.Config.class)
+                .run(launchArguments(LoadTestServer.extraArguments(args)));
+            return;
+        }
         SpringApplication.from(StemotionApplication::main).with(Config.class).run(launchArguments(args));
     }
 
