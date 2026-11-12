@@ -1,6 +1,7 @@
 package com.stemotion.domain.stem;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.stemotion.core.enums.StemEnums.*;
 import com.stemotion.core.exception.ApiException;
 import com.stemotion.core.security.WorkspaceAccess;
@@ -321,7 +322,7 @@ public class StemRf11AcceptanceTest {
         .isInstanceOfSatisfying(ApiException.class, e -> {
           assertThat(e.getStatus().value()).isEqualTo(409);
           assertThat(e.getCode()).isEqualTo("STEM_FINGERPRINT_STALE");
-          assertThat(e.getDetails()).containsEntry("expected", "stale-semantic-hash-12345");
+          assertThat(e.getDetails()).containsEntry("actual", "stale-semantic-hash-12345");
         });
 
     // 5. Approve with matching fingerprint -> OK
@@ -402,11 +403,11 @@ public class StemRf11AcceptanceTest {
     var feedbackService = new com.stemotion.domain.review.service.FeedbackService(notesMock, scenes, projects, scripts, authMock, artifactsMock, new StatusHistoryService(history), cpMock, renderMock);
     ReflectionTestUtils.setField(feedbackService, "stem", stem);
 
-    // Save initial composition snapshot
-    stem.checkSubmitVideoReview(projects.findById(pId).orElseThrow(), versions.findById(vId).orElseThrow(), writer);
-
     // Now set workspace to STRICT mode
     stem.saveSettings(wsId, admin, new StemDtos.Settings(0, "STRICT", List.of(), null, "video-strict-" + hasClip, null));
+
+    // Save initial composition snapshot
+    stem.checkSubmitVideoReview(projects.findById(pId).orElseThrow(), versions.findById(vId).orElseThrow(), writer);
 
     // 1. approveVideo without rubric in STRICT mode -> blocks with 400 STEM_RUBRIC_REQUIRED
     assertThatThrownBy(() -> tx.executeWithoutResult(s -> feedbackService.approveVideo(pId, reviewer, "TEST_ONLY", null)))
@@ -568,5 +569,150 @@ public class StemRf11AcceptanceTest {
     File bridgeDir = new File("src/main/resources/db/bridge-prod");
     File v26 = new File(bridgeDir, "V26__allow_stem_strict_mode.sql");
     assertThat(v26).exists();
+  }
+
+  /**
+   * RF11_REAPPROVE_USES_NEWEST:
+   * Approve script 2 times (edit script between the two approvals).
+   * Render uses the newest approval's fingerprint -> STRICT passes.
+   * If script is edited after the 2nd approval -> 409.
+   */
+  @Test
+  void RF11_REAPPROVE_USES_NEWEST() {
+    createBriefWithSubmission();
+    stem.saveSettings(workspace, admin, new StemDtos.Settings(0, "STRICT", List.of(), null, "reapprove-strict", null));
+
+    ClipProject p1 = projects.findById(project).orElseThrow();
+    ScriptVersion v1 = versions.findById(version).orElseThrow();
+
+    // 1st approval
+    String fp1 = stem.computeScriptFingerprint(p1, v1);
+    var a1 = new StemDtos.Assessment(
+        1, 0, null, 1, testRubric,
+        List.of(new StemDtos.Criterion("TEST_ONLY", "ADEQUATE", "Approve 1", List.of())),
+        "reapprove-a1",
+        fp1);
+    tx.execute(s -> scripts.approve(project, new ReviewDecisionRequest("Approval 1", a1), reviewer));
+    assertThat(jdbc.queryForObject("select count(*) from stem_assessments where version_id=? and phase='SCRIPT'", Integer.class, version)).isEqualTo(1);
+
+    // Edit script: mutate narration of scene and bump draft_revision (changes script fingerprint)
+    jdbc.update("update scenes set narration='Updated narration for 2nd review' where id=?", scene);
+    jdbc.update("update script_versions set draft_revision=draft_revision+1, status='IN_REVIEW' where id=?", version);
+    jdbc.update("update clip_projects set script_status='IN_REVIEW' where id=?", project);
+
+    ClipProject p2 = projects.findById(project).orElseThrow();
+    ScriptVersion v2 = versions.findById(version).orElseThrow();
+
+    // 2nd approval with new fingerprint fp2
+    String fp2 = stem.computeScriptFingerprint(p2, v2);
+    assertThat(fp2).isNotEqualTo(fp1);
+
+    var a2 = new StemDtos.Assessment(
+        1, v2.getDraftRevision(), null, 1, testRubric,
+        List.of(new StemDtos.Criterion("TEST_ONLY", "ADEQUATE", "Approve 2", List.of())),
+        "reapprove-a2",
+        fp2);
+    tx.execute(s -> scripts.approve(project, new ReviewDecisionRequest("Approval 2", a2), reviewer));
+    assertThat(jdbc.queryForObject("select count(*) from stem_assessments where version_id=? and phase='SCRIPT'", Integer.class, version)).isEqualTo(2);
+
+    // Render check with newest fingerprint -> STRICT passes!
+    assertThatCode(() -> stem.checkRenderFingerprint(p2, v2, writer)).doesNotThrowAnyException();
+
+    // Now mutate script after 2nd approval
+    jdbc.update("update scenes set narration='Mutated after 2nd approval' where id=?", scene);
+    ClipProject p3 = projects.findById(project).orElseThrow();
+    ScriptVersion v3 = versions.findById(version).orElseThrow();
+
+    // Render check now fails with 409 STEM_FINGERPRINT_STALE!
+    assertThatThrownBy(() -> stem.checkRenderFingerprint(p3, v3, writer))
+        .isInstanceOfSatisfying(ApiException.class, e -> {
+          assertThat(e.getStatus().value()).isEqualTo(409);
+          assertThat(e.getCode()).isEqualTo("STEM_FINGERPRINT_STALE");
+          assertThat(e.getDetails()).containsEntry("expected", fp2);
+        });
+  }
+
+  /**
+   * RF11_SEND_BACK_NOT_BLOCKED:
+   * STRICT mode, composition deviates from snapshot -> send-back succeeds, records audit STEM_FINGERPRINT_MISMATCH.
+   */
+  @Test
+  void RF11_SEND_BACK_NOT_BLOCKED() {
+    createBriefWithSubmission();
+    stem.saveSettings(workspace, admin, new StemDtos.Settings(0, "STRICT", List.of(), null, "send-back-strict", null));
+
+    var p = projects.findById(project).orElseThrow();
+    var v = versions.findById(version).orElseThrow();
+
+    // Save initial snapshot with a dummy/old fingerprint
+    stem.saveCompositionSnapshot(project, version, "old-comp-snapshot-12345", writer);
+
+    // Current composition fingerprint differs from saved snapshot
+    String currentCompFp = stem.computeCompositionFingerprint(p, v);
+    assertThat(currentCompFp).isNotEqualTo("old-comp-snapshot-12345");
+
+    // send-back must NOT be blocked, even in STRICT mode
+    assertThatCode(() -> stem.checkVideoReviewFingerprint(p, v, reviewer, "SEND_BACK")).doesNotThrowAnyException();
+
+    // Verify audit entry STEM_FINGERPRINT_MISMATCH was recorded with stage SEND_BACK
+    List<Map<String, Object>> audits = jdbc.queryForList(
+        "select payload from stem_audit where target=? and event='STEM_FINGERPRINT_MISMATCH' order by created_at desc, id desc", project);
+    assertThat(audits).isNotEmpty();
+    JsonNode auditPayload = db.decode(db.text(audits.get(0), "payload"), JsonNode.class);
+    assertThat(auditPayload.path("stage").asText()).isEqualTo("SEND_BACK");
+    assertThat(auditPayload.path("expected").asText()).isEqualTo("old-comp-snapshot-12345");
+    assertThat(auditPayload.path("actual").asText()).isEqualTo(currentCompFp);
+  }
+
+  /**
+   * RF11_APPROVE_VIDEO_NO_SNAPSHOT:
+   * STRICT mode, approveVideo without snapshot -> 409 STEM_FINGERPRINT_STALE.
+   */
+  @Test
+  void RF11_APPROVE_VIDEO_NO_SNAPSHOT() {
+    createBriefWithSubmission();
+    stem.saveSettings(workspace, admin, new StemDtos.Settings(0, "STRICT", List.of(), null, "no-snap-strict", null));
+
+    var p = projects.findById(project).orElseThrow();
+    var v = versions.findById(version).orElseThrow();
+
+    // Make sure no composition snapshot exists in stem_audit
+    jdbc.update("delete from stem_audit where target=? and event='COMPOSITION_SNAPSHOT'", project);
+    assertThat(stem.getCompositionSnapshot(project, version)).isNull();
+
+    // In STRICT mode, approving video when snapshot is missing -> 409 STEM_FINGERPRINT_STALE
+    assertThatThrownBy(() -> stem.checkVideoReviewFingerprint(p, v, reviewer, "APPROVE_VIDEO"))
+        .isInstanceOfSatisfying(ApiException.class, e -> {
+          assertThat(e.getStatus().value()).isEqualTo(409);
+          assertThat(e.getCode()).isEqualTo("STEM_FINGERPRINT_STALE");
+          assertThat(e.getMessage()).contains("Composition fingerprint does not match review snapshot");
+        });
+  }
+
+  /**
+   * RF11_SNAPSHOT_SURVIVES_RECEIPT_CLEANUP:
+   * Cleaning up expired stem_receipts does not affect composition snapshot; video check still functions correctly.
+   */
+  @Test
+  void RF11_SNAPSHOT_SURVIVES_RECEIPT_CLEANUP() {
+    createBriefWithSubmission();
+    stem.saveSettings(workspace, admin, new StemDtos.Settings(0, "STRICT", List.of(), null, "receipt-cleanup-strict", null));
+
+    var p = projects.findById(project).orElseThrow();
+    var v = versions.findById(version).orElseThrow();
+
+    // Save composition snapshot
+    String compFp = stem.computeCompositionFingerprint(p, v);
+    stem.saveCompositionSnapshot(project, version, compFp, writer);
+    assertThat(stem.getCompositionSnapshot(project, version)).isEqualTo(compFp);
+
+    // Simulate cleanup / expiry of stem_receipts
+    jdbc.update("delete from stem_receipts");
+
+    // Snapshot survives because it is in stem_audit (append-only), NOT in stem_receipts!
+    assertThat(stem.getCompositionSnapshot(project, version)).isEqualTo(compFp);
+
+    // Video review check succeeds in STRICT mode
+    assertThatCode(() -> stem.checkVideoReviewFingerprint(p, v, reviewer, "APPROVE_VIDEO")).doesNotThrowAnyException();
   }
 }
