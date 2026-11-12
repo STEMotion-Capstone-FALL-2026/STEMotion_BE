@@ -1,9 +1,7 @@
 package com.stemotion.e2e;
 
-import com.stemotion.StemotionApplication;
 import com.stemotion.perf.LoadTestSeeder;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -14,20 +12,23 @@ import org.springframework.context.annotation.Import;
  * and seeds baseline test data (200 users, 3 workspaces, 150 projects, 1500 scenes).
  * Listens on 0.0.0.0:18080 to allow Dockerized k6 containers to benchmark via host.docker.internal.
  */
-public class LoadTestServer {
+public final class LoadTestServer {
 
-    public static void main(String[] args) {
-        System.setProperty("spring.devtools.restart.enabled", "false");
+    private LoadTestServer() {}
+
+    /** Started through E2eServer with E2E_LOADTEST=1; no main method here, so test-run keeps one main class. */
+    static boolean enabled() {
+        return "1".equals(System.getenv("E2E_LOADTEST")) || "1".equals(System.getProperty("E2E_LOADTEST"));
+    }
+
+    static String[] extraArguments(String... args) {
         String port = System.getenv().getOrDefault("LOAD_TEST_PORT", "18080");
-        String[] customArgs = new String[]{
+        java.util.List<String> all = new java.util.ArrayList<>(java.util.List.of(
             "--server.port=" + port,
             "--server.address=0.0.0.0",
-            "--app.auth-v2.rate-limit-attempts=100000",
-        };
-        String[] finalArgs = E2eServer.launchArguments(customArgs);
-        SpringApplication.from(StemotionApplication::main)
-            .with(E2eServer.Config.class, Config.class)
-            .run(finalArgs);
+            "--app.auth-v2.rate-limit-attempts=100000"));
+        all.addAll(java.util.List.of(args));
+        return all.toArray(String[]::new);
     }
 
     @TestConfiguration(proxyBeanMethods = false)

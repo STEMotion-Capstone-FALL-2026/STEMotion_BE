@@ -26,7 +26,7 @@ mvn test -Dtest=LoadTestSeederTest
 Chạy lệnh sau từ thư mục gốc của repository (`STEMotion_BE`):
 
 ```bash
-mvn spring-boot:test-run '-Dstart-class=com.stemotion.e2e.LoadTestServer'
+E2E_LOADTEST=1 mvn test-compile spring-boot:test-run   # (PowerShell: $env:E2E_LOADTEST='1'; mvn test-compile spring-boot:test-run)
 ```
 
 Server sẽ tự động:
