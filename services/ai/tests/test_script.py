@@ -171,3 +171,42 @@ def test_a_diagram_without_labels_is_refused():
     result["scenes"][1] = {"type": "DIAGRAM_EXPLAINER", "title": "Sơ đồ", "narration": "Mạch điện", "durationInFrames": 90}
     with _pytest.raises(_H):
         validate_result("generate", result)
+
+
+TIMELINE = {"type": "PROCESS_TIMELINE", "title": "Quy trình", "narration": "Các bước", "durationInFrames": 150,
+            "processTitle": "Đèn dung nham",
+            "stages": [{"stageNumber": 1, "title": "Đun nóng", "description": "Sáp nở ra"},
+                       {"stageNumber": 2, "title": "Nổi lên", "description": "Sáp nhẹ hơn"}]}
+
+@pytest.mark.parametrize("stages", [None, [], [{"stageNumber": 1, "title": "Đun nóng", "description": "x"}],
+                                    [{"stageNumber": 1, "title": "Đun", "description": "x"}, {"stageNumber": 2, "title": " ", "description": "y"}],
+                                    ["Đun nóng", "Nổi lên"]])
+def test_a_timeline_needs_two_titled_stages_like_the_fe(stages):
+    from app.validation import validate_result
+    from fastapi import HTTPException as _H
+    result = copy.deepcopy(VALID)
+    scene = copy.deepcopy(TIMELINE)
+    if stages is None:
+        scene.pop("stages")
+    else:
+        scene["stages"] = stages
+    result["scenes"][1] = scene
+    with pytest.raises(_H):
+        validate_result("generate", result)
+
+
+def test_a_timeline_with_two_titled_stages_passes():
+    from app.validation import validate_result
+    result = copy.deepcopy(VALID)
+    result["scenes"][1] = copy.deepcopy(TIMELINE)
+    validate_result("generate", result)
+
+
+def test_a_quiz_with_a_blank_option_is_refused():
+    from app.validation import validate_result
+    from fastapi import HTTPException as _H
+    result = copy.deepcopy(VALID)
+    result["scenes"][1] = {"type": "STEM_QUIZ", "title": "Đố", "narration": "Câu hỏi", "durationInFrames": 150,
+                           "question": "Vì sao sáp nổi?", "options": ["Nhẹ hơn", " "], "correctIndex": 0}
+    with pytest.raises(_H):
+        validate_result("generate", result)
