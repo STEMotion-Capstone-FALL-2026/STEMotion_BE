@@ -38,6 +38,11 @@ Thư mục này chứa script và schema phục vụ diễn tập cục bộ b�
    - File dump được lưu trữ an toàn bên ngoài repository, tuyệt đối không chứa dữ liệu thật hay đưa vào git.
    - Nhận cờ `--dump <path>` bắt buộc; nạp dump vào container Docker `postgres:17`, kiểm tra tiền đề và áp dụng V23–V26 trong 1 transaction.
    - Tùy chọn `--with-app` cho phép khởi động ứng dụng backend (profile `cloud`, tắt Flyway, bật STEM) và chạy `smoke-stem.py` để chứng minh toàn bộ luồng hoạt động trên schema UUID thật.
+   - Đã chạy thật ngày 14/11/2026 với dump production (PostgreSQL 17.11): **7 PASS, 0 FAIL**, smoke 15/15. Những điều script tự xử lý, rút ra từ lần chạy đó:
+     - Dump Supabase tham chiếu role và extension riêng của Supabase (`supabase_vault`…) mà image `postgres:17` không có: script tạo các role, bỏ qua đúng lỗi của extension Supabase, và bắt buộc đủ số bảng `public` như trong dump.
+     - Dump schema-only không có dữ liệu, nhưng V23 kiểm tra 22 dòng lịch sử Flyway và dòng ledger `20261102131936`: script nạp các dòng đó từ `prod-sim-schema.sql`. Trên production, V23 tự kiểm tra dữ liệu thật trong transaction R5.
+     - Chạy app: build jar rồi chạy `java -Duser.timezone=UTC` (JVM trên Windows gửi `Asia/Saigon`, PostgreSQL 17 không nhận), đặt `AUTH_V2_ENABLED=true` (thiếu thì đăng nhập trả 503) và `AI_PRICING_JSON={}`.
+     - User smoke `TEST_ONLY` có mật khẩu (bcrypt bằng pgcrypto), kèm workspace và ghế WRITER/REVIEWER/PRODUCER. Không có Python 3 thật thì smoke chạy trong container `python:3.12-alpine`.
 
 ## Yêu cầu
 
