@@ -158,8 +158,15 @@ def validate_result(operation, result):
             if kind == "STEM_QUIZ":
                 options, answer = scene.get("options"), scene.get("correctIndex")
                 if (not nonempty(scene.get("question")) or not isinstance(options, list) or len(options) < 2
+                        or not all(nonempty(o) for o in options)
                         or isinstance(answer, bool) or not isinstance(answer, int) or not 0 <= answer < len(options)):
                     invalid("STEM_QUIZ scene without question, two options or a valid correctIndex")
+            if kind == "PROCESS_TIMELINE":
+                stages = scene.get("stages")
+                # Same rule as the FE editor: at least two stages, each with a title.
+                if (not isinstance(stages, list) or len(stages) < 2
+                        or not all(isinstance(s, dict) and nonempty(s.get("title")) for s in stages)):
+                    invalid("PROCESS_TIMELINE scene without at least two titled stages")
             if kind == "ILLUSTRATED_EXPLAINER" and not scene.get("icons"):
                 invalid("ILLUSTRATED_EXPLAINER scene without icons")
             if kind == "DATA_CHART":
