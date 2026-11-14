@@ -55,6 +55,17 @@ class ResourceAccessInterceptorTest {
         check("POST", "/api/v1/workspaces/one/scripts", Map.of("workspaceId", "one"));
         verify(access).requireWorkspace("one", "writer-id", false);
     }
+    @Test void youtubeChannelWritesNeedMembershipHereAndTheControllerChecksProducer() {
+        check("POST", "/api/v1/workspaces/one/youtube/connect", Map.of("workspaceId", "one"));
+        check("DELETE", "/api/v1/workspaces/one/youtube", Map.of("workspaceId", "one"));
+        verify(access, times(2)).requireWorkspace("one", "writer-id", false);
+        verify(access, never()).requireWorkspace("one", "writer-id", true);
+    }
+    @Test void otherWorkspaceWritesStillNeedTheLeader() {
+        check("PUT", "/api/v1/workspaces/one/stem-settings", Map.of("workspaceId", "one"));
+        check("POST", "/api/v1/workspaces/one/youtube/connect/extra", Map.of("workspaceId", "one"));
+        verify(access, times(2)).requireWorkspace("one", "writer-id", true);
+    }
     @Test void pollingJobChecksItsWorkspaceThroughProject() {
         when(jobs.findProjectIdById("job")).thenReturn(Optional.of("one"));
         check("GET", "/api/v1/render/status/job", Map.of("jobId", "job"));

@@ -152,7 +152,7 @@ final class E2eFakes {
             timer.schedule(() -> callback(jobId, "PROCESSING", 50, null, null), 1500, TimeUnit.MILLISECONDS);
             timer.schedule(() -> {
                 if (fail) callback(jobId, "FAILED", 50, null, "E2E: render worker unavailable");
-                else callback(jobId, "COMPLETED", 100, "https://e2e.example.org/videos/" + jobId + ".mp4", null);
+                else callback(jobId, "COMPLETED", 100, videoBase() + jobId + ".mp4", null);
             }, 3000, TimeUnit.MILLISECONDS);
             return new EnqueueResult(jobId, 5);
         }
@@ -189,6 +189,11 @@ final class E2eFakes {
                     .put("durationInFrames", (int) Math.round(seconds * fps));
             }
             return response;
+        }
+
+        /** With the YouTube fake running, clips are fetchable over HTTPS from it; otherwise a placeholder host. */
+        private static String videoBase() {
+            return E2eYoutubeFake.enabled() ? E2eYoutubeFake.videoBaseUrl() : "https://e2e.example.org/videos/";
         }
 
         private void callback(String jobId, String status, int progress, String videoUrl, String error) {

@@ -112,7 +112,7 @@ Trạng thái: Hoàn thành, 15/15 test tự động PASS, diễn tập schema U
     - `503 PUBLISH_TARGET_UNAVAILABLE`: Khi tính năng YouTube chưa được bật (`app.youtube.enabled=false`).
     - `409 YOUTUBE_NOT_CONNECTED`: Workspace chưa kết nối kênh YouTube nào.
     - `409 CONFLICT`: Dự án đã có bản ghi xuất bản YouTube đang xử lý hoặc thành công.
-    - `409 STEM_FINGERPRINT_MISMATCH`: Chặn bởi gate STRICT của STEM nếu kịch bản chưa duyệt đúng fingerprint.
+    - `409 STEM_FINGERPRINT_STALE`: Chặn bởi gate STRICT của STEM nếu kịch bản chưa duyệt đúng fingerprint.
 
 ### 3.5. Lịch sử xuất bản
 - `GET /api/v1/scripts/{projectId}/publications`
