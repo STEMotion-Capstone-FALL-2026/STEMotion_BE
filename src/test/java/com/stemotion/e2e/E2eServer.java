@@ -47,6 +47,14 @@ public class E2eServer {
                 .run(launchArguments(LoadTestServer.extraArguments(args)));
             return;
         }
+        if (E2eYoutubeFake.enabled()) {
+            // YouTube browser test (E2E_YOUTUBE=1): fake Google on 127.0.0.1, started before the API.
+            try {
+                E2eYoutubeFake.start(E2eYoutubeFake.httpPort(), E2eYoutubeFake.videoPort());
+            } catch (Exception e) {
+                throw new IllegalStateException("Could not start the fake YouTube endpoints", e);
+            }
+        }
         SpringApplication.from(StemotionApplication::main).with(Config.class).run(launchArguments(args));
     }
 
@@ -91,6 +99,9 @@ public class E2eServer {
         if (stem) {
             all.add("--app.stem.enabled=true");
             all.add("--app.stem.artifact.enabled=true");
+        }
+        if (E2eYoutubeFake.enabled()) {
+            all.addAll(E2eYoutubeFake.arguments(E2eYoutubeFake.httpPort(), env("E2E_API_PORT", "18080"), env("E2E_WEB_PORT", "5174")));
         }
         // Spring joins repeated command-line option values with commas; later entries do
         // not replace earlier ones. Remove overridden defaults before adding user arguments.

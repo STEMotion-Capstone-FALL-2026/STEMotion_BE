@@ -21,6 +21,8 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class ResourceAccessInterceptor implements HandlerInterceptor {
+    private static final java.util.regex.Pattern YOUTUBE_CHANNEL =
+        java.util.regex.Pattern.compile("^/api/v1/workspaces/[^/]+/youtube(/connect)?$");
     private final WorkspaceAccess access;
     private final UserRepository users;
     private final RenderJobRepository jobs;
@@ -73,7 +75,10 @@ public class ResourceAccessInterceptor implements HandlerInterceptor {
             String workspace = variables.getOrDefault("workspaceId", variables.get("id"));
             if (workspace != null) {
                 boolean isManageMembers = path.contains("/candidates") || (write && path.contains("/members"));
-                access.requireWorkspace(workspace, userId, isManageMembers || (write && !path.endsWith("/scripts")));
+                // Writes whose controller names the role itself need membership only here: creating a
+                // script (WRITER) and the workspace YouTube channel (PRODUCER or Admin, RF-08).
+                boolean roleCheckedByController = path.endsWith("/scripts") || YOUTUBE_CHANNEL.matcher(path).matches();
+                access.requireWorkspace(workspace, userId, isManageMembers || (write && !roleCheckedByController));
             }
         }
         String project = variables.get("projectId");

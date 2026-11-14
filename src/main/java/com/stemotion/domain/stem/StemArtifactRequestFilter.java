@@ -19,6 +19,9 @@ public class StemArtifactRequestFilter extends OncePerRequestFilter {
     private final ObjectMapper input=new ObjectMapper(JsonFactory.builder()
         .streamReadConstraints(StreamReadConstraints.builder().maxNestingDepth(16).maxStringLength(65536).maxNumberLength(1024).build()).build())
         .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+    /** Client-owned publish fields, including the RF-08 YouTube metadata; anything else is refused as server-owned. */
+    static final Set<String> PUBLISH_FIELDS=Set.of("targets","title","description","legacyUnverifiedAcknowledged","artifactExpectation","idempotencyKey",
+        "tags","privacyStatus","selfDeclaredMadeForKids");
     public StemArtifactRequestFilter(ObjectMapper mapper){output=mapper;}
     @Override protected boolean shouldNotFilter(HttpServletRequest request){
         return !"POST".equals(request.getMethod())||!(request.getRequestURI().equals("/api/v1/render/callback")||request.getRequestURI().matches("/api/v1/scripts/[^/]+/publish"));
@@ -32,7 +35,7 @@ public class StemArtifactRequestFilter extends OncePerRequestFilter {
             JsonNode tree=input.readTree(bytes);
             if(tree==null||!tree.isObject())error="Expected JSON object";
             else {
-                Set<String> allowed=callback?Set.of("jobId","status","progress","stage","videoUrl","errorMessage","captionSync","artifactManifest"):Set.of("targets","title","description","legacyUnverifiedAcknowledged","artifactExpectation","idempotencyKey");
+                Set<String> allowed=callback?Set.of("jobId","status","progress","stage","videoUrl","errorMessage","captionSync","artifactManifest"):PUBLISH_FIELDS;
                 for(var names=tree.fieldNames();names.hasNext();){String name=names.next();if(!allowed.contains(name)){error="Unknown/server-owned request field";field=name;break;}}
                 if(error==null&&tree.hasNonNull("artifactManifest")&&tree.get("artifactManifest").toString().getBytes(StandardCharsets.UTF_8).length>65536){error="Manifest exceeds64KiB";field="artifactManifest";}
                 if(error==null&&tree.hasNonNull("videoUrl")&&tree.path("videoUrl").asText().getBytes(StandardCharsets.UTF_8).length>4096){error="Output URL exceeds4096bytes";field="videoUrl";}
