@@ -58,11 +58,11 @@
       "logicalKey": "stem-source-tt86-2026",
       "versionNo": 1,
       "data": {
-        "title": "Quy định về tổ chức giáo dục tích hợp STEM trong giáo dục phổ thông",
+        "title": "Quy định về tổ chức hoạt động giáo dục tích hợp khoa học, công nghệ, kĩ thuật và toán học trong giáo dục phổ thông",
         "issuer": "Bộ Giáo dục và Đào tạo",
         "docNumber": "86/2026/TT-BGDDT",
         "issuedDate": "2026-09-30",
-        "url": "https://chinhphu.vn/?docid=219902&orggroupid=4&pageid=27160",
+        "url": "https://luatvietnam.vn/giao-duc/thong-tu-86-2026-tt-bgddt-quy-dinh-to-chuc-giao-duc-tich-hop-stem-trong-giao-duc-pho-thong-450234-d1.html",
         "sha256": null,
         "retrievedAt": "2026-11-03T00:00:00Z",
         "verificationStatus": "UNVERIFIED"
@@ -124,10 +124,16 @@
         "subjectKey": "Math",
         "gradeKey": "GRADE_4",
         "code": "M4-MEAS-01",
-        "text": null,
-        "locator": null,
+        "text": "Sử dụng được một số dụng cụ thông dụng để thực hành cân, đo, đong, đếm, xem thời gian với các đơn vị đo đã học.",
+        "locator": {
+          "sourceLogicalKey": "stem-source-gdpt2018",
+          "fileName": "03-cttoan.pdf",
+          "page": 38,
+          "section": "Lớp 4 - Hình học và đo lường - Đo lường - Thực hành đo đại lượng",
+          "sha256": "f35d34ff84da2ca3f9ab72d5d67482ada414684b611deea98c4b329801b661ab"
+        },
         "verificationStatus": "UNVERIFIED",
-        "summary": "Thực hiện được việc đo, đọc số đo thời gian và nhiệt độ bằng dụng cụ đo thông dụng; thực hiện ước lượng và so sánh các số đo trong giải quyết vấn đề thực tiễn."
+        "summary": "Thực hành đo, xem thời gian bằng dụng cụ thông dụng và giải quyết vấn đề thực tiễn với các số đo đã học (nhiệt độ thuộc chương trình lớp 3, không dùng ở lớp 4)."
       }
     },
     {
@@ -187,8 +193,14 @@
         "subjectKey": "Math",
         "gradeKey": "GRADE_8",
         "code": "M8-STAT-01",
-        "text": null,
-        "locator": null,
+        "text": "Lựa chọn và biểu diễn được dữ liệu vào bảng, biểu đồ thích hợp ở dạng: bảng thống kê; biểu đồ tranh; biểu đồ dạng cột/cột kép (column chart), biểu đồ hình quạt tròn (cho sẵn) (pie chart); biểu đồ đoạn thẳng (line graph).",
+        "locator": {
+          "sourceLogicalKey": "stem-source-gdpt2018",
+          "fileName": "03-cttoan.pdf",
+          "page": 68,
+          "section": "Lớp 8 - Một số yếu tố thống kê - Mô tả và biểu diễn dữ liệu trên các bảng, biểu đồ",
+          "sha256": "f35d34ff84da2ca3f9ab72d5d67482ada414684b611deea98c4b329801b661ab"
+        },
         "verificationStatus": "UNVERIFIED",
         "summary": "Thu thập, tổ chức dữ liệu thực nghiệm vào bảng và biểu diễn bằng biểu đồ thích hợp; phân tích xu thế biến thiên của đại lượng đo để rút ra kết luận."
       }
@@ -226,11 +238,17 @@
       "data": {
         "subjectKey": "Math",
         "gradeKey": "GRADE_11",
-        "code": "M11-FUNCT-01",
-        "text": null,
-        "locator": null,
+        "code": "M11-DERIV-01",
+        "text": "Giải quyết được một số vấn đề có liên quan đến môn học khác hoặc có liên quan đến thực tiễn gắn với đạo hàm (ví dụ: xác định vận tốc tức thời của một vật chuyển động không đều,...).",
+        "locator": {
+          "sourceLogicalKey": "stem-source-gdpt2018",
+          "fileName": "03-cttoan.pdf",
+          "page": 96,
+          "section": "Lớp 11 - Đạo hàm - Các quy tắc tính đạo hàm",
+          "sha256": "f35d34ff84da2ca3f9ab72d5d67482ada414684b611deea98c4b329801b661ab"
+        },
         "verificationStatus": "UNVERIFIED",
-        "summary": "Mô hình hoá các mối quan hệ đại lượng vật lí bằng hàm số; giải bài toán tối ưu đơn giản và biện luận sự phụ thuộc giữa các thông số mạch điện."
+        "summary": "Dùng đạo hàm để mô tả tốc độ biến đổi của đại lượng vật lí trong bài toán liên môn (bài toán tối ưu bằng đạo hàm thuộc chương trình lớp 12)."
       }
     },
     {
@@ -453,38 +471,38 @@
           {
             "stepKey": "OPENING_PROBLEM",
             "label": "Phát hiện vấn đề và xác định mục tiêu kỹ thuật",
-            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 5",
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 7 khoản 1 điểm c (xác định vấn đề và giải pháp giải quyết vấn đề)",
             "mappingNote": "Xác định vấn đề thực tiễn cần giải quyết và giới hạn thiết kế kỹ thuật"
           },
           {
             "stepKey": "BACKGROUND_KNOWLEDGE",
             "label": "Nghiên cứu kiến thức chuyên sâu và khảo sát linh kiện",
-            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 5",
-            "mappingNote": "Mô hình hoá toán học và nguyên lí vật lí liên quan"
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 7 khoản 1 điểm c (thực hành khám phá kiến thức khoa học)",
+            "mappingNote": "Thực hành khám phá kiến thức khoa học: nguyên lí vật lí liên quan và đạo hàm (Toán 11) để mô tả tốc độ biến đổi"
           },
           {
             "stepKey": "PROPOSE_SOLUTION",
             "label": "Thiết kế mô hình và tính toán thông số",
-            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 6",
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 6 khoản 2 điểm b (đề xuất ý tưởng, thiết kế giải pháp)",
             "mappingNote": "Xây dựng sơ đồ mạch và phương án bố trí linh kiện"
           },
           {
             "stepKey": "SELECT_SOLUTION",
             "label": "Đánh giá, lựa chọn phương án tối ưu dưới ràng buộc",
-            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 6",
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 6 khoản 2 điểm b (thiết kế giải pháp, lựa chọn vật liệu)",
             "mappingNote": "Biện luận thông số, tiêu chí an toàn và hiệu quả năng lượng"
           },
           {
             "stepKey": "BUILD_TEST",
             "label": "Lắp ráp mạch, đo đạc thử nghiệm và thu thập dữ liệu",
-            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 7",
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 7 khoản 1 điểm c (thiết kế, chế tạo, lập trình, thử nghiệm và hoàn thiện sản phẩm)",
             "mappingNote": "Lắp ráp mạch DC, đo dòng/áp/nhiệt độ và đánh giá sai số"
           },
           {
             "stepKey": "CLOSING_SHARE_REFLECT",
             "label": "Báo cáo bảo vệ giải pháp và định hướng ứng dụng",
-            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 7",
-            "mappingNote": "Đánh giá kết quả, đề xuất nâng cấp hệ thống và liên hệ thực tế"
+            "sourceLocator": "Thông tư 86/2026/TT-BGDĐT Điều 6 khoản 2 điểm b (thử nghiệm, đánh giá và cải tiến)",
+            "mappingNote": "Thông tư 86 không tách bước chia sẻ riêng; bước này ánh xạ vào đánh giá và cải tiến sản phẩm"
           }
         ],
         "verificationStatus": "UNVERIFIED",
