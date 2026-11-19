@@ -13,11 +13,11 @@ Toàn bộ 19 bản ghi trong gói demo đều ở trạng thái `status: "DRAFT
 | Cấp học / Hồ sơ (PROFILE) | Nguồn chương trình (SOURCE_EDITION) | Mã YCCĐ (OUTCOME) | Trích nguyên văn (`text`) / Tóm tắt (`summary`) | Locator (File PDF & Trang) | Rubric đánh giá (RUBRIC) | Chính sách (POLICY ID) |
 |---|---|---|---|---|---|---|
 | **Tiểu học (Lớp 1–5)**<br>`stem-profile-primary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`SCI4-ENG-01`**<br>(`stem-outcome-primary-science-01`) | **Trích nguyên văn:**<br>"Vận dụng được kiến thức về vật dẫn nhiệt tốt hoặc kém để giải thích một số hiện tượng tự nhiên; để giải quyết một số vấn đề đơn giản trong cuộc sống." | `10-ctkhoa-hoc.pdf`<br>Trang 11<br>SHA256: `bdcf1384...` | `stem-rubric-primary`<br>(3 tiêu chí, đạt ≥ 70) | `00000000-0000-0000-0000-000000000005`<br>(Chính sách STEM cấp Tiểu học) |
-| **Tiểu học (Lớp 1–5)**<br>`stem-profile-primary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`M4-MEAS-01`**<br>(`stem-outcome-primary-math-01`) | `text: null`<br>*(Tóm tắt ý đồ sư phạm)*: Thực hiện được việc đo, đọc số đo thời gian và nhiệt độ bằng dụng cụ đo thông dụng; thực hiện ước lượng và so sánh các số đo trong giải quyết vấn đề thực tiễn. | `null`<br>*(Cần người kiểm tra)* | `stem-rubric-primary`<br>(3 tiêu chí, đạt ≥ 70) | `00000000-0000-0000-0000-000000000005`<br>(Chính sách STEM cấp Tiểu học) |
+| **Tiểu học (Lớp 1–5)**<br>`stem-profile-primary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`M4-MEAS-01`**<br>(`stem-outcome-primary-math-01`) | "Sử dụng được một số dụng cụ thông dụng để thực hành cân, đo, đong, đếm, xem thời gian với các đơn vị đo đã học."<br>*(Tóm tắt)*: Thực hành đo, xem thời gian bằng dụng cụ thông dụng và giải quyết vấn đề thực tiễn với các số đo đã học (nhiệt độ thuộc chương trình lớp 3, không dùng ở lớp 4). | `03-cttoan.pdf`, trang 38 (Lớp 4 - Đo lường - Thực hành đo đại lượng) | `stem-rubric-primary`<br>(3 tiêu chí, đạt ≥ 70) | `00000000-0000-0000-0000-000000000005`<br>(Chính sách STEM cấp Tiểu học) |
 | **THCS (Lớp 6–9)**<br>`stem-profile-lower-secondary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`KHTN8-THERM-01`**<br>(`stem-outcome-lower-sec-khtn-01`) | **Trích nguyên văn:**<br>"Lấy được ví dụ về hiện tượng dẫn nhiệt, đối lưu, bức xạ nhiệt và mô tả sơ lược được sự truyền năng lượng trong mỗi hiện tượng đó." | `11-ctkhoa-hoc-tu-nhien.pdf`<br>Trang 49<br>SHA256: `4d809882...` | `stem-rubric-lower-secondary`<br>(3 tiêu chí, đạt ≥ 75) | `00000000-0000-0000-0000-000000000010`<br>(Chính sách STEM cấp THCS) |
-| **THCS (Lớp 6–9)**<br>`stem-profile-lower-secondary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`M8-STAT-01`**<br>(`stem-outcome-lower-sec-math-01`) | `text: null`<br>*(Tóm tắt ý đồ sư phạm)*: Thu thập, tổ chức dữ liệu thực nghiệm vào bảng và biểu diễn bằng biểu đồ thích hợp; phân tích xu thế biến thiên của đại lượng đo để rút ra kết luận. | `null`<br>*(Cần người kiểm tra)* | `stem-rubric-lower-secondary`<br>(3 tiêu chí, đạt ≥ 75) | `00000000-0000-0000-0000-000000000010`<br>(Chính sách STEM cấp THCS) |
+| **THCS (Lớp 6–9)**<br>`stem-profile-lower-secondary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`M8-STAT-01`**<br>(`stem-outcome-lower-sec-math-01`) | "Lựa chọn và biểu diễn được dữ liệu vào bảng, biểu đồ thích hợp ở dạng: bảng thống kê; biểu đồ tranh; biểu đồ dạng cột/cột kép (column chart), biểu đồ hình quạt tròn (cho sẵn) (pie chart); biểu đồ đoạn thẳng (line graph)."<br>*(Tóm tắt)*: Thu thập, tổ chức dữ liệu thực nghiệm vào bảng và biểu diễn bằng biểu đồ thích hợp; phân tích xu thế biến thiên của đại lượng đo để rút ra kết luận. | `03-cttoan.pdf`, trang 68 (Lớp 8 - Mô tả và biểu diễn dữ liệu) | `stem-rubric-lower-secondary`<br>(3 tiêu chí, đạt ≥ 75) | `00000000-0000-0000-0000-000000000010`<br>(Chính sách STEM cấp THCS) |
 | **THPT (Lớp 10–12)**<br>`stem-profile-upper-secondary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`PHY11-ELEC-01`**<br>(`stem-outcome-upper-sec-physics-01`) | **Trích nguyên văn:**<br>"Phát biểu được định luật Ohm cho vật dẫn kim loại." | `12-ctvat-li.pdf`<br>Trang 21<br>SHA256: `0a8754c7...` | `stem-rubric-upper-secondary`<br>(3 tiêu chí, đạt ≥ 80) | `00000000-0000-0000-0000-000000000017`<br>(Chính sách STEM cấp THPT) |
-| **THPT (Lớp 10–12)**<br>`stem-profile-upper-secondary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`M11-FUNCT-01`**<br>(`stem-outcome-upper-sec-math-01`) | `text: null`<br>*(Tóm tắt ý đồ sư phạm)*: Mô hình hoá các mối quan hệ đại lượng vật lí bằng hàm số; giải bài toán tối ưu đơn giản và biện luận sự phụ thuộc giữa các thông số mạch điện. | `null`<br>*(Cần người kiểm tra)* | `stem-rubric-upper-secondary`<br>(3 tiêu chí, đạt ≥ 80) | `00000000-0000-0000-0000-000000000017`<br>(Chính sách STEM cấp THPT) |
+| **THPT (Lớp 10–12)**<br>`stem-profile-upper-secondary` | `stem-source-gdpt2018`<br>(CTGDPT 2018 - TT 32/2018) | **`M11-DERIV-01`**<br>(`stem-outcome-upper-sec-math-01`) | "Giải quyết được một số vấn đề có liên quan đến môn học khác hoặc có liên quan đến thực tiễn gắn với đạo hàm (ví dụ: xác định vận tốc tức thời của một vật chuyển động không đều,...)."<br>*(Tóm tắt)*: Dùng đạo hàm để mô tả tốc độ biến đổi của đại lượng vật lí trong bài toán liên môn (bài toán tối ưu bằng đạo hàm thuộc chương trình lớp 12). | `03-cttoan.pdf`, trang 96 (Lớp 11 - Đạo hàm - Các quy tắc tính đạo hàm) | `stem-rubric-upper-secondary`<br>(3 tiêu chí, đạt ≥ 80) | `00000000-0000-0000-0000-000000000017`<br>(Chính sách STEM cấp THPT) |
 
 ### 1.1. Kết quả kiểm chứng tự động (`deploy/stem-demo/verify-quotes.py`)
 
@@ -33,9 +33,10 @@ Thư mục nguồn: D:\stem-sources
 Tổng số YCCĐ cần kiểm tra: 6
 
 [M4-MEAS-01] (stem-outcome-primary-math-01):
-  Trạng thái: text = null (Chưa có trích dẫn nguyên văn đối soát)
-  Tóm tắt ý đồ sư phạm: Thực hiện được việc đo, đọc số đo thời gian và nhiệt độ bằng dụng cụ đo thông dụng; thực hiện ước lượng và so sánh các số đo trong giải quyết vấn đề thực tiễn.
-  -> Đưa vào danh sách 'CẦN NGƯỜI KIỂM TRA'
+  [PASS] Khớp nguyên văn tại trang 38 của 03-cttoan.pdf
+         Chủ đề/mục: Lớp 4 - Hình học và đo lường - Đo lường - Thực hành đo đại lượng
+         SHA-256: f35d34ff84da2ca3... (khớp)
+         Trích dẫn: "Sử dụng được một số dụng cụ thông dụng để thực hành cân, đo, đong, đếm, xem thời gian với các đơn vị đo đã học."
 
 [SCI4-ENG-01] (stem-outcome-primary-science-01):
   [PASS] Khớp nguyên văn tại trang 11 của 10-ctkhoa-hoc.pdf
@@ -50,9 +51,10 @@ Tổng số YCCĐ cần kiểm tra: 6
          Trích dẫn: "Lấy được ví dụ về hiện tượng dẫn nhiệt, đối lưu, bức xạ nhiệt và mô tả sơ lược được sự truyền năng lượng trong mỗi hiện tượng đó."
 
 [M8-STAT-01] (stem-outcome-lower-sec-math-01):
-  Trạng thái: text = null (Chưa có trích dẫn nguyên văn đối soát)
-  Tóm tắt ý đồ sư phạm: Thu thập, tổ chức dữ liệu thực nghiệm vào bảng và biểu diễn bằng biểu đồ thích hợp; phân tích xu thế biến thiên của đại lượng đo để rút ra kết luận.
-  -> Đưa vào danh sách 'CẦN NGƯỜI KIỂM TRA'
+  [PASS] Khớp nguyên văn tại trang 68 của 03-cttoan.pdf
+         Chủ đề/mục: Lớp 8 - Một số yếu tố thống kê - Mô tả và biểu diễn dữ liệu trên các bảng, biểu đồ
+         SHA-256: f35d34ff84da2ca3... (khớp)
+         Trích dẫn: "Lựa chọn và biểu diễn được dữ liệu vào bảng, biểu đồ thích hợp ở dạng: bảng thống kê; biểu đồ tranh; biểu đồ dạng cột/cột kép (column chart), biểu đồ hình quạt tròn (cho sẵn) (pie chart); biểu đồ đoạn thẳng (line graph)."
 
 [PHY11-ELEC-01] (stem-outcome-upper-sec-physics-01):
   [PASS] Khớp nguyên văn tại trang 21 của 12-ctvat-li.pdf
@@ -60,36 +62,37 @@ Tổng số YCCĐ cần kiểm tra: 6
          SHA-256: 0a8754c7823eaaa2... (khớp)
          Trích dẫn: "Phát biểu được định luật Ohm cho vật dẫn kim loại."
 
-[M11-FUNCT-01] (stem-outcome-upper-sec-math-01):
-  Trạng thái: text = null (Chưa có trích dẫn nguyên văn đối soát)
-  Tóm tắt ý đồ sư phạm: Mô hình hoá các mối quan hệ đại lượng vật lí bằng hàm số; giải bài toán tối ưu đơn giản và biện luận sự phụ thuộc giữa các thông số mạch điện.
-  -> Đưa vào danh sách 'CẦN NGƯỜI KIỂM TRA'
+[M11-DERIV-01] (stem-outcome-upper-sec-math-01):
+  [PASS] Khớp nguyên văn tại trang 96 của 03-cttoan.pdf
+         Chủ đề/mục: Lớp 11 - Đạo hàm - Các quy tắc tính đạo hàm
+         SHA-256: f35d34ff84da2ca3... (khớp)
+         Trích dẫn: "Giải quyết được một số vấn đề có liên quan đến môn học khác hoặc có liên quan đến thực tiễn gắn với đạo hàm (ví dụ: xác định vận tốc tức thời của một vật chuyển động không đều,...)."
 
 ======================================================================
   KẾT QUẢ TỔNG HỢP VERIFY-QUOTES
 ======================================================================
-  Số YCCĐ đạt (PASS nguyên văn)      : 3
-  Số YCCĐ chưa đối soát (text: null) : 3
+  Số YCCĐ đạt (PASS nguyên văn)      : 6
+  Số YCCĐ chưa đối soát (text: null) : 0
   Số YCCĐ lỗi (FAIL)                 : 0
-  YCCĐ qua verify-quotes: 3/6
+  YCCĐ qua verify-quotes: 6/6
 ======================================================================
 ```
 
 ---
 
-## 2. Danh sách "Cần người kiểm tra" (Chuyên môn Sư phạm)
+## 2. Danh sách "Cần người kiểm tra" (Chuyên môn Sư phạm) và kết quả đối chiếu 19/11/2026
 
 Các hạng mục sau được chuẩn bị ở mức kỹ thuật nhưng cần giáo viên / chuyên gia giáo dục rà soát trước khi chuyển sang `status: "ACTIVE"` và `verificationStatus: "VERIFIED"`:
 
-1. **YCCĐ chưa có văn bản trích dẫn chính thức (`text: null`):**
-   - **`M4-MEAS-01` (`stem-outcome-primary-math-01`):** Đo đạc, đọc số đo thời gian và nhiệt độ bằng dụng cụ thông dụng. Trong CTGDPT 2018 môn Toán lớp 4, đơn vị nhiệt độ (°C) được xếp ở lớp 3 và tích hợp thực hành ở lớp 4, nên chưa có một câu YCCĐ đơn nhất trùng khớp hoàn toàn. Cần chuyên gia sư phạm chốt câu trích dẫn chính thức hoặc tách thành mục tiêu liên môn.
-   - **`M8-STAT-01` (`stem-outcome-lower-sec-math-01`):** Thu thập số liệu thực nghiệm và vẽ đồ thị biểu diễn biến thiên. Trong CTGDPT 2018 môn Toán lớp 8, YCCĐ nằm rải rác ở phần thống kê (bảng biểu, biểu đồ đoạn thẳng). Cần chuyên gia xác định số trang và câu văn cụ thể trong phụ lục môn Toán.
-   - **`M11-FUNCT-01` (`stem-outcome-upper-sec-math-01`):** Mô hình hoá quan hệ đại lượng bằng hàm số và tối ưu thông số mạch điện. CTGDPT 2018 môn Toán 11 tập trung vào đạo hàm, giới hạn và hàm số lượng giác/mũ; bài toán tối ưu thực tiễn mạch điện mang tính liên môn Toán - Lí. Cần chuyên gia giáo dục phê duyệt văn bản định vị.
+1. **YCCĐ môn Toán: đã đóng ngày 19/11/2026.** Cả ba YCCĐ đã có trích dẫn nguyên văn và qua `verify-quotes` trên `03-cttoan.pdf` (SHA-256 `f35d34ff…`).
+   - **`M4-MEAS-01`:** dùng YCCĐ "Thực hành đo đại lượng" lớp 4 (trang 38). Lớp 4 không có yêu cầu về nhiệt độ (đơn vị đo nhiệt độ thuộc lớp 3, trang 32), nên tóm tắt đã bỏ nhiệt độ.
+   - **`M8-STAT-01`:** dùng YCCĐ "Mô tả và biểu diễn dữ liệu trên các bảng, biểu đồ" lớp 8 (trang 68), đúng ý tóm tắt cũ.
+   - **`M11-FUNCT-01` đổi thành `M11-DERIV-01`:** Toán 11 không có bài toán tối ưu bằng đạo hàm; nội dung này thuộc lớp 12. Hồ sơ THPT của gói là lớp 11 và quy tắc khớp lớp (AT01) không cho dùng YCCĐ lớp 12, nên đổi sang YCCĐ đạo hàm lớp 11 gắn với môn học khác và thực tiễn (trang 96). Id và logicalKey giữ nguyên.
 
 2. **Ánh xạ 6 bước sư phạm trong `lessonTemplate`:**
    - **Cấp Tiểu học (CV 909):** Văn bản CV 909/BGDĐT-GDTH chia tiến trình bài học STEM thành 5 hoạt động. Để chuẩn hoá 6 bước kỹ thuật của hệ thống, hoạt động 2 ("Nghiên cứu kiến thức nền và đề xuất giải pháp") được ánh xạ thành 2 bước: `BACKGROUND_KNOWLEDGE` (Nghiên cứu kiến thức nền) và `PROPOSE_SOLUTION` (Đề xuất phương án thiết kế). Bước `SELECT_SOLUTION` tương ứng Hoạt động 3 ("Lựa chọn giải pháp và lập kế hoạch").
    - **Cấp THCS (CV 3089):** CV 3089/BGDĐT-GDTrH Mục 2 cũng tổ chức theo 5 hoạt động thiết kế kỹ thuật. Tương tự, hoạt động 2 được tách thành nghiên cứu kiến thức nền và xây dựng bản thiết kế sơ bộ (`PROPOSE_SOLUTION`), hoạt động 3 là trình bày và bảo vệ phương án (`SELECT_SOLUTION`).
-   - **Cấp THPT (TT 86):** Quy định theo Điều 5, Điều 6 và Điều 7 của Thông tư 86/2026/TT-BGDĐT về phát hiện vấn đề, mô hình hoá toán học chuyên sâu và nghiệm thu thử nghiệm.
+   - **Cấp THPT (TT 86, đã đối chiếu 19/11/2026):** Thông tư 86/2026/TT-BGDĐT "Quy định về tổ chức hoạt động giáo dục tích hợp khoa học, công nghệ, kĩ thuật và toán học trong giáo dục phổ thông" (ký và có hiệu lực 30/9/2026). Điều 7 khoản 1 điểm c: bài học STEM gồm các hoạt động xác định vấn đề và giải pháp; thực hành khám phá kiến thức khoa học; thiết kế, chế tạo, lập trình, thử nghiệm và hoàn thiện sản phẩm. Điều 6 khoản 2 điểm b nêu quy trình thiết kế kĩ thuật. Bản trước dẫn chung "Điều 5, 6, 7" và nhắc "mô hình hoá", "nghiệm thu"; hai cụm này không có trong văn bản. Nay mỗi bước dẫn đúng điểm, khoản; văn bản không có bước "chia sẻ" riêng nên bước 6 ánh xạ vào "thử nghiệm, đánh giá và cải tiến".
 
 ---
 
