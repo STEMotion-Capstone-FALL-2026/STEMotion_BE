@@ -25,6 +25,8 @@ public class AiRequest extends BaseEntity {
     private Scene scene;
     @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="clip_id")
     private Clip clip;
+    /** The project the call served, when the request names one (per-clip budget, V28). */
+    @Column(name="project_id",length=36) private String projectId;
     @Enumerated(EnumType.STRING) @Column(name="request_type",nullable=false,length=32)
     private RequestType requestType;
     @Column(name="model",nullable=false)

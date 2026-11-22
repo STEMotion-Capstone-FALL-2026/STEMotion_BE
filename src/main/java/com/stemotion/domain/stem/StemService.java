@@ -30,7 +30,7 @@ public class StemService {
   access.requireProject(project,actor,false);
   ScriptVersion v=versions.findById(version).orElseThrow(()->ApiException.notFound("ScriptVersion",version));
   if(!v.getProject().getId().equals(project))throw ApiException.forbidden("Version is outside project");
-  if(write)access.requireActiveStemSeat(v.getProject().getWorkspace().getId(),actor,WorkspaceRole.WRITER);
+  if(write)access.requireActiveStemSeat(v.getProject().getWorkspace().getId(),actor,WorkspaceRole.WRITER,v.getProject().getId());
   return v;
  }
  private void lock(ScriptVersion v){
@@ -144,13 +144,13 @@ public class StemService {
   lock(version);access.requireProjectRole(project.getId(),actor,Set.of(WorkspaceRole.REVIEWER));
   var mode=db.settings(project.getWorkspace().getId());
   if("STRICT".equals(mode.mode())){
-   access.requireActiveStemSeat(project.getWorkspace().getId(),actor,WorkspaceRole.REVIEWER);
+   access.requireActiveStemSeat(project.getWorkspace().getId(),actor,WorkspaceRole.REVIEWER,project.getId());
    if(a==null)throw new ApiException(HttpStatus.BAD_REQUEST,"STEM_RUBRIC_REQUIRED","Rubric assessment required in STRICT mode");
    if(a.rubricVersionId()==null||a.rubricVersionId().isBlank())throw StemValidator.invalid("rubricVersionId","Rubric required in STRICT mode");
   }
   if(a==null)return null;
   validator.limits(db.json().valueToTree(a),0);
-  access.requireActiveStemSeat(project.getWorkspace().getId(),actor,WorkspaceRole.REVIEWER);
+  access.requireActiveStemSeat(project.getWorkspace().getId(),actor,WorkspaceRole.REVIEWER,project.getId());
   phase(phase);
   validator.list(a.criteria(),20,"criteria");
   Set<String> criterionKeys=new HashSet<>();

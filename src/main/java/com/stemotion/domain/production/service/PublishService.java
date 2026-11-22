@@ -63,6 +63,8 @@ public class PublishService {
     private YoutubeChannelConnectionRepository youtubeConnectionRepository;
     @Autowired(required = false)
     private YoutubeUploadService youtubeUploadService;
+    @Autowired(required = false)
+    private com.stemotion.domain.collab.service.ContributionService contributions;
 
     @Transactional(readOnly = true)
     public List<PublishResponse> findByProject(String projectId) {
@@ -239,6 +241,7 @@ public class PublishService {
         project.setVideoStatus(VideoStatus.PUBLISHED);
         projectRepository.save(project);
 
+        if (contributions != null) contributions.record(projectId, currentUserId, com.stemotion.domain.collab.entity.CollabEnums.ContributionType.PUBLISHED, record.getId());
         var response = PublishResponse.from(record, ytPublication);
         if (stemArtifacts != null) stemArtifacts.rememberPublish(project, currentUserId, request, response);
         return response;

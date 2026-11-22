@@ -52,6 +52,11 @@ public class CompositionService {
     private final SceneMapper sceneMapper;
     private final AuthService authService;
     private final ObjectMapper objectMapper;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.stemotion.domain.collab.service.EditLeaseService editLeases;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.stemotion.domain.collab.service.ContributionService contributions;
     @org.springframework.beans.factory.annotation.Autowired(required=false)
     private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
 
@@ -80,6 +85,8 @@ public class CompositionService {
         if (locked != null) {
             throw ApiException.conflict(locked);
         }
+        if (editLeases != null) editLeases.requireWritable(
+            com.stemotion.domain.collab.entity.CollabEnums.LeaseResource.COMPOSITION, projectId, userId);
 
         ScriptVersion version = scriptService.currentVersion(project);
         Composition current = compositions.lockByScriptVersionId(version.getId()).orElse(null);
@@ -109,6 +116,7 @@ public class CompositionService {
                     "The composition was just saved elsewhere; reload it before saving");
             }
         }
+        if (contributions != null) contributions.record(projectId, userId, com.stemotion.domain.collab.entity.CollabEnums.ContributionType.COMPOSITION_REVISED, saved.getId());
         return response(project, version, saved, scenes);
     }
 

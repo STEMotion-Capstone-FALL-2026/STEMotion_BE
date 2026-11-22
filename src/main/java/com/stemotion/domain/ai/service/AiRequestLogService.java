@@ -20,13 +20,29 @@ public class AiRequestLogService {
     private final UserRepository users;
     private final AiCostCalculator costs;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.stemotion.domain.collab.service.AiSettingsService aiSettings;
+
+    /** The project the current HTTP request names ({projectId} in its path), if any. */
+    @SuppressWarnings("unchecked")
+    static String requestProjectId() {
+        var attrs = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+        if (attrs == null) return null;
+        Object vars = attrs.getAttribute(org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE,
+            org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST);
+        return vars instanceof java.util.Map<?, ?> m && m.get("projectId") instanceof String id ? id : null;
+    }
+
     @Transactional(propagation=Propagation.REQUIRES_NEW)
     public String start(AiRequest.RequestType type,String model,String requestData) {
         var auth=SecurityContextHolder.getContext().getAuthentication();
         User requester=auth!=null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())
             ? users.findById(auth.getName()).orElseThrow(()->ApiException.unauthorized("Unknown AI requester")) : null;
+        String projectId = requestProjectId();
+        // FR-44: over the monthly or per-clip budget the provider is not contacted (429).
+        if (aiSettings != null) aiSettings.checkBudget(projectId);
         return requests.saveAndFlush(AiRequest.builder().requester(requester).requestType(type)
-            .model(model).requestData(requestData).build()).getId();
+            .model(model).requestData(requestData).projectId(projectId).build()).getId();
     }
     @Transactional(propagation=Propagation.REQUIRES_NEW)
     public void complete(String id,Generation generation,long elapsed,String failureCode) {

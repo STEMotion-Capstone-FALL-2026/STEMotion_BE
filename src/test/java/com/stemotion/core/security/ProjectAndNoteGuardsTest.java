@@ -46,7 +46,7 @@ class ProjectAndNoteGuardsTest {
     private final ClipProjectRepository projects = mock(ClipProjectRepository.class);
     private final FeedbackCommentRepository comments = mock(FeedbackCommentRepository.class);
     private final WorkspaceAccess access =
-        new WorkspaceAccess(users, members, projects, mock(RenderJobRepository.class), comments);
+        new WorkspaceAccess(users, members, projects, mock(RenderJobRepository.class), comments, mock(com.stemotion.domain.collab.repository.ProjectMemberRepository.class));
 
     private final Workspace physics = workspace("physics");
     private final ClipProject project = project();

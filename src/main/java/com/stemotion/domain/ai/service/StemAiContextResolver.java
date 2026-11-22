@@ -29,7 +29,7 @@ public class StemAiContextResolver {
         access.requireProject(project,actor,false);
         var version=versions.findById(target.scriptVersionId()).orElseThrow(()->ApiException.notFound("ScriptVersion",target.scriptVersionId()));
         var p=version.getProject();if(!p.getId().equals(project))throw ApiException.forbidden("Version outside project");
-        access.requireActiveStemSeat(p.getWorkspace().getId(),actor,WorkspaceRole.WRITER);
+        access.requireActiveStemSeat(p.getWorkspace().getId(),actor,WorkspaceRole.WRITER,p.getId());
         if(Boolean.TRUE.equals(p.getArchived())||!Boolean.TRUE.equals(version.getIsCurrent())||!Set.of(ScriptStatus.DRAFT,ScriptStatus.CHANGE_REQUESTED).contains(version.getStatus()))throw ApiException.conflict("Grounding requires an editable current draft");
         var view=stem.get(project,version.getId(),actor);
         if(view.briefId()==null)throw StemValidator.invalid("briefId","Create a draft STEM brief before grounded AI");

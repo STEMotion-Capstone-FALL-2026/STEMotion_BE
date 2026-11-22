@@ -56,6 +56,11 @@ public class FeedbackService {
     private final StatusHistoryService statusHistoryService;
     private final CompositionService compositionService;
     private final RenderService renderService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.stemotion.domain.collab.service.ContributionService contributions;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.stemotion.core.security.WorkspaceAccess workspaceAccess;
     @org.springframework.beans.factory.annotation.Autowired(required=false)
     private com.stemotion.domain.stem.StemArtifactService stemArtifacts;
 
@@ -191,7 +196,9 @@ public class FeedbackService {
         comment.setStatus(FeedbackStatus.RESOLVED);
         comment.setResolvedBy(authService.findUserOrThrow(actorId));
         comment.setResolvedAt(java.time.LocalDateTime.now());
-        return FeedbackResponse.from(feedbackRepository.save(comment));
+        FeedbackComment saved = feedbackRepository.save(comment);
+        if (contributions != null) contributions.record(saved.getProject().getId(), actorId, com.stemotion.domain.collab.entity.CollabEnums.ContributionType.NOTE_RESOLVED, saved.getId());
+        return FeedbackResponse.from(saved);
     }
 
     @Transactional
@@ -263,6 +270,7 @@ public class FeedbackService {
         if(stem==null && assessment!=null)throw ApiException.badRequest("STEM is disabled");
         ClipProject project = scriptService.getOrThrow(projectId);
         scriptService.requireActive(project);
+        if (workspaceAccess != null) workspaceAccess.requireReviewerNotAdminBypass(projectId, reviewerId);
         var stemTicket=stem==null?null:stem.prepare(project,scriptService.currentVersion(project),reviewerId,"VIDEO",assessment,reason);
         if(stem!=null)stem.checkVideoReviewFingerprint(project,scriptService.currentVersion(project),reviewerId,"APPROVE_VIDEO");
         if(stemTicket!=null && stemTicket.replay())return;
@@ -292,12 +300,14 @@ public class FeedbackService {
                 StatusHistory.TargetType.CLIP, clip.get().getId(), StatusHistory.Decision.APPROVED, reason);
             if(stem!=null)stem.finish(project,stemTicket);
             if(stemArtifacts!=null)stemArtifacts.afterReview(project,reviewerId,artifactReview,clip.get());
+            if (contributions != null) contributions.record(projectId, reviewerId, com.stemotion.domain.collab.entity.CollabEnums.ContributionType.REVIEW_DECIDED, clip.get().getId());
             return;
         }
         Composition composition = compositionService.ensure(project, version, reviewerId);
         statusHistoryService.recordReview(project, from, reviewer, StatusHistory.TargetType.COMPOSITION,
             composition.getId(), StatusHistory.Decision.APPROVED, reason, revisionNote(composition));
         if(stem!=null)stem.finish(project,stemTicket);
+        if (contributions != null) contributions.record(projectId, reviewerId, com.stemotion.domain.collab.entity.CollabEnums.ContributionType.REVIEW_DECIDED, composition.getId());
         String approvalSnapshot=stemArtifacts==null?null:stemArtifacts.afterReview(project,reviewerId,artifactReview,null);
         if(stemArtifacts==null)renderService.renderApproved(projectId,reviewerId);
         else renderService.renderApproved(projectId,reviewerId,approvalSnapshot);
@@ -309,6 +319,7 @@ public class FeedbackService {
         String reason = ScriptService.requireReason(note);
         ClipProject project = scriptService.getOrThrow(projectId);
         scriptService.requireActive(project);
+        if (workspaceAccess != null) workspaceAccess.requireReviewerNotAdminBypass(projectId, reviewerId);
         if(stem!=null)stem.checkVideoReviewFingerprint(project,scriptService.currentVersion(project),reviewerId,"SEND_BACK");
         if (project.getVideoStatus() != VideoStatus.IN_QA) {
             throw ApiException.badRequest("Only a clip in QA can be sent back to production");
@@ -327,6 +338,7 @@ public class FeedbackService {
             statusHistoryService.recordReview(project, from, reviewer, StatusHistory.TargetType.COMPOSITION,
                 composition.getId(), StatusHistory.Decision.REJECTED, reason, revisionNote(composition));
         }
+        if (contributions != null) contributions.record(projectId, reviewerId, com.stemotion.domain.collab.entity.CollabEnums.ContributionType.REVIEW_DECIDED, version.getId());
     }
 
     /**

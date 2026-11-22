@@ -60,6 +60,19 @@ public class ScriptService {
     @org.springframework.beans.factory.annotation.Autowired(required=false)
     private com.stemotion.domain.stem.StemService stem;
 
+    /** Collaboration (V28); optional so unit tests can build the service bare. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.stemotion.domain.collab.service.EditLeaseService editLeases;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.stemotion.domain.collab.service.ContributionService contributions;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.stemotion.domain.collab.service.ProjectTeamRules teamRules;
+
+    private static String currentUserId() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName()) ? null : auth.getName();
+    }
+
     // ---------------------------------------------------------------- queries
 
     @Transactional(readOnly = true)
@@ -200,6 +213,8 @@ public class ScriptService {
                 "Only a draft or returned script can be edited; submitted versions are immutable"
             );
         }
+        if (editLeases != null) editLeases.requireWritable(
+            com.stemotion.domain.collab.entity.CollabEnums.LeaseResource.SCRIPT_DRAFT, projectId, currentUserId());
         // Locked and checked before anything changes, so a stale save leaves the draft as it is.
         ScriptVersion current = lockCurrentVersion(project);
         int revision = draftRevisionOf(current);
@@ -283,6 +298,7 @@ public class ScriptService {
         ClipProject project = getOrThrow(projectId);
         requireStatus(project, ScriptStatus.DRAFT, ScriptStatus.CHANGE_REQUESTED);
         workspaceAccess.requireProjectRole(projectId, currentUserId, java.util.Set.of(WorkspaceRole.WRITER));
+        if (teamRules != null) teamRules.requireCoverageBeforeSubmit(projectId);
 
         ScriptVersion current = currentVersion(project);
         List<Scene> scenes = scenesOf(current);
@@ -300,6 +316,7 @@ public class ScriptService {
         projectRepository.save(project);
         statusHistoryService.record(
             project, from, authService.findUserOrThrow(currentUserId), "Script submitted for review");
+        if (contributions != null) contributions.record(projectId, currentUserId, com.stemotion.domain.collab.entity.CollabEnums.ContributionType.SCRIPT_SUBMITTED, current.getId());
 
         return toResponse(project, current, scenes);
     }
@@ -310,6 +327,7 @@ public class ScriptService {
         if(request!=null && request.changeTarget()!=null)throw ApiException.badRequest("changeTarget only allowed on request-changes");
         if(stem==null && request!=null && request.stemAssessment()!=null)throw ApiException.badRequest("STEM is disabled");
         ClipProject project = getOrThrow(projectId);
+        workspaceAccess.requireReviewerNotAdminBypass(projectId, reviewerId);
         var stemTicket=stem==null?null:stem.prepare(project,currentVersion(project),reviewerId,"SCRIPT",request==null?null:request.stemAssessment(),request==null?null:request.note());
         if(stemTicket!=null && stemTicket.replay())return findById(projectId);
         requireStatus(project, ScriptStatus.IN_REVIEW);
@@ -331,6 +349,7 @@ public class ScriptService {
             request == null ? null : request.note());
 
         if(stem!=null)stem.finish(project,stemTicket);
+        if (contributions != null) contributions.record(projectId, reviewerId, com.stemotion.domain.collab.entity.CollabEnums.ContributionType.REVIEW_DECIDED, current.getId());
         return toResponse(project, current, scenesOf(current));
     }
 
@@ -357,6 +376,7 @@ public class ScriptService {
         if(request!=null && request.stemAssessment()!=null)throw ApiException.badRequest("Assessment is not accepted on request-changes");
         if(stem==null && request!=null && request.changeTarget()!=null)throw ApiException.badRequest("STEM is disabled");
         ClipProject project = getOrThrow(projectId);
+        workspaceAccess.requireReviewerNotAdminBypass(projectId, reviewerId);
         var changeTicket=stem==null?null:stem.beginChange(project,reviewerId,request==null?null:request.changeTarget(),reason);
         if(changeTicket!=null && changeTicket.copiedVersion()!=null) {
             ScriptVersion copiedVersion=versionOrThrow(changeTicket.copiedVersion(),projectId);
@@ -396,6 +416,7 @@ public class ScriptService {
             reason);
 
         if(stem!=null)stem.finishChange(changeTicket,next.getId());
+        if (contributions != null) contributions.record(projectId, reviewerId, com.stemotion.domain.collab.entity.CollabEnums.ContributionType.REVIEW_DECIDED, reviewed.getId());
         return toResponse(project, next, copied);
     }
 
