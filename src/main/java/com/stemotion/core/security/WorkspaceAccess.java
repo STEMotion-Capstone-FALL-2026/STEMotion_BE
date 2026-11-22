@@ -12,6 +12,8 @@ import com.stemotion.domain.project.repository.ClipProjectRepository;
 import com.stemotion.domain.production.repository.RenderJobRepository;
 import com.stemotion.domain.review.repository.FeedbackCommentRepository;
 import com.stemotion.domain.workspace.repository.WorkspaceMemberRepository;
+import com.stemotion.domain.collab.entity.ProjectMember;
+import com.stemotion.domain.collab.repository.ProjectMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +37,7 @@ public class WorkspaceAccess {
     private final ClipProjectRepository projects;
     private final RenderJobRepository jobs;
     private final FeedbackCommentRepository comments;
+    private final ProjectMemberRepository projectMembers;
 
     /** The user by id, read once per request (shared with the JWT filter and the interceptor). */
     public Optional<User> user(String userId) {
@@ -48,6 +51,35 @@ public class WorkspaceAccess {
 
     private Optional<ProjectRef> project(String projectId) {
         return RequestCache.get("project:" + projectId, () -> projects.findRefById(projectId));
+    }
+
+    /**
+     * Members of a project created from a proposal (V28). A project without members (every project
+     * created before V28) keeps the workspace roles, so existing projects and tests keep working.
+     */
+    public List<ProjectMember> projectMembers(String projectId) {
+        return RequestCache.get("project-members:" + projectId, () -> projectMembers.findByProjectIdOrderByCreatedAtAsc(projectId));
+    }
+
+    public boolean usesProjectRoles(String projectId) {
+        return !projectMembers(projectId).isEmpty();
+    }
+
+    /** The user's active project role, when the project uses project roles. */
+    public Optional<WorkspaceRole> projectRole(String projectId, String userId) {
+        return projectMembers(projectId).stream()
+            .filter(m -> m.active() && m.getUserId().equals(userId))
+            .map(ProjectMember::getRole).findFirst();
+    }
+
+    /** The role a user acts with in a project right now: project role, else workspace role. */
+    public Optional<WorkspaceRole> effectiveRole(String projectId, String userId) {
+        if (usesProjectRoles(projectId)) return projectRole(projectId, userId);
+        return project(projectId).flatMap(ref -> activeSeat(ref.workspaceId(), userId)).map(Membership::role);
+    }
+
+    public String workspaceOf(String projectId) {
+        return project(projectId).map(ProjectRef::workspaceId).orElseThrow(() -> ApiException.notFound("Script", projectId));
     }
 
     private Optional<Membership> activeSeat(String workspaceId, String userId) {
@@ -67,6 +99,27 @@ public class WorkspaceAccess {
         boolean allowed=members.findMembershipsByUserId(userId).stream()
             .anyMatch(m -> m.active() && m.workspaceId().equals(workspaceId) && m.role()==role);
         if(!allowed)throw ApiException.forbidden("Active "+role+" seat required for STEM");
+    }
+
+    /**
+     * STEM seat inside a project: a project that uses project roles (V28) asks for that role in the
+     * project and any active seat in its workspace; other projects keep the workspace seat rule.
+     * Still no system-admin bypass (D-ADM, AT24).
+     */
+    public void requireActiveStemSeat(String workspaceId, String userId, WorkspaceRole role, String projectId) {
+        if (projectId == null || !usesProjectRoles(projectId)) { requireActiveStemSeat(workspaceId, userId, role); return; }
+        if(users.findById(userId).filter(u->u.getStatus()==User.UserStatus.ACTIVE).isEmpty())
+            throw ApiException.forbidden("Active user required for STEM");
+        boolean seat = members.findMembershipsByUserId(userId).stream().anyMatch(m -> m.active() && m.workspaceId().equals(workspaceId));
+        if (!seat || projectRole(projectId, userId).filter(r -> r == role).isEmpty())
+            throw ApiException.forbidden("Active "+role+" role in this project required for STEM");
+    }
+
+    /** D-ADM: an Admin approves a script or a video only as a Reviewer of the project, never by bypass. */
+    public void requireReviewerNotAdminBypass(String projectId, String userId) {
+        if (isAdmin(userId) && effectiveRole(projectId, userId).filter(r -> r == WorkspaceRole.REVIEWER).isEmpty()) {
+            throw ApiException.forbidden("An Admin approves only as a Reviewer of this project (D-ADM)");
+        }
     }
 
     public boolean isAdmin(String userId) {
@@ -123,12 +176,24 @@ public class WorkspaceAccess {
             requireProjectRole(projectId, userId, Set.of(WorkspaceRole.WRITER));
         } else {
             requireWorkspace(ref.workspaceId(), userId, false);
+            // D13: outside members of a project-role project see its title in lists, not its content.
+            // Revoked members keep read access to the history they took part in (D15).
+            if (usesProjectRoles(projectId) && !isLeader(ref.workspaceId(), userId)
+                && projectMembers(projectId).stream().noneMatch(m -> m.getUserId().equals(userId))) {
+                throw ApiException.forbidden("Only members of this project can open it; ask to join the project");
+            }
         }
     }
 
     public void requireProjectRole(String projectId, String userId, Set<WorkspaceRole> allowedRoles) {
         if (isAdmin(userId)) return;
         ProjectRef ref = project(projectId).orElseThrow(() -> ApiException.notFound("Script", projectId));
+        if (usesProjectRoles(projectId)) {
+            if (projectRole(projectId, userId).filter(allowedRoles::contains).isEmpty()) {
+                throw ApiException.forbidden("You do not have the required role in this project");
+            }
+            return;
+        }
         requireWorkspaceRole(ref.workspaceId(), userId, allowedRoles);
     }
 
@@ -148,6 +213,11 @@ public class WorkspaceAccess {
 
     public boolean hasProjectRole(String projectId, String userId, String... roleNames) {
         if (isAdmin(userId)) return true;
+        if (project(projectId).isEmpty()) return false;
+        if (usesProjectRoles(projectId)) {
+            Set<WorkspaceRole> allowed = roles(roleNames);
+            return projectRole(projectId, userId).filter(allowed::contains).isPresent();
+        }
         return project(projectId)
             .map(ref -> hasWorkspaceRole(ref.workspaceId(), userId, roleNames))
             .orElse(false);

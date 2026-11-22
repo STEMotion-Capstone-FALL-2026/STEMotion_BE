@@ -77,7 +77,9 @@ public class ResourceAccessInterceptor implements HandlerInterceptor {
                 boolean isManageMembers = path.contains("/candidates") || (write && path.contains("/members"));
                 // Writes whose controller names the role itself need membership only here: creating a
                 // script (WRITER) and the workspace YouTube channel (PRODUCER or Admin, RF-08).
-                boolean roleCheckedByController = path.endsWith("/scripts") || YOUTUBE_CHANNEL.matcher(path).matches();
+                // Proposing a project (WRITER, UC-29) is checked by the collaboration service.
+                boolean roleCheckedByController = path.endsWith("/scripts") || path.endsWith("/proposals")
+                    || YOUTUBE_CHANNEL.matcher(path).matches();
                 access.requireWorkspace(workspace, userId, isManageMembers || (write && !roleCheckedByController));
             }
         }

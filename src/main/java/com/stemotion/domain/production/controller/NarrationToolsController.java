@@ -27,6 +27,9 @@ import java.time.Duration;
 @RequiredArgsConstructor
 @Tag(name = "Narration", description = "TTS preview and audio-timed scene durations through the API")
 public class NarrationToolsController {
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.stemotion.domain.collab.service.AiSettingsService aiSettings;
+
 
     private final NarrationToolsService narrationToolsService;
 
@@ -40,6 +43,7 @@ public class NarrationToolsController {
         @RequestParam(required = false) String sceneId,
         @RequestParam(required = false) String voice
     ) {
+        if (aiSettings != null) aiSettings.requireAllowedVoice(voice);
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("audio/mpeg"))
             .cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePrivate())

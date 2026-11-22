@@ -812,6 +812,10 @@ public class YoutubePublishAcceptanceTest {
                 .load();
             flywayAuth.migrate();
 
+            // V28 (collaboration, 22/11/2026) is applied by script so that only V27 is missing here.
+            new org.springframework.jdbc.datasource.init.ResourceDatabasePopulator(
+                new org.springframework.core.io.ClassPathResource("db/migration/V28__collaboration_and_ai_settings.sql")).execute(ds);
+
             // Try validating JPA schema without V27 -> must fail because publications table is missing V27 columns
             org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean emfb =
                 new org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean();

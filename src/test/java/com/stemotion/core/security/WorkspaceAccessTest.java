@@ -27,7 +27,7 @@ class WorkspaceAccessTest {
     final WorkspaceMemberRepository members = mock(WorkspaceMemberRepository.class);
     final ClipProjectRepository projects = mock(ClipProjectRepository.class);
     final RenderJobRepository jobs = mock(RenderJobRepository.class);
-    final WorkspaceAccess access = new WorkspaceAccess(users, members, projects, jobs, mock(com.stemotion.domain.review.repository.FeedbackCommentRepository.class));
+    final WorkspaceAccess access = new WorkspaceAccess(users, members, projects, jobs, mock(com.stemotion.domain.review.repository.FeedbackCommentRepository.class), mock(com.stemotion.domain.collab.repository.ProjectMemberRepository.class));
 
     void seat(WorkspaceRole role, MemberStatus status, boolean isLeader) {
         when(members.findMembershipsByUserId("writer")).thenReturn(List.of(new Membership("one", role, status, isLeader)));
