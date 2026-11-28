@@ -77,6 +77,9 @@ class SmokeTester:
         self.level = level
         self.results: List[Tuple[str, str, str]] = []  # (Step, Status, Note)
         self.tokens: Dict[str, str] = {}
+        # Revision of the workspace STEM settings after this run sets STRICT. A reused workspace
+        # is past revision 1, and approvals must send the current one (else 409 STALE_REVISION).
+        self.mode_revision: int = 1
 
     def log_result(self, step: str, passed: bool, note: str = ""):
         status = "PASS" if passed else "FAIL"
@@ -189,7 +192,9 @@ class SmokeTester:
         )
 
         if status == 200 and resp.get("mode") == "STRICT":
-            self.log_result("Set STRICT Mode", True, f"Workspace set to STRICT with policy {policy_id}")
+            self.mode_revision = int(resp.get("revision", base_rev + 1))
+            self.log_result("Set STRICT Mode", True,
+                            f"Workspace set to STRICT with policy {policy_id} (settings revision {self.mode_revision})")
             return True
         else:
             self.log_result("Set STRICT Mode", False, f"Status {status}: {resp}")
@@ -354,7 +359,7 @@ class SmokeTester:
                     "expectedBriefRevision": 1,
                     "expectedScriptRevision": 0,
                     "expectedCompositionRevision": None,
-                    "expectedModeRevision": 1,
+                    "expectedModeRevision": self.mode_revision,
                     "rubricVersionId": rubric_id,
                     "criteria": [
                         {
@@ -520,7 +525,7 @@ class SmokeTester:
                     "expectedBriefRevision": 1,
                     "expectedScriptRevision": 0,
                     "expectedCompositionRevision": None,
-                    "expectedModeRevision": 1,
+                    "expectedModeRevision": self.mode_revision,
                     "rubricVersionId": RUBRIC_MAP[self.level],
                     "criteria": [{"key": "CRIT-STEM-01", "judgment": "ADEQUATE", "rationale": "OK", "evidenceIds": []}],
                     "idempotencyKey": f"stale-approve-{int(time.time())}",
